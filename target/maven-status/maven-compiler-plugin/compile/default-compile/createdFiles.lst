@@ -1,1 +1,8 @@
+ltc/events/classes/resources.class
+ltc/events/Modules/Window.class
+ltc/events/classes/events.class
+ltc/events/classes/category.class
+ltc/events/classes/session.class
 ltc/events/Main.class
+ltc/events/classes/types.class
+ltc/events/classes/participant.class
