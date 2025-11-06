@@ -11,6 +11,7 @@ import javafx.geometry.*;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Circle;
 import ltc.events.Modules.con.EventDB;
+import ltc.events.Modules.visual.Login;
 import ltc.events.classes.Event;
 
 public class Window {
@@ -83,7 +84,49 @@ public class Window {
 
     private BorderPane getBorderPane(Stage palco, HBox botoesMac) {
         BorderPane barra = new BorderPane();
+        Button btnLogin = new Button("🔐 Login");
+        btnLogin.setStyle("""
+    -fx-background-color: linear-gradient(to bottom, #007aff, #0051a8);
+    -fx-text-fill: white;
+    -fx-font-weight: bold;
+    -fx-background-radius: 8;
+    -fx-cursor: hand;
+    -fx-padding: 6 14 6 14;
+""");
+
+// Efeito hover
+        btnLogin.setOnMouseEntered(e -> btnLogin.setStyle("""
+    -fx-background-color: linear-gradient(to bottom, #339cff, #007aff);
+    -fx-text-fill: white;
+    -fx-font-weight: bold;
+    -fx-background-radius: 8;
+    -fx-cursor: hand;
+    -fx-padding: 6 14 6 14;
+"""));
+        btnLogin.setOnMouseExited(e -> btnLogin.setStyle("""
+    -fx-background-color: linear-gradient(to bottom, #007aff, #0051a8);
+    -fx-text-fill: white;
+    -fx-font-weight: bold;
+    -fx-background-radius: 8;
+    -fx-cursor: hand;
+    -fx-padding: 6 14 6 14;
+"""));
+
+// Ação do botão → abre a janela de login
+        btnLogin.setOnAction(e -> {
+            new Login().mostrarLogin();
+        });
+
+
+// Colocar botão à direita
+        HBox rightBox = new HBox(btnLogin);
+        rightBox.setAlignment(Pos.CENTER_RIGHT);
+        rightBox.setPadding(new Insets(6, 10, 6, 0));
+
+// Adiciona ao topo
         barra.setLeft(botoesMac);
+        barra.setRight(rightBox);
+
         barra.setStyle("-fx-background-color: linear-gradient(to bottom, #e0e0e0, #cfcfcf); "
                 + "-fx-border-color: #b0b0b0; -fx-border-width: 0 0 1 0;");
 
