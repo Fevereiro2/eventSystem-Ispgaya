@@ -14,9 +14,13 @@ public class db {
         try {
             Dotenv env = Dotenv.load();
 
-            String url = env.get("DB_URL");
+            String url = env.get("URL");
             String user = env.get("DB_USER");
-            String pass = env.get("DB_PASS");
+            String pass = env.get("DB_PASSWORD");
+
+            System.out.println("Ligando como user: " + user);
+            System.out.println("Para o host: " + url);
+
 
             conn = DriverManager.getConnection(url, user, pass);
             System.out.println("✅ Ligação bem-sucedida ao PostgreSQL!");
