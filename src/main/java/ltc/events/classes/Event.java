@@ -1,7 +1,4 @@
 package ltc.events.classes;
-
-import javafx.collections.ObservableList;
-
 import java.sql.Timestamp;
 
 public class Event {
@@ -26,9 +23,6 @@ public class Event {
         this.state = state;
     }
 
-    public static ObservableList<Event> getAllEvents() {
-        return null;
-    }
 
     public int getId() { return event_id; }
     public String getName() { return name; }
