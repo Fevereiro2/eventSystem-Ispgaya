@@ -5,14 +5,14 @@ import javafx.collections.ObservableList;
 import java.sql.Timestamp;
 
 public class Event {
-    private int event_id;
-    private String name;
-    private String description;
-    private String local;
-    private Timestamp startdate;
-    private Timestamp finaldate;
-    private String state;
-    private String image;
+    private final int event_id;
+    private final String name;
+    private final String description;
+    private final String local;
+    private final Timestamp startdate;
+    private final Timestamp finaldate;
+    private final String state;
+    private final String image;
 
     public Event(int event_id, String name, String description, String local,
                  Timestamp startdate, Timestamp finaldate, String image, String state) {
