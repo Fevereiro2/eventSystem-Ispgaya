@@ -26,9 +26,9 @@ public class Window {
         Circle btnMin = new Circle(6, Color.web("#FFBD2E"));
         Circle btnMax = new Circle(6, Color.web("#28C940"));
 
-        btnFechar.setOnMouseClicked(e -> palco.close());
-        btnMin.setOnMouseClicked(e -> palco.setIconified(true));
-        btnMax.setOnMouseClicked(e -> palco.setMaximized(!palco.isMaximized()));
+        btnFechar.setOnMouseClicked(_ -> palco.close());
+        btnMin.setOnMouseClicked(_ -> palco.setIconified(true));
+        btnMax.setOnMouseClicked(_ -> palco.setMaximized(!palco.isMaximized()));
 
         HBox botoesMac = new HBox(8, btnFechar, btnMin, btnMax);
         botoesMac.setAlignment(Pos.CENTER_LEFT);
@@ -36,19 +36,7 @@ public class Window {
 
         //#################################################################################
         // Barra superior (draggable)
-        BorderPane barra = new BorderPane();
-        barra.setLeft(botoesMac);
-        barra.setStyle("-fx-background-color: linear-gradient(to bottom, #e0e0e0, #cfcfcf); "
-                + "-fx-border-color: #b0b0b0; -fx-border-width: 0 0 1 0;");
-
-        barra.setOnMousePressed(e -> {
-            xOffset = e.getSceneX();
-            yOffset = e.getSceneY();
-        });
-        barra.setOnMouseDragged(e -> {
-            palco.setX(e.getScreenX() - xOffset);
-            palco.setY(e.getScreenY() - yOffset);
-        });
+        BorderPane barra = getBorderPane(palco, botoesMac);
 
         //#################################################################################
         // 🎟️ Secção principal — Carrossel de Eventos
@@ -66,7 +54,7 @@ public class Window {
         hbox.setPadding(new Insets(20));
         hbox.setAlignment(Pos.CENTER_LEFT);
 
-        // Carregar eventos da BD
+        // Carrel events da BD
         for (Event ev : EventDB.getAllEvents()) {
             VBox card = criarCardEvento(ev);
             hbox.getChildren().add(card);
@@ -91,6 +79,23 @@ public class Window {
         Scene cena = new Scene(raiz, 1000, 600);
         palco.setScene(cena);
         palco.show();
+    }
+
+    private BorderPane getBorderPane(Stage palco, HBox botoesMac) {
+        BorderPane barra = new BorderPane();
+        barra.setLeft(botoesMac);
+        barra.setStyle("-fx-background-color: linear-gradient(to bottom, #e0e0e0, #cfcfcf); "
+                + "-fx-border-color: #b0b0b0; -fx-border-width: 0 0 1 0;");
+
+        barra.setOnMousePressed(e -> {
+            xOffset = e.getSceneX();
+            yOffset = e.getSceneY();
+        });
+        barra.setOnMouseDragged(e -> {
+            palco.setX(e.getScreenX() - xOffset);
+            palco.setY(e.getScreenY() - yOffset);
+        });
+        return barra;
     }
 
     //#################################################################################
@@ -148,14 +153,14 @@ public class Window {
         card.getChildren().addAll(img, lblNome, lblData, lblLocal, lblEstado);
 
         // Efeito hover
-        card.setOnMouseEntered(e -> card.setStyle("""
+        card.setOnMouseEntered(_ -> card.setStyle("""
         -fx-background-color: #f9f9f9;
         -fx-background-radius: 15;
         -fx-border-radius: 15;
         -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.25), 15, 0, 0, 6);
         -fx-cursor: hand;
     """));
-        card.setOnMouseExited(e -> card.setStyle("""
+        card.setOnMouseExited(_ -> card.setStyle("""
         -fx-background-color: #ffffff;
         -fx-background-radius: 15;
         -fx-border-radius: 15;
@@ -164,7 +169,7 @@ public class Window {
     """));
 
         // Clique → mostrar detalhes do evento
-        card.setOnMouseClicked(e -> {
+        card.setOnMouseClicked(_ -> {
             Alert detalhes = new Alert(Alert.AlertType.INFORMATION);
             detalhes.setTitle("Detalhes do Evento");
             detalhes.setHeaderText(ev.getName());
@@ -180,21 +185,16 @@ public class Window {
 
         return card;
     }
-
+    
     private String defineCorEstado(String state) {
         if (state == null) return "-fx-background-color: #ddd; -fx-text-fill: black; -fx-font-size: 12px;";
-        switch (state.toLowerCase()) {
-            case "ativo":
-                return "-fx-background-color: #e8f5e9; -fx-text-fill: #2e7d32; -fx-font-size: 12px;";
-            case "planeado":
-                return "-fx-background-color: #fff8e1; -fx-text-fill: #f9a825; -fx-font-size: 12px;";
-            case "cancelado":
-                return "-fx-background-color: #ffebee; -fx-text-fill: #c62828; -fx-font-size: 12px;";
-            case "concluido":
-                return "-fx-background-color: #e3f2fd; -fx-text-fill: #1565c0; -fx-font-size: 12px;";
-            default:
-                return "-fx-background-color: #eeeeee; -fx-text-fill: #333; -fx-font-size: 12px;";
-        }
+        return switch (state.toLowerCase()) {
+            case "ativo" -> "-fx-background-color: #e8f5e9; -fx-text-fill: #2e7d32; -fx-font-size: 12px;";
+            case "planeado" -> "-fx-background-color: #fff8e1; -fx-text-fill: #f9a825; -fx-font-size: 12px;";
+            case "cancelado" -> "-fx-background-color: #ffebee; -fx-text-fill: #c62828; -fx-font-size: 12px;";
+            case "concluido" -> "-fx-background-color: #e3f2fd; -fx-text-fill: #1565c0; -fx-font-size: 12px;";
+            default -> "-fx-background-color: #eeeeee; -fx-text-fill: #333; -fx-font-size: 12px;";
+        };
     }
 
 
