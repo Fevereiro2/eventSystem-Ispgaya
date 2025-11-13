@@ -27,9 +27,9 @@ public class Login {
         Circle btnMin = new Circle(6, Color.web("#FFBD2E"));
         Circle btnMax = new Circle(6, Color.web("#28C940"));
 
-        btnFechar.setOnMouseClicked(_ -> stage.close());
-        btnMin.setOnMouseClicked(_ -> stage.setIconified(true));
-        btnMax.setOnMouseClicked(_ -> stage.setMaximized(!stage.isMaximized()));
+        btnFechar.setOnMouseClicked(e -> stage.close());
+        btnMin.setOnMouseClicked(e -> stage.setIconified(true));
+        btnMax.setOnMouseClicked(e -> stage.setMaximized(!stage.isMaximized()));
 
         HBox botoesMac = new HBox(8, btnFechar, btnMin, btnMax);
         botoesMac.setAlignment(Pos.CENTER_LEFT);
