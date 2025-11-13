@@ -27,9 +27,9 @@ public class Window {
         Circle btnMin = new Circle(6, Color.web("#FFBD2E"));
         Circle btnMax = new Circle(6, Color.web("#28C940"));
 
-        btnFechar.setOnMouseClicked(_ -> palco.close());
-        btnMin.setOnMouseClicked(_ -> palco.setIconified(true));
-        btnMax.setOnMouseClicked(_ -> palco.setMaximized(!palco.isMaximized()));
+        btnFechar.setOnMouseClicked(e -> palco.close());
+        btnMin.setOnMouseClicked(e -> palco.setIconified(true));
+        btnMax.setOnMouseClicked(e -> palco.setMaximized(!palco.isMaximized()));
 
         HBox botoesMac = new HBox(8, btnFechar, btnMin, btnMax);
         botoesMac.setAlignment(Pos.CENTER_LEFT);
@@ -196,14 +196,14 @@ public class Window {
         card.getChildren().addAll(img, lblNome, lblData, lblLocal, lblEstado);
 
         // Efeito hover
-        card.setOnMouseEntered(_ -> card.setStyle("""
+        card.setOnMouseEntered(e -> card.setStyle("""
         -fx-background-color: #f9f9f9;
         -fx-background-radius: 15;
         -fx-border-radius: 15;
         -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.25), 15, 0, 0, 6);
         -fx-cursor: hand;
     """));
-        card.setOnMouseExited(_ -> card.setStyle("""
+        card.setOnMouseExited(e -> card.setStyle("""
         -fx-background-color: #ffffff;
         -fx-background-radius: 15;
         -fx-border-radius: 15;
@@ -212,7 +212,7 @@ public class Window {
     """));
 
         // Clique → mostrar detalhes do evento
-        card.setOnMouseClicked(_ -> {
+        card.setOnMouseClicked(e -> {
             Alert detalhes = new Alert(Alert.AlertType.INFORMATION);
             detalhes.setTitle("Detalhes do Evento");
             detalhes.setHeaderText(ev.getName());
