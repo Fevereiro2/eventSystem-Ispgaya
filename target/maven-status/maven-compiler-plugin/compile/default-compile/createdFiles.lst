@@ -1,12 +1,11 @@
 ltc/events/classes/resources.class
 ltc/events/Modules/Window.class
 ltc/events/classes/Event.class
-ltc/events/Modules/db.class
 ltc/events/classes/category.class
+ltc/events/Modules/db.class
 ltc/events/Main.class
 ltc/events/Modules/con/EventDB.class
-ltc/events/Modules/con/SessionDB.class
 ltc/events/Modules/visual/Login.class
 ltc/events/classes/Session.class
-ltc/events/classes/types.class
 ltc/events/classes/participant.class
+ltc/events/classes/types.class
