@@ -27,9 +27,9 @@ public class Window {
         Circle btnMin = new Circle(6, Color.web("#FFBD2E"));
         Circle btnMax = new Circle(6, Color.web("#28C940"));
 
-        btnFechar.setOnMouseClicked(e -> palco.close());
-        btnMin.setOnMouseClicked(e -> palco.setIconified(true));
-        btnMax.setOnMouseClicked(e -> palco.setMaximized(!palco.isMaximized()));
+        btnFechar.setOnMouseClicked(_ -> palco.close());
+        btnMin.setOnMouseClicked(_ -> palco.setIconified(true));
+        btnMax.setOnMouseClicked(_ -> palco.setMaximized(!palco.isMaximized()));
 
         HBox botoesMac = new HBox(8, btnFechar, btnMin, btnMax);
         botoesMac.setAlignment(Pos.CENTER_LEFT);
@@ -95,7 +95,7 @@ public class Window {
 """);
 
 // Efeito hover
-        btnLogin.setOnMouseEntered(e -> btnLogin.setStyle("""
+        btnLogin.setOnMouseEntered(_ -> btnLogin.setStyle("""
     -fx-background-color: linear-gradient(to bottom, #339cff, #007aff);
     -fx-text-fill: white;
     -fx-font-weight: bold;
@@ -103,7 +103,7 @@ public class Window {
     -fx-cursor: hand;
     -fx-padding: 6 14 6 14;
 """));
-        btnLogin.setOnMouseExited(e -> btnLogin.setStyle("""
+        btnLogin.setOnMouseExited(_ -> btnLogin.setStyle("""
     -fx-background-color: linear-gradient(to bottom, #007aff, #0051a8);
     -fx-text-fill: white;
     -fx-font-weight: bold;
@@ -113,10 +113,7 @@ public class Window {
 """));
 
 // Ação do botão → abre a janela de login
-        btnLogin.setOnAction(e -> {
-            new Login().mostrarLogin();
-        });
-
+        btnLogin.setOnAction(_ -> new Login().mostrarLogin());
 
 // Colocar botão à direita
         HBox rightBox = new HBox(btnLogin);
@@ -181,8 +178,8 @@ public class Window {
         lblLocal.setStyle("-fx-text-fill: #777; -fx-font-size: 13px;");
 
         // Estado colorido
-        Label lblEstado = new Label(ev.getState());
-        lblEstado.setStyle(defineCorEstado(ev.getState()));
+        Label lblEstado = new Label(ev.getState().getName());
+        lblEstado.setStyle(defineCorEstado(ev.getState().getName()));
         lblEstado.setPadding(new Insets(4, 10, 4, 10));
         lblEstado.setAlignment(Pos.CENTER);
         lblEstado.setMaxWidth(Double.MAX_VALUE);
@@ -196,14 +193,14 @@ public class Window {
         card.getChildren().addAll(img, lblNome, lblData, lblLocal, lblEstado);
 
         // Efeito hover
-        card.setOnMouseEntered(e -> card.setStyle("""
+        card.setOnMouseEntered(_ -> card.setStyle("""
         -fx-background-color: #f9f9f9;
         -fx-background-radius: 15;
         -fx-border-radius: 15;
         -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.25), 15, 0, 0, 6);
         -fx-cursor: hand;
     """));
-        card.setOnMouseExited(e -> card.setStyle("""
+        card.setOnMouseExited(_ -> card.setStyle("""
         -fx-background-color: #ffffff;
         -fx-background-radius: 15;
         -fx-border-radius: 15;
@@ -212,7 +209,7 @@ public class Window {
     """));
 
         // Clique → mostrar detalhes do evento
-        card.setOnMouseClicked(e -> {
+        card.setOnMouseClicked(_ -> {
             Alert detalhes = new Alert(Alert.AlertType.INFORMATION);
             detalhes.setTitle("Detalhes do Evento");
             detalhes.setHeaderText(ev.getName());
