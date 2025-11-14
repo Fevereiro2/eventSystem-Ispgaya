@@ -8,11 +8,12 @@ public class Event {
     private final String local;
     private final Timestamp startdate;
     private final Timestamp finaldate;
-    private final String state;
+    private final Participant participantid;
+    private final State state;
     private final String image;
 
     public Event(int event_id, String name, String description, String local,
-                 Timestamp startdate, Timestamp finaldate, String image, String state) {
+                 Timestamp startdate, Timestamp finaldate, String image, State state, Participant participantid) {
         this.event_id = event_id;
         this.name = name;
         this.description = description;
@@ -20,6 +21,7 @@ public class Event {
         this.startdate = startdate;
         this.finaldate = finaldate;
         this.image = image;
+        this.participantid = participantid;
         this.state = state;
     }
 
@@ -30,7 +32,8 @@ public class Event {
     public String getLocal() { return local; }
     public Timestamp getStartdate() { return startdate; }
     public Timestamp getFinaldate() { return finaldate; }
-    public String getState() { return state; }
+    public State getState() { return state; }
+    public Participant getParticipantid() { return participantid; }
     public String getImage() { return image; }
 
     @Override
