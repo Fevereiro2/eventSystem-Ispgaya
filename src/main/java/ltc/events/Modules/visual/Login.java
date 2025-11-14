@@ -10,6 +10,7 @@ import javafx.scene.shape.Circle;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
+import ltc.events.classes.hashs.AuthService;
 
 public class Login {
     private double xOffset = 0;
@@ -89,7 +90,7 @@ public class Login {
                 return;
             }
 
-            if (user.equals("admin@ltc.pt") && pass.equals("1234")) {
+            if (AuthService.login(user, pass)) {
                 new Alert(Alert.AlertType.INFORMATION, "Bem-vindo, " + user + "!").showAndWait();
                 stage.close();
             } else {
