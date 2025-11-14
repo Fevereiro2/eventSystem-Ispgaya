@@ -12,6 +12,7 @@ import javafx.scene.paint.Color;
 import javafx.scene.shape.Circle;
 import ltc.events.Modules.con.EventDB;
 import ltc.events.Modules.visual.Login;
+import ltc.events.Modules.visual.Register;
 import ltc.events.classes.Event;
 
 public class Window {
@@ -85,6 +86,7 @@ public class Window {
     private BorderPane getBorderPane(Stage palco, HBox botoesMac) {
         BorderPane barra = new BorderPane();
         Button btnLogin = new Button("🔐 Login");
+        Button btnRegister = new Button("🔐 Register");
         btnLogin.setStyle("""
     -fx-background-color: linear-gradient(to bottom, #007aff, #0051a8);
     -fx-text-fill: white;
@@ -114,6 +116,7 @@ public class Window {
 
 // Ação do botão → abre a janela de login
         btnLogin.setOnAction(_ -> new Login().mostrarLogin());
+        btnRegister.setOnAction(_ -> new Register().mostrarRegister());
 
 // Colocar botão à direita
         HBox rightBox = new HBox(btnLogin);
