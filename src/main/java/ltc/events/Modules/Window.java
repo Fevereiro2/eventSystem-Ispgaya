@@ -14,38 +14,58 @@ import ltc.events.Modules.con.EventDB;
 import ltc.events.Modules.visual.Login;
 import ltc.events.Modules.visual.Register;
 import ltc.events.classes.Event;
+import ltc.events.classes.hashs.SessionEntry;
 
 public class Window {
+
     private double xOffset = 0;
     private double yOffset = 0;
 
-    public void mostrar(Stage palco) {
-        palco.initStyle(StageStyle.UNDECORATED); // remove navbar e título padrão
+    // 🔥 Armazena a referência do Stage para conseguir recarregar a UI
+    private Stage palcoRef;
 
-        //#################################################################################
-        // Botões estilo macOS
+    // ============================================================
+    // 🔥 Função principal — chama setup e guarda o Stage
+    // ============================================================
+    public void mostrar(Stage palco) {
+        this.palcoRef = palco; // 🔥 guarda referência
+        palco.initStyle(StageStyle.UNDECORATED);
+        criarUI();
+    }
+
+    // ============================================================
+    // 🔥 Recarrega a UI após login/logout
+    // ============================================================
+    public void refresh() {
+        criarUI();
+    }
+
+    // ============================================================
+    // 🔥 Aqui fica toda a criação da UI
+    // ============================================================
+    private void criarUI() {
+
+        // Botões macOS
         Circle btnFechar = new Circle(6, Color.web("#FF5F57"));
         Circle btnMin = new Circle(6, Color.web("#FFBD2E"));
         Circle btnMax = new Circle(6, Color.web("#28C940"));
 
-        btnFechar.setOnMouseClicked(_ -> palco.close());
-        btnMin.setOnMouseClicked(_ -> palco.setIconified(true));
-        btnMax.setOnMouseClicked(_ -> palco.setMaximized(!palco.isMaximized()));
+        btnFechar.setOnMouseClicked(_ -> palcoRef.close());
+        btnMin.setOnMouseClicked(_ -> palcoRef.setIconified(true));
+        btnMax.setOnMouseClicked(_ -> palcoRef.setMaximized(!palcoRef.isMaximized()));
 
         HBox botoesMac = new HBox(8, btnFechar, btnMin, btnMax);
         botoesMac.setAlignment(Pos.CENTER_LEFT);
         botoesMac.setPadding(new Insets(6, 0, 6, 10));
 
-        //#################################################################################
-        // Barra superior (draggable)
-        BorderPane barra = getBorderPane(palco, botoesMac);
+        // Barra superior
+        BorderPane barra = getBorderPane(palcoRef, botoesMac);
 
-        //#################################################################################
-        // 🎟️ Secção principal — Carrossel de Eventos
+        // Título
         Label titulo = new Label("🎟️ Eventos Disponíveis");
         titulo.setStyle("-fx-font-size: 22px; -fx-font-weight: bold;");
 
-        // Scroll horizontal
+        // Scroll
         ScrollPane scroll = new ScrollPane();
         scroll.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
         scroll.setVbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
@@ -56,10 +76,10 @@ public class Window {
         hbox.setPadding(new Insets(20));
         hbox.setAlignment(Pos.CENTER_LEFT);
 
-        // Carrel events da BD
+        // Carregar eventos da BD
+        hbox.getChildren().clear();
         for (Event ev : EventDB.getAllEvents()) {
-            VBox card = criarCardEvento(ev);
-            hbox.getChildren().add(card);
+            hbox.getChildren().add(criarCardEvento(ev));
         }
 
         scroll.setContent(hbox);
@@ -68,64 +88,114 @@ public class Window {
         centro.setAlignment(Pos.TOP_CENTER);
         centro.setPadding(new Insets(30));
 
-        //#################################################################################
-        // Janela principal
         BorderPane raiz = new BorderPane();
         raiz.setTop(barra);
         raiz.setCenter(centro);
-        raiz.setStyle("-fx-background-color: white; -fx-background-radius: 10; "
+        raiz.setStyle("-fx-background-color: white; -fx-background-radius: 10;"
                 + "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.2), 15, 0.3, 0, 4);");
 
-        //#################################################################################
-        // Mostrar cena (janela maior)
         Scene cena = new Scene(raiz, 1000, 600);
-        palco.setScene(cena);
-        palco.show();
+        palcoRef.setScene(cena);
+        palcoRef.show();
     }
 
+    // ============================================================
+    // 🔥 Barra superior — Login/Register ou User Info + Logout
+    // ============================================================
     private BorderPane getBorderPane(Stage palco, HBox botoesMac) {
+
         BorderPane barra = new BorderPane();
-        Button btnLogin = new Button("🔐 Login");
-        Button btnRegister = new Button("🔐 Register");
-        btnLogin.setStyle("""
-    -fx-background-color: linear-gradient(to bottom, #007aff, #0051a8);
-    -fx-text-fill: white;
-    -fx-font-weight: bold;
-    -fx-background-radius: 8;
-    -fx-cursor: hand;
-    -fx-padding: 6 14 6 14;
-""");
 
-// Efeito hover
-        btnLogin.setOnMouseEntered(_ -> btnLogin.setStyle("""
-    -fx-background-color: linear-gradient(to bottom, #339cff, #007aff);
-    -fx-text-fill: white;
-    -fx-font-weight: bold;
-    -fx-background-radius: 8;
-    -fx-cursor: hand;
-    -fx-padding: 6 14 6 14;
-"""));
-        btnLogin.setOnMouseExited(_ -> btnLogin.setStyle("""
-    -fx-background-color: linear-gradient(to bottom, #007aff, #0051a8);
-    -fx-text-fill: white;
-    -fx-font-weight: bold;
-    -fx-background-radius: 8;
-    -fx-cursor: hand;
-    -fx-padding: 6 14 6 14;
-"""));
+        // ================= LOGADO ==================
+        if (SessionEntry.isLogged()) {
 
-// Ação do botão → abre a janela de login
-        btnLogin.setOnAction(_ -> new Login().mostrarLogin());
-        btnRegister.setOnAction(_ -> new Register().mostrarRegister());
+            var user = SessionEntry.getUser();
 
-// Colocar botão à direita
-        HBox rightBox = new HBox(btnLogin);
-        rightBox.setAlignment(Pos.CENTER_RIGHT);
-        rightBox.setPadding(new Insets(6, 10, 6, 0));
+            Label lblUser = new Label("👤 " + user.getName() + " (" + user.getType().getName() + ")");
+            lblUser.setStyle("-fx-font-weight: bold; -fx-font-size: 13px;");
 
-// Adiciona ao topo
+            Button btnLogout = new Button("Sair");
+            btnLogout.setStyle("""
+                -fx-background-color: linear-gradient(to bottom, #2EC4B6, #1A9E8C);
+                -fx-text-fill: white;
+                -fx-font-weight: bold;
+                -fx-background-radius: 8;
+                -fx-padding: 6 14;
+                -fx-cursor: hand;
+                -fx-alignment: center;
+                -fx-text-alignment: center;
+            """);
+            btnLogout.setOnAction(e -> {
+                SessionEntry.logout();
+                refresh();
+            });
+
+            HBox rightBox = new HBox(10, lblUser, btnLogout);
+            rightBox.setAlignment(Pos.CENTER_RIGHT);
+            rightBox.setPadding(new Insets(6, 10, 6, 0));
+
+            // Admin / Moderador
+            if (Permissions.isAdmin() || Permissions.isModerador()) {
+                Button btnAdmin = new Button("Painel Admin");
+                btnAdmin.setStyle("""
+                -fx-background-color: linear-gradient(to bottom, #2EC4B6, #1A9E8C);
+                -fx-text-fill: white;
+                -fx-font-weight: bold;
+                -fx-background-radius: 8;
+                -fx-padding: 6 14;
+                -fx-cursor: hand;
+                -fx-alignment: center;
+                -fx-text-alignment: center;
+            """);
+                rightBox.getChildren().add(btnAdmin);
+
+                btnAdmin.setOnAction(e -> {
+                    new Alert(Alert.AlertType.INFORMATION,
+                            "Painel reservado a moderadores.").showAndWait();
+                });
+            }
+
+            barra.setRight(rightBox);
+
+        } else {
+
+            // ================= DESLOGADO ==================
+            Button btnLogin = new Button("🔐 Login");
+            btnLogin.setStyle("""
+                -fx-background-color: linear-gradient(to bottom, #2EC4B6, #1A9E8C);
+                -fx-text-fill: white;
+                -fx-font-weight: bold;
+                -fx-background-radius: 8;
+                -fx-padding: 6 14;
+                -fx-cursor: hand;
+                -fx-alignment: center;
+                -fx-text-alignment: center;
+            """);
+            Button btnRegister = new Button("📝 Register");
+
+            btnRegister.setStyle("""
+                -fx-background-color: linear-gradient(to bottom, #2EC4B6, #1A9E8C);
+                -fx-text-fill: white;
+                -fx-font-weight: bold;
+                -fx-background-radius: 8;
+                -fx-padding: 6 14;
+                -fx-cursor: hand;
+                -fx-alignment: center;
+                -fx-text-alignment: center;
+            """);
+
+            btnLogin.setOnAction(_ -> new Login(this).mostrarLogin());
+            btnRegister.setOnAction(_ -> new Register().mostrarRegister());
+
+            HBox rightBox = new HBox(10, btnLogin, btnRegister);
+            rightBox.setAlignment(Pos.CENTER_RIGHT);
+            rightBox.setPadding(new Insets(6, 10, 6, 0));
+
+            barra.setRight(rightBox);
+        }
+
+        // Botões de janela à esquerda
         barra.setLeft(botoesMac);
-        barra.setRight(rightBox);
 
         barra.setStyle("-fx-background-color: linear-gradient(to bottom, #e0e0e0, #cfcfcf); "
                 + "-fx-border-color: #b0b0b0; -fx-border-width: 0 0 1 0;");
@@ -138,11 +208,13 @@ public class Window {
             palco.setX(e.getScreenX() - xOffset);
             palco.setY(e.getScreenY() - yOffset);
         });
+
         return barra;
     }
 
-    //#################################################################################
-    // Cria o "card" de cada evento
+    // ============================================================
+    // 🔥 Criação dos cards de eventos
+    // ============================================================
     private VBox criarCardEvento(Event ev) {
         VBox card = new VBox(10);
         card.setPrefSize(250, 320);
@@ -156,7 +228,6 @@ public class Window {
         -fx-cursor: hand;
     """);
 
-        // Imagem do evento (ou placeholder)
         ImageView img;
         try {
             img = new ImageView(new Image(ev.getImage(), 220, 130, false, true));
@@ -164,54 +235,19 @@ public class Window {
             img = new ImageView(new Image("https://via.placeholder.com/220x130.png?text=Evento",
                     220, 130, false, true));
         }
-        img.setStyle("-fx-background-radius: 10; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.1), 5, 0, 0, 2);");
 
-        // Nome do evento
         Label lblNome = new Label(ev.getName());
         lblNome.setStyle("-fx-font-weight: bold; -fx-font-size: 16px; -fx-text-fill: #333;");
         lblNome.setWrapText(true);
-        lblNome.setAlignment(Pos.CENTER);
 
-        // Data formatada
         Label lblData = new Label("📅 " + ev.getStartdate().toLocalDateTime().toLocalDate());
-        lblData.setStyle("-fx-text-fill: #666; -fx-font-size: 13px;");
-
-        // Local
         Label lblLocal = new Label("📍 " + ev.getLocal());
-        lblLocal.setStyle("-fx-text-fill: #777; -fx-font-size: 13px;");
 
-        // Estado colorido
         Label lblEstado = new Label(ev.getState().getName());
         lblEstado.setStyle(defineCorEstado(ev.getState().getName()));
-        lblEstado.setPadding(new Insets(4, 10, 4, 10));
-        lblEstado.setAlignment(Pos.CENTER);
-        lblEstado.setMaxWidth(Double.MAX_VALUE);
-        lblEstado.setBorder(new Border(new BorderStroke(Color.LIGHTGRAY,
-                BorderStrokeStyle.SOLID, new CornerRadii(5), BorderWidths.DEFAULT)));
-
-        // Organizar tudo
-        VBox.setMargin(img, new Insets(0, 0, 5, 0));
-        VBox.setMargin(lblNome, new Insets(5, 0, 0, 0));
 
         card.getChildren().addAll(img, lblNome, lblData, lblLocal, lblEstado);
 
-        // Efeito hover
-        card.setOnMouseEntered(_ -> card.setStyle("""
-        -fx-background-color: #f9f9f9;
-        -fx-background-radius: 15;
-        -fx-border-radius: 15;
-        -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.25), 15, 0, 0, 6);
-        -fx-cursor: hand;
-    """));
-        card.setOnMouseExited(_ -> card.setStyle("""
-        -fx-background-color: #ffffff;
-        -fx-background-radius: 15;
-        -fx-border-radius: 15;
-        -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.15), 12, 0, 0, 6);
-        -fx-cursor: hand;
-    """));
-
-        // Clique → mostrar detalhes do evento
         card.setOnMouseClicked(_ -> {
             Alert detalhes = new Alert(Alert.AlertType.INFORMATION);
             detalhes.setTitle("Detalhes do Evento");
@@ -220,28 +256,23 @@ public class Window {
                     "📍 Local: " + ev.getLocal() + "\n" +
                             "🕒 Início: " + ev.getStartdate() + "\n" +
                             "🕒 Fim: " + ev.getFinaldate() + "\n\n" +
-                            "ℹ️ " + ev.getDescription() + "\n\n" +
-                            "Estado: " + ev.getState()
+                            "ℹ️ " + ev.getDescription()
             );
             detalhes.showAndWait();
         });
 
         return card;
     }
-    
+
     private String defineCorEstado(String state) {
-        if (state == null) return "-fx-background-color: #ddd; -fx-text-fill: black; -fx-font-size: 12px;";
+        if (state == null) return "-fx-background-color: #ddd; -fx-font-size: 12px;";
+
         return switch (state.toLowerCase()) {
-            case "ativo" -> "-fx-background-color: #e8f5e9; -fx-text-fill: #2e7d32; -fx-font-size: 12px;";
-            case "planeado" -> "-fx-background-color: #fff8e1; -fx-text-fill: #f9a825; -fx-font-size: 12px;";
-            case "cancelado" -> "-fx-background-color: #ffebee; -fx-text-fill: #c62828; -fx-font-size: 12px;";
-            case "concluido" -> "-fx-background-color: #e3f2fd; -fx-text-fill: #1565c0; -fx-font-size: 12px;";
-            default -> "-fx-background-color: #eeeeee; -fx-text-fill: #333; -fx-font-size: 12px;";
+            case "ativo" -> "-fx-background-color: #e8f5e9; -fx-text-fill: #2e7d32;";
+            case "planeado" -> "-fx-background-color: #fff8e1; -fx-text-fill: #f9a825;";
+            case "cancelado" -> "-fx-background-color: #ffebee; -fx-text-fill: #c62828;";
+            case "concluido" -> "-fx-background-color: #e3f2fd; -fx-text-fill: #1565c0;";
+            default -> "-fx-background-color: #eeeeee; -fx-text-fill: #333;";
         };
     }
-
-
 }
-
-
-
