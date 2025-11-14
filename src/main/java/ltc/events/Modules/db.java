@@ -6,39 +6,21 @@ import java.sql.SQLException;
 import io.github.cdimascio.dotenv.Dotenv;
 
 public class db {
-    private static Connection conn;
+
+    private static final Dotenv env = Dotenv.load();
+
+    private static final String URL  = env.get("URL");
+    private static final String USER = env.get("DB_USER");
+    private static final String PASS = env.get("DB_PASSWORD");
 
     public static Connection connect() {
-        if (conn != null) return conn; // reutiliza se já estiver ligada
-
         try {
-            Dotenv env = Dotenv.load();
-
-            String url = env.get("URL");
-            String user = env.get("DB_USER");
-            String pass = env.get("DB_PASSWORD");
-
-            System.out.println("Ligando como user: " + user);
-            System.out.println("Para o host: " + url);
-
-
-            conn = DriverManager.getConnection(url, user, pass);
-            System.out.println("✅ Ligação bem-sucedida ao PostgreSQL!");
+            Connection conn = DriverManager.getConnection(URL, USER, PASS);
+            System.out.println("✔ Ligação aberta ao PostgreSQL!");
+            return conn;
         } catch (SQLException e) {
             System.err.println("❌ Erro ao ligar ao PostgreSQL: " + e.getMessage());
-        }
-
-        return conn;
-    }
-
-    public static void close() {
-        if (conn != null) {
-            try {
-                conn.close();
-                System.out.println("🔒 Ligação fechada.");
-            } catch (SQLException e) {
-                System.err.println("❌ Erro ao fechar ligação: " + e.getMessage());
-            }
+            return null;
         }
     }
 }
