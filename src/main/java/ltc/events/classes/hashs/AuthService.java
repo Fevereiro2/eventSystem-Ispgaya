@@ -1,75 +1,96 @@
 package ltc.events.classes.hashs;
 
 import ltc.events.Modules.db;
-import ltc.events.classes.hashs.PasswordUtil;
+import ltc.events.classes.Participant;
+import ltc.events.classes.Types;
+
 import java.sql.*;
+import ltc.events.classes.hashs.PasswordUtil;
 
 public class AuthService {
 
-    public static boolean login(String email, String password) {
+    public static Participant login(String email, String password) {
+
         System.out.println("=== DEBUG LOGIN ===");
         System.out.println("Email recebido: " + email);
         System.out.println("Password recebida: " + password);
 
-        String sql = "Select password from participant where email = ?";
+        String sql = """
+            SELECT p.*, t.types_id AS tid, t.name AS tname
+            FROM participant p
+            INNER JOIN types t ON p.types_id = t.types_id
+            WHERE p.email = ?
+        """;
+
         String storedPassword = null;
+        Participant user = null;
 
         try (Connection conn = db.connect();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
 
             stmt.setString(1, email);
+
             ResultSet rs = stmt.executeQuery();
 
             if (!rs.next()) {
                 System.out.println("DEBUG → Utilizador NÃO encontrado.");
-                return false;
+                return null;
             }
 
+            // 1️⃣ Lê password
             storedPassword = rs.getString("password");
-
             System.out.println("DEBUG → PASSWORD BD: " + storedPassword);
+
+            // 2️⃣ Criar Types
+            Types type = new Types(
+                    rs.getInt("tid"),
+                    rs.getString("tname")
+            );
+
+            // 3️⃣ Criar Participant completo
+            user = new Participant(
+                    rs.getString("participant_id"),
+                    rs.getString("name"),
+                    rs.getString("email"),
+                    rs.getString("phone"),
+                    type
+            );
 
         } catch (SQLException e) {
             System.out.println("Erro na autenticação: " + e.getMessage());
-            return false;
+            return null;
         }
 
-        // 1️⃣ Verificar se está encriptada
+        // 4️⃣ Verificar hash
         boolean isHashed = PasswordUtil.isHashed(storedPassword);
         System.out.println("DEBUG → Password é hash? " + isHashed);
 
         if (isHashed) {
-            System.out.println("DEBUG → A validar com BCrypt...");
             boolean ok = PasswordUtil.checkPassword(password, storedPassword);
             System.out.println("DEBUG → BCrypt resultado: " + ok);
-            return ok;
+            return ok ? user : null;
         }
 
-        // 2️⃣ Password antiga → texto normal
-        System.out.println("DEBUG → Password antiga em TEXTO.");
-
+        // 5️⃣ Password antiga em texto
         boolean match = storedPassword.equals(password);
         System.out.println("DEBUG → Match texto simples: " + match);
 
         if (match) {
-            System.out.println("DEBUG → Encriptando password antiga e atualizando BD.");
+            System.out.println("DEBUG → Atualizando antiga password para hash...");
             try (Connection conn = db.connect();
                  PreparedStatement update = conn.prepareStatement(
                          "UPDATE participant SET password = ? WHERE email = ?"
                  )) {
 
-                String newHash = PasswordUtil.hashPassword(storedPassword);
-
-                update.setString(1, newHash);
+                update.setString(1, PasswordUtil.hashPassword(storedPassword));
                 update.setString(2, email);
                 update.executeUpdate();
 
-                System.out.println("DEBUG → Password atualizada na BD com hash.");
             } catch (SQLException e) {
                 System.out.println("Erro a atualizar password: " + e.getMessage());
             }
         }
 
-        return match;
+        return match ? user : null;
     }
 }
