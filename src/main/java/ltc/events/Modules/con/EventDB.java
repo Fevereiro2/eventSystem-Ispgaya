@@ -4,6 +4,7 @@ import ltc.events.Modules.db;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import ltc.events.classes.Event;
+import ltc.events.classes.State;
 
 import java.sql.*;
 
@@ -34,6 +35,8 @@ public class EventDB {
              ResultSet rs = stmt.executeQuery()) {
 
             while (rs.next()) {
+
+                State state = new State(0, rs.getString("state_name"));
                 events.add(new Event(
                         rs.getInt("event_id"),
                         rs.getString("name"),
@@ -42,7 +45,8 @@ public class EventDB {
                         rs.getTimestamp("initial_date"),
                         rs.getTimestamp("finish_date"),
                         rs.getString("image"),
-                        rs.getString("state_name")
+                        state,
+                        null
                 ));
             }
 
