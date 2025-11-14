@@ -19,7 +19,6 @@ public class Main extends Application {
         Window janela = new Window();   // instanciamos a outra classe
         janela.mostrar(palco);
 
-        palco.setOnCloseRequest(e -> db.close());
 
     }
 
