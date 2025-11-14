@@ -10,12 +10,19 @@ import javafx.scene.shape.Circle;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
+import ltc.events.Modules.Window;
+import ltc.events.classes.Participant;
 import ltc.events.classes.hashs.AuthService;
+import ltc.events.classes.hashs.SessionEntry;
 
 public class Login {
     private double xOffset = 0;
     private double yOffset = 0;
+    private final Window window;
 
+    public Login(Window window) {
+        this.window = window;
+    }
     public void mostrarLogin() {
         // 🔸 Criar novo Stage de login
         Stage stage = new Stage();
@@ -77,8 +84,18 @@ public class Login {
             -fx-padding: 8 18 8 18;
         """);
 
+
         Button btnCancelar = new Button("Cancelar");
+        btnCancelar.setStyle("""
+            -fx-background-color: linear-gradient(to bottom, #ff5f57, #c62828);
+            -fx-text-fill: white;
+            -fx-font-weight: bold;
+            -fx-background-radius: 6;
+            -fx-cursor: hand;
+            -fx-padding: 8 18 8 18;
+        """);
         btnCancelar.setOnAction(e -> stage.close());
+
 
         // 🔹 Validação simples
         btnEntrar.setOnAction(e -> {
@@ -86,16 +103,41 @@ public class Login {
             String pass = txtPass.getText();
 
             if (user.isEmpty() || pass.isEmpty()) {
-                new Alert(Alert.AlertType.WARNING, "Preencha todos os campos!").showAndWait();
+                new Alert(Alert.AlertType.WARNING,
+                        "Preencha todos os campos!"
+                ).showAndWait();
                 return;
             }
 
-            if (AuthService.login(user, pass)) {
-                new Alert(Alert.AlertType.INFORMATION, "Bem-vindo, " + user + "!").showAndWait();
+            // Validação do email com regex
+            if (!isValidEmail(user)) {
+                new Alert(Alert.AlertType.ERROR,
+                        "O email inserido não é válido.\n\nExemplo: nome@dominio.com"
+                ).showAndWait();
+                return;
+            }
+
+            Participant logged = AuthService.login(user, pass);
+
+            if (logged != null) {
+
+                SessionEntry.login(logged);
+
+                new Alert(Alert.AlertType.INFORMATION,
+                        "Bem-vindo, " + logged.getName() + "!"
+                ).showAndWait();
+
+                // Fechar apenas a janela de login
                 stage.close();
+
+                // Atualizar a janela principal
+                window.refresh();
+
             } else {
                 new Alert(Alert.AlertType.ERROR, "Credenciais inválidas.").showAndWait();
             }
+
+
         });
 
         HBox botoes = new HBox(10, btnCancelar, btnEntrar);
@@ -121,4 +163,8 @@ public class Login {
         stage.centerOnScreen();
         stage.show();
     }
+    private boolean isValidEmail(String email) {
+        return email.matches("^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$");
+    }
+
 }
