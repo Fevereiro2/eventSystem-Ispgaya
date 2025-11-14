@@ -1,10 +1,10 @@
 package ltc.events.classes;
 
-public class category {
+public class Category {
     private final int id;
     public final String name;
 
-    private category(int id, String name) {
+    private Category(int id, String name) {
         this.id = id;
         this.name = name;
     }
