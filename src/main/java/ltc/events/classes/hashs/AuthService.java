@@ -16,11 +16,12 @@ public class AuthService {
         System.out.println("Password recebida: " + password);
 
         String sql = """
-            SELECT p.*, t.types_id AS tid, t.name AS tname
+            SELECT p.*, t.types_id, t.name AS types_name
             FROM participant p
             INNER JOIN types t ON p.types_id = t.types_id
             WHERE p.email = ?
         """;
+
 
         String storedPassword = null;
         Participant user = null;
@@ -41,20 +42,7 @@ public class AuthService {
             storedPassword = rs.getString("password");
             System.out.println("DEBUG → PASSWORD BD: " + storedPassword);
 
-            // 2️⃣ Criar Types
-            Types type = new Types(
-                    rs.getInt("tid"),
-                    rs.getString("tname")
-            );
-
-            // 3️⃣ Criar Participant completo
-            user = new Participant(
-                    rs.getString("participant_id"),
-                    rs.getString("name"),
-                    rs.getString("email"),
-                    rs.getString("phone"),
-                    type
-            );
+            user = new Participant(rs);
 
         } catch (SQLException e) {
             System.out.println("Erro na autenticação: " + e.getMessage());
