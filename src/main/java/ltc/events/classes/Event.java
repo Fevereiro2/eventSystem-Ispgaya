@@ -1,4 +1,6 @@
 package ltc.events.classes;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.sql.Timestamp;
 
 public class Event {
@@ -23,6 +25,24 @@ public class Event {
         this.image = image;
         this.participantid = participantid;
         this.state = state;
+    }
+
+
+    public Event(ResultSet rs) throws SQLException {
+        this(
+                rs.getInt("event_id"),
+                rs.getString("name"),
+                rs.getString("description"),
+                rs.getString("local"),
+                rs.getTimestamp("initial_date"),
+                rs.getTimestamp("finish_date"),
+                rs.getString("image"),
+                new State(
+                            0,
+                            rs.getString("state_name")
+                    ),
+                null
+                );
     }
 
 
