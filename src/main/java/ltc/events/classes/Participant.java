@@ -1,5 +1,7 @@
 package ltc.events.classes;
 
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.sql.Timestamp;
 
 
@@ -19,6 +21,22 @@ public class Participant {
         this.phone = phone;
         this.type = typesid;
     }
+
+    public Participant(ResultSet rs) throws SQLException {
+        this(
+                rs.getString("participant_id"),
+                rs.getString("name"),
+                rs.getString("email"),
+                rs.getString("phone"),
+                new Types(
+                        rs.getInt("types_id"),
+                        rs.getString("types_name")
+                )
+        );
+    }
+
+
+
 
     public String getId() { return id; }
     public String getName() { return name; }
