@@ -1,6 +1,7 @@
 package ltc.events.Modules;
 
 import javafx.beans.property.SimpleStringProperty;
+import javafx.collections.ObservableList;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
@@ -24,8 +25,11 @@ import ltc.events.classes.Event;
 import ltc.events.classes.Participant;
 import ltc.events.classes.Session;
 import ltc.events.classes.Types;
+import ltc.events.classes.hashs.PasswordUtil;
 import ltc.events.classes.hashs.SessionEntry;
 
+import java.sql.Connection;
+import java.sql.PreparedStatement;
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
@@ -261,16 +265,141 @@ public class Window {
         // Substituir tudo no centro
         centro.getChildren().addAll(titulo, menu);
     }
+    private void aplicarFiltro(TableView<Participant> tabela, String filtro) {
+
+        ObservableList<Participant> todos = ParticipantDB.listAll(); // já tens isto
+
+        switch (filtro) {
+            case "Admins" -> {
+                tabela.setItems(
+                        todos.filtered(p -> p.getType().getName().equalsIgnoreCase("Admin"))
+                );
+            }
+
+            case "Participantes" -> {
+                tabela.setItems(
+                        todos.filtered(p -> p.getType().getName().equalsIgnoreCase("Participante"))
+                );
+            }
+
+            default -> {
+                tabela.setItems(todos);
+            }
+        }
+    }
+
+    private void atualizarContador(Label label, ObservableList<Participant> lista) {
+        long total = lista.size();
+        long admins = lista.stream().filter(p -> p.getType().getName().equalsIgnoreCase("Admin")).count();
+        long participantes = lista.stream().filter(p -> p.getType().getName().equalsIgnoreCase("Participante")).count();
+        long moderadores = lista.stream().filter(p -> p.getType().getName().equalsIgnoreCase("Moderador")).count();
+
+        label.setText("Total: " + total + " | Admins: " + admins + " | Participantes: " + participantes + " | Moderadores: " + moderadores);
+    }
+
+    private void abrirJanelaCriarUtilizador() {
+        Stage stage = new Stage();
+        stage.initStyle(StageStyle.UTILITY);
+        stage.setTitle("Criar Novo Utilizador");
+
+        Label lblNome = new Label("Nome:");
+        TextField txtNome = new TextField();
+
+        Label lblEmail = new Label("Email:");
+        TextField txtEmail = new TextField();
+
+        Label lblPhone = new Label("Telefone:");
+        TextField txtPhone = new TextField();
+
+        Label lblPass = new Label("Password:");
+        PasswordField txtPass = new PasswordField();
+
+        Label lblTipo = new Label("Tipo:");
+        ComboBox<Types> cmbTipo = new ComboBox<>(TypesDB.getAll());
+        cmbTipo.getSelectionModel().selectFirst();
+
+        Button btnCriar = new Button("Criar");
+        btnCriar.setOnAction(e -> {
+            try {
+                String hashed = PasswordUtil.hashPassword(txtPass.getText());
+                ParticipantDB.register(
+                        txtNome.getText(),
+                        txtEmail.getText(),
+                        txtPhone.getText(),
+                        hashed,
+                        cmbTipo.getValue()
+                );
+                new Alert(Alert.AlertType.INFORMATION, "Utilizador criado com sucesso!").showAndWait();
+                stage.close();
+            } catch (Exception ex) {
+                new Alert(Alert.AlertType.ERROR, "Erro: " + ex.getMessage()).showAndWait();
+            }
+        });
+
+        VBox layout = new VBox(10, lblNome, txtNome, lblEmail, txtEmail, lblPhone, txtPhone, lblPass, txtPass, lblTipo, cmbTipo, btnCriar);
+        layout.setPadding(new Insets(20));
+
+        stage.setScene(new Scene(layout, 300, 450));
+        stage.showAndWait();
+    }
+
+    private void abrirJanelaAlterarPassword(Participant user) {
+        Stage stage = new Stage();
+        stage.initStyle(StageStyle.UTILITY);
+        stage.setTitle("Alterar Password");
+
+        Label lblPass = new Label("Nova Password:");
+        PasswordField txtPass = new PasswordField();
+
+        Button btnSalvar = new Button("Guardar");
+        btnSalvar.setOnAction(e -> {
+            try (Connection conn = db.connect()) {
+                PreparedStatement stmt = conn.prepareStatement(
+                        "UPDATE participant SET password = ? WHERE participant_id = ?"
+                );
+                stmt.setString(1, PasswordUtil.hashPassword(txtPass.getText()));
+                stmt.setInt(2, Integer.parseInt(user.getId()));
+                stmt.executeUpdate();
+
+                new Alert(Alert.AlertType.INFORMATION, "Password atualizada!").showAndWait();
+                stage.close();
+            } catch (Exception ex) {
+                new Alert(Alert.AlertType.ERROR, "Erro: " + ex.getMessage()).showAndWait();
+            }
+        });
+
+        VBox layout = new VBox(10, lblPass, txtPass, btnSalvar);
+        layout.setPadding(new Insets(20));
+
+        stage.setScene(new Scene(layout, 250, 150));
+        stage.showAndWait();
+    }
+
+
 
     public void mostrarParticipantesAdmin() {
+
         centro.getChildren().clear();
 
+        // -------------------------------
+        // TÍTULO + FILTRO
+        // -------------------------------
         Label titulo = new Label("👤 Gestão de Participantes");
         titulo.setStyle("-fx-font-size: 20px; -fx-font-weight: bold;");
 
+        ComboBox<String> filtro = new ComboBox<>();
+        filtro.getItems().addAll("Todos", "Admins", "Participantes", "Moderadores");
+        filtro.getSelectionModel().select("Todos");
+
+        HBox topo = new HBox(20, titulo, filtro);
+        topo.setAlignment(Pos.CENTER_LEFT);
+        topo.setPadding(new Insets(10));
+
+        // -------------------------------
+        // TABELA
+        // -------------------------------
         TableView<Participant> tabela = new TableView<>();
 
-        // Colunas
         TableColumn<Participant, String> colNome = new TableColumn<>("Nome");
         colNome.setCellValueFactory(new PropertyValueFactory<>("name"));
 
@@ -287,26 +416,93 @@ public class Window {
 
         tabela.getColumns().addAll(colNome, colEmail, colPhone, colTipo);
 
-        // Carregar dados da BD
-        tabela.setItems(ParticipantDB.listAll());
+        // Lista original
+        ObservableList<Participant> todos = ParticipantDB.listAll();
+        tabela.setItems(todos);
 
-        // Botões CRUD
+        // -------------------------------
+        // CONTADOR
+        // -------------------------------
+        Label contador = new Label();
+        contador.setStyle("-fx-font-weight: bold; -fx-font-size: 14px;");
+        atualizarContador(contador, todos);
+
+        // -------------------------------
+        // FILTRO
+        // -------------------------------
+        filtro.setOnAction(e -> {
+            aplicarFiltro(tabela, filtro.getValue());
+            atualizarContador(contador, tabela.getItems());
+        });
+
+        // -------------------------------
+        // BOTÕES
+        // -------------------------------
         Button btnEditar = new Button("✏ Editar");
         Button btnRemover = new Button("🗑 Remover");
         Button btnRefresh = new Button("🔄 Atualizar");
 
-        btnEditar.setOnAction(e -> editarParticipante(tabela.getSelectionModel().getSelectedItem()));
-        btnRemover.setOnAction(e -> eliminarParticipante(tabela.getSelectionModel().getSelectedItem()));
-        btnRefresh.setOnAction(e -> tabela.setItems(ParticipantDB.listAll()));
+        btnEditar.setOnAction(e -> {
+            Participant sel = tabela.getSelectionModel().getSelectedItem();
+            if (sel == null) {
+                new Alert(Alert.AlertType.WARNING, "Selecione um participante para editar.").showAndWait();
+                return;
+            }
+            editarParticipante(sel);
+        });
 
-        HBox botoes = new HBox(10, btnEditar, btnRemover, btnRefresh);
+        btnRemover.setOnAction(e -> {
+            Participant sel = tabela.getSelectionModel().getSelectedItem();
+            if (sel == null) {
+                new Alert(Alert.AlertType.WARNING, "Selecione um participante para remover.").showAndWait();
+                return;
+            }
+            eliminarParticipante(sel);
+            aplicarFiltro(tabela, filtro.getValue());
+            atualizarContador(contador, tabela.getItems());
+        });
 
-        VBox layout = new VBox(20, titulo, tabela, botoes);
+        btnRefresh.setOnAction(e -> {
+            tabela.setItems(ParticipantDB.listAll());
+            aplicarFiltro(tabela, filtro.getValue());
+            atualizarContador(contador, tabela.getItems());
+        });
+
+        Button btnCriar = new Button("➕ Criar Utilizador");
+        Button btnPass = new Button("🔑 Alterar Password");
+
+// Ações
+        btnCriar.setOnAction(e -> abrirJanelaCriarUtilizador());
+
+        btnPass.setOnAction(e -> {
+            Participant sel = tabela.getSelectionModel().getSelectedItem();
+            if (sel == null) {
+                new Alert(Alert.AlertType.WARNING, "Selecione um participante para alterar a password.").showAndWait();
+                return;
+            }
+            abrirJanelaAlterarPassword(sel);
+        });
+
+        HBox botoes = new HBox(10, btnCriar, btnEditar, btnRemover, btnRefresh, btnPass);
+        botoes.setAlignment(Pos.CENTER_LEFT);
+        botoes.setPadding(new Insets(10, 0, 0, 0));
+
+        botoes.setAlignment(Pos.CENTER_LEFT);
+        botoes.setPadding(new Insets(10, 0, 0, 0));
+
+        // -------------------------------
+        // LAYOUT FINAL
+        // -------------------------------
+        VBox layout = new VBox(15, topo, tabela, contador, botoes);
         layout.setAlignment(Pos.TOP_CENTER);
         layout.setPadding(new Insets(20));
 
         centro.getChildren().add(layout);
     }
+
+
+
+
 
     private void editarParticipante(Participant p) {
         if (p == null) {

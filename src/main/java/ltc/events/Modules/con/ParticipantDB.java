@@ -119,6 +119,17 @@ public class ParticipantDB {
         }
     }
 
+    public static void count() throws SQLException {
+        String sql = "SELECT COUNT(*) FROM participant";
+        try (Connection conn = db.connect();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            ResultSet rs = stmt.executeQuery();
+            if (rs.next()) {
+                System.out.println("Total de participantes: " + rs.getInt(1));
+            }
+        }
+    }
+
 
 
 
