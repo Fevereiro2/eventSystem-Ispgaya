@@ -1,5 +1,7 @@
 package ltc.events.Modules.con;
 
+import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
 import ltc.events.Modules.db;
 import ltc.events.classes.Participant;
 import ltc.events.classes.Types;
@@ -62,5 +64,62 @@ public class ParticipantDB {
             return new Participant(rs);
         }
     }
+    public static ObservableList<Participant> listAll() {
+        ObservableList<Participant> lista = FXCollections.observableArrayList();
+
+        String sql = """
+        SELECT p.*, t.name AS types_name
+        FROM participant p
+        JOIN types t ON p.types_id = t.types_id
+        ORDER BY p.name
+    """;
+
+        try (Connection conn = db.connect();
+             PreparedStatement stmt = conn.prepareStatement(sql);
+             ResultSet rs = stmt.executeQuery()) {
+
+            while (rs.next()) {
+                lista.add(new Participant(rs));
+            }
+
+        } catch (SQLException e) {
+            System.out.println("Erro ao carregar participantes: " + e.getMessage());
+        }
+
+        return lista;
+    }
+
+    public static void update(String id, String name, String email, String phone, Types type) throws SQLException {
+        String sql = """
+        UPDATE participant
+        SET name = ?, email = ?, phone = ?, types_id = ?
+        WHERE participant_id = ?
+    """;
+
+        try (Connection conn = db.connect();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+
+            stmt.setString(1, name);
+            stmt.setString(2, email);
+            stmt.setString(3, phone);
+            stmt.setInt(4, type.getId());
+            stmt.setInt(5, Integer.parseInt(id));
+
+            stmt.executeUpdate();
+        }
+    }
+    public static void delete(String id) throws SQLException {
+        String sql = "DELETE FROM participant WHERE participant_id = ?";
+
+        try (Connection conn = db.connect();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+
+            stmt.setInt(1, Integer.parseInt(id));
+            stmt.executeUpdate();
+        }
+    }
+
+
+
 
 }
