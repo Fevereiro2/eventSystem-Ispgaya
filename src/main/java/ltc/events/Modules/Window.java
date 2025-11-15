@@ -11,12 +11,20 @@ import javafx.geometry.*;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Circle;
 import ltc.events.Modules.con.EventDB;
+import ltc.events.Modules.con.SessionDB;
+import ltc.events.Modules.visual.CalendarEventoView;
 import ltc.events.Modules.visual.Login;
 import ltc.events.Modules.visual.Register;
 import ltc.events.classes.Event;
+import ltc.events.classes.Session;
 import ltc.events.classes.hashs.SessionEntry;
 
+import java.time.LocalDate;
+import java.time.temporal.ChronoUnit;
+import java.util.List;
+
 public class Window {
+    private VBox centro; // conteúdo principal (eventos ou admin menu)
 
     private double xOffset = 0;
     private double yOffset = 0;
@@ -72,19 +80,29 @@ public class Window {
         scroll.setPannable(true);
         scroll.setStyle("-fx-background: transparent; -fx-background-color: transparent;");
 
-        HBox hbox = new HBox(25);
-        hbox.setPadding(new Insets(20));
-        hbox.setAlignment(Pos.CENTER_LEFT);
 
-        // Carregar eventos da BD
-        hbox.getChildren().clear();
+
+        TilePane tiles = new TilePane();
+        tiles.setPadding(new Insets(20));
+        tiles.setHgap(20);
+        tiles.setVgap(20);
+        tiles.setPrefColumns(4); // 4 colunas estilo Windows 8
+        tiles.setTileAlignment(Pos.TOP_LEFT);
+        tiles.setPrefTileWidth(200);
+        tiles.setPrefTileHeight(200);
+
+
         for (Event ev : EventDB.getAllEvents()) {
-            hbox.getChildren().add(criarCardEvento(ev));
+            tiles.getChildren().add(criarCardEvento(ev));
         }
+        scroll.setContent(tiles);
 
-        scroll.setContent(hbox);
 
-        VBox centro = new VBox(20, titulo, scroll);
+        scroll.setContent(tiles);
+
+
+
+        centro = new VBox(20, titulo, scroll);
         centro.setAlignment(Pos.TOP_CENTER);
         centro.setPadding(new Insets(30));
 
@@ -149,10 +167,7 @@ public class Window {
             """);
                 rightBox.getChildren().add(btnAdmin);
 
-                btnAdmin.setOnAction(e -> {
-                    new Alert(Alert.AlertType.INFORMATION,
-                            "Painel reservado a moderadores.").showAndWait();
-                });
+                btnAdmin.setOnAction(_ -> this.mostrarPainelAdmin());
             }
 
             barra.setRight(rightBox);
@@ -211,13 +226,71 @@ public class Window {
 
         return barra;
     }
+    public void mostrarPainelAdmin() {
+
+        // Limpar centro
+        centro.getChildren().clear();
+
+        Label titulo = new Label("⚙️ Painel de Administração");
+        titulo.setStyle("-fx-font-size: 24px; -fx-font-weight: bold;");
+
+        // Botões do menu
+        Button btnParticipantes = new Button("👤 Participantes");
+        Button btnSessoes = new Button("🗓️ Sessões");
+        Button btnEventos = new Button("🎟️ Eventos");
+        Button btnRecursos = new Button("📦 Recursos");
+
+        estilizarBotaoAdmin(btnParticipantes);
+        estilizarBotaoAdmin(btnSessoes);
+        estilizarBotaoAdmin(btnEventos);
+        estilizarBotaoAdmin(btnRecursos);
+
+        VBox menu = new VBox(15, btnParticipantes, btnSessoes, btnEventos, btnRecursos);
+        menu.setAlignment(Pos.TOP_LEFT);
+        menu.setPadding(new Insets(20));
+
+        // Substituir tudo no centro
+        centro.getChildren().addAll(titulo, menu);
+    }
+
+    private void estilizarBotaoAdmin(Button btn) {
+        btn.setPrefWidth(200);
+        btn.setStyle("""
+        -fx-background-color: #007aff;
+        -fx-text-fill: white;
+        -fx-font-size: 14px;
+        -fx-font-weight: bold;
+        -fx-padding: 10;
+        -fx-background-radius: 6;
+    """);
+    }
+
+
 
     // ============================================================
     // 🔥 Criação dos cards de eventos
     // ============================================================
     private VBox criarCardEvento(Event ev) {
+// ─────────────────────────────────────────────
+        // 1) Calcular proximidade do evento (por dias)
+        // ─────────────────────────────────────────────
+        LocalDate hoje = LocalDate.now();
+        LocalDate dataInicio = ev.getStartdate()
+                .toLocalDateTime()
+                .toLocalDate();
+
+        long dias = ChronoUnit.DAYS.between(hoje, dataInicio);
+
+
+
+        double[] size = calcularTamanho(dias);
+        double width = size[0];
+        double height = size[1];
+        // ─────────────────────────────────────────────
+        // 2) Configuração base do card
+        // ─────────────────────────────────────────────
         VBox card = new VBox(10);
-        card.setPrefSize(250, 320);
+        card.setPrefSize(width, height);
         card.setPadding(new Insets(15));
         card.setAlignment(Pos.TOP_CENTER);
         card.setStyle("""
@@ -228,41 +301,58 @@ public class Window {
         -fx-cursor: hand;
     """);
 
+        // ─────────────────────────────────────────────
+        // 3) Imagem
+        // ─────────────────────────────────────────────
         ImageView img;
         try {
             img = new ImageView(new Image(ev.getImage(), 220, 130, false, true));
         } catch (Exception ex) {
-            img = new ImageView(new Image("https://via.placeholder.com/220x130.png?text=Evento",
-                    220, 130, false, true));
+            img = new ImageView(new Image(
+                    "https://via.placeholder.com/220x130.png?text=Evento",
+                    220, 130, false, true
+            ));
         }
 
+        // ─────────────────────────────────────────────
+        // 4) Labels
+        // ─────────────────────────────────────────────
         Label lblNome = new Label(ev.getName());
         lblNome.setStyle("-fx-font-weight: bold; -fx-font-size: 16px; -fx-text-fill: #333;");
         lblNome.setWrapText(true);
 
         Label lblData = new Label("📅 " + ev.getStartdate().toLocalDateTime().toLocalDate());
+        lblData.setStyle("-fx-text-fill: #666; -fx-font-size: 13px;");
+
         Label lblLocal = new Label("📍 " + ev.getLocal());
+        lblLocal.setStyle("-fx-text-fill: #777; -fx-font-size: 13px;");
 
         Label lblEstado = new Label(ev.getState().getName());
         lblEstado.setStyle(defineCorEstado(ev.getState().getName()));
 
+        // ─────────────────────────────────────────────
+        // 5) Montar o card
+        // ─────────────────────────────────────────────
         card.getChildren().addAll(img, lblNome, lblData, lblLocal, lblEstado);
 
+        // ─────────────────────────────────────────────
+        // 6) Click → detalhes
+        // ─────────────────────────────────────────────
         card.setOnMouseClicked(_ -> {
-            Alert detalhes = new Alert(Alert.AlertType.INFORMATION);
-            detalhes.setTitle("Detalhes do Evento");
-            detalhes.setHeaderText(ev.getName());
-            detalhes.setContentText(
-                    "📍 Local: " + ev.getLocal() + "\n" +
-                            "🕒 Início: " + ev.getStartdate() + "\n" +
-                            "🕒 Fim: " + ev.getFinaldate() + "\n\n" +
-                            "ℹ️ " + ev.getDescription()
-            );
-            detalhes.showAndWait();
+            List<Session> sessoes = SessionDB.getSessionsByEvent(ev.getId());
+            new CalendarEventoView(ev, sessoes).mostrar();
         });
 
         return card;
+
     }
+
+    private double[] calcularTamanho(long dias) {
+        if (dias <= 0) return new double[]{300, 360};
+        if (dias <= 2) return new double[]{250, 330};
+        return new double[]{210, 300};
+    }
+
 
     private String defineCorEstado(String state) {
         if (state == null) return "-fx-background-color: #ddd; -fx-font-size: 12px;";
