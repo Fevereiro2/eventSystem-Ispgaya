@@ -1,5 +1,8 @@
 package ltc.events.Modules;
 
+import javafx.beans.property.SimpleStringProperty;
+import javafx.scene.control.cell.PropertyValueFactory;
+import javafx.stage.Modality;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
 import javafx.scene.Scene;
@@ -11,12 +14,16 @@ import javafx.geometry.*;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Circle;
 import ltc.events.Modules.con.EventDB;
+import ltc.events.Modules.con.ParticipantDB;
 import ltc.events.Modules.con.SessionDB;
+import ltc.events.Modules.con.TypesDB;
 import ltc.events.Modules.visual.CalendarEventoView;
 import ltc.events.Modules.visual.Login;
 import ltc.events.Modules.visual.Register;
 import ltc.events.classes.Event;
+import ltc.events.classes.Participant;
 import ltc.events.classes.Session;
+import ltc.events.classes.Types;
 import ltc.events.classes.hashs.SessionEntry;
 
 import java.time.LocalDate;
@@ -245,6 +252,8 @@ public class Window {
         estilizarBotaoAdmin(btnEventos);
         estilizarBotaoAdmin(btnRecursos);
 
+        btnParticipantes.setOnAction(e -> mostrarParticipantesAdmin());
+
         VBox menu = new VBox(15, btnParticipantes, btnSessoes, btnEventos, btnRecursos);
         menu.setAlignment(Pos.TOP_LEFT);
         menu.setPadding(new Insets(20));
@@ -252,6 +261,113 @@ public class Window {
         // Substituir tudo no centro
         centro.getChildren().addAll(titulo, menu);
     }
+
+    public void mostrarParticipantesAdmin() {
+        centro.getChildren().clear();
+
+        Label titulo = new Label("👤 Gestão de Participantes");
+        titulo.setStyle("-fx-font-size: 20px; -fx-font-weight: bold;");
+
+        TableView<Participant> tabela = new TableView<>();
+
+        // Colunas
+        TableColumn<Participant, String> colNome = new TableColumn<>("Nome");
+        colNome.setCellValueFactory(new PropertyValueFactory<>("name"));
+
+        TableColumn<Participant, String> colEmail = new TableColumn<>("Email");
+        colEmail.setCellValueFactory(new PropertyValueFactory<>("email"));
+
+        TableColumn<Participant, String> colPhone = new TableColumn<>("Telefone");
+        colPhone.setCellValueFactory(new PropertyValueFactory<>("phone"));
+
+        TableColumn<Participant, String> colTipo = new TableColumn<>("Tipo");
+        colTipo.setCellValueFactory(cell ->
+                new SimpleStringProperty(cell.getValue().getType().getName())
+        );
+
+        tabela.getColumns().addAll(colNome, colEmail, colPhone, colTipo);
+
+        // Carregar dados da BD
+        tabela.setItems(ParticipantDB.listAll());
+
+        // Botões CRUD
+        Button btnEditar = new Button("✏ Editar");
+        Button btnRemover = new Button("🗑 Remover");
+        Button btnRefresh = new Button("🔄 Atualizar");
+
+        btnEditar.setOnAction(e -> editarParticipante(tabela.getSelectionModel().getSelectedItem()));
+        btnRemover.setOnAction(e -> eliminarParticipante(tabela.getSelectionModel().getSelectedItem()));
+        btnRefresh.setOnAction(e -> tabela.setItems(ParticipantDB.listAll()));
+
+        HBox botoes = new HBox(10, btnEditar, btnRemover, btnRefresh);
+
+        VBox layout = new VBox(20, titulo, tabela, botoes);
+        layout.setAlignment(Pos.TOP_CENTER);
+        layout.setPadding(new Insets(20));
+
+        centro.getChildren().add(layout);
+    }
+
+    private void editarParticipante(Participant p) {
+        if (p == null) {
+            new Alert(Alert.AlertType.WARNING, "Selecione um participante.").show();
+            return;
+        }
+
+        Stage popup = new Stage();
+        popup.initModality(Modality.APPLICATION_MODAL);
+        popup.setTitle("Editar Participante");
+
+        TextField txtNome = new TextField(p.getName());
+        TextField txtEmail = new TextField(p.getEmail());
+        TextField txtPhone = new TextField(p.getPhone());
+
+        ComboBox<Types> comboTipo = new ComboBox<>();
+        comboTipo.getItems().addAll(TypesDB.listAll()); // Criamos já a seguir
+        comboTipo.getSelectionModel().select(p.getType());
+
+        Button btnSalvar = new Button("Salvar");
+        btnSalvar.setOnAction(e -> {
+            try {
+                ParticipantDB.update(p.getId(), txtNome.getText(), txtEmail.getText(),
+                        txtPhone.getText(), comboTipo.getValue());
+
+                popup.close();
+                mostrarParticipantesAdmin(); // refresh
+
+            } catch (Exception ex) {
+                new Alert(Alert.AlertType.ERROR, "Erro ao atualizar: " + ex.getMessage()).show();
+            }
+        });
+
+        VBox box = new VBox(10, txtNome, txtEmail, txtPhone, comboTipo, btnSalvar);
+        box.setPadding(new Insets(20));
+
+        popup.setScene(new Scene(box, 300, 300));
+        popup.showAndWait();
+    }
+    private void eliminarParticipante(Participant p) {
+        if (p == null) {
+            new Alert(Alert.AlertType.WARNING, "Selecione um participante.").show();
+            return;
+        }
+
+        if (new Alert(Alert.AlertType.CONFIRMATION,
+                "Deseja mesmo apagar " + p.getName() + "?",
+                ButtonType.YES, ButtonType.NO).showAndWait().get() != ButtonType.YES) {
+            return;
+        }
+
+        try {
+            ParticipantDB.delete(p.getId());
+            mostrarParticipantesAdmin(); // refresh
+        } catch (Exception ex) {
+            new Alert(Alert.AlertType.ERROR, "Erro ao apagar: " + ex.getMessage()).show();
+        }
+    }
+
+
+
 
     private void estilizarBotaoAdmin(Button btn) {
         btn.setPrefWidth(200);
