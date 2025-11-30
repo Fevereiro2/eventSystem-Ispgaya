@@ -1,8 +1,9 @@
-package ltc.events.Modules;
+package ltc.events.Modules; //Referenciar aonde esta o db.java
 
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.SQLException;
+import java.sql.Connection; //Importar librarys da base de dados
+import java.sql.DriverManager; //Importar librarys da base de dados
+import java.sql.SQLException; //Importar librarys da base de dados
+
 public class db {
     private static final String URL = "jdbc:sqlite:eventos.db"; //String para a conexão entre o ficheiro eventos.db onde contem toda a info do programa
     public static Connection connect() { //função para conectar a base de dados
