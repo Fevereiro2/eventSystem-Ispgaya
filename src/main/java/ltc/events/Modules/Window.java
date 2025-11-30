@@ -156,7 +156,7 @@ public class Window {
                 -fx-alignment: center;
                 -fx-text-alignment: center;
             """);
-            btnLogout.setOnAction(e -> {
+            btnLogout.setOnAction(_ -> {
                 SessionEntry.logout();
                 refresh();
             });
@@ -258,7 +258,7 @@ public class Window {
         estilizarBotaoAdmin(btnEventos);
         estilizarBotaoAdmin(btnRecursos);
 
-        btnParticipantes.setOnAction(e -> mostrarParticipantesAdmin());
+        btnParticipantes.setOnAction(_ -> mostrarParticipantesAdmin());
         btnEventos.setOnAction(_ -> mostrarEventosAdmin());
 
         VBox menu = new VBox(15, btnParticipantes, btnSessoes, btnEventos, btnRecursos);
@@ -345,25 +345,18 @@ public class Window {
     }
 
     private void aplicarFiltro(TableView<Participant> tabela, String filtro) {
-
         ObservableList<Participant> todos = ParticipantDB.listAll(); // já tens isto
-
         switch (filtro) {
-            case "Admins" -> {
+            case "Admins" ->
                 tabela.setItems(
                         todos.filtered(p -> p.getType().getName().equalsIgnoreCase("Admin"))
                 );
-            }
-
-            case "Participantes" -> {
+            case "Participantes" ->
                 tabela.setItems(
                         todos.filtered(p -> p.getType().getName().equalsIgnoreCase("Participante"))
                 );
-            }
-
-            default -> {
+            default ->
                 tabela.setItems(todos);
-            }
         }
     }
 
@@ -398,7 +391,7 @@ public class Window {
         cmbTipo.getSelectionModel().selectFirst();
 
         Button btnCriar = new Button("Criar");
-        btnCriar.setOnAction(e -> {
+        btnCriar.setOnAction(_ -> {
             try {
                 String hashed = PasswordUtil.hashPassword(txtPass.getText());
                 ParticipantDB.register(
@@ -431,7 +424,7 @@ public class Window {
         PasswordField txtPass = new PasswordField();
 
         Button btnSalvar = new Button("Guardar");
-        btnSalvar.setOnAction(e -> {
+        btnSalvar.setOnAction(_ -> {
             try (Connection conn = db.connect()) {
                 PreparedStatement stmt = conn.prepareStatement(
                         "UPDATE participant SET password = ? WHERE participant_id = ?"
@@ -509,7 +502,7 @@ public class Window {
         // -------------------------------
         // FILTRO
         // -------------------------------
-        filtro.setOnAction(e -> {
+        filtro.setOnAction(_ -> {
             aplicarFiltro(tabela, filtro.getValue());
             atualizarContador(contador, tabela.getItems());
         });
@@ -521,7 +514,7 @@ public class Window {
         Button btnRemover = new Button("🗑 Remover");
         Button btnRefresh = new Button("🔄 Atualizar");
 
-        btnEditar.setOnAction(e -> {
+        btnEditar.setOnAction(_ -> {
             Participant sel = tabela.getSelectionModel().getSelectedItem();
             if (sel == null) {
                 new Alert(Alert.AlertType.WARNING, "Selecione um participante para editar.").showAndWait();
@@ -530,7 +523,7 @@ public class Window {
             editarParticipante(sel);
         });
 
-        btnRemover.setOnAction(e -> {
+        btnRemover.setOnAction(_ -> {
             Participant sel = tabela.getSelectionModel().getSelectedItem();
             if (sel == null) {
                 new Alert(Alert.AlertType.WARNING, "Selecione um participante para remover.").showAndWait();
@@ -541,7 +534,7 @@ public class Window {
             atualizarContador(contador, tabela.getItems());
         });
 
-        btnRefresh.setOnAction(e -> {
+        btnRefresh.setOnAction(_ -> {
             tabela.setItems(ParticipantDB.listAll());
             aplicarFiltro(tabela, filtro.getValue());
             atualizarContador(contador, tabela.getItems());
@@ -551,9 +544,9 @@ public class Window {
         Button btnPass = new Button("🔑 Alterar Password");
 
 // Ações
-        btnCriar.setOnAction(e -> abrirJanelaCriarUtilizador());
+        btnCriar.setOnAction(_ -> abrirJanelaCriarUtilizador());
 
-        btnPass.setOnAction(e -> {
+        btnPass.setOnAction(_ -> {
             Participant sel = tabela.getSelectionModel().getSelectedItem();
             if (sel == null) {
                 new Alert(Alert.AlertType.WARNING, "Selecione um participante para alterar a password.").showAndWait();
@@ -602,7 +595,7 @@ public class Window {
         comboTipo.getSelectionModel().select(p.getType());
 
         Button btnSalvar = new Button("Salvar");
-        btnSalvar.setOnAction(e -> {
+        btnSalvar.setOnAction(_ -> {
             try {
                 ParticipantDB.update(p.getId(), txtNome.getText(), txtEmail.getText(),
                         txtPhone.getText(), comboTipo.getValue());
