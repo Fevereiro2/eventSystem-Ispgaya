@@ -7,29 +7,27 @@ import javafx.scene.control.*;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
-import javafx.scene.paint.Color;
-import javafx.scene.shape.Circle;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
-import ltc.events.Modules.con.ParticipantDB;
+import ltc.events.Modules.NavbarUtil;
+import ltc.events.Modules.connection.ParticipantDB;
 import ltc.events.classes.Participant;
 import ltc.events.classes.Types;
 import ltc.events.classes.hashs.PasswordUtil;
 
 public class Register {
-
-    private double xOffset = 0;
-    private double yOffset = 0;
-
-    public void mostrarRegister() {
+        public void mostrarRegister(Stage palco) {
 
         Stage stage = new Stage();
         stage.initStyle(StageStyle.UNDECORATED);
         stage.initModality(Modality.APPLICATION_MODAL);
 
+        NavbarUtil navbar  = new NavbarUtil();
+        BorderPane barra = navbar.createNavbar(palco);
+
         // ======================================================
-        // 🔹 Botões macOS
+        /* 🔹 Botões macOS
         Circle btnFechar = new Circle(6, Color.web("#FF5F57"));
         Circle btnMin = new Circle(6, Color.web("#FFBD2E"));
         Circle btnMax = new Circle(6, Color.web("#28C940"));
@@ -58,6 +56,7 @@ public class Register {
             stage.setX(e.getScreenX() - xOffset);
             stage.setY(e.getScreenY() - yOffset);
         });
+         */
 
         // ======================================================
         // 🔹 Formulário
@@ -91,11 +90,11 @@ public class Register {
         """);
 
         Button btnCancelar = new Button("Cancelar");
-        btnCancelar.setOnAction(e -> stage.close());
+        btnCancelar.setOnAction(_ -> stage.close());
 
         // ======================================================
         // 🔹 Lógica do Registo
-        btnRegistar.setOnAction(e -> {
+        btnRegistar.setOnAction(_ -> {
 
             String nome = txtNome.getText();
             String phone = txtPhone.getText();

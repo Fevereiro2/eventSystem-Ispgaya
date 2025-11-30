@@ -213,7 +213,7 @@ public class Window {
             """);
 
             btnLogin.setOnAction(_ -> new Login(this).mostrarLogin());
-            btnRegister.setOnAction(_ -> new Register().mostrarRegister());
+            btnRegister.setOnAction(_ -> new Register().mostrarRegister(palco));
 
             HBox rightBox = new HBox(10, btnLogin, btnRegister);
             rightBox.setAlignment(Pos.CENTER_RIGHT);
