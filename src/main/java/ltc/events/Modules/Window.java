@@ -1,33 +1,33 @@
-package ltc.events.Modules;
+package ltc.events.Modules; // Declara o pacote onde esta classe reside
 
-import javafx.beans.property.SimpleStringProperty; //importar os metodos do javafx
-import javafx.collections.FXCollections; //importar os metodos do javafx
-import javafx.collections.ObservableList; //importar os metodos do javafx
-import javafx.scene.control.cell.PropertyValueFactory; //importar os metodos do javafx
-import javafx.stage.Modality; //importar os metodos do javafx
-import javafx.stage.Stage; //importar os metodos do javafx
-import javafx.stage.StageStyle; //importar os metodos do javafx
-import javafx.scene.Scene; //importar os metodos do javafx
-import javafx.scene.control.*; //importar os metodos do javafx
-import javafx.scene.image.Image; //importar os metodos do javafx
-import javafx.scene.image.ImageView; //importar os metodos do javafx
-import javafx.scene.layout.*; //importar os metodos do javafx
-import javafx.geometry.*; //importar os metodos do javafx
-import javafx.scene.paint.Color; //importar os metodos do javafx
-import javafx.scene.shape.Circle; //importar os metodos do javafx
-import ltc.events.Modules.connection.EventDB; // importar os metodos do  EventDB
-import ltc.events.Modules.connection.ParticipantDB;// importar os medodos do ParticipantDB
-import ltc.events.Modules.connection.SessionDB;// importar os medodos do SessionDB
-import ltc.events.Modules.connection.TypesDB;// importar os medodos do TypesDB
-import ltc.events.Modules.visual.CalendarEventoView;
-import ltc.events.Modules.visual.Login;
-import ltc.events.Modules.visual.Register;
-import ltc.events.classes.Event;
-import ltc.events.classes.Participant;
-import ltc.events.classes.Session;
-import ltc.events.classes.Types;
-import ltc.events.classes.hashs.PasswordUtil;
-import ltc.events.classes.hashs.SessionEntry;
+import javafx.beans.property.SimpleStringProperty; // Importa uma classe para criar propriedades observáveis de ‘String’, útil para ligar dados a componentes da UI (ex: TableView)
+import javafx.collections.FXCollections; // Importa utilitários para criar coleções observáveis (listas a notificar a UI sobre mudanças)
+import javafx.collections.ObservableList; // Importa a ‘interface’ para listas que permitem que os componentes da UI sejam notificados quando a lista é alterada
+import javafx.scene.control.cell.PropertyValueFactory; // Importa uma classe usada em TableView para ligar as colunas aos campos (propriedades) dos objetos
+import javafx.stage.Modality; // Importa enumeração que define o comportamento de modalidade de uma janela (ex: bloquear a janela principal)
+import javafx.stage.Stage; // Importa a classe principal Stage, que representa uma janela no JavaFX
+import javafx.stage.StageStyle; // Importa enumeração que define a decoração e estilo da janela (ex: sem borda, utilitário)
+import javafx.scene.Scene; // Importa a classe Scene, que é o contentor para todo o conteúdo da interface gráfica (o que está dentro da Stage)
+import javafx.scene.control.*; // Importa todos os componentes de controlo da UI (botões, caixas de texto, tabelas, etc.)
+import javafx.scene.image.Image; // Importa a classe Image, usada para carregar imagens
+import javafx.scene.image.ImageView; // Importa o componente para exibir uma imagem na UI
+import javafx.scene.layout.*; // Importa todas as classes de layout (HBox, VBox, BorderPane, StackPane, etc.) para organizar os componentes
+import javafx.geometry.*; // Importa utilitários para definir alinhamentos, preenchimentos (padding) e margens (insets)
+import javafx.scene.paint.Color; // Importa a classe Color, usada para definir cores
+import javafx.scene.shape.Circle; // Importa a classe Circle, usada para desenhar um círculo (forma geométrica)
+import ltc.events.Modules.connection.EventDB; // Importa a classe de acesso ao banco de dados para a tabela Eventos
+import ltc.events.Modules.connection.ParticipantDB;// Importa a classe de acesso ao banco de dados para a tabela Participantes
+import ltc.events.Modules.connection.SessionDB;// Importa a classe de acesso ao banco de dados para a tabela Sessões
+import ltc.events.Modules.connection.TypesDB;// Importa a classe de acesso ao banco de dados para a tabela Tipos de Participantes
+import ltc.events.Modules.visual.CalendarEventoView; // Importa a classe de visualização específica para o calendário de eventos
+import ltc.events.Modules.visual.Login; // Importa a classe que define a interface e lógica da tela de Login
+import ltc.events.Modules.visual.Register; // Importa a classe que define a interface e lógica da tela de Registo
+import ltc.events.classes.Event; // Importa a classe modelo (POJO) que representa um Evento
+import ltc.events.classes.Participant; // Importa a classe modelo (POJO) que representa um Participante
+import ltc.events.classes.Session; // Importa a classe modelo (POJO) que representa uma Sessão
+import ltc.events.classes.Types; // Importa a classe modelo (POJO) que representa os Tipos de Participantes
+import ltc.events.classes.hashs.PasswordUtil; // Importa a classe utilitária para operações com hashes de password
+import ltc.events.classes.hashs.SessionEntry; // Importa a classe que armazena informações da sessão ativa do utilizador logado (ex: ‘ID’ e Tipo)
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;

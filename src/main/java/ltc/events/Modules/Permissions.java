@@ -1,4 +1,4 @@
-package ltc.events.Modules;
+package ltc.events.Modules; // Declara o pacote onde esta classe reside
 
 import ltc.events.classes.Participant;
 import ltc.events.classes.hashs.SessionEntry;
