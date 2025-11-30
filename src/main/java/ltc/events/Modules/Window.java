@@ -1,24 +1,24 @@
 package ltc.events.Modules;
 
-import javafx.beans.property.SimpleStringProperty;
-import javafx.collections.FXCollections;
-import javafx.collections.ObservableList;
-import javafx.scene.control.cell.PropertyValueFactory;
-import javafx.stage.Modality;
-import javafx.stage.Stage;
-import javafx.stage.StageStyle;
-import javafx.scene.Scene;
-import javafx.scene.control.*;
-import javafx.scene.image.Image;
-import javafx.scene.image.ImageView;
-import javafx.scene.layout.*;
-import javafx.geometry.*;
-import javafx.scene.paint.Color;
-import javafx.scene.shape.Circle;
-import ltc.events.Modules.con.EventDB;
-import ltc.events.Modules.con.ParticipantDB;
-import ltc.events.Modules.con.SessionDB;
-import ltc.events.Modules.con.TypesDB;
+import javafx.beans.property.SimpleStringProperty; //importar os metodos do javafx
+import javafx.collections.FXCollections; //importar os metodos do javafx
+import javafx.collections.ObservableList; //importar os metodos do javafx
+import javafx.scene.control.cell.PropertyValueFactory; //importar os metodos do javafx
+import javafx.stage.Modality; //importar os metodos do javafx
+import javafx.stage.Stage; //importar os metodos do javafx
+import javafx.stage.StageStyle; //importar os metodos do javafx
+import javafx.scene.Scene; //importar os metodos do javafx
+import javafx.scene.control.*; //importar os metodos do javafx
+import javafx.scene.image.Image; //importar os metodos do javafx
+import javafx.scene.image.ImageView; //importar os metodos do javafx
+import javafx.scene.layout.*; //importar os metodos do javafx
+import javafx.geometry.*; //importar os metodos do javafx
+import javafx.scene.paint.Color; //importar os metodos do javafx
+import javafx.scene.shape.Circle; //importar os metodos do javafx
+import ltc.events.Modules.connection.EventDB; // importar os metodos do  EventDB
+import ltc.events.Modules.connection.ParticipantDB;// importar os medodos do ParticipantDB
+import ltc.events.Modules.connection.SessionDB;// importar os medodos do SessionDB
+import ltc.events.Modules.connection.TypesDB;// importar os medodos do TypesDB
 import ltc.events.Modules.visual.CalendarEventoView;
 import ltc.events.Modules.visual.Login;
 import ltc.events.Modules.visual.Register;
@@ -39,7 +39,7 @@ import java.util.List;
 public class Window {
     private VBox centro; // conteúdo principal (eventos ou admin menu)
 
-    private double xOffset = 0;
+    private double xOffset = 0; //declarar as
     private double yOffset = 0;
 
     // 🔥 Armazena a referência do Stage para conseguir recarregar a UI

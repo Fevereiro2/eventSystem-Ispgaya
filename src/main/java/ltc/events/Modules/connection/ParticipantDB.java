@@ -1,5 +1,6 @@
-package ltc.events.Modules.con;
+package ltc.events.Modules.connection;
 
+import ltc.events.Modules.db;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import ltc.events.Modules.db;

@@ -1,4 +1,4 @@
-package ltc.events.Modules.con;
+package ltc.events.Modules.connection;
 
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
