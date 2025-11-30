@@ -9,17 +9,11 @@ import ltc.events.Modules.Window;
 import ltc.events.Modules.db;
 
 public class Main extends Application {
-
-
-
     @Override
     public void start(Stage palco) {
-        db.connect();
-
-        Window janela = new Window();   // instanciamos a outra classe
-        janela.mostrar(palco);
-
-
+        db.connect(); //conexão a base de dados
+        Window janela = new Window();   // Declarar  a janela vindo do javaFX
+        janela.mostrar(palco);  // Chamar o metodo mostrar em Modules/Window.java
     }
 
     public static void main(String[] args) {

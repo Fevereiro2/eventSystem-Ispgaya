@@ -1,6 +1,7 @@
 package ltc.events.Modules;
 
 import javafx.beans.property.SimpleStringProperty;
+import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.stage.Modality;
@@ -30,6 +31,7 @@ import ltc.events.classes.hashs.SessionEntry;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
+import java.sql.Timestamp;
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
@@ -257,6 +259,7 @@ public class Window {
         estilizarBotaoAdmin(btnRecursos);
 
         btnParticipantes.setOnAction(e -> mostrarParticipantesAdmin());
+        btnEventos.setOnAction(_ -> mostrarEventosAdmin());
 
         VBox menu = new VBox(15, btnParticipantes, btnSessoes, btnEventos, btnRecursos);
         menu.setAlignment(Pos.TOP_LEFT);
@@ -265,6 +268,82 @@ public class Window {
         // Substituir tudo no centro
         centro.getChildren().addAll(titulo, menu);
     }
+
+    private void mostrarEventosAdmin() {
+        // 1. LIMPAR O CENTRO
+        centro.getChildren().clear();
+
+        // 2. TÍTULO E BOTÕES DE AÇÃO
+        Label titulo = new Label("🎟️ Gestão de Eventos");
+        titulo.setStyle("-fx-font-size: 24px; -fx-font-weight: bold;");
+
+        Button btnCriar = new Button("➕ Criar Evento");
+        Button btnEditar = new Button("✏️ Editar");
+        Button btnRemover = new Button("🗑️ Remover");
+        Button btnAtualizar = new Button("🔄 Atualizar");
+
+        // Container para os botões de ação (semelhante ao painel de participantes)
+        HBox botoesAcao = new HBox(10, btnCriar, btnEditar, btnRemover, btnAtualizar);
+        botoesAcao.setPadding(new Insets(10, 0, 10, 0));
+
+
+        // 3. TABELA DE EVENTOS
+        TableView<Event> tabelaEventos = new TableView<>();
+
+        // Coluna Nome
+        TableColumn<Event, String> colNome = new TableColumn<>("Nome");
+        colNome.setCellValueFactory(new PropertyValueFactory<>("name"));
+        colNome.setPrefWidth(250);
+
+        // Coluna Local
+        TableColumn<Event, String> colLocal = new TableColumn<>("Local");
+        colLocal.setCellValueFactory(new PropertyValueFactory<>("local"));
+        colLocal.setPrefWidth(150);
+
+        // Coluna Data de Início (Timestamp)
+        TableColumn<Event, Timestamp> colInicio = new TableColumn<>("Início");
+        colInicio.setCellValueFactory(new PropertyValueFactory<>("startdate"));
+        colInicio.setPrefWidth(180);
+
+        // Coluna Data de Fim (Timestamp)
+        TableColumn<Event, Timestamp> colFim = new TableColumn<>("Fim");
+        colFim.setCellValueFactory(new PropertyValueFactory<>("finaldate"));
+        colFim.setPrefWidth(180);
+
+        // Coluna Estado (Obtido da classe State dentro de Event)
+        TableColumn<Event, String> colEstado = new TableColumn<>("Estado");
+        colEstado.setCellValueFactory(cellData ->
+                new SimpleStringProperty(cellData.getValue().getState().getName())
+        );
+        colEstado.setPrefWidth(100);
+
+        tabelaEventos.getColumns().addAll(colNome, colLocal, colInicio, colFim, colEstado);
+
+
+        // 4. CARREGAR DADOS
+        try {
+            ObservableList<Event> listaEventos = FXCollections.observableArrayList(
+                    EventDB.getAllEvents() // Assumindo que esta função está no seu EventDB
+            );
+            tabelaEventos.setItems(listaEventos);
+        } catch (Exception ex) {
+            System.err.println("Erro ao carregar eventos: " + ex.getMessage());
+            // Mostrar um erro amigável ao utilizador, se necessário
+        }
+
+        // 5. AJUSTAR TAMANHOS E LAYOUT
+        tabelaEventos.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
+
+        VBox content = new VBox(20, titulo, botoesAcao, tabelaEventos);
+        content.setPadding(new Insets(20));
+        content.setAlignment(Pos.TOP_LEFT);
+
+        // Ajustar o tamanho da VBox para ocupar o espaço necessário
+        content.prefWidthProperty().bind(centro.widthProperty());
+
+        centro.getChildren().add(content);
+    }
+
     private void aplicarFiltro(TableView<Participant> tabela, String filtro) {
 
         ObservableList<Participant> todos = ParticipantDB.listAll(); // já tens isto

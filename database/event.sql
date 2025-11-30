@@ -1,0 +1,5 @@
+INSERT INTO Event (event_id, name, description, local, initial_date, finish_date, state_id, participant_id, image) VALUES (1, 'Pedro', 'asdasd', 'Porto', '2025-11-12', '2025-11-06', 3, 1, null);
+INSERT INTO Event (event_id, name, description, local, initial_date, finish_date, state_id, participant_id, image) VALUES (2, 'Ispgaya', 'Ispgaya Internacional', 'Porto', '2025-11-14', '2025-11-15', 2, 1, null);
+INSERT INTO Event (event_id, name, description, local, initial_date, finish_date, state_id, participant_id, image) VALUES (3, 'Cyber', 'Cyber Sobre ns o que ', 'Lisboa', '2025-11-19', '2025-11-20', 1, 1, null);
+INSERT INTO Event (event_id, name, description, local, initial_date, finish_date, state_id, participant_id, image) VALUES (4, 'Informatic', 'Informatic', 'Spain', '2025-11-15', '2025-11-21', 2, 1, null);
+INSERT INTO Event (event_id, name, description, local, initial_date, finish_date, state_id, participant_id, image) VALUES (5, 'Informatic', 'Informatic', 'Spain', '2025-11-15', '2025-11-21', 2, 1, null);

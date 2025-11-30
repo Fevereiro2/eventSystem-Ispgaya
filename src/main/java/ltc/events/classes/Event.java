@@ -29,20 +29,49 @@ public class Event {
 
 
     public Event(ResultSet rs) throws SQLException {
+
+        // 1. LER AS DATAS COMO STRING (para evitar o erro de parsing)
+        String startDateString = rs.getString("initial_date");
+        String finalDateString = rs.getString("finish_date");
+
+        // Verificação de segurança (caso as strings estejam vazias ou nulas)
+        Timestamp startTimestamp = null;
+        if (startDateString != null && !startDateString.isEmpty()) {
+            // 2. CONVERTER A STRING PARA TIMESTAMP
+            // O SQLite tipicamente devolve o formato "YYYY-MM-DD HH:MM:SS.S" que Timestamp.valueOf() suporta.
+            try {
+                startTimestamp = Timestamp.valueOf(startDateString);
+            } catch (IllegalArgumentException e) {
+                // Se a string não for válida (ex: apenas a data sem a hora), pode ser necessário formatar:
+                //System.err.println("Erro de formato de data no SQLite. A tentar adicionar a hora padrão.");
+                startTimestamp = Timestamp.valueOf(startDateString + " 00:00:00");
+            }
+        }
+
+        Timestamp finalTimestamp = null;
+        if (finalDateString != null && !finalDateString.isEmpty()) {
+            try {
+                finalTimestamp = Timestamp.valueOf(finalDateString);
+            } catch (IllegalArgumentException e) {
+                //System.err.println("Erro de formato de data no SQLite. A tentar adicionar a hora padrão.");
+                finalTimestamp = Timestamp.valueOf(finalDateString + " 00:00:00");
+            }
+        }
+
         this(
                 rs.getInt("event_id"),
                 rs.getString("name"),
                 rs.getString("description"),
                 rs.getString("local"),
-                rs.getTimestamp("initial_date"),
-                rs.getTimestamp("finish_date"),
+                startTimestamp, // Usar o valor convertido
+                finalTimestamp, // Usar o valor convertido
                 rs.getString("image"),
                 new State(
-                            0,
-                            rs.getString("state_name")
-                    ),
+                        0,
+                        rs.getString("state_name")
+                ),
                 null
-                );
+        );
     }
 
 

@@ -31,6 +31,34 @@ public class Session {
 
     // 🔥 NOVO CONSTRUTOR — recebe diretamente o ResultSet
     public Session(ResultSet rs) throws SQLException {
+
+        // 1. Ler as datas como STRING para evitar o erro de parsing do driver SQLite
+        String startDateString = rs.getString("initial_date");
+        String finalDateString = rs.getString("finish_date");
+
+        Timestamp startTimestamp = null;
+        if (startDateString != null && !startDateString.isEmpty()) {
+            try {
+                // Tenta converter a string completa (funciona se a hora estiver presente)
+                startTimestamp = Timestamp.valueOf(startDateString);
+            } catch (IllegalArgumentException e) {
+                // FALLBACK: Se falhar, é porque a hora está em falta (dados antigos).
+                // Adicionamos " 00:00:00" para que a conversão funcione.
+                // Não adicionamos System.err.println para manter a consola limpa.
+                startTimestamp = Timestamp.valueOf(startDateString + " 00:00:00");
+            }
+        }
+
+        Timestamp finalTimestamp = null;
+        if (finalDateString != null && !finalDateString.isEmpty()) {
+            try {
+                finalTimestamp = Timestamp.valueOf(finalDateString);
+            } catch (IllegalArgumentException e) {
+                // FALLBACK
+                finalTimestamp = Timestamp.valueOf(finalDateString + " 00:00:00");
+            }
+        }
+
         this(
                 rs.getInt("session_id"),
                 rs.getString("name"),
@@ -43,8 +71,8 @@ public class Session {
                 ),
 
                 rs.getString("image"),
-                rs.getTimestamp("initial_date"),
-                rs.getTimestamp("finish_date")
+                startTimestamp, // Usamos o valor convertido/fallback
+                finalTimestamp // Usamos o valor convertido/fallback
         );
     }
 
