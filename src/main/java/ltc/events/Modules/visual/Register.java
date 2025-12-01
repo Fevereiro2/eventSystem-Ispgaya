@@ -1,6 +1,6 @@
 package ltc.events.Modules.visual; // Declara que a classe Register pertence a este pacote.
 
-// Importações JavaFX ‘standard’ para UI
+// Importações JavaFX 'standard' para UI
 import javafx.geometry.Insets;      // Para definir espaçamentos internos (padding).
 import javafx.geometry.Pos;         // Para definir o alinhamento de componentes.
 import javafx.scene.Scene;          // O contentor do conteúdo gráfico.
@@ -13,11 +13,11 @@ import javafx.stage.Stage;          // A janela.
 import javafx.stage.StageStyle;     // O estilo da janela (sem decoração).
 
 // Importações de utilitários e classes de dados
-import ltc.events.Modules.NavbarUtil; // Utilitário para a barra de título personalizada.
 import ltc.events.Modules.connection.ParticipantDB; // Serviço de base de dados para registo de participantes.
 import ltc.events.classes.Participant; // Classe de modelo do Participante.
 import ltc.events.classes.Types; // Classe de modelo para tipos de utilizador.
 import ltc.events.classes.hashs.PasswordUtil; // Utilitário para hashing de passwords.
+// Importação implícita do StyleUtil (se estiver no mesmo pacote, senão deve ser explícita).
 
 public class Register { // Início da classe Register.
 
@@ -28,8 +28,12 @@ public class Register { // Início da classe Register.
         stage.initStyle(StageStyle.UNDECORATED); // Remove a decoração padrão (barra de título do sistema).
         stage.initModality(Modality.APPLICATION_MODAL); // Bloqueia a interação com outras janelas da aplicação.
 
-        NavbarUtil navbar  = new NavbarUtil(); // Cria a instância da NavbarUtil.
-        BorderPane barra = navbar.createNavbar(stage); // Cria a barra de título personalizada.
+        /*
+           🚨 LINHAS REMOVIDAS (Criação da NavbarUtil e da barra)
+           Esta lógica foi transferida para StyleUtil.createRootLayout.
+        NavbarUtil navbar  = new NavbarUtil();
+        BorderPane barra = navbar.createNavbar(stage);
+        */
 
         // 🔹 2. Componentes do Formulário
         Label titulo = new Label("📝 Criar Conta"); // Título do formulário.
@@ -124,9 +128,10 @@ public class Register { // Início da classe Register.
         form.setAlignment(Pos.CENTER); // Centraliza o formulário verticalmente.
         form.setPadding(new Insets(20)); // Adiciona 20px de espaçamento interno.
 
-        // ✅ Utiliza o novo método estático para criar e estilizar o BorderPane raiz
+        // ✅ Utiliza o novo método estático para criar, estilizar e colocar a barra de título
         BorderPane raiz = StyleUtil.createRootLayout(stage, form);
 
+        // 🔹 4. Exibição
         Scene scene = new Scene(raiz, 400, 480); // Cria a Scene com o tamanho.
         stage.setScene(scene); // Define a Scene no Stage.
         stage.centerOnScreen(); // Centraliza a janela no ecrã.
