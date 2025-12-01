@@ -10,12 +10,14 @@ ltc\events\Modules\connection\EventDB.class
 ltc\events\classes\Event.class
 ltc\events\classes\ParticipantSession.class
 ltc\events\classes\hashs\PasswordUtil.class
+ltc\events\Modules\visual\CustomAlert.class
 ltc\events\classes\Resourceevent.class
 ltc\events\Modules\connection\ParticipantDB.class
 ltc\events\Main.class
 ltc\events\Modules\visual\Register.class
 ltc\events\Modules\db.class
 ltc\events\Modules\connection\TypesDB.class
+ltc\events\Modules\visual\StyleUtil.class
 ltc\events\classes\Resources.class
 ltc\events\classes\State.class
 ltc\events\Modules\NavbarUtil.class
