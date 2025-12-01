@@ -17,14 +17,14 @@ import ltc.events.classes.Types;
 import ltc.events.classes.hashs.PasswordUtil;
 
 public class Register {
-        public void mostrarRegister(Stage palco) {
+        public void mostrarRegister() {
 
         Stage stage = new Stage();
         stage.initStyle(StageStyle.UNDECORATED);
         stage.initModality(Modality.APPLICATION_MODAL);
 
         NavbarUtil navbar  = new NavbarUtil();
-        BorderPane barra = navbar.createNavbar(palco);
+        BorderPane barra = navbar.createNavbar(stage);
 
         // ======================================================
         /* 🔹 Botões macOS

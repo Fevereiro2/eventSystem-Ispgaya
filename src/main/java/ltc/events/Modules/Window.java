@@ -13,8 +13,6 @@ import javafx.scene.image.Image; // Importa a classe Image, usada para carregar 
 import javafx.scene.image.ImageView; // Importa o componente para exibir uma imagem na UI
 import javafx.scene.layout.*; // Importa todas as classes de layout (HBox, VBox, BorderPane, StackPane, etc.) para organizar os componentes
 import javafx.geometry.*; // Importa utilitários para definir alinhamentos, preenchimentos (padding) e margens (insets)
-import javafx.scene.paint.Color; // Importa a classe Color, usada para definir cores
-import javafx.scene.shape.Circle; // Importa a classe Circle, usada para desenhar um círculo (forma geométrica)
 import ltc.events.Modules.connection.EventDB; // Importa a classe de acesso ao banco de dados para a tabela Eventos
 import ltc.events.Modules.connection.ParticipantDB;// Importa a classe de acesso ao banco de dados para a tabela Participantes
 import ltc.events.Modules.connection.SessionDB;// Importa a classe de acesso ao banco de dados para a tabela Sessões
@@ -66,21 +64,16 @@ public class Window {
     // ============================================================
     private void criarUI() {
 
+
+        NavbarUtil navbarUtil = new NavbarUtil();
+        BorderPane barra = navbarUtil.createNavbar(palcoRef);
+
+
         // Botões macOS
-        Circle btnFechar = new Circle(6, Color.web("#FF5F57"));
-        Circle btnMin = new Circle(6, Color.web("#FFBD2E"));
-        Circle btnMax = new Circle(6, Color.web("#28C940"));
+        HBox rightBox = criarRightBoxSessao();
+        barra.setRight(rightBox);
 
-        btnFechar.setOnMouseClicked(_ -> palcoRef.close());
-        btnMin.setOnMouseClicked(_ -> palcoRef.setIconified(true));
-        btnMax.setOnMouseClicked(_ -> palcoRef.setMaximized(!palcoRef.isMaximized()));
 
-        HBox botoesMac = new HBox(8, btnFechar, btnMin, btnMax);
-        botoesMac.setAlignment(Pos.CENTER_LEFT);
-        botoesMac.setPadding(new Insets(6, 0, 6, 10));
-
-        // Barra superior
-        BorderPane barra = getBorderPane(palcoRef, botoesMac);
 
         // Título
         Label titulo = new Label("🎟️ Eventos Disponíveis");
@@ -133,6 +126,95 @@ public class Window {
     // ============================================================
     // 🔥 Barra superior — Login/Register ou User Info + Logout
     // ============================================================
+// ============================================================
+// 🔥 Lógica de Login/Register ou User Info + Logout
+// ============================================================
+    private HBox criarRightBoxSessao() {
+
+        HBox rightBox = new HBox(10);
+        rightBox.setAlignment(Pos.CENTER_RIGHT);
+        rightBox.setPadding(new Insets(6, 10, 6, 0));
+
+        // ================= LOGADO ==================
+        if (SessionEntry.isLogged()) {
+
+            var user = SessionEntry.getUser();
+
+            Label lblUser = new Label("👤 " + user.getName() + " (" + user.getType().getName() + ")");
+            lblUser.setStyle("-fx-font-weight: bold; -fx-font-size: 13px;");
+
+            Button btnLogout = new Button("Sair");
+            btnLogout.setStyle("""
+            -fx-background-color: linear-gradient(to bottom, #2EC4B6, #1A9E8C);
+            -fx-text-fill: white;
+            -fx-font-weight: bold;
+            -fx-background-radius: 8;
+            -fx-padding: 6 14;
+            -fx-cursor: hand;
+            -fx-alignment: center;
+            -fx-text-alignment: center;
+        """);
+            btnLogout.setOnAction(_ -> {
+                SessionEntry.logout();
+                refresh();
+            });
+
+            rightBox.getChildren().addAll(lblUser, btnLogout);
+
+            // Admin / Moderador
+            if (Permissions.isAdmin() || Permissions.isModerador()) {
+                Button btnAdmin = new Button("Painel Admin");
+                btnAdmin.setStyle("""
+            -fx-background-color: linear-gradient(to bottom, #2EC4B6, #1A9E8C);
+            -fx-text-fill: white;
+            -fx-font-weight: bold;
+            -fx-background-radius: 8;
+            -fx-padding: 6 14;
+            -fx-cursor: hand;
+            -fx-alignment: center;
+            -fx-text-alignment: center;
+        """);
+                rightBox.getChildren().add(btnAdmin);
+
+                btnAdmin.setOnAction(_ -> this.mostrarPainelAdmin());
+            }
+
+        } else {
+
+            // ================= DESLOGADO ==================
+            Button btnLogin = new Button("🔐 Login");
+            btnLogin.setStyle("""
+            -fx-background-color: linear-gradient(to bottom, #2EC4B6, #1A9E8C);
+            -fx-text-fill: white;
+            -fx-font-weight: bold;
+            -fx-background-radius: 8;
+            -fx-padding: 6 14;
+            -fx-cursor: hand;
+            -fx-alignment: center;
+            -fx-text-alignment: center;
+        """);
+            Button btnRegister = new Button("📝 Register");
+
+            btnRegister.setStyle("""
+            -fx-background-color: linear-gradient(to bottom, #2EC4B6, #1A9E8C);
+            -fx-text-fill: white;
+            -fx-font-weight: bold;
+            -fx-background-radius: 8;
+            -fx-padding: 6 14;
+            -fx-cursor: hand;
+            -fx-alignment: center;
+            -fx-text-alignment: center;
+        """);
+
+            btnLogin.setOnAction(_ -> new Login(this).mostrarLogin());
+            btnRegister.setOnAction(_ -> new Register().mostrarRegister()); // Corrigir chamada
+
+            rightBox.getChildren().addAll(btnLogin, btnRegister);
+        }
+
+        return rightBox;
+    }
+
     private BorderPane getBorderPane(Stage palco, HBox botoesMac) {
 
         BorderPane barra = new BorderPane();
@@ -213,7 +295,9 @@ public class Window {
             """);
 
             btnLogin.setOnAction(_ -> new Login(this).mostrarLogin());
-            btnRegister.setOnAction(_ -> new Register().mostrarRegister(palco));
+            btnRegister.setOnAction(_ -> new Register().mostrarRegister(
+
+            ));
 
             HBox rightBox = new HBox(10, btnLogin, btnRegister);
             rightBox.setAlignment(Pos.CENTER_RIGHT);
@@ -228,14 +312,6 @@ public class Window {
         barra.setStyle("-fx-background-color: linear-gradient(to bottom, #e0e0e0, #cfcfcf); "
                 + "-fx-border-color: #b0b0b0; -fx-border-width: 0 0 1 0;");
 
-        barra.setOnMousePressed(e -> {
-            xOffset = e.getSceneX();
-            yOffset = e.getSceneY();
-        });
-        barra.setOnMouseDragged(e -> {
-            palco.setX(e.getScreenX() - xOffset);
-            palco.setY(e.getScreenY() - yOffset);
-        });
 
         return barra;
     }
@@ -362,12 +438,26 @@ public class Window {
 
     private void atualizarContador(Label label, ObservableList<Participant> lista) {
         long total = lista.size();
-        long admins = lista.stream().filter(p -> p.getType().getName().equalsIgnoreCase("Admin")).count();
-        long participantes = lista.stream().filter(p -> p.getType().getName().equalsIgnoreCase("Participante")).count();
-        long moderadores = lista.stream().filter(p -> p.getType().getName().equalsIgnoreCase("Moderador")).count();
+        long admins = lista.stream().filter(p ->
+                p.getType().getName().equalsIgnoreCase("Admin")
+        ).count();
 
-        label.setText("Total: " + total + " | Admins: " + admins + " | Participantes: " + participantes + " | Moderadores: " + moderadores);
+        long moderadores = lista.stream().filter(p ->
+                p.getType().getName().equalsIgnoreCase("Moderador")
+        ).count();
+
+        long participantes = lista.stream().filter(p ->
+                p.getType().getName().equalsIgnoreCase("Participante")
+        ).count();
+
+        label.setText(
+                "Total: " + total +
+                        " | Admins: " + admins +
+                        " | Moderadores: " + moderadores +
+                        " | Participantes: " + participantes
+        );
     }
+
 
     private void abrirJanelaCriarUtilizador() {
         Stage stage = new Stage();

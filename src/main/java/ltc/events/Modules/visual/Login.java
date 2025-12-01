@@ -5,19 +5,18 @@ import javafx.geometry.Pos;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.layout.*;
-import javafx.scene.paint.Color;
-import javafx.scene.shape.Circle;
+
 import javafx.stage.Modality;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
+import ltc.events.Modules.NavbarUtil;
 import ltc.events.Modules.Window;
 import ltc.events.classes.Participant;
 import ltc.events.classes.hashs.AuthService;
 import ltc.events.classes.hashs.SessionEntry;
 
+@SuppressWarnings("Convert2Record")
 public class Login {
-    private double xOffset = 0;
-    private double yOffset = 0;
     private final Window window;
 
     public Login(Window window) {
@@ -29,38 +28,8 @@ public class Login {
         stage.initStyle(StageStyle.UNDECORATED);
         stage.initModality(Modality.APPLICATION_MODAL);
 
-        // ======================================================
-        // 🔹 Botões estilo macOS
-        Circle btnFechar = new Circle(6, Color.web("#FF5F57"));
-        Circle btnMin = new Circle(6, Color.web("#FFBD2E"));
-        Circle btnMax = new Circle(6, Color.web("#28C940"));
-
-        btnFechar.setOnMouseClicked(e -> stage.close());
-        btnMin.setOnMouseClicked(e -> stage.setIconified(true));
-        btnMax.setOnMouseClicked(e -> stage.setMaximized(!stage.isMaximized()));
-
-        HBox botoesMac = new HBox(8, btnFechar, btnMin, btnMax);
-        botoesMac.setAlignment(Pos.CENTER_LEFT);
-        botoesMac.setPadding(new Insets(6, 0, 6, 10));
-
-        // 🔹 Barra superior (com drag)
-        BorderPane barra = new BorderPane();
-        barra.setLeft(botoesMac);
-        barra.setStyle("""
-            -fx-background-color: linear-gradient(to bottom, #e0e0e0, #cfcfcf);
-            -fx-border-color: #b0b0b0;
-            -fx-border-width: 0 0 1 0;
-        """);
-
-        barra.setOnMousePressed(e -> {
-            xOffset = e.getSceneX();
-            yOffset = e.getSceneY();
-        });
-        barra.setOnMouseDragged(e -> {
-            stage.setX(e.getScreenX() - xOffset);
-            stage.setY(e.getScreenY() - yOffset);
-        });
-        // ======================================================
+        NavbarUtil navbar = new NavbarUtil();
+        BorderPane barra = navbar.createNavbar(stage);
 
         // 🔹 Conteúdo do formulário
         Label titulo = new Label("🔐 Iniciar Sessão");
@@ -94,11 +63,11 @@ public class Login {
             -fx-cursor: hand;
             -fx-padding: 8 18 8 18;
         """);
-        btnCancelar.setOnAction(e -> stage.close());
+        btnCancelar.setOnAction(_ -> stage.close());
 
 
         // 🔹 Validação simples
-        btnEntrar.setOnAction(e -> {
+        btnEntrar.setOnAction(_ -> {
             String user = txtUser.getText();
             String pass = txtPass.getText();
 
