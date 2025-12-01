@@ -62,13 +62,13 @@ public class Login { // Início da classe ‘Login’, responsável pela UI e l�
 
                     // 1. Guarda: Verificar campos vazios (Sai se houver campos vazios)
                     if (user.isEmpty() || pass.isEmpty()) {
-                        CustomAlert.show("Atenção", "Preencha todos os campos!"); // Exibe alerta personalizado.
+                        CustomAlert.Warning( "Preencha todos os campos!"); // Exibe alerta personalizado.
                         return; // Termina a execução do bloco de código.
                     }
 
                     // 2. Guarda: Validação do formato do endereço eletrónico (Sai se for inválido)
                     if (!isValidEmail(user)) {
-                        CustomAlert.show("Erro de Validação", "O email inserido não é válido.\n\nExemplo: nome@dominio.com");
+                        CustomAlert.Error( "O email inserido não é válido.\n\nExemplo: nome@dominio.com");
                         return; // Termina a execução do bloco de código.
                     }
 
@@ -78,13 +78,13 @@ public class Login { // Início da classe ‘Login’, responsável pela UI e l�
                     if (logged != null) {
                         // Sucesso
                         SessionEntry.login(logged); // Regista o utilizador na sessão.
-                        CustomAlert.show("Sucesso!", "Bem-vindo, " + logged.getName() + "!"); // Mensagem de boas-vindas.
+                        CustomAlert.Success( "Bem-vindo, " + logged.getName() + "!"); // Mensagem de boas-vindas.
 
                         stage.close(); // Fecha a janela de login.
                         window.refresh(); // Atualiza a janela principal para mostrar o estado de logado.
                     } else {
                         // Falha
-                        CustomAlert.show("Erro de Autenticação", "Credenciais inválidas."); // Mensagem de erro.
+                        CustomAlert.Error( "Credenciais inválidas."); // Mensagem de erro.
                     }
                 }
         );
@@ -151,15 +151,14 @@ public class Login { // Início da classe ‘Login’, responsável pela UI e l�
                 _ -> { // Define a ação do botão.
                     String email = txtEmail.getText(); // Obtém o texto do campo de endereço eletrónico.
                     if (email.isEmpty() || !isValidEmail(email)) { // Validação: verifica se está vazio ou se o formato é inválido.
-                        CustomAlert.show("Atenção", "Por favor, insira um email válido."); // Exibe alerta personalizado em caso de erro.
+                        CustomAlert.Warning( "Por favor, insira um email válido."); // Exibe alerta personalizado em caso de erro.
                         return; // Sai do método se a validação falhar (Guard Clause).
                     }
 
                     // Simulação da lógica de backend
-                    CustomAlert.show("Recuperação de Palavra-passe", // Exibe a mensagem de sucesso/instrução personalizada.
-                            "Processo de Recuperação Iniciado:\n\n" +
+                    CustomAlert.Info( "Processo de Recuperação Iniciado:\n\n" +
                                     "Devido à ausência de serviço de email, contacte o administrador " +
-                                    "para redefinir a palavra-passe do email:\n" + email
+                                    "para redefinir a palavra-passe do email:\n" + email // Exibe a mensagem de sucesso/instrução personalizada.
                     );
 
                     stage.close(); // Fecha a janela após a simulação.
