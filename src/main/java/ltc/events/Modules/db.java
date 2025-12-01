@@ -9,7 +9,7 @@ public class db { // Definição da classe 'db', responsável por gerir a conex�
     public static Connection connect() { // Função estática que tenta estabelecer e retornar a conexão com a base de dados
         try { // Bloco TRY: Tenta executar o código que pode falhar (a tentativa de conexão)
             Connection conn = DriverManager.getConnection(URL);// Tenta estabelecer a conexão usando o URL e armazena o resultado no objeto 'conn'
-            System.out.println("✔ Ligação aberta ao SQLite!");// Se a conexão for bem-sucedida, imprime uma mensagem de sucesso no console
+            System.out.println("✔ Ligação aberta ao SQLite!");// Se a conexão for bem-sucedida, imprime uma mensagem de sucesso na consola
             return conn;// Retorna o objeto 'Connection' ativo
         } catch (SQLException e) { // Bloco CATCH: Captura qualquer erro (exceção) que ocorra durante a execução do 'try'
             System.err.println("❌ Erro ao ligar ao SQLite: " + e.getMessage());// Imprime a mensagem de erro específica na consola (usando System.err para indicar um erro)
