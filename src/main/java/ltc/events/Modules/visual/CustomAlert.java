@@ -1,82 +1,160 @@
-package ltc.events.Modules.visual; // Declara que a classe pertence a este pacote (visual).
+package ltc.events.Modules.visual; // Declara que a classe CustomAlert pertence a este pacote.
 
-import javafx.geometry.Insets;      // Importa a classe para definir espaçamentos internos (padding).
-import javafx.geometry.Pos;         // Importa a classe para definir o alinhamento de componentes.
-import javafx.scene.Scene;          // Importa a Scene, o contentor do conteúdo gráfico.
-import javafx.scene.control.Button; // Importa o componente Button.
-import javafx.scene.control.Label;  // Importa o componente Label.
-import javafx.scene.layout.BorderPane; // Importa o BorderPane, usado como layout raiz.
-import javafx.scene.layout.HBox;    // Importa o HBox, usado para organizar botões horizontalmente.
-import javafx.scene.layout.VBox;    // Importa o VBox, usado para organizar conteúdo verticalmente.
-import javafx.stage.Modality;       // Importa a Modality para definir o comportamento modal da janela.
-import javafx.stage.Stage;          // Importa a classe Stage, que representa a janela.
-import javafx.stage.StageStyle;     // Importa o StageStyle para remover a decoração padrão da janela.
-import ltc.events.Modules.NavbarUtil; // Importa a sua NavbarUtil para criar a barra de título personalizada.
+// -------------------------------------------------------------------------
+// Importações JavaFX ‘standard’ para a construção da ‘interface’ gráfica (UI)
+// -------------------------------------------------------------------------
+import javafx.geometry.Insets;// Importa a classe para definir espaçamentos internos (padding/margens).
+import javafx.geometry.Pos;// Importa a classe para definir o alinhamento de componentes dentro de layouts.
+import javafx.scene.Scene;// Importa a Scene, o contentor principal para todos os nós gráficos.
+import javafx.scene.control.Button;// Importa o componente Button (botão).
+import javafx.scene.control.Label;// Importa o componente Label (texto estático).
+import javafx.scene.layout.BorderPane;// Importa o BorderPane, layout que organiza em 5 regiões (Topo, Centro, etc.).
+import javafx.scene.layout.HBox;// Importa o HBox, layout que organiza componentes horizontalmente.
+import javafx.scene.layout.VBox;// Importa o VBox, layout que organiza componentes verticalmente.
+import javafx.stage.Modality;// Importa a Modality para definir o comportamento de bloqueio da janela.
+import javafx.stage.Stage;// Importa a classe Stage, que representa a janela.
+import javafx.stage.StageStyle;// Importa o StageStyle para remover a decoração padrão da janela.
 
-public class CustomAlert { // Início da classe utilitária CustomAlert.
+// -------------------------------------------------------------------------
+// Importações de utilitários personalizados (Classes do seu projeto)
+// -------------------------------------------------------------------------
+import ltc.events.Modules.NavbarUtil; // Importa a sua NavbarUtil para a barra de título personalizada.
 
- /**
-    * Exibe um alerta com ‘design’ personalizado e a NavbarUtil.
-    * @param titulo O título da janela de alerta.
-    * @param mensagem A mensagem a ser exibida.
+
+public class CustomAlert { // Início da classe utilitária CustomAlert (não instanciáveis, só métodos estáticos).
+
+    /**
+    * Enumeração que define os tipos de alerta disponíveis, associados a cores e lógica.
     */
-    public static void show(String titulo, String mensagem) { // Método estático para exibir o alerta.
-     // 1. Configurar o Stage
-        Stage stage = new Stage(); // Cria uma janela (Stage).
-        stage.initStyle(StageStyle.UNDECORATED); // Define o estilo para remover a barra de título e bordas padrão do sistema.
-        stage.initModality(Modality.APPLICATION_MODAL); // Define a janela como modal, bloqueando a interação com as outras janelas da aplicação até ser fechada.
+    public enum Type {
+        SUCCESS,// Tipo para sucesso (Verde).
+        WARNING,// Tipo para aviso/atenção (Laranja).
+        ERROR,// Tipo para erro/falha (Vermelho).
+        INFO // Tipo para informação geral (Azul).
+    }
 
-        // Usar a sua NavbarUtil para o arrasto e botões de fechar
-        NavbarUtil navbar = new NavbarUtil(); // Cria uma instância da sua classe de utilidade para a navbar.
-        BorderPane barra = navbar.createNavbar(stage); // Cria a barra de título personalizada (com botões e arrasto) e associa-a a este Stage.
+    // ─────────────────────────────────────────────
+    // MÉTODOS ESTÁTICOS DE CONVENIÊNCIA (Factory Methods)
+    // São a interface pública simplificada para chamar o alerta.
+    // ─────────────────────────────────────────────
 
-        // Comentários sobre a Navbar:
-        // Ajusta a barra: remove os botões Min/Max se a NavbarUtil não foi refatorada
-        // Se a NavbarUtil foi refatorada para usar createMacButtonsHBox, pode precisar de ajuste manual aqui.
-        // Assumindo o NavbarUtil não refatorado (versão mais simples):
-        // Se a NavbarUtil usar o BorderPane(center) para o HBox, o rightBox é nulo.
+    /**
+    * Exibe um alerta d'ERRO com o título "Erro".
+    * @param mensagem A mensagem de erro a ser exibida.
+    */
+    public static void Error(String mensagem) {
+        show(Type.ERROR, "Erro", mensagem); // Chama o método principal, passando o tipo, título e mensagem.
+    }
 
-        // 2. Conteúdo Principal
-        Label lblTitulo = new Label(titulo); // Cria um Label para o título da mensagem.
-        lblTitulo.setStyle("-fx-font-size: 16px; -fx-font-weight: bold; -fx-padding: 0 0 10 0;"); // Estiliza o título (negrito, tamanho e padding inferior).
+    /**
+    * Exibe um alerta de AVISO com o título "Atenção".
+    * @param mensagem A mensagem de aviso a ser exibida.
+    */
+    public static void Warning(String mensagem) {
+        show(Type.WARNING, "Atenção", mensagem); // Chama o método principal, passando o tipo, título e mensagem.
+    }
 
-        Label lblMensagem = new Label(mensagem); // Cria um Label para a mensagem principal.
-        lblMensagem.setStyle("-fx-font-size: 13px; -fx-text-fill: #555;"); // Estiliza a mensagem (cor cinza).
-        lblMensagem.setWrapText(true); // Permite que o texto quebre linhas se for muito longo.
-        lblMensagem.setMaxWidth(300); // Define uma largura máxima para o texto.
+    /**
+    * Exibe um alerta de SUCESSO com o título "Sucesso".
+     * @param mensagem A mensagem de sucesso a ser exibida.
+     */
+    public static void Success(String mensagem) {
+        show(Type.SUCCESS, "Sucesso", mensagem); // Chama o método principal, passando o tipo, título e mensagem.
+    }
 
-        Button btnOK = new Button("OK"); // Cria o botão de ação principal.
-        btnOK.setStyle(""" 
-            -fx-background-color: linear-gradient(to bottom, #2EC4B6, #1A9E8C);
-            -fx-text-fill: white;
-            -fx-font-weight: bold;
-            -fx-background-radius: 6;
-            -fx-cursor: hand;
-            -fx-padding: 6 18;
-        """); // Fim do bloco de estilo.
-        btnOK.setOnAction(_ -> stage.close()); // Define a ação do botão: fechar a janela ao ser clicado.
+  /**
+   * Exibe um alerta de INFORMAÇÃO com o título "Informação".
+   * @param mensagem A mensagem informativa a ser exibida.
+   */
+          public static void Info(String mensagem) {
+    show(Type.INFO, "Informação", mensagem); // Chama o método principal, passando o tipo, título e mensagem.
+  }
+ 
+          // ─────────────────────────────────────────────
+          // MÉTODO PRINCIPAL DE EXIBIÇÃO (Privado)
+          // Toda a lógica de UI reside aqui.
+          // ─────────────────────────────────────────────
 
-        HBox botoes = new HBox(btnOK); // Cria um HBox e insere o botão OK.
-        botoes.setAlignment(Pos.CENTER_RIGHT); // Alinha o botão à direita dentro do HBox.
+          /**
+   * Exibe o alerta com ‘design’ personalizado, ajustando o estilo pelo tipo.
+   * É privado para garantir que apenas os métodos de conveniência o chamam.
+   */
+          private static void show(Type tipo, String titulo, String mensagem) {
 
-        VBox conteudo = new VBox(15, lblTitulo, lblMensagem, botoes); // Cria um VBox para o conteúdo principal, com 15px de espaçamento.
-        conteudo.setAlignment(Pos.TOP_LEFT); // Alinha o conteúdo ao topo-esquerda.
-        conteudo.setPadding(new Insets(20)); // Aplica 20px de padding (espaçamento interno) em toda a volta do conteúdo.
+    // Variáveis para definir o estilo dinamicamente (cores CSS)
+    String colorStart;// Cor inicial do gradiente do botão OK.
+    String colorEnd; // Cor final do gradiente do botão OK.
+    String tituloColor;// Cor do texto do título do alerta.
 
-         // 3. Layout Raiz (usando o seu design de sombra)
-         BorderPane raiz = new BorderPane(); // Cria o BorderPane raiz.
-         raiz.setTop(barra); // Coloca a barra de título personalizada no topo.
-         raiz.setCenter(conteudo); // Coloca o VBox com a mensagem no centro.
-         raiz.setStyle(""" 
-            -fx-background-color: white;
-            -fx-background-radius: 10;
-            -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.25), 15, 0.3, 0, 4);
-        """); // Fim do bloco de estilo.
+    // 1. Definição dos Estilos baseada no Tipo (SUCCESS, WARNING, etc.)
+    switch (tipo) {
+      case SUCCESS:
+        colorStart = "#34c759"; colorEnd = "#2ca02c"; // Verde para o botão.
+        tituloColor = "#2e7d32";// Verde-escuro para o título.
+        break;
+      case WARNING:
+        colorStart = "#ffc107"; colorEnd = "#ff9800"; // Laranja para o botão.
+        tituloColor = "#f9a825";// Amarelo/Laranja escuro para o título.
+        break;
+      case ERROR:
+        colorStart = "#ff5f57"; colorEnd = "#c62828"; // Vermelho para o botão.
+        tituloColor = "#c62828";// Vermelho-escuro para o título.
+        break;
+      case INFO:
+      default: // Usado para INFO e como fallback.
+        colorStart = "#2196F3"; colorEnd = "#1565C0"; // Azul para o botão.
+        tituloColor = "#1565C0"; // Azul-escuro para o título.
+        break;
+    }
 
-        // 4. Exibir
-        Scene scene = new Scene(raiz, 350, 200); // Cria a Scene, definindo o tamanho inicial da janela (350x200).
-        stage.setScene(scene); // Define a Scene criada como o conteúdo da janela.
-        stage.centerOnScreen(); // Centraliza a janela no ecrã do utilizador.
-        stage.showAndWait(); // Exibe a janela e BLOQUEIA o código de execução até que esta janela seja fechada (o que é crucial para um alerta modal).
-    } // Fim do método show.
+    // 2. Configurar o Stage (Janela)
+    Stage stage = new Stage();// Cria a janela do alerta.
+    stage.initStyle(StageStyle.UNDECORATED);// Remove a decoração padrão do sistema (bordas).
+    stage.initModality(Modality.APPLICATION_MODAL);// Bloqueia toda a aplicação enquanto o alerta estiver aberto.
+
+    // Usar a sua NavbarUtil para a barra de título arrastáveis
+    NavbarUtil navbar = new NavbarUtil();// Instancia o utilitário.
+    BorderPane barra = navbar.createNavbar(stage);// Cria a barra de título personalizada e associa-a ao Stage.
+
+    // 3. Criação e Estilização do Conteúdo Principal
+    Label lblTitulo = new Label(titulo);// Cria o Label para o título.
+        // Aplica o estilo, incluindo a cor dinâmica do título.
+    lblTitulo.setStyle(String.format("-fx-font-size: 16px; -fx-font-weight: bold; -fx-padding: 0 0 10 0; -fx-text-fill: %s;", tituloColor));
+
+    Label lblMensagem = new Label(mensagem);// Cria o Label para a mensagem.
+    lblMensagem.setStyle("-fx-font-size: 13px; -fx-text-fill: #555;");// Estiliza a mensagem (cor cinza).
+    lblMensagem.setWrapText(true);// Permite que o texto quebre linhas se não couber.
+    lblMensagem.setMaxWidth(300);// Limita a largura do texto para evitar que a janela fique muito larga.
+
+    // Cria o botão OK usando o StyleUtil com as cores dinâmicas definidas no switch
+    Button btnOK = StyleUtil.createStyledButton(
+                      "OK",     // Texto do botão.
+                      colorStart,  // Cor inicial do gradiente.
+                      colorEnd,   // Cor final do gradiente.
+                      _ -> stage.close()// Ação: fecha a janela.
+                    );
+
+    HBox botoes = new HBox(btnOK);// Container para os botões.
+    botoes.setAlignment(Pos.CENTER_RIGHT);// Alinha o botão OK à direita dentro do container.
+
+    VBox conteudo = new VBox(15, lblTitulo, lblMensagem, botoes);// Container vertical para todos os elementos de conteúdo.
+    conteudo.setAlignment(Pos.TOP_LEFT);// Alinha o conteúdo ao topo-esquerda.
+    conteudo.setPadding(new Insets(20));// Aplica 20px de espaçamento interno.
+
+    // 4. Layout Raiz e Estilo de Janela
+    BorderPane raiz = new BorderPane();// Cria o layout raiz.
+    raiz.setTop(barra);// Coloca a barra de título no topo.
+    raiz.setCenter(conteudo);// Coloca o VBox com a mensagem no centro.
+    raiz.setStyle("""
+      -fx-background-color: white;
+      -fx-background-radius: 10;
+      -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.25), 15, 0.3, 0, 4); // Efeito de sombra (elevação 3D).
+    """);
+
+    // 5. Exibir a Janela
+    Scene scene = new Scene(raiz, 350, 200);// Cria a Scene com o layout raiz e define o tamanho da janela (350x200).
+    stage.setScene(scene);// Define a Scene.
+    stage.centerOnScreen();// Centraliza a janela no ecrã do utilizador.
+    stage.showAndWait();// Exibe a janela e BLOQUEIA a execução do código de chamada até ser fechada.
+  } // Fim do método show.
 } // Fim da classe CustomAlert.
