@@ -1,123 +1,118 @@
-package ltc.events.Modules.visual;
+package ltc.events.Modules.visual; // Declara que a classe Register pertence a este pacote.
 
-import javafx.geometry.Insets;
-import javafx.geometry.Pos;
-import javafx.scene.Scene;
-import javafx.scene.control.*;
-import javafx.scene.layout.BorderPane;
-import javafx.scene.layout.HBox;
-import javafx.scene.layout.VBox;
-import javafx.stage.Modality;
-import javafx.stage.Stage;
-import javafx.stage.StageStyle;
-import ltc.events.Modules.NavbarUtil;
-import ltc.events.Modules.connection.ParticipantDB;
-import ltc.events.classes.Participant;
-import ltc.events.classes.Types;
-import ltc.events.classes.hashs.PasswordUtil;
+// Importações JavaFX ‘standard’ para UI
+import javafx.geometry.Insets;      // Para definir espaçamentos internos (padding).
+import javafx.geometry.Pos;         // Para definir o alinhamento de componentes.
+import javafx.scene.Scene;          // O contentor do conteúdo gráfico.
+import javafx.scene.control.*;      // Componentes de controlo (Label, TextField, Button, etc.).
+import javafx.scene.layout.BorderPane; // Layout raiz.
+import javafx.scene.layout.HBox;    // Layout horizontal.
+import javafx.scene.layout.VBox;    // Layout vertical.
+import javafx.stage.Modality;       // Para definir o comportamento modal.
+import javafx.stage.Stage;          // A janela.
+import javafx.stage.StageStyle;     // O estilo da janela (sem decoração).
 
-public class Register {
-        public void mostrarRegister() {
+// Importações de utilitários e classes de dados
+import ltc.events.Modules.NavbarUtil; // Utilitário para a barra de título personalizada.
+import ltc.events.Modules.connection.ParticipantDB; // Serviço de base de dados para registo de participantes.
+import ltc.events.classes.Participant; // Classe de modelo do Participante.
+import ltc.events.classes.Types; // Classe de modelo para tipos de utilizador.
+import ltc.events.classes.hashs.PasswordUtil; // Utilitário para hashing de passwords.
 
-        Stage stage = new Stage();
-        stage.initStyle(StageStyle.UNDECORATED);
-        stage.initModality(Modality.APPLICATION_MODAL);
+public class Register { // Início da classe Register.
 
-        NavbarUtil navbar  = new NavbarUtil();
-        BorderPane barra = navbar.createNavbar(stage);
+    public void mostrarRegister() { // Método principal para exibir a janela de registo.
 
-        // 🔹 Formulário
-        Label titulo = new Label("📝 Criar Conta");
-        titulo.setStyle("-fx-font-size: 22px; -fx-font-weight: bold; -fx-text-fill: #333;");
+        // 🔸 1. Configuração do Stage
+        Stage stage = new Stage(); // Cria uma janela.
+        stage.initStyle(StageStyle.UNDECORATED); // Remove a decoração padrão (barra de título do sistema).
+        stage.initModality(Modality.APPLICATION_MODAL); // Bloqueia a interação com outras janelas da aplicação.
 
-        Label lblNome = new Label("Nome:");
-        TextField txtNome = new TextField();
-        txtNome.setPromptText("ex: Pedro Fevereiro");
+        NavbarUtil navbar  = new NavbarUtil(); // Cria a instância da NavbarUtil.
+        BorderPane barra = navbar.createNavbar(stage); // Cria a barra de título personalizada.
 
-        Label lblPhone = new Label("Telefone:");
-        TextField txtPhone = new TextField();
-        txtPhone.setPromptText("ex: 912 345 678");
+        // 🔹 2. Componentes do Formulário
+        Label titulo = new Label("📝 Criar Conta"); // Título do formulário.
+        titulo.setStyle("-fx-font-size: 22px; -fx-font-weight: bold; -fx-text-fill: #333;"); // Estilização do título.
 
-        Label lblEmail = new Label("Email:");
-        TextField txtEmail = new TextField();
-        txtEmail.setPromptText("ex: pedro@email.com");
+        Label lblNome = new Label("Nome:"); // Label Nome.
+        TextField txtNome = new TextField(); // Campo de texto Nome.
+        txtNome.setPromptText("ex: Pedro Fevereiro"); // Placeholder.
 
-        Label lblPass = new Label("Password:");
-        PasswordField txtPass = new PasswordField();
-        txtPass.setPromptText("••••••••");
+        Label lblPhone = new Label("Telefone:"); // Label Telefone.
+        TextField txtPhone = new TextField(); // Campo de texto Telefone.
+        txtPhone.setPromptText("ex: 912 345 678"); // Placeholder.
 
-        Button btnRegistar = new Button("Criar Conta");
-        btnRegistar.setStyle("""
-            -fx-background-color: linear-gradient(to bottom, #007aff, #0051a8);
-            -fx-text-fill: white;
-            -fx-font-weight: bold;
-            -fx-background-radius: 6;
-            -fx-cursor: hand;
-            -fx-padding: 10 18;
-        """);
+        Label lblEmail = new Label("Email:"); // Label Email.
+        TextField txtEmail = new TextField(); // Campo de texto Endereço eletrónico.
+        txtEmail.setPromptText("ex: pedro@email.com"); // Placeholder.
 
-        Button btnCancelar = new Button("Cancelar");
-        btnCancelar.setOnAction(_ -> stage.close());
+        Label lblPass = new Label("Password:"); // Label Password.
+        PasswordField txtPass = new PasswordField(); // Campo de password.
+        txtPass.setPromptText("••••••••"); // Placeholder.
 
-        // ======================================================
-        // 🔹 Lógica do Registo
-        btnRegistar.setOnAction(_ -> {
+        // 🟢 Botão Registar (Azul) - Usando StyleUtil
+        Button btnRegistar = StyleUtil.createStyledButton(
+                "Criar Conta",
+                "#007aff", // Cor inicial do gradiente (Azul primário)
+                "#0051a8", // Cor final do gradiente (Azul-escuro)
+                _ -> { // Início da lógica de clique
 
-            String nome = txtNome.getText();
-            String phone = txtPhone.getText();
-            String email = txtEmail.getText();
-            String pass = txtPass.getText();
+                    String nome = txtNome.getText();
+                    String phone = txtPhone.getText();
+                    String email = txtEmail.getText();
+                    String pass = txtPass.getText();
 
-            // ---------- VALIDAÇÕES ----------
-            if (nome.isEmpty() || phone.isEmpty() || email.isEmpty() || pass.isEmpty()) {
-                new Alert(Alert.AlertType.WARNING,
-                        "Por favor preencha todos os campos!"
-                ).showAndWait();
+                    // ---------- VALIDAÇÕES (Guard Clauses) ----------
+                    if (nome.isEmpty() || phone.isEmpty() || email.isEmpty() || pass.isEmpty()) {
+                        CustomAlert.Warning( "Por favor preencha todos os campos!"); // Alerta de campos vazios.
+                        return; // Sai se falhar.
+                    }
 
-                CustomAlert.Warning( "Por favor preencha todos os campos!");
-                return;
-            }
+                    if (!email.matches("^[A-Za-z0-9+_.-]+@(.+)$")) { // Validação do formato do endereço eletrónico (REGEX fraca).
+                        CustomAlert.Error("Email inválido!"); // Alerta d'Erro.
+                        return; // Sai se falhar.
+                    }
 
-            if (!email.matches("^[A-Za-z0-9+_.-]+@(.+)$")) {
-                new Alert(Alert.AlertType.WARNING,
-                        "Email inválido!"
-                ).showAndWait();
-                return;
-            }
+                    if (!phone.matches("\\d{9}")) { // Validação do formato do telefone (9 dígitos).
+                        CustomAlert.Warning("O telefone deve ter 9 dígitos!"); // Alerta.
+                        return; // Sai se falhar.
+                    }
 
-            if (!phone.matches("\\d{9}")) {
-                new Alert(Alert.AlertType.WARNING,
-                        "O telefone deve ter 9 dígitos!"
-                ).showAndWait();
-                return;
-            }
+                    // ---------- Processamento ----------
+                    String hashed = PasswordUtil.hashPassword(pass); // Encripta a senha.
 
+                    // Tipo de utilizador padrão: PARTICIPANTE (‘ID’=2)
+                    Types type = new Types(2, "Participant");
 
-            String hashed = PasswordUtil.hashPassword(pass);
+                    try {
+                        // Tenta registar o participante na base de dados
+                        Participant p = ParticipantDB.register(nome, email, phone, hashed, type);
 
-// User type default → PARTICIPANTE
-            Types type = new Types(2, "Participant");
+                        // Sucesso
+                        CustomAlert.Success("Conta criada com sucesso para: " + p.getName()); // Alerta de Sucesso.
+                        stage.close(); // Fecha a janela de registo.
 
-            try {
-                Participant p = ParticipantDB.register(nome, email, phone, hashed, type);
+                    } catch (Exception ex) {
+                        // Falha no registo (ex: endereço eletrónico já existe)
+                        CustomAlert.Error("Erro ao criar conta: "+ex.getMessage()); // Alerta mensagem.
+                    }
+                } // Fim da lógica de clique.
+        );
 
-                new Alert(Alert.AlertType.INFORMATION,
-                        "Conta criada com sucesso para: " + p.getName()
-                ).showAndWait();
+        // 🔴 Botão Cancelar (Vermelho/Cinza) - Usando StyleUtil
+        Button btnCancelar = StyleUtil.createStyledButton(
+                "Cancelar",
+                "#ff5f57", // Cor inicial do gradiente (Vermelho para ação de paragem)
+                "#c62828", // Cor final do gradiente (Vermelho-escuro)
+                _ -> stage.close() // Define a ação para fechar a janela.
+        );
 
-                stage.close();
+        // 🔹 3. Organização do Layout
+        HBox botoes = new HBox(10, btnCancelar, btnRegistar); // Container horizontal para botões com 10px de espaçamento.
+        botoes.setAlignment(Pos.CENTER); // Centraliza os botões.
 
-            } catch (Exception ex) {
-                new Alert(Alert.AlertType.ERROR,
-                        "Erro ao criar conta: " + ex.getMessage()
-                ).showAndWait();
-            }
-        });
-
-        HBox botoes = new HBox(10, btnCancelar, btnRegistar);
-        botoes.setAlignment(Pos.CENTER);
-
-        VBox form = new VBox(12,
+        VBox form = new VBox(12, // Container vertical para o formulário.
                 titulo,
                 lblNome, txtNome,
                 lblPhone, txtPhone,
@@ -126,23 +121,15 @@ public class Register {
                 botoes
         );
 
-        form.setAlignment(Pos.CENTER);
-        form.setPadding(new Insets(20));
+        form.setAlignment(Pos.CENTER); // Centraliza o formulário verticalmente.
+        form.setPadding(new Insets(20)); // Adiciona 20px de espaçamento interno.
 
-        // ======================================================
-        // Layout final
-        BorderPane raiz = new BorderPane();
-        raiz.setTop(barra);
-        raiz.setCenter(form);
-        raiz.setStyle("""
-            -fx-background-color: white;
-            -fx-background-radius: 10;
-            -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.25), 15, 0.3, 0, 4);
-        """);
+        // ✅ Utiliza o novo método estático para criar e estilizar o BorderPane raiz
+        BorderPane raiz = StyleUtil.createRootLayout(stage, form);
 
-        Scene scene = new Scene(raiz, 400, 480);
-        stage.setScene(scene);
-        stage.centerOnScreen();
-        stage.show();
+        Scene scene = new Scene(raiz, 400, 480); // Cria a Scene com o tamanho.
+        stage.setScene(scene); // Define a Scene no Stage.
+        stage.centerOnScreen(); // Centraliza a janela no ecrã.
+        stage.show(); // Exibe a janela.
     }
 }
