@@ -26,39 +26,6 @@ public class Register {
         NavbarUtil navbar  = new NavbarUtil();
         BorderPane barra = navbar.createNavbar(stage);
 
-        // ======================================================
-        /* 🔹 Botões macOS
-        Circle btnFechar = new Circle(6, Color.web("#FF5F57"));
-        Circle btnMin = new Circle(6, Color.web("#FFBD2E"));
-        Circle btnMax = new Circle(6, Color.web("#28C940"));
-
-        btnFechar.setOnMouseClicked(e -> stage.close());
-        btnMin.setOnMouseClicked(e -> stage.setIconified(true));
-        btnMax.setOnMouseClicked(e -> stage.setMaximized(!stage.isMaximized()));
-
-        HBox botoesMac = new HBox(8, btnFechar, btnMin, btnMax);
-        botoesMac.setAlignment(Pos.CENTER_LEFT);
-        botoesMac.setPadding(new Insets(6, 0, 6, 10));
-
-        BorderPane barra = new BorderPane(botoesMac, null, null, null, null);
-        barra.setStyle("""
-            -fx-background-color: linear-gradient(to bottom, #e0e0e0, #cfcfcf);
-            -fx-border-color: #b0b0b0;
-            -fx-border-width: 0 0 1 0;
-        """);
-
-        barra.setOnMousePressed(e -> {
-            xOffset = e.getSceneX();
-            yOffset = e.getSceneY();
-        });
-
-        barra.setOnMouseDragged(e -> {
-            stage.setX(e.getScreenX() - xOffset);
-            stage.setY(e.getScreenY() - yOffset);
-        });
-         */
-
-        // ======================================================
         // 🔹 Formulário
         Label titulo = new Label("📝 Criar Conta");
         titulo.setStyle("-fx-font-size: 22px; -fx-font-weight: bold; -fx-text-fill: #333;");
@@ -106,6 +73,8 @@ public class Register {
                 new Alert(Alert.AlertType.WARNING,
                         "Por favor preencha todos os campos!"
                 ).showAndWait();
+
+                CustomAlert.Warning( "Por favor preencha todos os campos!");
                 return;
             }
 
