@@ -176,19 +176,11 @@ public class Login { // Início da classe ‘Login’, responsável pela UI e l�
         HBox botoes = new HBox(10, btnCancelar, btnRecuperar); // Layout horizontal para os botões, com 10px de espaçamento.
         botoes.setAlignment(Pos.CENTER); // Centraliza os botões dentro do HBox.
 
-        VBox conteudo = new VBox(15, titulo, lblEmail, txtEmail, botoes); // Layout vertical para todo o conteúdo, com 15px de espaçamento.
-        conteudo.setAlignment(Pos.CENTER); // Centraliza verticalmente o conteúdo.
-        conteudo.setPadding(new Insets(20)); // Adiciona 20px de espaçamento interno (padding) ao VBox.
+        VBox form = new VBox(15, titulo, lblEmail, txtEmail, botoes); // Layout vertical para todo o conteúdo, com 15px de espaçamento.
+        form.setAlignment(Pos.CENTER); // Centraliza verticalmente o conteúdo.
+        form.setPadding(new Insets(20)); // Adiciona 20px de espaçamento interno (padding) ao VBox.
 
-        // Layout principal
-        BorderPane raiz = new BorderPane(); // Cria o layout raiz para o Stage.
-        raiz.setTop(barra); // Coloca a barra de navegação no topo.
-        raiz.setCenter(conteudo); // Coloca o VBox com o formulário no centro.
-        raiz.setStyle("""
-        -fx-background-color: white; // Fundo branco.
-        -fx-background-radius: 10; // Cantos arredondados.
-        -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.25), 15, 0.3, 0, 4); // Efeito de sombra (design moderno).
-    """);
+        BorderPane raiz = StyleUtil.createRootLayout(stage, form);
 
         Scene scene = new Scene(raiz, 400, 250); // Cria a Scene com o layout raiz e define o tamanho da janela (400x250).
         stage.setScene(scene); // Associa a Scene ao Stage.
