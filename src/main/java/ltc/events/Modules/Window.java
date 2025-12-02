@@ -14,6 +14,7 @@ import javafx.scene.image.Image; // Importa a classe Image, usada para carregar 
 import javafx.scene.image.ImageView; // Importa o componente para exibir uma imagem na UI
 import javafx.scene.layout.*; // Importa todas as classes de layout (HBox, VBox, BorderPane, StackPane, etc.) para organizar os componentes
 import javafx.geometry.*; // Importa utilitários para definir alinhamentos, preenchimentos (padding) e margens (insets)
+import ltc.events.Modules.admin.AdminScreens;
 import ltc.events.Modules.connection.EventDB; // Importa a classe de acesso ao banco de dados para a tabela Eventos
 import ltc.events.Modules.connection.ParticipantDB;// Importa a classe de acesso ao banco de dados para a tabela Participantes
 import ltc.events.Modules.connection.SessionDB;// Importa a classe de acesso ao banco de dados para a tabela Sessões
@@ -37,10 +38,15 @@ import java.time.YearMonth;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
 
-public class Window {
+public class Window{
+
     private VBox centro; // conteúdo principal (eventos ou admin menu)
     // 🔥 Armazena a referência do Stage para conseguir recarregar a UI
     private Stage palcoRef;
+
+
+
+
 
     // ============================================================
     // 🔥 Função principal — chama setup e guarda o Stage
@@ -494,28 +500,40 @@ public class Window {
 
         return barra;
     }
+
+
+
+
+
     public void mostrarPainelAdmin() {
 
         // Limpar centro
         centro.getChildren().clear();
-
         Label titulo = new Label("⚙️ Painel de Administração");
         titulo.setStyle("-fx-font-size: 24px; -fx-font-weight: bold;");
 
         // Botões do menu
-        Button btnParticipantes = new Button("👤 Participantes");
-        Button btnSessoes = new Button("🗓️ Sessões");
-        Button btnEventos = new Button("🎟️ Eventos");
-        Button btnRecursos = new Button("📦 Recursos");
 
-        estilizarBotaoAdmin(btnParticipantes);
-        estilizarBotaoAdmin(btnSessoes);
-        estilizarBotaoAdmin(btnEventos);
-        estilizarBotaoAdmin(btnRecursos);
+        AdminScreens admin = new AdminScreens(centro);
+        Button btnParticipantes = StyleUtil.createStyledButtonAdmin(
+                "Participantes",
+                _ -> admin.mostrarParticipantes()
+        );
 
-        btnParticipantes.setOnAction(_ -> mostrarParticipantesAdmin());
-        btnEventos.setOnAction(_ -> mostrarEventosAdmin());
+        Button btnSessoes = StyleUtil.createStyledButtonAdmin(
+                "Sessões",
+                _ -> admin.mostrarSessoes()
+        );
 
+        Button btnEventos = StyleUtil.createStyledButtonAdmin(
+                "Eventos",
+                _ -> admin.mostrarEventos()
+        );
+
+        Button btnRecursos = StyleUtil.createStyledButtonAdmin(
+                "Recursos",
+                _ -> admin.mostrarRecursos()
+        );
         VBox menu = new VBox(15, btnParticipantes, btnSessoes, btnEventos, btnRecursos);
         menu.setAlignment(Pos.TOP_LEFT);
         menu.setPadding(new Insets(20));
@@ -604,12 +622,12 @@ public class Window {
         btnGuardar.setOnAction(_ -> {
             try {
                 // 👇 adapta isto ao teu EventDB
-                EventDB.createEvent(
+                /*EventDB.createEvent(
                         txtNome.getText(),
                         txtLocal.getText(),
                         Timestamp.valueOf(dpInicio.getValue().atStartOfDay()),
                         Timestamp.valueOf(dpFim.getValue().atStartOfDay())
-                );
+                );*/
 
                 tabelaEventos.setItems(
                         FXCollections.observableArrayList(EventDB.getAllEvents())
@@ -740,134 +758,6 @@ public class Window {
     }
 
 
-
-    public void mostrarParticipantesAdmin() {
-
-        centro.getChildren().clear();
-
-        // -------------------------------
-        // TÍTULO + FILTRO
-        // -------------------------------
-        Label titulo = new Label("👤 Gestão de Participantes");
-        titulo.setStyle("-fx-font-size: 20px; -fx-font-weight: bold;");
-
-        ComboBox<String> filtro = new ComboBox<>();
-        filtro.getItems().addAll("Todos", "Admins", "Participantes", "Moderadores");
-        filtro.getSelectionModel().select("Todos");
-
-        HBox topo = new HBox(20, titulo, filtro);
-        topo.setAlignment(Pos.CENTER_LEFT);
-        topo.setPadding(new Insets(10));
-
-        // -------------------------------
-        // TABELA
-        // -------------------------------
-        TableView<Participant> tabela = new TableView<>();
-
-        TableColumn<Participant, String> colNome = new TableColumn<>("Nome");
-        colNome.setCellValueFactory(new PropertyValueFactory<>("name"));
-
-        TableColumn<Participant, String> colEmail = new TableColumn<>("Email");
-        colEmail.setCellValueFactory(new PropertyValueFactory<>("email"));
-
-        TableColumn<Participant, String> colPhone = new TableColumn<>("Telefone");
-        colPhone.setCellValueFactory(new PropertyValueFactory<>("phone"));
-
-        TableColumn<Participant, String> colTipo = new TableColumn<>("Tipo");
-        colTipo.setCellValueFactory(cell ->
-                new SimpleStringProperty(cell.getValue().getType().getName())
-        );
-
-        tabela.getColumns().addAll(colNome, colEmail, colPhone, colTipo);
-
-        // Lista original
-        ObservableList<Participant> todos = ParticipantDB.listAll();
-        tabela.setItems(todos);
-
-        // -------------------------------
-        // CONTADOR
-        // -------------------------------
-        Label contador = new Label();
-        contador.setStyle("-fx-font-weight: bold; -fx-font-size: 14px;");
-        atualizarContador(contador, todos);
-
-        // -------------------------------
-        // FILTRO
-        // -------------------------------
-        filtro.setOnAction(_ -> {
-            aplicarFiltro(tabela, filtro.getValue());
-            atualizarContador(contador, tabela.getItems());
-        });
-
-        // -------------------------------
-        // BOTÕES
-        // -------------------------------
-        Button btnEditar = new Button("✏ Editar");
-        Button btnRemover = new Button("🗑 Remover");
-        Button btnRefresh = new Button("🔄 Atualizar");
-
-        btnEditar.setOnAction(_ -> {
-            Participant sel = tabela.getSelectionModel().getSelectedItem();
-            if (sel == null) {
-                new Alert(Alert.AlertType.WARNING, "Selecione um participante para editar.").showAndWait();
-                return;
-            }
-            editarParticipante(sel);
-        });
-
-        btnRemover.setOnAction(_ -> {
-            Participant sel = tabela.getSelectionModel().getSelectedItem();
-            if (sel == null) {
-                new Alert(Alert.AlertType.WARNING, "Selecione um participante para remover.").showAndWait();
-                return;
-            }
-            eliminarParticipante(sel);
-            aplicarFiltro(tabela, filtro.getValue());
-            atualizarContador(contador, tabela.getItems());
-        });
-
-        btnRefresh.setOnAction(_ -> {
-            tabela.setItems(ParticipantDB.listAll());
-            aplicarFiltro(tabela, filtro.getValue());
-            atualizarContador(contador, tabela.getItems());
-        });
-
-        Button btnCriar = new Button("➕ Criar Utilizador");
-        Button btnPass = new Button("🔑 Alterar Password");
-
-// Ações
-        btnCriar.setOnAction(_ -> abrirJanelaCriarUtilizador());
-
-        btnPass.setOnAction(_ -> {
-            Participant sel = tabela.getSelectionModel().getSelectedItem();
-            if (sel == null) {
-                new Alert(Alert.AlertType.WARNING, "Selecione um participante para alterar a password.").showAndWait();
-                return;
-            }
-            abrirJanelaAlterarPassword(sel);
-        });
-
-        HBox botoes = new HBox(10, btnCriar, btnEditar, btnRemover, btnRefresh, btnPass);
-        botoes.setAlignment(Pos.CENTER_LEFT);
-        botoes.setPadding(new Insets(10, 0, 0, 0));
-
-        botoes.setAlignment(Pos.CENTER_LEFT);
-        botoes.setPadding(new Insets(10, 0, 0, 0));
-
-        // -------------------------------
-        // LAYOUT FINAL
-        // -------------------------------
-        VBox layout = new VBox(15, topo, tabela, contador, botoes);
-        layout.setAlignment(Pos.TOP_CENTER);
-        layout.setPadding(new Insets(20));
-
-        centro.getChildren().add(layout);
-    }
-
-
-
-
-
     private void editarParticipante(Participant p) {
         if (p == null) {
             new Alert(Alert.AlertType.WARNING, "Selecione um participante.").show();
@@ -920,29 +810,11 @@ public class Window {
 
         try {
             ParticipantDB.delete(p.getId());
-            mostrarParticipantesAdmin(); // refresh
+            admin.mostrarParticipantesAdmin(); // refresh
         } catch (Exception ex) {
             new Alert(Alert.AlertType.ERROR, "Erro ao apagar: " + ex.getMessage()).show();
         }
     }
-
-
-
-
-    private void estilizarBotaoAdmin(Button btn) {
-        btn.setPrefWidth(200);
-        btn.setStyle("""
-        -fx-background-color: #007aff;
-        -fx-text-fill: white;
-        -fx-font-size: 14px;
-        -fx-font-weight: bold;
-        -fx-padding: 10;
-        -fx-background-radius: 6;
-    """);
-    }
-
-
-
     // ============================================================
     // 🔥 Criação dos cards de eventos
     // ============================================================
