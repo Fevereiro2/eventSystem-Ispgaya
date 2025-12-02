@@ -3,6 +3,7 @@ package ltc.events.Modules; // Declara o pacote onde esta classe reside
 import javafx.beans.property.SimpleStringProperty; // Importa uma classe para criar propriedades observáveis de ‘String’, útil para ligar dados a componentes da UI (ex: TableView)
 import javafx.collections.FXCollections; // Importa utilitários para criar coleções observáveis (listas a notificar a UI sobre mudanças)
 import javafx.collections.ObservableList; // Importa a ‘interface’ para listas que permitem que os componentes da UI sejam notificados quando a lista é alterada
+import javafx.scene.Cursor;
 import javafx.scene.control.cell.PropertyValueFactory; // Importa uma classe usada em TableView para ligar as colunas aos campos (propriedades) dos objetos
 import javafx.stage.Modality; // Importa enumeração que define o comportamento de modalidade de uma janela (ex: bloquear a janela principal)
 import javafx.stage.Stage; // Importa a classe principal Stage, que representa uma janela no JavaFX
@@ -32,6 +33,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.Timestamp;
 import java.time.LocalDate;
+import java.time.YearMonth;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
 
@@ -58,13 +60,10 @@ public class Window {
     // 🔥 Aqui fica toda a criação da UI
     // ============================================================
     private void criarUI() {
-
-
         NavbarUtil navbarUtil = new NavbarUtil();
         BorderPane barra = navbarUtil.createNavbar(palcoRef);
         HBox rightBox = criarRightBoxSessao();
         barra.setRight(rightBox);
-
         LocalDate hoje = LocalDate.now();
 
         ObservableList<Event> eventos = EventDB.getAllEvents();
@@ -83,31 +82,182 @@ public class Window {
         Label titulo = new Label("🎟️ Eventos Disponíveis");
         titulo.setStyle("-fx-font-size: 22px; -fx-font-weight: bold;");
 
-        Button btnAntigos = StyleUtil.createStyledButton(
+        Button btnAntigos = StyleUtil.secondaryButton(
                 "Eventos Antigos",
-                "#a0a0a0",
-                "#707070",
                 _ -> {
+
                     Stage janela = new Stage();
                     janela.initModality(Modality.APPLICATION_MODAL);
                     janela.setTitle("Eventos Antigos");
 
-                    VBox box = new VBox(15);
-                    box.setPadding(new Insets(20));
-                    box.setAlignment(Pos.TOP_CENTER);
+                    VBox root = new VBox(15);
+                    root.setPadding(new Insets(20));
 
-                    for (Event ev : eventosAntigos) {
-                        box.getChildren().add(criarCardEvento(ev));
-                    }
+                    // ===========================
+                    // SELECT ANO
+                    // ===========================
+                    ComboBox<Integer> anoBox = new ComboBox<>();
+                    int anoAtual = LocalDate.now().getYear();
 
-                    ScrollPane sp = new ScrollPane(box);
-                    sp.setFitToWidth(true);
+                    for (int a = 2000; a <= anoAtual; a++)
+                        anoBox.getItems().add(a);
 
-                    Scene cena = new Scene(sp, 600, 500);
-                    janela.setScene(cena);
+                    anoBox.setValue(anoAtual);
+
+                    // ===========================
+                    // SELECT MES (YearMonth)
+                    // ===========================
+                    ComboBox<YearMonth> mesBox = new ComboBox<>();
+
+                    for (int m = 1; m <= 12; m++)
+                        mesBox.getItems().add(YearMonth.of(anoAtual, m));
+
+                    mesBox.setValue(YearMonth.now());
+
+                    HBox filtros = new HBox(10,
+                            new Label("Ano:"), anoBox,
+                            new Label("Mês:"), mesBox
+                    );
+                    filtros.setAlignment(Pos.CENTER_LEFT);
+
+                    // ===========================
+                    // ÁREA DO CALENDÁRIO
+                    // ===========================
+                    ScrollPane scroll = new ScrollPane();
+                    scroll.setFitToWidth(true);
+
+                    GridPane calendario = new GridPane();
+                    scroll.setContent(calendario);
+
+                    // ===========================
+                    // FUNÇÃO PARA DESENHAR O CALENDÁRIO
+                    // ===========================
+                    Runnable atualizarCalendario = () -> {
+
+                        YearMonth mes = mesBox.getValue();
+                        if (mes == null) {
+                            return;
+                        }
+
+                        calendario.getChildren().clear();
+                        calendario.setHgap(10);
+                        calendario.setVgap(10);
+
+                        // Cabeçalho dias da semana
+                        String[] dias = {"Seg", "Ter", "Qua", "Qui", "Sex", "Sáb", "Dom"};
+                        for (int i = 0; i < dias.length; i++) {
+                            Label lbl = new Label(dias[i]);
+                            lbl.setStyle("-fx-font-weight: bold; -fx-font-size: 14px;");
+                            calendario.add(lbl, i, 0);
+                        }
+
+                        LocalDate primeiroDia = mes.atDay(1);
+                        int offset = primeiroDia.getDayOfWeek().getValue();  // 1=Seg, 7=Dom
+
+                        int col = offset - 1;
+                        int row = 1;
+
+                        for (int dia = 1; dia <= mes.lengthOfMonth(); dia++) {
+
+                            LocalDate diaAtual = mes.atDay(dia);
+
+                            // ---- EVENTOS DESTE DIA ----
+                            List<Event> eventosDoDia = eventosAntigos.stream()
+                                    .filter(ev -> ev.getStartdate().toLocalDateTime().toLocalDate().equals(diaAtual))
+                                    .toList();
+
+                            // ---- CÉLULA DO CALENDÁRIO ----
+                            VBox celula = new VBox(5);
+                            celula.setPadding(new Insets(10));
+                            celula.setPrefSize(140, 110);
+                            celula.setStyle("""
+                                 -fx-background-color: #f8f8f8;
+                                 -fx-border-color: #ccc;
+                                 -fx-background-radius: 8;
+                                 -fx-border-radius: 8;
+                             """);
+
+                            // Cursor de clickable
+                            celula.setCursor(Cursor.HAND);
+
+                            // Número do dia
+                            Label lblDia = new Label(String.valueOf(dia));
+                            lblDia.setStyle("-fx-font-weight: bold; -fx-font-size: 16px;");
+                            celula.getChildren().add(lblDia);
+
+                            // Mostrar eventos dentro da célula
+                            for (Event ev : eventosDoDia) {
+                                Label lblEvento = new Label("• " + ev.getName());
+                                lblEvento.setStyle("-fx-font-size: 12px; -fx-text-fill: #1976d2;");
+                                celula.getChildren().add(lblEvento);
+                            }
+
+                            // ---- EVENTO DE CLICK ----
+                            celula.setOnMouseClicked(e -> {
+
+                                if (eventosDoDia.isEmpty()) return; // nada para mostrar
+
+                                Stage detalhes = new Stage();
+                                detalhes.initModality(Modality.APPLICATION_MODAL);
+                                detalhes.setTitle("Eventos em " + diaAtual);
+
+                                VBox conteudo = new VBox(20);
+                                conteudo.setPadding(new Insets(20));
+                                conteudo.setAlignment(Pos.TOP_CENTER);
+
+                                // Reutiliza o teu método criarCardEvento()
+                                for (Event ev : eventosDoDia) {
+                                    conteudo.getChildren().add(criarCardEvento(ev));
+                                }
+
+                                ScrollPane scrollPopup = new ScrollPane(conteudo);
+                                scrollPopup.setFitToWidth(true);
+
+                                Scene cena = new Scene(scrollPopup, 600, 500);
+                                detalhes.setScene(cena);
+                                detalhes.show();
+
+                            });
+
+                            // ---- ADICIONAR AO GRID ----
+                            calendario.add(celula, col, row);
+
+                            col++;
+                            if (col > 6) {
+                                col = 0;
+                                row++;
+                            }
+                        }
+                    };
+
+                    // Atualizar quando muda ANO
+                    anoBox.setOnAction(_2 -> {
+                        mesBox.getItems().clear();
+                        for (int m = 1; m <= 12; m++)
+                            mesBox.getItems().add(YearMonth.of(anoBox.getValue(), m));
+
+                        mesBox.setValue(YearMonth.of(anoBox.getValue(), 1));
+                        atualizarCalendario.run();
+                    });
+
+                    // Atualizar quando muda MÊS
+                    mesBox.setOnAction(_2 -> atualizarCalendario.run());
+
+                    atualizarCalendario.run(); // primeira vez
+
+                    root.getChildren().addAll(filtros, scroll);
+
+                    janela.setScene(new Scene(root, 900, 650));
                     janela.show();
                 }
         );
+
+        Button btnParticipantCriarEvento = StyleUtil.secondaryButton(
+                "Criar Evento",
+                _ -> {
+
+                });
+
 
 
         // Scroll
@@ -116,8 +266,6 @@ public class Window {
         scroll.setVbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
         scroll.setPannable(true);
         scroll.setStyle("-fx-background: transparent; -fx-background-color: transparent;");
-
-
 
         TilePane tiles = new TilePane();
         tiles.setPadding(new Insets(20));
@@ -128,7 +276,10 @@ public class Window {
         tiles.setPrefTileWidth(200);
         tiles.setPrefTileHeight(200);
 
-        tiles.getChildren().add(btnAntigos);
+        HBox colunaBotoes = new HBox(15);
+        colunaBotoes.setAlignment(Pos.CENTER_LEFT);
+        colunaBotoes.getChildren().addAll(btnAntigos, btnParticipantCriarEvento);
+        colunaBotoes.setPadding(new Insets(5, 0, 5, 5)); // opcional
 
         // Mostrar apenas os atuais no ecrã
         for (Event ev : eventosAtuais) {
@@ -136,12 +287,7 @@ public class Window {
         }
         scroll.setContent(tiles);
 
-
-        scroll.setContent(tiles);
-
-
-
-        centro = new VBox(20, titulo, scroll);
+        centro = new VBox(20, titulo, colunaBotoes, scroll);
         centro.setAlignment(Pos.TOP_CENTER);
         centro.setPadding(new Insets(30));
 
@@ -386,72 +532,110 @@ public class Window {
         Label titulo = new Label("🎟️ Gestão de Eventos");
         titulo.setStyle("-fx-font-size: 24px; -fx-font-weight: bold;");
 
-        Button btnCriar = new Button("➕ Criar Evento");
+        TableView<Event> tabelaEventos = new TableView<>();
+
+        Button btnCriar = StyleUtil.primaryButton(
+                "Adicionar",
+                _ -> abrirJanelaCriarEvento(tabelaEventos) // 👈 só chama outro método
+        );
+
         Button btnEditar = new Button("✏️ Editar");
         Button btnRemover = new Button("🗑️ Remover");
         Button btnAtualizar = new Button("🔄 Atualizar");
 
-        // Container para os botões de ação (semelhante ao painel de participantes)
         HBox botoesAcao = new HBox(10, btnCriar, btnEditar, btnRemover, btnAtualizar);
         botoesAcao.setPadding(new Insets(10, 0, 10, 0));
 
-
         // 3. TABELA DE EVENTOS
-        TableView<Event> tabelaEventos = new TableView<>();
 
-        // Coluna Nome
         TableColumn<Event, String> colNome = new TableColumn<>("Nome");
         colNome.setCellValueFactory(new PropertyValueFactory<>("name"));
         colNome.setPrefWidth(250);
 
-        // Coluna Local
         TableColumn<Event, String> colLocal = new TableColumn<>("Local");
         colLocal.setCellValueFactory(new PropertyValueFactory<>("local"));
         colLocal.setPrefWidth(150);
 
-        // Coluna Data de Início (Timestamp)
         TableColumn<Event, Timestamp> colInicio = new TableColumn<>("Início");
         colInicio.setCellValueFactory(new PropertyValueFactory<>("startdate"));
         colInicio.setPrefWidth(180);
 
-        // Coluna Data de Fim (Timestamp)
         TableColumn<Event, Timestamp> colFim = new TableColumn<>("Fim");
         colFim.setCellValueFactory(new PropertyValueFactory<>("finaldate"));
         colFim.setPrefWidth(180);
 
-        // Coluna Estado (Obtido da classe State dentro de Event)
         TableColumn<Event, String> colEstado = new TableColumn<>("Estado");
-        colEstado.setCellValueFactory(cellData ->
-                new SimpleStringProperty(cellData.getValue().getState().getName())
+        colEstado.setCellValueFactory(cd ->
+                new SimpleStringProperty(cd.getValue().getState().getName())
         );
         colEstado.setPrefWidth(100);
 
         tabelaEventos.getColumns().addAll(colNome, colLocal, colInicio, colFim, colEstado);
 
-
-        // 4. CARREGAR DADOS
         try {
-            ObservableList<Event> listaEventos = FXCollections.observableArrayList(
-                    EventDB.getAllEvents() // Assumindo que esta função está no seu EventDB
-            );
+            ObservableList<Event> listaEventos =
+                    FXCollections.observableArrayList(EventDB.getAllEvents());
             tabelaEventos.setItems(listaEventos);
         } catch (Exception ex) {
             System.err.println("Erro ao carregar eventos: " + ex.getMessage());
-            // Mostrar um erro amigável ao utilizador, se necessário
         }
 
-        // 5. AJUSTAR TAMANHOS E LAYOUT
         tabelaEventos.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
 
         VBox content = new VBox(20, titulo, botoesAcao, tabelaEventos);
         content.setPadding(new Insets(20));
         content.setAlignment(Pos.TOP_LEFT);
-
-        // Ajustar o tamanho da VBox para ocupar o espaço necessário
         content.prefWidthProperty().bind(centro.widthProperty());
 
         centro.getChildren().add(content);
     }
+
+    private void abrirJanelaCriarEvento(TableView<Event> tabelaEventos) {
+        Stage stage = new Stage();
+        stage.initStyle(StageStyle.UTILITY);
+        stage.setTitle("Criar Evento");
+
+        TextField txtNome = new TextField();
+        TextField txtLocal = new TextField();
+        DatePicker dpInicio = new DatePicker();
+        DatePicker dpFim = new DatePicker();
+
+        Button btnGuardar = new Button("Guardar");
+        btnGuardar.setOnAction(_ -> {
+            try {
+                // 👇 adapta isto ao teu EventDB
+                EventDB.createEvent(
+                        txtNome.getText(),
+                        txtLocal.getText(),
+                        Timestamp.valueOf(dpInicio.getValue().atStartOfDay()),
+                        Timestamp.valueOf(dpFim.getValue().atStartOfDay())
+                );
+
+                tabelaEventos.setItems(
+                        FXCollections.observableArrayList(EventDB.getAllEvents())
+                );
+
+                new Alert(Alert.AlertType.INFORMATION, "Evento criado com sucesso!").showAndWait();
+                stage.close();
+            } catch (Exception ex) {
+                new Alert(Alert.AlertType.ERROR, "Erro: " + ex.getMessage()).showAndWait();
+            }
+        });
+
+        VBox layout = new VBox(10,
+                new Label("Nome:"), txtNome,
+                new Label("Local:"), txtLocal,
+                new Label("Início:"), dpInicio,
+                new Label("Fim:"), dpFim,
+                btnGuardar
+        );
+        layout.setPadding(new Insets(20));
+
+        stage.setScene(new Scene(layout, 350, 350));
+        stage.showAndWait();
+    }
+
+
 
     private void aplicarFiltro(TableView<Participant> tabela, String filtro) {
         ObservableList<Participant> todos = ParticipantDB.listAll(); // já tens isto
@@ -514,22 +698,7 @@ public class Window {
         cmbTipo.getSelectionModel().selectFirst();
 
         Button btnCriar = new Button("Criar");
-        btnCriar.setOnAction(_ -> {
-            try {
-                String hashed = PasswordUtil.hashPassword(txtPass.getText());
-                ParticipantDB.register(
-                        txtNome.getText(),
-                        txtEmail.getText(),
-                        txtPhone.getText(),
-                        hashed,
-                        cmbTipo.getValue()
-                );
-                new Alert(Alert.AlertType.INFORMATION, "Utilizador criado com sucesso!").showAndWait();
-                stage.close();
-            } catch (Exception ex) {
-                new Alert(Alert.AlertType.ERROR, "Erro: " + ex.getMessage()).showAndWait();
-            }
-        });
+
 
         VBox layout = new VBox(10, lblNome, txtNome, lblEmail, txtEmail, lblPhone, txtPhone, lblPass, txtPass, lblTipo, cmbTipo, btnCriar);
         layout.setPadding(new Insets(20));
