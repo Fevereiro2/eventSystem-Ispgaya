@@ -340,17 +340,7 @@ public class Window{
             Label lblUser = new Label("👤 " + user.getName() + " (" + user.getType().getName() + ")");
             lblUser.setStyle("-fx-font-weight: bold; -fx-font-size: 13px;");
 
-            Button btnLogout = new Button("Sair");
-            btnLogout.setStyle("""
-            -fx-background-color: linear-gradient(to bottom, #2EC4B6, #1A9E8C);
-            -fx-text-fill: white;
-            -fx-font-weight: bold;
-            -fx-background-radius: 8;
-            -fx-padding: 6 14;
-            -fx-cursor: hand;
-            -fx-alignment: center;
-            -fx-text-alignment: center;
-        """);
+            Button btnLogout = StyleUtil.secondaryButton("Sair", null);
             btnLogout.setOnAction(_ -> {
                 SessionEntry.logout();
                 refresh();
@@ -360,51 +350,15 @@ public class Window{
 
             // Admin / Moderador
             if (Permissions.isAdmin() || Permissions.isModerador()) {
-                Button btnAdmin = new Button("Painel Admin");
-                btnAdmin.setStyle("""
-            -fx-background-color: linear-gradient(to bottom, #2EC4B6, #1A9E8C);
-            -fx-text-fill: white;
-            -fx-font-weight: bold;
-            -fx-background-radius: 8;
-            -fx-padding: 6 14;
-            -fx-cursor: hand;
-            -fx-alignment: center;
-            -fx-text-alignment: center;
-        """);
+                Button btnAdmin = StyleUtil.primaryButton("Painel Admin", _ -> this.mostrarPainelAdmin());
                 rightBox.getChildren().add(btnAdmin);
-
-                btnAdmin.setOnAction(_ -> this.mostrarPainelAdmin());
             }
 
         } else {
 
             // ================= DESLOGADO ==================
-            Button btnLogin = new Button("🔐 Login");
-            btnLogin.setStyle("""
-            -fx-background-color: linear-gradient(to bottom, #2EC4B6, #1A9E8C);
-            -fx-text-fill: white;
-            -fx-font-weight: bold;
-            -fx-background-radius: 8;
-            -fx-padding: 6 14;
-            -fx-cursor: hand;
-            -fx-alignment: center;
-            -fx-text-alignment: center;
-        """);
-            Button btnRegister = new Button("📝 Register");
-
-            btnRegister.setStyle("""
-            -fx-background-color: linear-gradient(to bottom, #2EC4B6, #1A9E8C);
-            -fx-text-fill: white;
-            -fx-font-weight: bold;
-            -fx-background-radius: 8;
-            -fx-padding: 6 14;
-            -fx-cursor: hand;
-            -fx-alignment: center;
-            -fx-text-alignment: center;
-        """);
-
-            btnLogin.setOnAction(_ -> new Login(this).mostrarLogin());
-            btnRegister.setOnAction(_ -> new Register().mostrarRegister()); // Corrigir chamada
+            Button btnLogin = StyleUtil.primaryButton("🔐 Login", _ -> new Login(this).mostrarLogin());
+            Button btnRegister = StyleUtil.primaryButton("📝 Register", _ -> new Register().mostrarRegister()); // Corrigir chamada
 
             rightBox.getChildren().addAll(btnLogin, btnRegister);
         }
@@ -424,17 +378,7 @@ public class Window{
             Label lblUser = new Label("👤 " + user.getName() + " (" + user.getType().getName() + ")");
             lblUser.setStyle("-fx-font-weight: bold; -fx-font-size: 13px;");
 
-            Button btnLogout = new Button("Sair");
-            btnLogout.setStyle("""
-                -fx-background-color: linear-gradient(to bottom, #2EC4B6, #1A9E8C);
-                -fx-text-fill: white;
-                -fx-font-weight: bold;
-                -fx-background-radius: 8;
-                -fx-padding: 6 14;
-                -fx-cursor: hand;
-                -fx-alignment: center;
-                -fx-text-alignment: center;
-            """);
+            Button btnLogout = StyleUtil.secondaryButton("Sair", null);
             btnLogout.setOnAction(_ -> {
                 SessionEntry.logout();
                 refresh();
@@ -446,20 +390,8 @@ public class Window{
 
             // Admin / Moderador
             if (Permissions.isAdmin() || Permissions.isModerador()) {
-                Button btnAdmin = new Button("Painel Admin");
-                btnAdmin.setStyle("""
-                -fx-background-color: linear-gradient(to bottom, #2EC4B6, #1A9E8C);
-                -fx-text-fill: white;
-                -fx-font-weight: bold;
-                -fx-background-radius: 8;
-                -fx-padding: 6 14;
-                -fx-cursor: hand;
-                -fx-alignment: center;
-                -fx-text-alignment: center;
-            """);
+                Button btnAdmin = StyleUtil.primaryButton("Painel Admin", _ -> this.mostrarPainelAdmin());
                 rightBox.getChildren().add(btnAdmin);
-
-                btnAdmin.setOnAction(_ -> this.mostrarPainelAdmin());
             }
 
             barra.setRight(rightBox);
@@ -467,34 +399,8 @@ public class Window{
         } else {
 
             // ================= DESLOGADO ==================
-            Button btnLogin = new Button("🔐 Login");
-            btnLogin.setStyle("""
-                -fx-background-color: linear-gradient(to bottom, #2EC4B6, #1A9E8C);
-                -fx-text-fill: white;
-                -fx-font-weight: bold;
-                -fx-background-radius: 8;
-                -fx-padding: 6 14;
-                -fx-cursor: hand;
-                -fx-alignment: center;
-                -fx-text-alignment: center;
-            """);
-            Button btnRegister = new Button("📝 Register");
-
-            btnRegister.setStyle("""
-                -fx-background-color: linear-gradient(to bottom, #2EC4B6, #1A9E8C);
-                -fx-text-fill: white;
-                -fx-font-weight: bold;
-                -fx-background-radius: 8;
-                -fx-padding: 6 14;
-                -fx-cursor: hand;
-                -fx-alignment: center;
-                -fx-text-alignment: center;
-            """);
-
-            btnLogin.setOnAction(_ -> new Login(this).mostrarLogin());
-            btnRegister.setOnAction(_ -> new Register().mostrarRegister(
-
-            ));
+            Button btnLogin = StyleUtil.primaryButton("🔐 Login", _ -> new Login(this).mostrarLogin());
+            Button btnRegister = StyleUtil.primaryButton("📝 Register", _ -> new Register().mostrarRegister());
 
             HBox rightBox = new HBox(10, btnLogin, btnRegister);
             rightBox.setAlignment(Pos.CENTER_RIGHT);
