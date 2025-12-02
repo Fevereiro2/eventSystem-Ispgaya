@@ -11,6 +11,7 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
+import java.sql.Timestamp;
 import ltc.events.Modules.connection.EventDB;
 import ltc.events.Modules.connection.ParticipantDB;
 import ltc.events.Modules.connection.TypesDB;
@@ -19,6 +20,7 @@ import ltc.events.Modules.visual.StyleUtil;
 import ltc.events.classes.Participant;
 import ltc.events.classes.Event;
 import ltc.events.classes.Types;
+import ltc.events.classes.State;
 
 import static ltc.events.Modules.ui.AlterPassword.abrirJanelaAlterarPassword;
 
@@ -88,6 +90,7 @@ public class AdminScreens {
         // -------------------------------
         filtro.setOnAction(_ -> {
             aplicarFiltro(tabela, filtro.getValue());
+            
             atualizarContador(contador, tabela.getItems());
         });
 
@@ -225,6 +228,102 @@ public class AdminScreens {
         layout.setAlignment(Pos.TOP_LEFT);
 
         centro.getChildren().add(layout);
+    }
+
+    private void abrirFormEvento(Event existente, TableView<Event> tabela) {
+        Stage stage = new Stage();
+        stage.initModality(Modality.APPLICATION_MODAL);
+        stage.setTitle(existente == null ? "Criar Evento" : "Editar Evento");
+
+        TextField txtNome = new TextField();
+        TextArea txtDesc = new TextArea();
+        txtDesc.setPrefRowCount(3);
+        TextField txtLocal = new TextField();
+        DatePicker dpInicio = new DatePicker();
+        DatePicker dpFim = new DatePicker();
+        TextField txtImagem = new TextField();
+
+        ComboBox<State> cmbEstado = new ComboBox<>();
+        cmbEstado.getItems().addAll(
+                new State(1, "Planeado"),
+                new State(2, "Em Progresso"),
+                new State(3, "Concluido"),
+                new State(4, "Em Aprovacao"),
+                new State(5, "Cancelado")
+        );
+        cmbEstado.getSelectionModel().selectFirst();
+
+        if (existente != null) {
+            txtNome.setText(existente.getName());
+            txtDesc.setText(existente.getDescription());
+            txtLocal.setText(existente.getLocal());
+            if (existente.getStartdate() != null) dpInicio.setValue(existente.getStartdate().toLocalDateTime().toLocalDate());
+            if (existente.getFinaldate() != null) dpFim.setValue(existente.getFinaldate().toLocalDateTime().toLocalDate());
+            txtImagem.setText(existente.getImage());
+            if (existente.getState() != null) {
+                cmbEstado.getItems().stream()
+                        .filter(s -> s.getId() == existente.getState().getId())
+                        .findFirst()
+                        .ifPresent(cmbEstado.getSelectionModel()::select);
+            }
+        }
+
+        Button btnSalvar = StyleUtil.primaryButton("Salvar", _ -> {
+            try {
+                if (txtNome.getText().isBlank() || txtLocal.getText().isBlank() || dpInicio.getValue() == null || dpFim.getValue() == null) {
+                    throw new IllegalArgumentException("Preencha nome, local e datas.");
+                }
+                if (dpFim.getValue().isBefore(dpInicio.getValue())) {
+                    throw new IllegalArgumentException("Data fim antes da data inicio.");
+                }
+                State estadoSel = cmbEstado.getValue();
+                int stateId = estadoSel != null ? estadoSel.getId() : 1;
+
+                if (existente == null) {
+                    EventDB.register(
+                            txtNome.getText(),
+                            txtDesc.getText(),
+                            txtLocal.getText(),
+                            Timestamp.valueOf(dpInicio.getValue().atStartOfDay()),
+                            Timestamp.valueOf(dpFim.getValue().atStartOfDay()),
+                            txtImagem.getText(),
+                            stateId
+                    );
+                } else {
+                    EventDB.update(
+                            String.valueOf(existente.getId()),
+                            txtNome.getText(),
+                            txtDesc.getText(),
+                            txtLocal.getText(),
+                            Timestamp.valueOf(dpInicio.getValue().atStartOfDay()),
+                            Timestamp.valueOf(dpFim.getValue().atStartOfDay()),
+                            txtImagem.getText(),
+                            stateId
+                    );
+                }
+
+                tabela.setItems(EventDB.getAllEvents());
+                CustomAlert.Success("Guardado com sucesso.");
+                stage.close();
+            } catch (Exception ex) {
+                CustomAlert.Error("Erro ao guardar: " + ex.getMessage());
+            }
+        });
+
+        VBox layout = new VBox(10,
+                new Label("Nome:"), txtNome,
+                new Label("Descricao:"), txtDesc,
+                new Label("Local:"), txtLocal,
+                new Label("Inicio:"), dpInicio,
+                new Label("Fim:"), dpFim,
+                new Label("Imagem:"), txtImagem,
+                new Label("Estado:"), cmbEstado,
+                btnSalvar
+        );
+        layout.setPadding(new Insets(20));
+
+        stage.setScene(new Scene(layout, 400, 500));
+        stage.showAndWait();
     }
     public void mostrarRecursos() {
         centro.getChildren().clear();
