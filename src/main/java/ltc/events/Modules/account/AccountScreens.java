@@ -7,6 +7,7 @@ import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.*;
 import javafx.scene.shape.Circle;
+import javafx.scene.layout.HBox;
 import ltc.events.Modules.connection.ParticipantDB;
 import ltc.events.Modules.visual.StyleUtil;
 import ltc.events.Modules.visual.CustomAlert;
@@ -19,9 +20,15 @@ import java.time.LocalDate;
 public class AccountScreens {
 
     private final VBox centro;
+    private final Runnable onBack;
 
     public AccountScreens(VBox centro) {
+        this(centro, null);
+    }
+
+    public AccountScreens(VBox centro, Runnable onBack) {
         this.centro = centro;
+        this.onBack = onBack;
     }
 
     public void mostrarDefinicoesConta() {
@@ -38,6 +45,15 @@ public class AccountScreens {
         // =========================
         Label titulo = new Label("🔧 Definições da Conta");
         titulo.setStyle("-fx-font-size: 22px; -fx-font-weight: bold;");
+        Button btnVoltar = StyleUtil.secondaryButton("Voltar", _ -> {
+            if (onBack != null) {
+                onBack.run();
+            } else {
+                centro.getChildren().clear();
+            }
+        });
+        HBox header = new HBox(10, btnVoltar, titulo);
+        header.setAlignment(Pos.CENTER_LEFT);
 
         // =========================
         // AVATAR
@@ -187,7 +203,7 @@ public class AccountScreens {
         HBox topo = new HBox(40, avatarBox, formBox);
         topo.setAlignment(Pos.TOP_LEFT);
 
-        VBox root = new VBox(20, titulo, topo);
+        VBox root = new VBox(20, header, topo);
         root.setPadding(new Insets(20));
 
         centro.getChildren().add(root);
