@@ -13,6 +13,7 @@ import javafx.stage.Modality;
 import javafx.stage.Stage;
 import ltc.events.Modules.connection.ParticipantDB;
 import ltc.events.Modules.connection.TypesDB;
+import ltc.events.Modules.visual.CustomAlert;
 import ltc.events.classes.Participant;
 import ltc.events.classes.Types;
 
@@ -214,13 +215,11 @@ public class AdminScreens {
 
     private void eliminarParticipante(Participant p) {
         if (p == null) {
-            new Alert(Alert.AlertType.WARNING, "Selecione um participante.").show();
+            CustomAlert.Warning("Selecione um participante.");
             return;
         }
 
-        if (new Alert(Alert.AlertType.CONFIRMATION,
-                "Deseja mesmo apagar " + p.getName() + "?",
-                ButtonType.YES, ButtonType.NO).showAndWait().get() != ButtonType.YES) {
+        if (!CustomAlert.Confirm("Confirmar", "Deseja mesmo apagar " + p.getName() + "?")) {
             return;
         }
 
@@ -228,13 +227,13 @@ public class AdminScreens {
             ParticipantDB.delete(p.getId());
             //admin.mostrarParticipantesAdmin(); // refresh
         } catch (Exception ex) {
-            new Alert(Alert.AlertType.ERROR, "Erro ao apagar: " + ex.getMessage()).show();
+            CustomAlert.Error("Erro ao apagar: " + ex.getMessage());
         }
     }
 
     private void editarParticipante(Participant p) {
         if (p == null) {
-            new Alert(Alert.AlertType.WARNING, "Selecione um participante.").show();
+            CustomAlert.Warning("Selecione um participante.");
             return;
         }
 
