@@ -262,15 +262,13 @@ public class Window{
 
         Button btnParticipantCriarEvento = StyleUtil.secondaryButton(
                 "Criar Evento",
-                _ -> {
-
-                });
+                _ -> abrirJanelaCriarEventoParticipante());
 
         Button btndefenicoes = null;
         if (SessionEntry.isLogged()) {
             btndefenicoes = StyleUtil.secondaryButton(
                     "Definicoes",
-                    _ -> new AccountScreens(centro).mostrarDefinicoesConta()
+                    _ -> new AccountScreens(centro, this::refresh).mostrarDefinicoesConta()
             );
         }
 
