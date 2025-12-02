@@ -9,6 +9,7 @@ import javafx.scene.layout.*;
 import javafx.scene.shape.Circle;
 import ltc.events.Modules.connection.ParticipantDB;
 import ltc.events.Modules.visual.StyleUtil;
+import ltc.events.Modules.visual.CustomAlert;
 import ltc.events.classes.Participant;
 import ltc.events.classes.hashs.SessionEntry;
 
@@ -28,7 +29,7 @@ public class AccountScreens {
 
         Participant user = SessionEntry.getUser();
         if (user == null) {
-            new Alert(Alert.AlertType.ERROR, "Nenhum utilizador autenticado.").showAndWait();
+            CustomAlert.Error("Nenhum utilizador autenticado.");
             return;
         }
 
