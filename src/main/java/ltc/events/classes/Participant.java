@@ -4,66 +4,55 @@ import java.sql.Date;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
-
-
 public class Participant {
     private final String id;
-    private final String name;
-    private final String email;
-    private final String phone;
-    private final Types type;
-    private final String password;
-    private final boolean gender;
-    private final String nif;
-    private final Date birthdate;
-    private final String photo;
-
-
-
-    public Participant(String id, String name, String email, String phone, Types typesid, String password, boolean gender, String nif, Date birthdate, String photo) {
-        this.id = id;
-        this.name = name;
-        this.email = email;
-        this.phone = phone;
-        this.type = typesid;
-        this.password = password;
-        this.gender = gender;
-        this.nif = nif;
-        this.birthdate = birthdate;
-        this.photo = photo;
-    }
+    private String name;
+    private String email;
+    private String phone;
+    private Types type;
+    private String password;
+    private String gender;
+    private String taxNumber;
+    private Date birthdate;
+    private String photo;
 
     public Participant(ResultSet rs) throws SQLException {
-        this(
-                rs.getString("participant_id"),
-                rs.getString("name"),
-                rs.getString("email"),
-                rs.getString("phone"),
-                new Types(
-                        rs.getInt("types_id"),
-                        rs.getString("types_name")
-                ),
-                rs.getString("password"),
-                rs.getBoolean("gender"),
-                rs.getString("nif"),
-                rs.getDate("birthdate"),
-                rs.getString("photo")
+        this.id = rs.getString("participant_id");
+        this.name = rs.getString("name");
+        this.email = rs.getString("email");
+        this.phone = rs.getString("phone");
+        this.password = rs.getString("password");
+        this.gender = rs.getString("gender");
+        this.taxNumber = rs.getString("tax_number");
+        this.birthdate = rs.getDate("birthdate");
+        this.photo = rs.getString("photo");
+
+        this.type = new Types(
+                rs.getInt("types_id"),
+                rs.getString("types_name")
         );
     }
 
-
-
-
+    // Getters
     public String getId() { return id; }
     public String getName() { return name; }
     public String getEmail() { return email; }
     public String getPhone() { return phone; }
-    public Types getType() { return type; }
-    public String getPassword() { return password; }
-    public boolean isGender() { return gender; }
-    public String getNif() { return nif; }
+    public String getGender() { return gender; }
+    public String getTaxNumber() { return taxNumber; }
     public Date getBirthdate() { return birthdate; }
     public String getPhoto() { return photo; }
+    public Types getType() { return type; }
+
+    // Setters para AccountScreens atualizar:
+    public void setName(String name) { this.name = name; }
+    public void setEmail(String email) { this.email = email; }
+    public void setPhone(String phone) { this.phone = phone; }
+    public void setGender(String gender) { this.gender = gender; }
+    public void setTaxNumber(String tax) { this.taxNumber = tax; }
+    public void setBirthdate(Date birthdate) { this.birthdate = birthdate; }
+    public void setPhoto(String photo) { this.photo = photo; }
+
     @Override
     public String toString() {
         return name;
