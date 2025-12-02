@@ -78,11 +78,13 @@ public class Window{
 
         // Eventos atuais (data >= hoje)
         List<Event> eventosAtuais = eventos.stream()
+                .filter(ev -> ev.getState() != null && !"planeado".equalsIgnoreCase(ev.getState().getName()))
                 .filter(ev -> dataEventoOuHoje(ev).compareTo(hoje) >= 0)
                 .toList();
 
         // Eventos antigos (data < hoje)
         List<Event> eventosAntigos = eventos.stream()
+                .filter(ev -> ev.getState() != null && !"planeado".equalsIgnoreCase(ev.getState().getName()))
                 .filter(ev -> dataEventoOuHoje(ev).compareTo(hoje) < 0)
                 .toList();
 
