@@ -17,6 +17,7 @@ import ltc.events.Modules.connection.ParticipantDB;
 import ltc.events.Modules.connection.TypesDB;
 import ltc.events.Modules.visual.CustomAlert;
 import ltc.events.Modules.visual.StyleUtil;
+import ltc.events.Modules.connection.StateDB;
 import ltc.events.classes.Participant;
 import ltc.events.classes.Event;
 import ltc.events.classes.Types;
@@ -187,10 +188,25 @@ public class AdminScreens {
         tabela.getColumns().addAll(colNome, colEstado, colInicio, colFim);
         tabela.setItems(EventDB.getAllEvents());
 
+        Button btnCriar = StyleUtil.primaryButton("Criar", _ -> abrirFormEvento(null, tabela));
+
+        Button btnEditar = StyleUtil.secondaryButton("Editar", _ -> {
+            Event sel = tabela.getSelectionModel().getSelectedItem();
+            if (sel == null) {
+                CustomAlert.Warning("Selecione um evento.");
+                return;
+            }
+            abrirFormEvento(sel, tabela);
+        });
+
         Button btnAprovar = StyleUtil.primaryButton("Aprovar", _ -> {
             Event sel = tabela.getSelectionModel().getSelectedItem();
             if (sel == null) {
                 CustomAlert.Warning("Selecione um evento.");
+                return;
+            }
+            if (sel.getState() != null && !"em aprovacao".equalsIgnoreCase(sel.getState().getName())) {
+                CustomAlert.Warning("Apenas eventos em aprovacao podem ser aprovados.");
                 return;
             }
             try {
@@ -208,6 +224,10 @@ public class AdminScreens {
                 CustomAlert.Warning("Selecione um evento.");
                 return;
             }
+            if (sel.getState() != null && !"em aprovacao".equalsIgnoreCase(sel.getState().getName())) {
+                CustomAlert.Warning("Apenas eventos em aprovacao podem ser recusados.");
+                return;
+            }
             try {
                 EventDB.delete(String.valueOf(sel.getId()));
                 tabela.setItems(EventDB.getAllEvents());
@@ -219,7 +239,7 @@ public class AdminScreens {
 
         Button btnAtualizar = StyleUtil.secondaryButton("Atualizar", _ -> tabela.setItems(EventDB.getAllEvents()));
 
-        HBox botoes = new HBox(10, btnAprovar, btnRecusar, btnAtualizar);
+        HBox botoes = new HBox(10, btnCriar, btnEditar, btnAprovar, btnRecusar, btnAtualizar);
         botoes.setAlignment(Pos.CENTER_LEFT);
         botoes.setPadding(new Insets(10, 0, 0, 0));
 
@@ -243,14 +263,7 @@ public class AdminScreens {
         DatePicker dpFim = new DatePicker();
         TextField txtImagem = new TextField();
 
-        ComboBox<State> cmbEstado = new ComboBox<>();
-        cmbEstado.getItems().addAll(
-                new State(1, "Planeado"),
-                new State(2, "Em Progresso"),
-                new State(3, "Concluido"),
-                new State(4, "Em Aprovacao"),
-                new State(5, "Cancelado")
-        );
+        ComboBox<State> cmbEstado = new ComboBox<>(StateDB.listAll());
         cmbEstado.getSelectionModel().selectFirst();
 
         if (existente != null) {
