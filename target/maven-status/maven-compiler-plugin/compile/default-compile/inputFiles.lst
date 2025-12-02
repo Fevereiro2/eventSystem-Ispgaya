@@ -5,6 +5,7 @@ C:\projects\eventSystem-Ispgaya\src\main\java\ltc\events\Modules\visual\Login.ja
 C:\projects\eventSystem-Ispgaya\src\main\java\ltc\events\classes\Event.java
 C:\projects\eventSystem-Ispgaya\src\main\java\ltc\events\Modules\connection\EventDB.java
 C:\projects\eventSystem-Ispgaya\src\main\java\ltc\events\Modules\db.java
+C:\projects\eventSystem-Ispgaya\src\main\java\ltc\events\Modules\ui\Settings.java
 C:\projects\eventSystem-Ispgaya\src\main\java\ltc\events\classes\hashs\PasswordUtil.java
 C:\projects\eventSystem-Ispgaya\src\main\java\ltc\events\classes\Sessionevent.java
 C:\projects\eventSystem-Ispgaya\src\main\java\ltc\events\Modules\Permissions.java
@@ -20,6 +21,7 @@ C:\projects\eventSystem-Ispgaya\src\main\java\ltc\events\Modules\NavbarUtil.java
 C:\projects\eventSystem-Ispgaya\src\main\java\ltc\events\classes\ParticipantSession.java
 C:\projects\eventSystem-Ispgaya\src\main\java\ltc\events\classes\hashs\SessionEntry.java
 C:\projects\eventSystem-Ispgaya\src\main\java\ltc\events\classes\Resources.java
+C:\projects\eventSystem-Ispgaya\src\main\java\ltc\events\Modules\account\AccountScreens.java
 C:\projects\eventSystem-Ispgaya\src\main\java\ltc\events\classes\hashs\AuthService.java
 C:\projects\eventSystem-Ispgaya\src\main\java\ltc\events\Modules\connection\TypesDB.java
 C:\projects\eventSystem-Ispgaya\src\main\java\ltc\events\Modules\visual\CustomAlert.java

@@ -1,3 +1,4 @@
+ltc\events\Modules\ui\Settings.class
 ltc\events\classes\Category.class
 ltc\events\classes\Session.class
 ltc\events\classes\Sessionevent.class
@@ -17,6 +18,7 @@ ltc\events\Modules\connection\ParticipantDB.class
 ltc\events\Main.class
 ltc\events\Modules\admin\AdminScreens.class
 ltc\events\Modules\ui\AlterPassword.class
+ltc\events\Modules\account\AccountScreens.class
 ltc\events\Modules\visual\Register.class
 ltc\events\Modules\db.class
 ltc\events\Modules\connection\TypesDB.class
