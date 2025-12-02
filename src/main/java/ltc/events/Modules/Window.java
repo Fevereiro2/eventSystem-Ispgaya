@@ -23,6 +23,7 @@ import ltc.events.Modules.visual.CalendarEventoView; // Importa a classe de visu
 import ltc.events.Modules.visual.Login; // Importa a classe que define a interface e lógica da tela de Login
 import ltc.events.Modules.visual.Register; // Importa a classe que define a interface e lógica da tela de Registo
 import ltc.events.Modules.visual.StyleUtil;
+import ltc.events.Modules.account.AccountScreens;
 import ltc.events.classes.Event; // Importa a classe modelo (POJO) que representa um Evento
 import ltc.events.classes.Participant; // Importa a classe modelo (POJO) que representa um Participante
 import ltc.events.classes.Session; // Importa a classe modelo (POJO) que representa uma Sessão
@@ -265,9 +266,13 @@ public class Window{
                 });
 
         Button btndefenicoes = StyleUtil.secondaryButton(
-                "Defenições",
+                "Definicoes",
                 _ -> {
-
+                    if (!SessionEntry.isLogged()) {
+                        new Alert(Alert.AlertType.WARNING, "Inicie sessao para aceder ao perfil.").showAndWait();
+                        return;
+                    }
+                    new AccountScreens(centro).mostrarDefinicoesConta();
                 });
 
 
@@ -822,3 +827,4 @@ public class Window{
         };
     }
 }
+
