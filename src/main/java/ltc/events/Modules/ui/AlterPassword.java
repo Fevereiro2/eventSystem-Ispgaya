@@ -24,11 +24,10 @@ public class AlterPassword {
         PasswordField passConfirm = new PasswordField();
         passConfirm.setPromptText("Confirmar nova password");
 
-        Button btnAlterar = ltc.events.Modules.visual.StyleUtil.primaryButton("Alterar", null);
-        btnAlterar.setOnAction(_ -> {
+        Button btnAlterar = StyleUtil.primaryButton("Alterar", _ -> {
             try {
                 if (!passNova.getText().equals(passConfirm.getText())) {
-                    throw new Exception("As passwords não coincidem!");
+                    throw new Exception("As passwords nao coincidem!");
                 }
 
                 ParticipantDB.updatePassword(userId, passNova.getText());
@@ -48,3 +47,4 @@ public class AlterPassword {
         stage.showAndWait();
     }
 }
+
