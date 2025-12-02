@@ -43,7 +43,7 @@ public class Event {
                 finalTimestamp,
                 rs.getString("image"),
                 new State(
-                        0,
+                        rs.getInt("state_id"),
                         rs.getString("state_name")
                 ),
                 null
