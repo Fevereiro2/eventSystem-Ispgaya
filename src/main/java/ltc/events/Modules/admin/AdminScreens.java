@@ -11,11 +11,13 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
+import ltc.events.Modules.connection.EventDB;
 import ltc.events.Modules.connection.ParticipantDB;
 import ltc.events.Modules.connection.TypesDB;
 import ltc.events.Modules.visual.CustomAlert;
 import ltc.events.Modules.visual.StyleUtil;
 import ltc.events.classes.Participant;
+import ltc.events.classes.Event;
 import ltc.events.classes.Types;
 
 import static ltc.events.Modules.ui.AlterPassword.abrirJanelaAlterarPassword;
@@ -155,9 +157,75 @@ public class AdminScreens {
 
     public void mostrarEventos() {
         centro.getChildren().clear();
-        // ... código da interface de eventos
-    }
 
+        Label titulo = new Label("Gestao de Eventos");
+        titulo.setStyle("-fx-font-size: 20px; -fx-font-weight: bold;");
+
+        TableView<Event> tabela = new TableView<>();
+
+        TableColumn<Event, String> colNome = new TableColumn<>("Nome");
+        colNome.setCellValueFactory(new PropertyValueFactory<>("name"));
+        colNome.setPrefWidth(200);
+
+        TableColumn<Event, String> colEstado = new TableColumn<>("Estado");
+        colEstado.setCellValueFactory(c -> new SimpleStringProperty(c.getValue().getState().getName()));
+        colEstado.setPrefWidth(120);
+
+        TableColumn<Event, String> colInicio = new TableColumn<>("Inicio");
+        colInicio.setCellValueFactory(c -> new SimpleStringProperty(
+                c.getValue().getStartdate() != null ? c.getValue().getStartdate().toString() : ""));
+        colInicio.setPrefWidth(150);
+
+        TableColumn<Event, String> colFim = new TableColumn<>("Fim");
+        colFim.setCellValueFactory(c -> new SimpleStringProperty(
+                c.getValue().getFinaldate() != null ? c.getValue().getFinaldate().toString() : ""));
+        colFim.setPrefWidth(150);
+
+        tabela.getColumns().addAll(colNome, colEstado, colInicio, colFim);
+        tabela.setItems(EventDB.getAllEvents());
+
+        Button btnAprovar = StyleUtil.primaryButton("Aprovar", _ -> {
+            Event sel = tabela.getSelectionModel().getSelectedItem();
+            if (sel == null) {
+                CustomAlert.Warning("Selecione um evento.");
+                return;
+            }
+            try {
+                EventDB.updateState(String.valueOf(sel.getId()), 2);
+                tabela.setItems(EventDB.getAllEvents());
+                CustomAlert.Success("Evento aprovado.");
+            } catch (Exception ex) {
+                CustomAlert.Error("Erro ao aprovar: " + ex.getMessage());
+            }
+        });
+
+        Button btnRecusar = StyleUtil.dangerButton("Recusar", _ -> {
+            Event sel = tabela.getSelectionModel().getSelectedItem();
+            if (sel == null) {
+                CustomAlert.Warning("Selecione um evento.");
+                return;
+            }
+            try {
+                EventDB.delete(String.valueOf(sel.getId()));
+                tabela.setItems(EventDB.getAllEvents());
+                CustomAlert.Success("Evento removido.");
+            } catch (Exception ex) {
+                CustomAlert.Error("Erro ao remover: " + ex.getMessage());
+            }
+        });
+
+        Button btnAtualizar = StyleUtil.secondaryButton("Atualizar", _ -> tabela.setItems(EventDB.getAllEvents()));
+
+        HBox botoes = new HBox(10, btnAprovar, btnRecusar, btnAtualizar);
+        botoes.setAlignment(Pos.CENTER_LEFT);
+        botoes.setPadding(new Insets(10, 0, 0, 0));
+
+        VBox layout = new VBox(15, titulo, tabela, botoes);
+        layout.setPadding(new Insets(20));
+        layout.setAlignment(Pos.TOP_LEFT);
+
+        centro.getChildren().add(layout);
+    }
     public void mostrarRecursos() {
         centro.getChildren().clear();
         // ... código da interface de recursos
@@ -263,3 +331,4 @@ public class AdminScreens {
         popup.showAndWait();
     }
 }
+
