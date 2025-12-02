@@ -62,11 +62,20 @@ public class Event {
 
     private static Timestamp parseTimestamp(String value) {
         if (value == null || value.isEmpty()) return null;
+        String trimmed = value.trim();
+        // caso venha em epoch millis (ex: "1765929600000")
+        if (trimmed.matches("^\\d{10,}$")) {
+            try {
+                return new Timestamp(Long.parseLong(trimmed));
+            } catch (NumberFormatException ignored) {
+                // segue para outras tentativas
+            }
+        }
         try {
-            return Timestamp.valueOf(value);
+            return Timestamp.valueOf(trimmed);
         } catch (IllegalArgumentException ex) {
             try {
-                LocalDate d = LocalDate.parse(value);
+                LocalDate d = LocalDate.parse(trimmed);
                 return Timestamp.valueOf(d.atStartOfDay());
             } catch (DateTimeParseException ignored) {
                 return null;
