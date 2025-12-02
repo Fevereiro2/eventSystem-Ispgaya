@@ -4,15 +4,18 @@ import ltc.events.Modules.db; // Importa o utilitário de conexão à base de da
 import ltc.events.classes.Participant; // Importa a classe de modelo Participant.
 import java.sql.*; // Importa todas as classes necessárias para manipulação de JDBC/SQL.
 
+
+
 public class AuthService { // Início da classe utilitária de Serviço de Autenticação.
 
     /**
      * Tenta autenticar um utilizador com endereço eletrónico e senha.
-     * Suporta a verificação de senhas hasheadas e a migração de senhas em texto simples.
+     * Suporta a verificação de senhas hashes e a migração de senhas em texto simples.
      * @param email O endereço eletrónico fornecido pelo utilizador.
      * @param password A senha fornecida pelo utilizador (texto simples).
      * @return O objeto Participant se a autenticação for bem-sucedida, ou null caso contrário.
      */
+
     public static Participant login(String email, String password) { // Método estático de login.
 
         System.out.println("=== DEBUG LOGIN ===");
@@ -34,35 +37,27 @@ public class AuthService { // Início da classe utilitária de Serviço de Auten
         // FASE 1: Conexão e Leitura de Dados
         // ─────────────────────────────────────────────
 
-        try (Connection conn = db.connect()) { // ✅ Solução: Inicializa apenas a conexão no try-with-resources externo.
+        try (Connection conn = db.connect();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
 
-            // O PreparedStatement só é criado AGORA, após a conexão 'conn' estar garantida.
-            try (PreparedStatement stmt = conn.prepareStatement(sql)) { // O stmt é fechado automaticamente.
+            stmt.setString(1, email);
 
-                stmt.setString(1, email); // Define o parâmetro "?" da query.
+            try (ResultSet rs = stmt.executeQuery()) {
 
-                try (ResultSet rs = stmt.executeQuery()) { // O ResultSet é fechado automaticamente.
+                if (!rs.next()) {
+                    System.out.println("DEBUG → Utilizador NÃO encontrado.");
+                    return null;
+                }
 
-                    if (!rs.next()) { // Verifica se encontrou um utilizador.
-                        System.out.println("DEBUG → Utilizador NÃO encontrado.");
-                        return null;
-                    }
-
-                    // 1️⃣ Lê password
-                    storedPassword = rs.getString("password");
-                    System.out.println("DEBUG → PASSWORD BD: " + storedPassword);
-
-                    user = new Participant(rs); // Constrói o objeto ‘User’.
-
-                } // ResultSet fechado
-
-            } // PreparedStatement fechado
+                storedPassword = rs.getString("password");
+                user = new Participant(rs);
+            }
 
         } catch (SQLException e) {
-            // Captura erros durante a conexão ou a leitura de dados.
             System.out.println("Erro na autenticação: " + e.getMessage());
             return null;
         }
+
 
         // ─────────────────────────────────────────────
         // FASE 2: Verificação de Hash e Migração (Sem DB)
