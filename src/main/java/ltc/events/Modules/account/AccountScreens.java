@@ -57,12 +57,9 @@ public class AccountScreens {
         Circle clip = new Circle(60, 60, 60);
         avatarView.setClip(clip);
 
-        Button btnUpload = StyleUtil.primaryButton("Upload Novo", null);
-        Button btnDeleteAvatar = StyleUtil.dangerButton("Remover Avatar", null);
-
         final String[] avatarHolder = { avatarUrl };
 
-        btnUpload.setOnAction(_ -> {
+        Button btnUpload = StyleUtil.primaryButton("Upload Novo", _ -> {
             TextInputDialog dialog = new TextInputDialog(avatarHolder[0]);
             dialog.setTitle("Alterar Avatar");
             dialog.setHeaderText("Colar URL da nova imagem");
@@ -78,7 +75,7 @@ public class AccountScreens {
             });
         });
 
-        btnDeleteAvatar.setOnAction(_ -> {
+        Button btnDeleteAvatar = StyleUtil.dangerButton("Remover Avatar", _ -> {
             avatarHolder[0] = null;
             avatarView.setImage(new Image("https://via.placeholder.com/150", 120, 120, true, true));
         });
