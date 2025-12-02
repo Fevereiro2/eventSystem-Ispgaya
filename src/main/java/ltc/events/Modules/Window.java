@@ -266,15 +266,13 @@ public class Window{
 
                 });
 
-        Button btndefenicoes = StyleUtil.secondaryButton(
-                "Definicoes",
-                _ -> {
-                    if (!SessionEntry.isLogged()) {
-                        CustomAlert.Warning("Inicie sessao para aceder ao perfil.");
-                        return;
-                    }
-                    new AccountScreens(centro).mostrarDefinicoesConta();
-                });
+        Button btndefenicoes = null;
+        if (SessionEntry.isLogged()) {
+            btndefenicoes = StyleUtil.secondaryButton(
+                    "Definicoes",
+                    _ -> new AccountScreens(centro).mostrarDefinicoesConta()
+            );
+        }
 
 
 
@@ -296,7 +294,11 @@ public class Window{
 
         HBox colunaBotoes = new HBox(15);
         colunaBotoes.setAlignment(Pos.CENTER_LEFT);
-        colunaBotoes.getChildren().addAll(btnAntigos, btnParticipantCriarEvento, btndefenicoes);
+        if (btndefenicoes != null) {
+            colunaBotoes.getChildren().addAll(btnAntigos, btnParticipantCriarEvento, btndefenicoes);
+        } else {
+            colunaBotoes.getChildren().addAll(btnAntigos, btnParticipantCriarEvento);
+        }
         colunaBotoes.setPadding(new Insets(5, 0, 5, 5)); // opcional
 
         // Mostrar apenas os atuais no ecrã
@@ -340,11 +342,10 @@ public class Window{
             Label lblUser = new Label("👤 " + user.getName() + " (" + user.getType().getName() + ")");
             lblUser.setStyle("-fx-font-weight: bold; -fx-font-size: 13px;");
 
-            Button btnLogout = StyleUtil.secondaryButton("Sair", null);
-            btnLogout.setOnAction(_ -> {
-                SessionEntry.logout();
-                refresh();
-            });
+        Button btnLogout = StyleUtil.secondaryButton("Sair", _ -> {
+            SessionEntry.logout();
+            refresh();
+        });
 
             rightBox.getChildren().addAll(lblUser, btnLogout);
 
@@ -378,11 +379,10 @@ public class Window{
             Label lblUser = new Label("👤 " + user.getName() + " (" + user.getType().getName() + ")");
             lblUser.setStyle("-fx-font-weight: bold; -fx-font-size: 13px;");
 
-            Button btnLogout = StyleUtil.secondaryButton("Sair", null);
-            btnLogout.setOnAction(_ -> {
-                SessionEntry.logout();
-                refresh();
-            });
+        Button btnLogout = StyleUtil.secondaryButton("Sair", _ -> {
+            SessionEntry.logout();
+            refresh();
+        });
 
             HBox rightBox = new HBox(10, lblUser, btnLogout);
             rightBox.setAlignment(Pos.CENTER_RIGHT);
@@ -475,9 +475,11 @@ public class Window{
                 _ -> abrirJanelaCriarEvento(tabelaEventos) // 👈 só chama outro método
         );
 
-        Button btnEditar = StyleUtil.secondaryButton("Editar", null);
-        Button btnRemover = StyleUtil.dangerButton("Remover", null);
-        Button btnAtualizar = StyleUtil.secondaryButton("Atualizar", null);
+        Button btnEditar = StyleUtil.secondaryButton("Editar", _ -> CustomAlert.Info("Funcionalidade de editar evento ainda nao implementada."));
+        Button btnRemover = StyleUtil.dangerButton("Remover", _ -> CustomAlert.Info("Funcionalidade de remover evento ainda nao implementada."));
+        Button btnAtualizar = StyleUtil.secondaryButton("Atualizar", _ -> {
+            tabelaEventos.setItems(FXCollections.observableArrayList(EventDB.getAllEvents()));
+        });
 
         HBox botoesAcao = new HBox(10, btnCriar, btnEditar, btnRemover, btnAtualizar);
         botoesAcao.setPadding(new Insets(10, 0, 10, 0));
@@ -536,8 +538,7 @@ public class Window{
         DatePicker dpInicio = new DatePicker();
         DatePicker dpFim = new DatePicker();
 
-        Button btnGuardar = StyleUtil.primaryButton("Guardar", null);
-        btnGuardar.setOnAction(_ -> {
+        Button btnGuardar = StyleUtil.primaryButton("Guardar", _ -> {
             try {
                 // 👇 adapta isto ao teu EventDB
                 /*EventDB.createEvent(
@@ -594,7 +595,7 @@ public class Window{
         ComboBox<Types> cmbTipo = new ComboBox<>(TypesDB.getAll());
         cmbTipo.getSelectionModel().selectFirst();
 
-        Button btnCriar = StyleUtil.primaryButton("Criar", null);
+        Button btnCriar = StyleUtil.primaryButton("Criar", _ -> { /* TODO: implementar criacao de utilizador */ });
 
 
         VBox layout = new VBox(10, lblNome, txtNome, lblEmail, txtEmail, lblPhone, txtPhone, lblPass, txtPass, lblTipo, cmbTipo, btnCriar);
@@ -612,7 +613,7 @@ public class Window{
         Label lblPass = new Label("Nova Password:");
         PasswordField txtPass = new PasswordField();
 
-        Button btnSalvar = StyleUtil.primaryButton("Guardar", null);
+        Button btnSalvar = StyleUtil.primaryButton("Guardar", _ -> {});
         btnSalvar.setOnAction(_ -> {
             try (Connection conn = db.connect()) {
                 PreparedStatement stmt = conn.prepareStatement(
@@ -734,6 +735,8 @@ public class Window{
         };
     }
 }
+
+
 
 
 
