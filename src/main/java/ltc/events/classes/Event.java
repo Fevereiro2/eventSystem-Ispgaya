@@ -1,7 +1,10 @@
 package ltc.events.classes;
+
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
+import java.time.LocalDate;
+import java.time.format.DateTimeParseException;
 
 public class Event {
     private final int event_id;
@@ -27,44 +30,17 @@ public class Event {
         this.state = state;
     }
 
-
     public Event(ResultSet rs) throws SQLException {
-
-        // 1. LER AS DATAS COMO STRING (para evitar o erro de parsing)
-        String startDateString = rs.getString("initial_date");
-        String finalDateString = rs.getString("finish_date");
-
-        // Verificação de segurança (caso as strings estejam vazias ou nulas)
-        Timestamp startTimestamp = null;
-        if (startDateString != null && !startDateString.isEmpty()) {
-            // 2. CONVERTER A STRING PARA TIMESTAMP
-            // O SQLite tipicamente devolve o formato "YYYY-MM-DD HH:MM:SS.S" que Timestamp.valueOf() suporta.
-            try {
-                startTimestamp = Timestamp.valueOf(startDateString);
-            } catch (IllegalArgumentException e) {
-                // Se a string não for válida (ex: apenas a data sem a hora), pode ser necessário formatar:
-                //System.err.println("Erro de formato de data no SQLite. A tentar adicionar a hora padrão.");
-                startTimestamp = Timestamp.valueOf(startDateString + " 00:00:00");
-            }
-        }
-
-        Timestamp finalTimestamp = null;
-        if (finalDateString != null && !finalDateString.isEmpty()) {
-            try {
-                finalTimestamp = Timestamp.valueOf(finalDateString);
-            } catch (IllegalArgumentException e) {
-                //System.err.println("Erro de formato de data no SQLite. A tentar adicionar a hora padrão.");
-                finalTimestamp = Timestamp.valueOf(finalDateString + " 00:00:00");
-            }
-        }
+        Timestamp startTimestamp = parseTimestamp(rs.getString("initial_date"));
+        Timestamp finalTimestamp = parseTimestamp(rs.getString("finish_date"));
 
         this(
                 rs.getInt("event_id"),
                 rs.getString("name"),
                 rs.getString("description"),
                 rs.getString("local"),
-                startTimestamp, // Usar o valor convertido
-                finalTimestamp, // Usar o valor convertido
+                startTimestamp,
+                finalTimestamp,
                 rs.getString("image"),
                 new State(
                         0,
@@ -73,7 +49,6 @@ public class Event {
                 null
         );
     }
-
 
     public int getId() { return event_id; }
     public String getName() { return name; }
@@ -84,6 +59,20 @@ public class Event {
     public State getState() { return state; }
     public Participant getParticipantid() { return participantid; }
     public String getImage() { return image; }
+
+    private static Timestamp parseTimestamp(String value) {
+        if (value == null || value.isEmpty()) return null;
+        try {
+            return Timestamp.valueOf(value);
+        } catch (IllegalArgumentException ex) {
+            try {
+                LocalDate d = LocalDate.parse(value);
+                return Timestamp.valueOf(d.atStartOfDay());
+            } catch (DateTimeParseException ignored) {
+                return null;
+            }
+        }
+    }
 
     @Override
     public String toString() {
