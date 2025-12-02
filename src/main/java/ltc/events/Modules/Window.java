@@ -475,9 +475,9 @@ public class Window{
                 _ -> abrirJanelaCriarEvento(tabelaEventos) // 👈 só chama outro método
         );
 
-        Button btnEditar = new Button("✏️ Editar");
-        Button btnRemover = new Button("🗑️ Remover");
-        Button btnAtualizar = new Button("🔄 Atualizar");
+        Button btnEditar = StyleUtil.secondaryButton("Editar", null);
+        Button btnRemover = StyleUtil.dangerButton("Remover", null);
+        Button btnAtualizar = StyleUtil.secondaryButton("Atualizar", null);
 
         HBox botoesAcao = new HBox(10, btnCriar, btnEditar, btnRemover, btnAtualizar);
         botoesAcao.setPadding(new Insets(10, 0, 10, 0));
@@ -536,7 +536,7 @@ public class Window{
         DatePicker dpInicio = new DatePicker();
         DatePicker dpFim = new DatePicker();
 
-        Button btnGuardar = new Button("Guardar");
+        Button btnGuardar = StyleUtil.primaryButton("Guardar", null);
         btnGuardar.setOnAction(_ -> {
             try {
                 // 👇 adapta isto ao teu EventDB
@@ -594,7 +594,7 @@ public class Window{
         ComboBox<Types> cmbTipo = new ComboBox<>(TypesDB.getAll());
         cmbTipo.getSelectionModel().selectFirst();
 
-        Button btnCriar = new Button("Criar");
+        Button btnCriar = StyleUtil.primaryButton("Criar", null);
 
 
         VBox layout = new VBox(10, lblNome, txtNome, lblEmail, txtEmail, lblPhone, txtPhone, lblPass, txtPass, lblTipo, cmbTipo, btnCriar);
@@ -612,7 +612,7 @@ public class Window{
         Label lblPass = new Label("Nova Password:");
         PasswordField txtPass = new PasswordField();
 
-        Button btnSalvar = new Button("Guardar");
+        Button btnSalvar = StyleUtil.primaryButton("Guardar", null);
         btnSalvar.setOnAction(_ -> {
             try (Connection conn = db.connect()) {
                 PreparedStatement stmt = conn.prepareStatement(
@@ -734,5 +734,6 @@ public class Window{
         };
     }
 }
+
 
 
