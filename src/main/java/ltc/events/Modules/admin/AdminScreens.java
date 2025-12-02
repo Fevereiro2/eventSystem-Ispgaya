@@ -98,7 +98,7 @@ public class AdminScreens {
         btnEditar.setOnAction(_ -> {
             Participant sel = tabela.getSelectionModel().getSelectedItem();
             if (sel == null) {
-                new Alert(Alert.AlertType.WARNING, "Selecione um participante para editar.").showAndWait();
+                CustomAlert.Warning("Selecione um participante para editar.");
                 return;
             }
             editarParticipante(sel);
@@ -107,7 +107,7 @@ public class AdminScreens {
         btnRemover.setOnAction(_ -> {
             Participant sel = tabela.getSelectionModel().getSelectedItem();
             if (sel == null) {
-                new Alert(Alert.AlertType.WARNING, "Selecione um participante para remover.").showAndWait();
+                CustomAlert.Warning("Selecione um participante para remover.");
                 return;
             }
             eliminarParticipante(sel);
@@ -130,7 +130,7 @@ public class AdminScreens {
         btnPass.setOnAction(_ -> {
             Participant sel = tabela.getSelectionModel().getSelectedItem();
             if (sel == null) {
-                new Alert(Alert.AlertType.WARNING, "Selecione um participante para alterar a password.").showAndWait();
+                CustomAlert.Warning("Selecione um participante para alterar a password.");
                 return;
             }
             //abrirJanelaAlterarPassword(sel);
@@ -259,7 +259,7 @@ public class AdminScreens {
                 //mostrarParticipantesAdmin(); // refresh
 
             } catch (Exception ex) {
-                new Alert(Alert.AlertType.ERROR, "Erro ao atualizar: " + ex.getMessage()).show();
+                CustomAlert.Error("Erro ao atualizar: " + ex.getMessage());
             }
         });
 
