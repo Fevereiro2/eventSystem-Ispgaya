@@ -16,6 +16,7 @@ ltc\events\classes\Resourceevent.class
 ltc\events\Modules\connection\ParticipantDB.class
 ltc\events\Main.class
 ltc\events\Modules\admin\AdminScreens.class
+ltc\events\Modules\ui\AlterPassword.class
 ltc\events\Modules\visual\Register.class
 ltc\events\Modules\db.class
 ltc\events\Modules\connection\TypesDB.class
