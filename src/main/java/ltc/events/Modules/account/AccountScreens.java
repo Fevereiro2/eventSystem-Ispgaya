@@ -94,19 +94,26 @@ public class AccountScreens {
 
         TextField txtEmail = new TextField(user.getEmail());
         txtEmail.setPromptText("Email");
+        txtEmail.setEditable(false);
 
         TextField txtPhone = new TextField(user.getPhone());
-        txtPhone.setPromptText("Telemóvel");
+        txtPhone.setPromptText("Telemivel");
 
         ComboBox<String> cmbGender = new ComboBox<>();
         cmbGender.getItems().addAll("Masculino", "Feminino", "Outro");
-        cmbGender.setPromptText("Género");
+        cmbGender.setPromptText("Genero");
 
         TextField txtTaxNumber = new TextField();
         txtTaxNumber.setPromptText("NIF");
+        txtTaxNumber.setText(user.getTaxNumber());
+        txtTaxNumber.setEditable(false);
 
         DatePicker dpBirthdate = new DatePicker();
         dpBirthdate.setPromptText("Data de nascimento");
+        if (user.getBirthdate() != null) {
+            dpBirthdate.setValue(user.getBirthdate().toLocalDate());
+        }
+        dpBirthdate.setDisable(true);
 
         TextArea txtAddress = new TextArea();
         txtAddress.setPromptText("Morada");
@@ -188,3 +195,4 @@ public class AccountScreens {
         centro.getChildren().add(root);
     }
 }
+
