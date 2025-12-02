@@ -104,20 +104,12 @@ public class Login { // Início da classe ‘Login’, responsável pela UI e l�
         HBox linkBox = new HBox(linkRecuperar); // Coloca o hyperlink num HBox.
         linkBox.setAlignment(Pos.CENTER_RIGHT); // Alinha o hyperlink à direita.
 
-        VBox conteudo = new VBox(15, titulo, lblUser, txtUser, lblPass, txtPass, linkBox, botoes); // VBox com 15px de espaçamento.
-        conteudo.setAlignment(Pos.CENTER); // Centraliza o conteúdo.
-        conteudo.setPadding(new Insets(20)); // Adiciona 20px de padding interno.
+        VBox formmostrarlogin = new VBox(15, titulo, lblUser, txtUser, lblPass, txtPass, linkBox, botoes); // VBox com 15px de espaçamento.
+        formmostrarlogin.setAlignment(Pos.CENTER); // Centraliza o conteúdo.
+        formmostrarlogin.setPadding(new Insets(20)); // Adiciona 20px de padding interno.
 
         // 🔹 4. Layout Raiz (BorderPane)
-        BorderPane raiz = new BorderPane(); // Cria o layout raiz.
-        raiz.setTop(barra); // Coloca a barra de título no topo.
-        raiz.setCenter(conteudo); // Coloca o formulário no centro.
-        raiz.setStyle(""" 
-            -fx-background-color: white;
-            -fx-background-radius: 10;
-            -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.25), 15, 0.3, 0, 4);
-        """);
-
+        BorderPane raiz = StyleUtil.createRootLayout(stage, formmostrarlogin);
         // 🔹 5. Exibir
         Scene scene = new Scene(raiz, 380, 320); // Cria a Scene com o tamanho.
         stage.setScene(scene); // Associa a Scene ao Stage.
@@ -176,11 +168,11 @@ public class Login { // Início da classe ‘Login’, responsável pela UI e l�
         HBox botoes = new HBox(10, btnCancelar, btnRecuperar); // Layout horizontal para os botões, com 10px de espaçamento.
         botoes.setAlignment(Pos.CENTER); // Centraliza os botões dentro do HBox.
 
-        VBox form = new VBox(15, titulo, lblEmail, txtEmail, botoes); // Layout vertical para todo o conteúdo, com 15px de espaçamento.
-        form.setAlignment(Pos.CENTER); // Centraliza verticalmente o conteúdo.
-        form.setPadding(new Insets(20)); // Adiciona 20px de espaçamento interno (padding) ao VBox.
+        VBox formrecuperarpassword = new VBox(15, titulo, lblEmail, txtEmail, botoes); // Layout vertical para todo o conteúdo, com 15px de espaçamento.
+        formrecuperarpassword.setAlignment(Pos.CENTER); // Centraliza verticalmente o conteúdo.
+        formrecuperarpassword.setPadding(new Insets(20)); // Adiciona 20px de espaçamento interno (padding) ao VBox.
 
-        BorderPane raiz = StyleUtil.createRootLayout(stage, form);
+        BorderPane raiz = StyleUtil.createRootLayout(stage, formrecuperarpassword);
 
         Scene scene = new Scene(raiz, 400, 250); // Cria a Scene com o layout raiz e define o tamanho da janela (400x250).
         stage.setScene(scene); // Associa a Scene ao Stage.
