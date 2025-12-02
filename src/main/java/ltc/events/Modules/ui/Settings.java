@@ -2,13 +2,13 @@ package ltc.events.Modules.ui;
 
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
-import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.layout.VBox;
 import ltc.events.Modules.visual.StyleUtil;
 import ltc.events.classes.hashs.SessionEntry;
 import ltc.events.Modules.ui.AlterPassword;
+import ltc.events.Modules.visual.CustomAlert;
 
 public class Settings {
 
@@ -23,7 +23,7 @@ public class Settings {
 
         var user = SessionEntry.getUser();
         if (user == null) {
-            new Alert(Alert.AlertType.ERROR, "Nenhum utilizador autenticado.").showAndWait();
+            CustomAlert.Error("Nenhum utilizador autenticado.");
             return;
         }
 
@@ -31,7 +31,7 @@ public class Settings {
         try {
             userId = Integer.parseInt(user.getId());
         } catch (NumberFormatException ex) {
-            new Alert(Alert.AlertType.ERROR, "Utilizador invalido na sessao atual.").showAndWait();
+            CustomAlert.Error("Utilizador invalido na sessao atual.");
             return;
         }
 
@@ -45,7 +45,7 @@ public class Settings {
 
         Button btnAlterarEmail = StyleUtil.primaryButton(
                 "Alterar Email",
-                _ -> new Alert(Alert.AlertType.INFORMATION, "Funcionalidade de alterar email ainda nao implementada.").showAndWait()
+                _ -> CustomAlert.Info("Funcionalidade de alterar email ainda nao implementada.")
         );
 
         VBox box = new VBox(15, titulo, btnAlterarPass, btnAlterarEmail);

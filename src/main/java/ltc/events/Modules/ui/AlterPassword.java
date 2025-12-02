@@ -5,6 +5,7 @@ import javafx.scene.layout.*;
 import javafx.scene.control.*;
 import javafx.geometry.*;
 import ltc.events.Modules.connection.ParticipantDB;
+import ltc.events.Modules.visual.CustomAlert;
 
 
 public class AlterPassword {
@@ -31,11 +32,11 @@ public class AlterPassword {
 
                 ParticipantDB.updatePassword(userId, passNova.getText());
 
-                new Alert(Alert.AlertType.INFORMATION, "Password alterada!").showAndWait();
+                CustomAlert.Success("Password alterada!");
                 stage.close();
 
             } catch (Exception ex) {
-                new Alert(Alert.AlertType.ERROR, ex.getMessage()).showAndWait();
+                CustomAlert.Error(ex.getMessage());
             }
         });
 
