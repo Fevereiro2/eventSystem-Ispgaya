@@ -1,11 +1,13 @@
 package ltc.events.Modules.connection;
 
+import javafx.scene.control.Alert;
 import ltc.events.Modules.db;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import ltc.events.Modules.db;
 import ltc.events.classes.Participant;
 import ltc.events.classes.Types;
+import ltc.events.classes.hashs.PasswordUtil;
 
 import java.sql.*;
 
@@ -131,7 +133,16 @@ public class ParticipantDB {
         }
     }
 
+    public static void updatePassword(int participantId, String newPassword) throws SQLException {
+        String sql = "UPDATE participant SET password = ? WHERE participant_id = ?";
 
+        try (Connection connection = db.connect();
+             PreparedStatement stmt = connection.prepareStatement(sql)) {
 
+            stmt.setString(1, PasswordUtil.hashPassword(newPassword)); // hash seguro
+            stmt.setInt(2, participantId);
 
+            stmt.executeUpdate();
+        }
+    }
 }
