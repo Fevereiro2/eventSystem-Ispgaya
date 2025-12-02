@@ -264,6 +264,12 @@ public class Window{
 
                 });
 
+        Button btndefenicoes = StyleUtil.secondaryButton(
+                "Defenições",
+                _ -> {
+
+                });
+
 
 
         // Scroll
@@ -284,7 +290,7 @@ public class Window{
 
         HBox colunaBotoes = new HBox(15);
         colunaBotoes.setAlignment(Pos.CENTER_LEFT);
-        colunaBotoes.getChildren().addAll(btnAntigos, btnParticipantCriarEvento);
+        colunaBotoes.getChildren().addAll(btnAntigos, btnParticipantCriarEvento, btndefenicoes);
         colunaBotoes.setPadding(new Insets(5, 0, 5, 5)); // opcional
 
         // Mostrar apenas os atuais no ecrã
@@ -655,45 +661,6 @@ public class Window{
 
 
 
-    private void aplicarFiltro(TableView<Participant> tabela, String filtro) {
-        ObservableList<Participant> todos = ParticipantDB.listAll(); // já tens isto
-        switch (filtro) {
-            case "Admins" ->
-                tabela.setItems(
-                        todos.filtered(p -> p.getType().getName().equalsIgnoreCase("Admin"))
-                );
-            case "Participantes" ->
-                tabela.setItems(
-                        todos.filtered(p -> p.getType().getName().equalsIgnoreCase("Participante"))
-                );
-            default ->
-                tabela.setItems(todos);
-        }
-    }
-
-    private void atualizarContador(Label label, ObservableList<Participant> lista) {
-        long total = lista.size();
-        long admins = lista.stream().filter(p ->
-                p.getType().getName().equalsIgnoreCase("Admin")
-        ).count();
-
-        long moderadores = lista.stream().filter(p ->
-                p.getType().getName().equalsIgnoreCase("Moderador")
-        ).count();
-
-        long participantes = lista.stream().filter(p ->
-                p.getType().getName().equalsIgnoreCase("Participante")
-        ).count();
-
-        label.setText(
-                "Total: " + total +
-                        " | Admins: " + admins +
-                        " | Moderadores: " + moderadores +
-                        " | Participantes: " + participantes
-        );
-    }
-
-
     private void abrirJanelaCriarUtilizador() {
         Stage stage = new Stage();
         stage.initStyle(StageStyle.UTILITY);
@@ -755,65 +722,6 @@ public class Window{
 
         stage.setScene(new Scene(layout, 250, 150));
         stage.showAndWait();
-    }
-
-
-    private void editarParticipante(Participant p) {
-        if (p == null) {
-            new Alert(Alert.AlertType.WARNING, "Selecione um participante.").show();
-            return;
-        }
-
-        Stage popup = new Stage();
-        popup.initModality(Modality.APPLICATION_MODAL);
-        popup.setTitle("Editar Participante");
-
-        TextField txtNome = new TextField(p.getName());
-        TextField txtEmail = new TextField(p.getEmail());
-        TextField txtPhone = new TextField(p.getPhone());
-
-        ComboBox<Types> comboTipo = new ComboBox<>();
-        comboTipo.getItems().addAll(TypesDB.listAll()); // Criamos já a seguir
-        comboTipo.getSelectionModel().select(p.getType());
-
-        Button btnSalvar = new Button("Salvar");
-        btnSalvar.setOnAction(_ -> {
-            try {
-                ParticipantDB.update(p.getId(), txtNome.getText(), txtEmail.getText(),
-                        txtPhone.getText(), comboTipo.getValue());
-
-                popup.close();
-                mostrarParticipantesAdmin(); // refresh
-
-            } catch (Exception ex) {
-                new Alert(Alert.AlertType.ERROR, "Erro ao atualizar: " + ex.getMessage()).show();
-            }
-        });
-
-        VBox box = new VBox(10, txtNome, txtEmail, txtPhone, comboTipo, btnSalvar);
-        box.setPadding(new Insets(20));
-
-        popup.setScene(new Scene(box, 300, 300));
-        popup.showAndWait();
-    }
-    private void eliminarParticipante(Participant p) {
-        if (p == null) {
-            new Alert(Alert.AlertType.WARNING, "Selecione um participante.").show();
-            return;
-        }
-
-        if (new Alert(Alert.AlertType.CONFIRMATION,
-                "Deseja mesmo apagar " + p.getName() + "?",
-                ButtonType.YES, ButtonType.NO).showAndWait().get() != ButtonType.YES) {
-            return;
-        }
-
-        try {
-            ParticipantDB.delete(p.getId());
-            admin.mostrarParticipantesAdmin(); // refresh
-        } catch (Exception ex) {
-            new Alert(Alert.AlertType.ERROR, "Erro ao apagar: " + ex.getMessage()).show();
-        }
     }
     // ============================================================
     // 🔥 Criação dos cards de eventos
