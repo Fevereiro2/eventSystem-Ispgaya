@@ -20,6 +20,7 @@ import ltc.events.Modules.connection.TypesDB;// Importa a classe de acesso ao ba
 import ltc.events.Modules.visual.CalendarEventoView; // Importa a classe de visualização específica para o calendário de eventos
 import ltc.events.Modules.visual.Login; // Importa a classe que define a interface e lógica da tela de Login
 import ltc.events.Modules.visual.Register; // Importa a classe que define a interface e lógica da tela de Registo
+import ltc.events.Modules.visual.StyleUtil;
 import ltc.events.classes.Event; // Importa a classe modelo (POJO) que representa um Evento
 import ltc.events.classes.Participant; // Importa a classe modelo (POJO) que representa um Participante
 import ltc.events.classes.Session; // Importa a classe modelo (POJO) que representa uma Sessão
@@ -64,9 +65,50 @@ public class Window {
         HBox rightBox = criarRightBoxSessao();
         barra.setRight(rightBox);
 
+        LocalDate hoje = LocalDate.now();
+
+        ObservableList<Event> eventos = EventDB.getAllEvents();
+
+        // Eventos atuais (data >= hoje)
+        List<Event> eventosAtuais = eventos.stream()
+                .filter(ev -> ev.getStartdate().toLocalDateTime().toLocalDate().compareTo(hoje) >= 0)
+                .toList();
+
+        // Eventos antigos (data < hoje)
+        List<Event> eventosAntigos = eventos.stream()
+                .filter(ev -> ev.getStartdate().toLocalDateTime().toLocalDate().compareTo(hoje) < 0)
+                .toList();
+
         // Título
         Label titulo = new Label("🎟️ Eventos Disponíveis");
         titulo.setStyle("-fx-font-size: 22px; -fx-font-weight: bold;");
+
+        Button btnAntigos = StyleUtil.createStyledButton(
+                "Eventos Antigos",
+                "#a0a0a0",
+                "#707070",
+                _ -> {
+                    Stage janela = new Stage();
+                    janela.initModality(Modality.APPLICATION_MODAL);
+                    janela.setTitle("Eventos Antigos");
+
+                    VBox box = new VBox(15);
+                    box.setPadding(new Insets(20));
+                    box.setAlignment(Pos.TOP_CENTER);
+
+                    for (Event ev : eventosAntigos) {
+                        box.getChildren().add(criarCardEvento(ev));
+                    }
+
+                    ScrollPane sp = new ScrollPane(box);
+                    sp.setFitToWidth(true);
+
+                    Scene cena = new Scene(sp, 600, 500);
+                    janela.setScene(cena);
+                    janela.show();
+                }
+        );
+
 
         // Scroll
         ScrollPane scroll = new ScrollPane();
@@ -86,8 +128,10 @@ public class Window {
         tiles.setPrefTileWidth(200);
         tiles.setPrefTileHeight(200);
 
+        tiles.getChildren().add(btnAntigos);
 
-        for (Event ev : EventDB.getAllEvents()) {
+        // Mostrar apenas os atuais no ecrã
+        for (Event ev : eventosAtuais) {
             tiles.getChildren().add(criarCardEvento(ev));
         }
         scroll.setContent(tiles);
