@@ -16,6 +16,8 @@ import ltc.events.Modules.connection.ParticipantDB; // Serviço de base de dados
 import ltc.events.classes.Participant; // Classe de modelo do Participante.
 import ltc.events.classes.Types; // Classe de modelo para tipos de utilizador.
 import ltc.events.classes.hashs.PasswordUtil; // Utilitário para hashing de passwords.
+
+import java.time.LocalDate;
 // Importação implícita do StyleUtil (se estiver no mesmo pacote, senão deve ser explícita).
 
 public class Register { // Início da classe Register.
@@ -54,6 +56,19 @@ public class Register { // Início da classe Register.
         PasswordField txtPass = new PasswordField(); // Campo de password.
         txtPass.setPromptText("••••••••"); // Placeholder.
 
+        Label lblGenero = new Label("Género:");
+        ComboBox<String> cmbGenero = new ComboBox<>();
+        cmbGenero.getItems().addAll("Masculino", "Feminino");
+        cmbGenero.setPromptText("Selecionar género");
+
+        Label lblNif = new Label("NIF:");
+        TextField txtNif = new TextField();
+        txtNif.setPromptText("ex: 123456789");
+
+        Label lblBirth = new Label("Data de Nascimento:");
+        DatePicker dpBirth = new DatePicker();
+        dpBirth.setPromptText("Selecionar data");
+
         // 🟢 Botão Registar (Azul) - Usando StyleUtil
         Button btnRegistar = StyleUtil.createStyledButton(
                 "Criar Conta",
@@ -65,6 +80,10 @@ public class Register { // Início da classe Register.
                     String phone = txtPhone.getText();
                     String email = txtEmail.getText();
                     String pass = txtPass.getText();
+                    String genero = cmbGenero.getValue();
+                    String nif = txtNif.getText();
+                    LocalDate birthdate = dpBirth.getValue();
+
 
                     // ---------- VALIDAÇÕES (Guard Clauses) ----------
                     if (nome.isEmpty() || phone.isEmpty() || email.isEmpty() || pass.isEmpty()) {
@@ -81,6 +100,19 @@ public class Register { // Início da classe Register.
                         CustomAlert.Warning("O telefone deve ter 9 dígitos!"); // Alerta.
                         return; // Sai se falhar.
                     }
+                    if (genero == null) {
+                        CustomAlert.Warning("Selecione um género.");
+                        return;
+                    }
+                    if (!nif.matches("\\d{9}")) {
+                        CustomAlert.Warning("O NIF deve ter 9 dígitos!");
+                        return;
+                    }
+
+                    if (birthdate == null) {
+                        CustomAlert.Warning("Selecione uma data de nascimento.");
+                        return;
+                    }
 
                     // ---------- Processamento ----------
                     String hashed = PasswordUtil.hashPassword(pass); // Encripta a senha.
@@ -90,7 +122,16 @@ public class Register { // Início da classe Register.
 
                     try {
                         // Tenta registar o participante na base de dados
-                        Participant p = ParticipantDB.register(nome, email, phone, hashed, type);
+                        Participant p = ParticipantDB.register(
+                                nome,
+                                email,
+                                phone,
+                                hashed,
+                                genero,
+                                nif,
+                                birthdate,
+                                type
+                        );
 
                         // Sucesso
                         CustomAlert.Success("Conta criada com sucesso para: " + p.getName()); // Alerta de Sucesso.
@@ -115,14 +156,18 @@ public class Register { // Início da classe Register.
         HBox botoes = new HBox(10, btnCancelar, btnRegistar); // Container horizontal para botões com 10px de espaçamento.
         botoes.setAlignment(Pos.CENTER); // Centraliza os botões.
 
-        VBox formmostrarregisto = new VBox(12, // Container vertical para o formulário.
+        VBox formmostrarregisto = new VBox(12,
                 titulo,
                 lblNome, txtNome,
                 lblPhone, txtPhone,
                 lblEmail, txtEmail,
                 lblPass, txtPass,
+                lblGenero, cmbGenero,   // ← ADICIONADO
+                lblNif, txtNif,         // ← ADICIONADO
+                lblBirth, dpBirth,      // ← ADICIONADO
                 botoes
         );
+
 
         formmostrarregisto.setAlignment(Pos.CENTER); // Centraliza o formulário verticalmente.
         formmostrarregisto.setPadding(new Insets(20)); // Adiciona 20px de espaçamento interno.
