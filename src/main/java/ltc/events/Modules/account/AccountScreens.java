@@ -171,10 +171,10 @@ public class AccountScreens {
                 user.setPhone(txtPhone.getText());
                 // se adicionares getters/setters para gender, address, etc, atualiza aqui também
 
-                new Alert(Alert.AlertType.INFORMATION, "Alterações guardadas com sucesso!").showAndWait();
+                CustomAlert.Success("Alteracoes guardadas com sucesso!");
 
             } catch (Exception ex) {
-                new Alert(Alert.AlertType.ERROR, "Erro ao guardar: " + ex.getMessage()).showAndWait();
+                CustomAlert.Error("Erro ao guardar: " + ex.getMessage());
             }
         });
 
@@ -196,4 +196,8 @@ public class AccountScreens {
         centro.getChildren().add(root);
     }
 }
+
+
+
+
 
