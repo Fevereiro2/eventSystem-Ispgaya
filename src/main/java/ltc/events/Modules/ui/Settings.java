@@ -4,7 +4,9 @@ import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
+import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
+import javafx.scene.layout.HBox;
 import ltc.events.Modules.visual.StyleUtil;
 import ltc.events.classes.hashs.SessionEntry;
 import ltc.events.Modules.ui.AlterPassword;
@@ -35,8 +37,12 @@ public class Settings {
             return;
         }
 
+        Button btnVoltar = StyleUtil.secondaryButton("Voltar", _ -> centro.getChildren().clear());
+
         Label titulo = new Label("Definicoes da Conta");
         titulo.setStyle("-fx-font-size: 22px; -fx-font-weight: bold;");
+        HBox cabecalho = new HBox(10, btnVoltar, titulo);
+        cabecalho.setAlignment(Pos.CENTER_LEFT);
 
         Button btnAlterarPass = StyleUtil.primaryButton(
                 "Alterar Password",
@@ -48,11 +54,7 @@ public class Settings {
                 _ -> CustomAlert.Info("Funcionalidade de alterar email ainda nao implementada.")
         );
 
-        Button btnVoltar = StyleUtil.secondaryButton("Voltar", _ -> {
-            centro.getChildren().clear();
-        });
-
-        VBox box = new VBox(15, titulo, btnAlterarPass, btnAlterarEmail, btnVoltar);
+        VBox box = new VBox(15, cabecalho, btnAlterarPass, btnAlterarEmail);
         box.setPadding(new Insets(20));
         box.setAlignment(Pos.TOP_LEFT);
 
