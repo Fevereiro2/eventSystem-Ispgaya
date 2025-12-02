@@ -51,8 +51,8 @@ public class Login { // Início da classe ‘Login’, responsável pela UI e l�
         linkRecuperar.setOnAction(_ -> mostrarRecuperarPassword(stage)); // Define a ação para abrir a janela de recuperação.
 
         // 🟢 Botão Entrar (Verde) - Usando método extraído (StyleUtil)
-        // O método 'StyleUtil.createStyledButton' centraliza a estilização CSS.
-        Button btnEntrar = StyleUtil.createStyledButton(
+        // O método 'StyleUtil.gradientButton' centraliza a estilização CSS.
+        Button btnEntrar = StyleUtil.gradientButton(
                 "Entrar",
                 "#34c759", // Cor inicial do gradiente (Verde)
                 "#2ca02c", // Cor final do gradiente (Verde-escuro)
@@ -90,7 +90,7 @@ public class Login { // Início da classe ‘Login’, responsável pela UI e l�
         );
 
         // 🔴 Botão Cancelar (Vermelho) - Usando método extraído (StyleUtil)
-        Button btnCancelar = StyleUtil.createStyledButton(
+        Button btnCancelar = StyleUtil.gradientButton(
                 "Cancelar",
                 "#ff5f57", // Cor inicial do gradiente (Vermelho)
                 "#c62828", // Cor final do gradiente (Vermelho-escuro)
@@ -136,7 +136,7 @@ public class Login { // Início da classe ‘Login’, responsável pela UI e l�
         txtEmail.setPromptText("Insira o seu email"); // Placeholder.
 
         // 🟡 Botão Recuperar (Amarelo/Laranja) - Usando StyleUtil
-        Button btnRecuperar = StyleUtil.createStyledButton( // Cria o botão usando o utilitário StyleUtil.
+        Button btnRecuperar = StyleUtil.gradientButton( // Cria o botão usando o utilitário StyleUtil.
                 "Recuperar",
                 "#ffc107", // Cor inicial do gradiente (Amarelo)
                 "#ff9800", // Cor final do gradiente (Laranja)
@@ -158,7 +158,7 @@ public class Login { // Início da classe ‘Login’, responsável pela UI e l�
         );
 
         // ⚫ Botão Cancelar (Cinza) - Usando StyleUtil
-        Button btnCancelar = StyleUtil.createStyledButton( // Cria o botão Cancelar.
+        Button btnCancelar = StyleUtil.gradientButton( // Cria o botão Cancelar.
                 "Cancelar",
                 "#a0a0a0", // Cor inicial do gradiente (Cinza)
                 "#707070", // Cor final do gradiente (Cinza escuro)
