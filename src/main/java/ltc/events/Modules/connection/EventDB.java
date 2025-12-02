@@ -149,6 +149,18 @@ public class EventDB {
         }
     }
 
+    public static void updateState(String id, int stateId) throws SQLException {
+        String sql = "UPDATE event SET state_id = ? WHERE event_id = ?";
+
+        try (Connection conn = db.connect();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+
+            stmt.setInt(1, stateId);
+            stmt.setInt(2, Integer.parseInt(id));
+            stmt.executeUpdate();
+        }
+    }
+
     // Método 4: DELETE (Remover um evento)
     public static void delete(String id) throws SQLException {
         String sql = "DELETE FROM event WHERE event_id = ?";
