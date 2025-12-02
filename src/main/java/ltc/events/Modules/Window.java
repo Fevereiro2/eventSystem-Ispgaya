@@ -710,9 +710,7 @@ public class Window{
         // 1) Calcular proximidade do evento (por dias)
         // ─────────────────────────────────────────────
         LocalDate hoje = LocalDate.now();
-        LocalDate dataInicio = ev.getStartdate()
-                .toLocalDateTime()
-                .toLocalDate();
+        LocalDate dataInicio = dataEventoOuHoje(ev);
 
         long dias = ChronoUnit.DAYS.between(hoje, dataInicio);
 
