@@ -32,6 +32,27 @@ public class StyleUtil {
     }
 
 
+    public static Button createStyledButtonAdmin(String text, EventHandler<ActionEvent> handler) {
+        Button button = new Button(text);
+
+        button.setStyle(String.format("""
+        -fx-background-color: #007aff;
+        -fx-text-fill: white;
+        -fx-font-size: 14px;
+        -fx-font-weight: bold;
+        -fx-padding: 10;
+        -fx-background-radius: 6;
+        -fx-pref-width: 200px;  // <--- 💡 Adiciona largura
+        -fx-pref-height: 50px; // <--- 💡 Adiciona altura
+        """));
+
+        if (handler != null)
+            button.setOnAction(handler);
+
+        return button;
+    }
+
+
     // ============================================================
     // 🔵 2. BOTÕES MODERNOS (NOVOS)
     // ============================================================
