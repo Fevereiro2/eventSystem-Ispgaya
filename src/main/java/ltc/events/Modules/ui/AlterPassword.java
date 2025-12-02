@@ -6,6 +6,7 @@ import javafx.scene.control.*;
 import javafx.geometry.*;
 import ltc.events.Modules.connection.ParticipantDB;
 import ltc.events.Modules.visual.CustomAlert;
+import ltc.events.Modules.visual.StyleUtil;
 
 
 public class AlterPassword {
@@ -23,7 +24,7 @@ public class AlterPassword {
         PasswordField passConfirm = new PasswordField();
         passConfirm.setPromptText("Confirmar nova password");
 
-        Button btnAlterar = new Button("Alterar");
+        Button btnAlterar = ltc.events.Modules.visual.StyleUtil.primaryButton("Alterar", null);
         btnAlterar.setOnAction(_ -> {
             try {
                 if (!passNova.getText().equals(passConfirm.getText())) {
