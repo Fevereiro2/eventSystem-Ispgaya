@@ -70,7 +70,7 @@ public class Register { // Início da classe Register.
         dpBirth.setPromptText("Selecionar data");
 
         // 🟢 Botão Registar (Azul) - Usando StyleUtil
-        Button btnRegistar = StyleUtil.createStyledButton(
+        Button btnRegistar = StyleUtil.gradientButton(
                 "Criar Conta",
                 "#007aff", // Cor inicial do gradiente (Azul primário)
                 "#0051a8", // Cor final do gradiente (Azul-escuro)
@@ -145,7 +145,7 @@ public class Register { // Início da classe Register.
         );
 
         // 🔴 Botão Cancelar (Vermelho/Cinza) - Usando StyleUtil
-        Button btnCancelar = StyleUtil.createStyledButton(
+        Button btnCancelar = StyleUtil.gradientButton(
                 "Cancelar",
                 "#ff5f57", // Cor inicial do gradiente (Vermelho para ação de paragem)
                 "#c62828", // Cor final do gradiente (Vermelho-escuro)
