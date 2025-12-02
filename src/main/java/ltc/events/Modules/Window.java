@@ -78,13 +78,19 @@ public class Window{
 
         // Eventos atuais (data >= hoje)
         List<Event> eventosAtuais = eventos.stream()
-                .filter(ev -> ev.getState() != null && !"planeado".equalsIgnoreCase(ev.getState().getName()))
+                .filter(ev -> ev.getState() == null || (
+                        !"em aprovacao".equalsIgnoreCase(ev.getState().getName())
+                                && !"cancelado".equalsIgnoreCase(ev.getState().getName())
+                ))
                 .filter(ev -> dataEventoOuHoje(ev).compareTo(hoje) >= 0)
                 .toList();
 
         // Eventos antigos (data < hoje)
         List<Event> eventosAntigos = eventos.stream()
-                .filter(ev -> ev.getState() != null && !"planeado".equalsIgnoreCase(ev.getState().getName()))
+                .filter(ev -> ev.getState() == null || (
+                        !"em aprovacao".equalsIgnoreCase(ev.getState().getName())
+                                && !"cancelado".equalsIgnoreCase(ev.getState().getName())
+                ))
                 .filter(ev -> dataEventoOuHoje(ev).compareTo(hoje) < 0)
                 .toList();
 
@@ -602,6 +608,9 @@ public class Window{
                 }
                 var dataInicio = dpInicio.getValue();
                 var dataFim = dpFim.getValue();
+                if (!dataInicio.isAfter(LocalDate.now())) {
+                    throw new IllegalArgumentException("Data de inicio deve ser depois do dia de hoje para submeter.");
+                }
                 if (dataFim.isBefore(dataInicio)) {
                     throw new IllegalArgumentException("Data de fim nao pode ser anterior à de inicio.");
                 }
@@ -609,7 +618,7 @@ public class Window{
                 Timestamp inicio = Timestamp.valueOf(dataInicio.atStartOfDay());
                 Timestamp fim = Timestamp.valueOf(dataFim.atStartOfDay());
 
-                // state_id=1 (Planeado) usado como pendente/aguarda aprovacao
+                // state_id=4 (Em Aprovacao) usado como pendente/aguarda aprovacao
                 EventDB.register(
                         txtNome.getText(),
                         txtDescricao.getText(),
@@ -617,7 +626,7 @@ public class Window{
                         inicio,
                         fim,
                         txtImagem.getText(),
-                        1
+                        4
                 );
 
                 CustomAlert.Success("Evento enviado para aprovacao do admin.");
