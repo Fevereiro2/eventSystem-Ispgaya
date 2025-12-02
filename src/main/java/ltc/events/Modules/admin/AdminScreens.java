@@ -14,6 +14,7 @@ import javafx.stage.Stage;
 import ltc.events.Modules.connection.ParticipantDB;
 import ltc.events.Modules.connection.TypesDB;
 import ltc.events.Modules.visual.CustomAlert;
+import ltc.events.Modules.visual.StyleUtil;
 import ltc.events.classes.Participant;
 import ltc.events.classes.Types;
 
@@ -91,9 +92,9 @@ public class AdminScreens {
         // -------------------------------
         // BOTÕES
         // -------------------------------
-        Button btnEditar = new Button("✏ Editar");
-        Button btnRemover = new Button("🗑 Remover");
-        Button btnRefresh = new Button("🔄 Atualizar");
+        Button btnEditar = StyleUtil.secondaryButton("Editar", null);
+        Button btnRemover = StyleUtil.dangerButton("Remover", null);
+        Button btnRefresh = StyleUtil.secondaryButton("Atualizar", null);
 
         btnEditar.setOnAction(_ -> {
             Participant sel = tabela.getSelectionModel().getSelectedItem();
@@ -121,8 +122,8 @@ public class AdminScreens {
             atualizarContador(contador, tabela.getItems());
         });
 
-        Button btnCriar = new Button("➕ Criar Utilizador");
-        Button btnPass = new Button("🔑 Alterar Password");
+        Button btnCriar = StyleUtil.primaryButton("Criar Utilizador", null);
+        Button btnPass = StyleUtil.primaryButton("Alterar Password", null);
 
 // Ações
         //btnCriar.setOnAction(_ -> abrirJanelaCriarUtilizador());
@@ -249,7 +250,7 @@ public class AdminScreens {
         comboTipo.getItems().addAll(TypesDB.listAll()); // Criamos já a seguir
         comboTipo.getSelectionModel().select(p.getType());
 
-        Button btnSalvar = new Button("Salvar");
+        Button btnSalvar = StyleUtil.primaryButton("Salvar", null);
         btnSalvar.setOnAction(_ -> {
             try {
                 ParticipantDB.update(p.getId(), txtNome.getText(), txtEmail.getText(),
