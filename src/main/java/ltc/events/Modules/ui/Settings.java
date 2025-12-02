@@ -48,7 +48,11 @@ public class Settings {
                 _ -> CustomAlert.Info("Funcionalidade de alterar email ainda nao implementada.")
         );
 
-        VBox box = new VBox(15, titulo, btnAlterarPass, btnAlterarEmail);
+        Button btnVoltar = StyleUtil.secondaryButton("Voltar", _ -> {
+            centro.getChildren().clear();
+        });
+
+        VBox box = new VBox(15, titulo, btnAlterarPass, btnAlterarEmail, btnVoltar);
         box.setPadding(new Insets(20));
         box.setAlignment(Pos.TOP_LEFT);
 
