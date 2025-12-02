@@ -11,7 +11,6 @@ import javafx.scene.layout.VBox;    // Layout vertical.
 import javafx.stage.Modality;       // Para definir o comportamento modal.
 import javafx.stage.Stage;          // A janela.
 import javafx.stage.StageStyle;     // O estilo da janela (sem decoração).
-
 // Importações de utilitários e classes de dados
 import ltc.events.Modules.connection.ParticipantDB; // Serviço de base de dados para registo de participantes.
 import ltc.events.classes.Participant; // Classe de modelo do Participante.
@@ -116,7 +115,7 @@ public class Register { // Início da classe Register.
         HBox botoes = new HBox(10, btnCancelar, btnRegistar); // Container horizontal para botões com 10px de espaçamento.
         botoes.setAlignment(Pos.CENTER); // Centraliza os botões.
 
-        VBox form = new VBox(12, // Container vertical para o formulário.
+        VBox formmostrarregisto = new VBox(12, // Container vertical para o formulário.
                 titulo,
                 lblNome, txtNome,
                 lblPhone, txtPhone,
@@ -125,11 +124,11 @@ public class Register { // Início da classe Register.
                 botoes
         );
 
-        form.setAlignment(Pos.CENTER); // Centraliza o formulário verticalmente.
-        form.setPadding(new Insets(20)); // Adiciona 20px de espaçamento interno.
+        formmostrarregisto.setAlignment(Pos.CENTER); // Centraliza o formulário verticalmente.
+        formmostrarregisto.setPadding(new Insets(20)); // Adiciona 20px de espaçamento interno.
 
         // ✅ Utiliza o novo método estático para criar, estilizar e colocar a barra de título
-        BorderPane raiz = StyleUtil.createRootLayout(stage, form);
+        BorderPane raiz = StyleUtil.createRootLayout(stage, formmostrarregisto);
 
         // 🔹 4. Exibição
         Scene scene = new Scene(raiz, 400, 480); // Cria a Scene com o tamanho.
