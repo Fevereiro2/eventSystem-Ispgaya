@@ -527,22 +527,22 @@ public class Window{
         // Botões do menu
 
         AdminScreens admin = new AdminScreens(centro);
-        Button btnParticipantes = StyleUtil.createStyledButtonAdmin(
+        Button btnParticipantes = StyleUtil.adminButton(
                 "Participantes",
                 _ -> admin.mostrarParticipantes()
         );
 
-        Button btnSessoes = StyleUtil.createStyledButtonAdmin(
+        Button btnSessoes = StyleUtil.adminButton(
                 "Sessões",
                 _ -> admin.mostrarSessoes()
         );
 
-        Button btnEventos = StyleUtil.createStyledButtonAdmin(
+        Button btnEventos = StyleUtil.adminButton(
                 "Eventos",
                 _ -> admin.mostrarEventos()
         );
 
-        Button btnRecursos = StyleUtil.createStyledButtonAdmin(
+        Button btnRecursos = StyleUtil.adminButton(
                 "Recursos",
                 _ -> admin.mostrarRecursos()
         );
@@ -828,4 +828,5 @@ public class Window{
         };
     }
 }
+
 
