@@ -73,7 +73,7 @@ public class AccountScreens {
                     avatarView.setImage(new Image(url, 120, 120, true, true));
                     avatarHolder[0] = url;
                 } catch (Exception ex) {
-                    new Alert(Alert.AlertType.ERROR, "URL inválido.").showAndWait();
+                    CustomAlert.Error("URL invalido.");
                 }
             });
         });
