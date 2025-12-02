@@ -36,10 +36,6 @@ import java.util.List;
 
 public class Window {
     private VBox centro; // conteúdo principal (eventos ou admin menu)
-
-    private double xOffset = 0; //declarar as
-    private double yOffset = 0;
-
     // 🔥 Armazena a referência do Stage para conseguir recarregar a UI
     private Stage palcoRef;
 
@@ -51,14 +47,12 @@ public class Window {
         palco.initStyle(StageStyle.UNDECORATED);
         criarUI();
     }
-
     // ============================================================
     // 🔥 Recarrega a UI após login/logout
     // ============================================================
     public void refresh() {
         criarUI();
     }
-
     // ============================================================
     // 🔥 Aqui fica toda a criação da UI
     // ============================================================
@@ -67,13 +61,8 @@ public class Window {
 
         NavbarUtil navbarUtil = new NavbarUtil();
         BorderPane barra = navbarUtil.createNavbar(palcoRef);
-
-
-        // Botões macOS
         HBox rightBox = criarRightBoxSessao();
         barra.setRight(rightBox);
-
-
 
         // Título
         Label titulo = new Label("🎟️ Eventos Disponíveis");
