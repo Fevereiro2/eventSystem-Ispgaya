@@ -42,7 +42,8 @@ public class EventDB {
                 e.initial_date,
                 e.finish_date,
                 e.image,
-                s.name AS state_name
+                s.name AS state_name,
+                s.state_id
             FROM event e
             INNER JOIN state s ON e.state_id = s.state_id
             WHERE e.event_id = ?
@@ -94,7 +95,8 @@ public class EventDB {
             e.initial_date,
             e.finish_date,
             e.image,
-            s.name AS state_name
+            s.name AS state_name,
+            s.state_id
         FROM event e
         INNER JOIN state s ON e.state_id = s.state_id
         ORDER BY e.initial_date;
