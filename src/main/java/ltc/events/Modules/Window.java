@@ -75,18 +75,15 @@ public class Window{
         LocalDate hoje = LocalDate.now();
 
         ObservableList<Event> eventos = EventDB.getAllEvents();
-        List<Event> eventosComData = eventos.stream()
-                .filter(ev -> ev.getStartdate() != null)
-                .toList();
 
         // Eventos atuais (data >= hoje)
-        List<Event> eventosAtuais = eventosComData.stream()
-                .filter(ev -> ev.getStartdate().toLocalDateTime().toLocalDate().compareTo(hoje) >= 0)
+        List<Event> eventosAtuais = eventos.stream()
+                .filter(ev -> dataEventoOuHoje(ev).compareTo(hoje) >= 0)
                 .toList();
 
         // Eventos antigos (data < hoje)
-        List<Event> eventosAntigos = eventosComData.stream()
-                .filter(ev -> ev.getStartdate().toLocalDateTime().toLocalDate().compareTo(hoje) < 0)
+        List<Event> eventosAntigos = eventos.stream()
+                .filter(ev -> dataEventoOuHoje(ev).compareTo(hoje) < 0)
                 .toList();
 
         // Título
