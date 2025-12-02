@@ -13,7 +13,7 @@ public class StyleUtil {
     // ============================================================
     // 🔵 1. MÉTODO ORIGINAL — NÃO MEXEMOS
     // ============================================================
-    public static Button createStyledButton(String text, String colorStart, String colorEnd, EventHandler<ActionEvent> handler) {
+    public static Button gradientButton(String text, String colorStart, String colorEnd, EventHandler<ActionEvent> handler) {
         Button button = new Button(text);
 
         button.setStyle(String.format("""
@@ -32,7 +32,7 @@ public class StyleUtil {
     }
 
 
-    public static Button createStyledButtonAdmin(String text, EventHandler<ActionEvent> handler) {
+    public static Button adminButton(String text, EventHandler<ActionEvent> handler) {
         Button button = new Button(text);
 
         button.setStyle(String.format("""
@@ -59,7 +59,7 @@ public class StyleUtil {
 
     // ==== BOTÃO PRIMÁRIO ====
     public static Button primaryButton(String text, EventHandler<ActionEvent> handler) {
-        return createStyledButton(text, "#2EC4B6", "#1A9E8C", handler);
+        return gradientButton(text, "#2EC4B6", "#1A9E8C", handler);
     }
 
     // ==== BOTÃO SECUNDÁRIO ====
@@ -99,7 +99,7 @@ public class StyleUtil {
 
     // ==== BOTÃO DE PERIGO ====
     public static Button dangerButton(String text, EventHandler<ActionEvent> handler) {
-        return createStyledButton(text, "#FF5C5C", "#E64545", handler);
+        return gradientButton(text, "#FF5C5C", "#E64545", handler);
     }
 
 
@@ -123,3 +123,4 @@ public class StyleUtil {
         return raiz;
     }
 }
+
