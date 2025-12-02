@@ -756,10 +756,10 @@ public class Window{
         lblNome.setStyle("-fx-font-weight: bold; -fx-font-size: 16px; -fx-text-fill: #333;");
         lblNome.setWrapText(true);
 
-        Label lblData = new Label("📅 " + ev.getStartdate().toLocalDateTime().toLocalDate());
+        Label lblData = new Label("Data: " + dataEventoOuHoje(ev));
         lblData.setStyle("-fx-text-fill: #666; -fx-font-size: 13px;");
 
-        Label lblLocal = new Label("📍 " + ev.getLocal());
+        Label lblLocal = new Label("Local: " + ev.getLocal());
         lblLocal.setStyle("-fx-text-fill: #777; -fx-font-size: 13px;");
 
         Label lblEstado = new Label(ev.getState().getName());
@@ -786,6 +786,13 @@ public class Window{
         if (dias <= 0) return new double[]{300, 360};
         if (dias <= 2) return new double[]{250, 330};
         return new double[]{210, 300};
+    }
+
+    private LocalDate dataEventoOuHoje(Event ev) {
+        if (ev.getStartdate() != null) {
+            return ev.getStartdate().toLocalDateTime().toLocalDate();
+        }
+        return LocalDate.now();
     }
 
 
