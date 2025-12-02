@@ -86,7 +86,7 @@ public class CustomAlert {
         lblMensagem.setWrapText(true);
         lblMensagem.setMaxWidth(320);
 
-        Button btnOK = StyleUtil.createStyledButton("OK", colorStart, colorEnd, _ -> stage.close());
+        Button btnOK = StyleUtil.gradientButton("OK", colorStart, colorEnd, _ -> stage.close());
 
         HBox botoes = new HBox(btnOK);
         botoes.setAlignment(Pos.CENTER_RIGHT);
@@ -121,7 +121,7 @@ public class CustomAlert {
         lblMensagem.setWrapText(true);
         lblMensagem.setMaxWidth(320);
 
-        Button btnSim = StyleUtil.createStyledButton("Sim", "#2EC4B6", "#1A9E8C", _ -> {
+        Button btnSim = StyleUtil.gradientButton("Sim", "#2EC4B6", "#1A9E8C", _ -> {
             resultado[0] = true;
             stage.close();
         });
@@ -144,3 +144,4 @@ public class CustomAlert {
         return resultado[0];
     }
 }
+
