@@ -2,20 +2,17 @@ package ltc.events.Modules.ui;
 
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
+import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.layout.VBox;
-import ltc.events.Modules.ui.ModalFactory;
-import ltc.events.Modules.session.UserSession;
-import ltc.events.Modules.styles.StyleUtil;
+import ltc.events.Modules.visual.StyleUtil;
+import ltc.events.classes.hashs.SessionEntry;
+import ltc.events.Modules.ui.AlterPassword;
 
 public class Settings {
 
     private final VBox centro;
-
-    public AccountScreens(VBox centro) {
-        this.centro = centro;
-    }
 
     public Settings(VBox centro) {
         this.centro = centro;
@@ -24,17 +21,31 @@ public class Settings {
     public void mostrarDefinicoesConta() {
         centro.getChildren().clear();
 
-        Label titulo = new Label("🔧 Definições da Conta");
+        var user = SessionEntry.getUser();
+        if (user == null) {
+            new Alert(Alert.AlertType.ERROR, "Nenhum utilizador autenticado.").showAndWait();
+            return;
+        }
+
+        int userId;
+        try {
+            userId = Integer.parseInt(user.getId());
+        } catch (NumberFormatException ex) {
+            new Alert(Alert.AlertType.ERROR, "Utilizador invalido na sessao atual.").showAndWait();
+            return;
+        }
+
+        Label titulo = new Label("Definicoes da Conta");
         titulo.setStyle("-fx-font-size: 22px; -fx-font-weight: bold;");
 
         Button btnAlterarPass = StyleUtil.primaryButton(
                 "Alterar Password",
-                _ -> ModalFactory.abrirJanelaAlterarPassword(UserSession.getUserId())
+                _ -> AlterPassword.abrirJanelaAlterarPassword(userId)
         );
 
         Button btnAlterarEmail = StyleUtil.primaryButton(
                 "Alterar Email",
-                _ -> ModalFactory.abrirJanelaAlterarEmail(UserSession.getUserId())
+                _ -> new Alert(Alert.AlertType.INFORMATION, "Funcionalidade de alterar email ainda nao implementada.").showAndWait()
         );
 
         VBox box = new VBox(15, titulo, btnAlterarPass, btnAlterarEmail);
@@ -44,4 +55,3 @@ public class Settings {
         centro.getChildren().add(box);
     }
 }
-
