@@ -137,19 +137,12 @@ public class CustomAlert { // Início da classe utilitária CustomAlert (não in
     HBox botoes = new HBox(btnOK);// Container para os botões.
     botoes.setAlignment(Pos.CENTER_RIGHT);// Alinha o botão OK à direita dentro do container.
 
-    VBox conteudo = new VBox(15, lblTitulo, lblMensagem, botoes);// Container vertical para todos os elementos de conteúdo.
-    conteudo.setAlignment(Pos.TOP_LEFT);// Alinha o conteúdo ao topo-esquerda.
-    conteudo.setPadding(new Insets(20));// Aplica 20px de espaçamento interno.
+    VBox formcustomalert = new VBox(15, lblTitulo, lblMensagem, botoes);// Container vertical para todos os elementos de conteúdo.
+    formcustomalert.setAlignment(Pos.TOP_LEFT);// Alinha o conteúdo ao topo-esquerda.
+    formcustomalert.setPadding(new Insets(20));// Aplica 20px de espaçamento interno.
 
     // 4. Layout Raiz e Estilo de Janela
-    BorderPane raiz = new BorderPane();// Cria o layout raiz.
-    raiz.setTop(barra);// Coloca a barra de título no topo.
-    raiz.setCenter(conteudo);// Coloca o VBox com a mensagem no centro.
-    raiz.setStyle("""
-      -fx-background-color: white;
-      -fx-background-radius: 10;
-      -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.25), 15, 0.3, 0, 4); // Efeito de sombra (elevação 3D).
-    """);
+    BorderPane raiz = StyleUtil.createRootLayout(stage, formcustomalert);
 
     // 5. Exibir a Janela
     Scene scene = new Scene(raiz, 350, 200);// Cria a Scene com o layout raiz e define o tamanho da janela (350x200).
