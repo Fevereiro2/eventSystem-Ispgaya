@@ -57,8 +57,8 @@ public class EventDB {
             insert.setString(1, name);
             insert.setString(2, description);
             insert.setString(3, local);
-            insert.setTimestamp(4, initialDate);
-            insert.setTimestamp(5, finishDate);
+            insert.setString(4, initialDate != null ? initialDate.toLocalDateTime().toLocalDate().toString() : null);
+            insert.setString(5, finishDate != null ? finishDate.toLocalDateTime().toLocalDate().toString() : null);
             insert.setString(6, image);
             insert.setInt(7, stateId);
 
@@ -136,13 +136,13 @@ public class EventDB {
         """;
 
         try (Connection conn = db.connect();
-             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            PreparedStatement stmt = conn.prepareStatement(sql)) {
 
             stmt.setString(1, name);
             stmt.setString(2, description);
             stmt.setString(3, local);
-            stmt.setTimestamp(4, initialDate);
-            stmt.setTimestamp(5, finishDate);
+            stmt.setString(4, initialDate != null ? initialDate.toLocalDateTime().toLocalDate().toString() : null);
+            stmt.setString(5, finishDate != null ? finishDate.toLocalDateTime().toLocalDate().toString() : null);
             stmt.setString(6, image);
             stmt.setInt(7, stateId);
             stmt.setInt(8, Integer.parseInt(id)); // Parse do ID
