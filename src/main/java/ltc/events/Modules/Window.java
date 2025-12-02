@@ -645,10 +645,10 @@ public class Window{
                         FXCollections.observableArrayList(EventDB.getAllEvents())
                 );
 
-                new Alert(Alert.AlertType.INFORMATION, "Evento criado com sucesso!").showAndWait();
+                CustomAlert.Success("Evento criado com sucesso!");
                 stage.close();
             } catch (Exception ex) {
-                new Alert(Alert.AlertType.ERROR, "Erro: " + ex.getMessage()).showAndWait();
+                CustomAlert.Error("Erro: " + ex.getMessage());
             }
         });
 
@@ -716,10 +716,10 @@ public class Window{
                 stmt.setInt(2, Integer.parseInt(user.getId()));
                 stmt.executeUpdate();
 
-                new Alert(Alert.AlertType.INFORMATION, "Password atualizada!").showAndWait();
+                CustomAlert.Success("Password atualizada!");
                 stage.close();
             } catch (Exception ex) {
-                new Alert(Alert.AlertType.ERROR, "Erro: " + ex.getMessage()).showAndWait();
+                CustomAlert.Error("Erro: " + ex.getMessage());
             }
         });
 
