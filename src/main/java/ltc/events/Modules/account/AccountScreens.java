@@ -57,8 +57,8 @@ public class AccountScreens {
         Circle clip = new Circle(60, 60, 60);
         avatarView.setClip(clip);
 
-        Button btnUpload = new Button("Upload Novo");
-        Button btnDeleteAvatar = new Button("Remover Avatar");
+        Button btnUpload = StyleUtil.primaryButton("Upload Novo", null);
+        Button btnDeleteAvatar = StyleUtil.dangerButton("Remover Avatar", null);
 
         final String[] avatarHolder = { avatarUrl };
 
