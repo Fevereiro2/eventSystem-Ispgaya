@@ -23,6 +23,7 @@ import ltc.events.Modules.visual.CalendarEventoView; // Importa a classe de visu
 import ltc.events.Modules.visual.Login; // Importa a classe que define a interface e lógica da tela de Login
 import ltc.events.Modules.visual.Register; // Importa a classe que define a interface e lógica da tela de Registo
 import ltc.events.Modules.visual.StyleUtil;
+import ltc.events.Modules.visual.CustomAlert;
 import ltc.events.Modules.account.AccountScreens;
 import ltc.events.classes.Event; // Importa a classe modelo (POJO) que representa um Evento
 import ltc.events.classes.Participant; // Importa a classe modelo (POJO) que representa um Participante
@@ -269,7 +270,7 @@ public class Window{
                 "Definicoes",
                 _ -> {
                     if (!SessionEntry.isLogged()) {
-                        new Alert(Alert.AlertType.WARNING, "Inicie sessao para aceder ao perfil.").showAndWait();
+                        CustomAlert.Warning("Inicie sessao para aceder ao perfil.");
                         return;
                     }
                     new AccountScreens(centro).mostrarDefinicoesConta();
