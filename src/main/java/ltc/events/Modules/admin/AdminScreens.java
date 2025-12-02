@@ -92,11 +92,7 @@ public class AdminScreens {
         // -------------------------------
         // BOTÕES
         // -------------------------------
-        Button btnEditar = StyleUtil.secondaryButton("Editar", null);
-        Button btnRemover = StyleUtil.dangerButton("Remover", null);
-        Button btnRefresh = StyleUtil.secondaryButton("Atualizar", null);
-
-        btnEditar.setOnAction(_ -> {
+        Button btnEditar = StyleUtil.secondaryButton("Editar", _ -> {
             Participant sel = tabela.getSelectionModel().getSelectedItem();
             if (sel == null) {
                 CustomAlert.Warning("Selecione um participante para editar.");
@@ -105,7 +101,7 @@ public class AdminScreens {
             editarParticipante(sel);
         });
 
-        btnRemover.setOnAction(_ -> {
+        Button btnRemover = StyleUtil.dangerButton("Remover", _ -> {
             Participant sel = tabela.getSelectionModel().getSelectedItem();
             if (sel == null) {
                 CustomAlert.Warning("Selecione um participante para remover.");
@@ -116,19 +112,16 @@ public class AdminScreens {
             atualizarContador(contador, tabela.getItems());
         });
 
-        btnRefresh.setOnAction(_ -> {
+        Button btnRefresh = StyleUtil.secondaryButton("Atualizar", _ -> {
             tabela.setItems(ParticipantDB.listAll());
             aplicarFiltro(tabela, filtro.getValue());
             atualizarContador(contador, tabela.getItems());
         });
 
-        Button btnCriar = StyleUtil.primaryButton("Criar Utilizador", null);
-        Button btnPass = StyleUtil.primaryButton("Alterar Password", null);
-
-// Ações
-        //btnCriar.setOnAction(_ -> abrirJanelaCriarUtilizador());
-
-        btnPass.setOnAction(_ -> {
+        Button btnCriar = StyleUtil.primaryButton("Criar Utilizador", _ -> {
+            CustomAlert.Info("Criar utilizador ainda nao implementado.");
+        });
+        Button btnPass = StyleUtil.primaryButton("Alterar Password", _ -> {
             Participant sel = tabela.getSelectionModel().getSelectedItem();
             if (sel == null) {
                 CustomAlert.Warning("Selecione um participante para alterar a password.");
@@ -250,8 +243,7 @@ public class AdminScreens {
         comboTipo.getItems().addAll(TypesDB.listAll()); // Criamos já a seguir
         comboTipo.getSelectionModel().select(p.getType());
 
-        Button btnSalvar = StyleUtil.primaryButton("Salvar", null);
-        btnSalvar.setOnAction(_ -> {
+        Button btnSalvar = StyleUtil.primaryButton("Salvar", _ -> {
             try {
                 ParticipantDB.update(p.getId(), txtNome.getText(), txtEmail.getText(),
                         txtPhone.getText(), comboTipo.getValue());
