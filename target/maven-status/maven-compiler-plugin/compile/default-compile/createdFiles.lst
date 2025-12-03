@@ -20,6 +20,7 @@ ltc\events\classes\Resourceevent.class
 ltc\events\Modules\connection\ParticipantDB.class
 ltc\events\Main.class
 ltc\events\Modules\admin\AdminScreens.class
+ltc\events\Modules\connection\ResourcesDB.class
 ltc\events\Modules\connection\StateDB.class
 ltc\events\Modules\ui\AlterPassword.class
 ltc\events\Modules\account\AccountScreens.class
@@ -29,5 +30,6 @@ ltc\events\Modules\connection\TypesDB.class
 ltc\events\Modules\visual\StyleUtil.class
 ltc\events\Modules\Permissions.class
 ltc\events\classes\Resources.class
+ltc\events\Modules\connection\CategoryDB.class
 ltc\events\classes\State.class
 ltc\events\Modules\NavbarUtil.class
