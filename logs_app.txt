@@ -1,4 +1,4 @@
-Logs da aplicacao - 2025-12-03T17:27:29.706343
+Logs da aplicacao - 2025-12-03T17:57:06.914879400
 
 === PARTICIPANTES ===
 - Francisco | francisco@fevereiro.pt | Participante | tel: 913635135
@@ -38,5 +38,3 @@ Evento: Cyber
 - Projetor | qtd: 6 | custo: 50.0 | categoria: 
 - Projetor Epson | qtd: 3 | custo: 1500.0 | categoria: Projetor
 - Router WiFi | qtd: 2 | custo: 120.0 | categoria: Hub/Router
-[2025-12-03T17:36:54.722390] LOGIN: pedro@fevereiro.pt
-[2025-12-03T17:53:22.202762700] LOGIN: pedro@fevereiro.pt
