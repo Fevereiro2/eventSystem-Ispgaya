@@ -15,12 +15,15 @@ import javafx.stage.Stage;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.sql.Timestamp;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import ltc.events.Modules.connection.EventDB;
 import ltc.events.Modules.connection.ParticipantDB;
 import ltc.events.Modules.connection.TypesDB;
 import ltc.events.Modules.connection.CategoryDB;
 import ltc.events.Modules.connection.ResourcesDB;
 import ltc.events.Modules.connection.SessionDB;
+import ltc.events.Modules.connection.SessionParticipantDB;
 import ltc.events.Modules.visual.CustomAlert;
 import ltc.events.Modules.visual.StyleUtil;
 import ltc.events.Modules.connection.StateDB;
@@ -50,9 +53,9 @@ public class AdminScreens {
         centro.getChildren().clear();
 
         // -------------------------------
-        // TÃƒÂTULO + FILTRO
+        // TÃƒÆ’Ã‚ÂTULO + FILTRO
         // -------------------------------
-        javafx.scene.control.Label titulo = new javafx.scene.control.Label("Ã°Å¸â€˜Â¤ GestÃƒÂ£o de Participantes");
+        javafx.scene.control.Label titulo = new javafx.scene.control.Label("ÃƒÂ°Ã…Â¸Ã¢â‚¬ËœÃ‚Â¤ GestÃƒÆ’Ã‚Â£o de Participantes");
         titulo.setStyle("-fx-font-size: 20px; -fx-font-weight: bold;");
 
         ComboBox<String> filtro = new ComboBox<>();
@@ -105,7 +108,7 @@ public class AdminScreens {
         });
 
         // -------------------------------
-        // BOTÃƒâ€¢ES
+        // BOTÃƒÆ’Ã¢â‚¬Â¢ES
         // -------------------------------
         Button btnEditar = StyleUtil.secondaryButton("Editar", _ -> {
             Participant sel = tabela.getSelectionModel().getSelectedItem();
@@ -156,6 +159,8 @@ public class AdminScreens {
         // LAYOUT FINAL
         // -------------------------------
         VBox layout = new VBox(15, topo, tabela, contador, botoes);
+        addAdminActions(layout);
+
         layout.setAlignment(Pos.TOP_CENTER);
         layout.setPadding(new Insets(20));
 
@@ -250,6 +255,8 @@ public class AdminScreens {
         botoes.setPadding(new Insets(10, 0, 0, 0));
 
         VBox layout = new VBox(12, titulo, tabelaEventos, tabelaSessoes, botoes);
+        addAdminActions(layout);
+
         layout.setAlignment(Pos.TOP_LEFT);
         layout.setPadding(new Insets(20));
 
@@ -340,6 +347,8 @@ public class AdminScreens {
         botoes.setPadding(new Insets(10, 0, 0, 0));
 
         VBox layout = new VBox(15, titulo, tabela, botoes);
+        addAdminActions(layout);
+
         layout.setPadding(new Insets(20));
         layout.setAlignment(Pos.TOP_LEFT);
 
@@ -501,6 +510,8 @@ public class AdminScreens {
         botoes.setPadding(new Insets(10, 0, 0, 0));
 
         VBox layout = new VBox(15, titulo, tabela, botoes);
+        addAdminActions(layout);
+
         layout.setAlignment(Pos.TOP_CENTER);
         layout.setPadding(new Insets(20));
 
@@ -561,6 +572,49 @@ public class AdminScreens {
 
         stage.setScene(new Scene(layout, 400, 420));
         stage.showAndWait();
+    }
+
+    private void addAdminActions(VBox layout) {
+        Button btnLogs = StyleUtil.secondaryButton("Gerar Logs", _ -> gerarLogs());
+        Button btnRel = StyleUtil.primaryButton("Gerar Relatorios", _ -> gerarRelatorios());
+        HBox extras = new HBox(10, btnLogs, btnRel);
+        extras.setAlignment(Pos.CENTER_LEFT);
+        extras.setPadding(new Insets(8, 0, 0, 0));
+        layout.getChildren().add(extras);
+    }
+
+    private void gerarLogs() {
+        try {
+            String content = "Logs da aplicacao - " + LocalDateTime.now();
+            Files.writeString(Path.of("logs_app.txt"), content);
+            CustomAlert.Success("Logs gerados em logs_app.txt");
+        } catch (Exception ex) {
+            CustomAlert.Error("Erro ao gerar logs: " + ex.getMessage());
+        }
+    }
+
+    private void gerarRelatorios() {
+        try {
+            int totalParticipantes = ParticipantDB.listAll().size();
+            int totalEventos = EventDB.getAllEvents().size();
+            int totalRecursos = ResourcesDB.listAll().size();
+            int totalSessoes = EventDB.getAllEvents().stream()
+                    .mapToInt(ev -> SessionDB.getSessionsByEvent(ev.getId()).size())
+                    .sum();
+
+            String rel = """
+                    Relatorio geral - %s
+                    Participantes: %d
+                    Eventos: %d
+                    Recursos: %d
+                    Sessoes: %d
+                    """.formatted(LocalDateTime.now(), totalParticipantes, totalEventos, totalRecursos, totalSessoes);
+
+            Files.writeString(Path.of("relatorio_admin.txt"), rel);
+            CustomAlert.Success("Relatorio gerado em relatorio_admin.txt");
+        } catch (Exception ex) {
+            CustomAlert.Error("Erro ao gerar relatorio: " + ex.getMessage());
+        }
     }
 
     private void carregarSessoes(TableView<Session> tabela, Event ev) {
@@ -639,7 +693,7 @@ public class AdminScreens {
     }
 
     private void aplicarFiltro(TableView<Participant> tabela, String filtro) {
-        ObservableList<Participant> todos = ParticipantDB.listAll(); // jÃƒÂ¡ tens isto
+        ObservableList<Participant> todos = ParticipantDB.listAll(); // jÃƒÆ’Ã‚Â¡ tens isto
         switch (filtro) {
             case "Admins" ->
                     tabela.setItems(
@@ -692,7 +746,7 @@ public class AdminScreens {
         TextField txtPhone = new TextField(p.getPhone());
 
         ComboBox<Types> comboTipo = new ComboBox<>();
-        comboTipo.getItems().addAll(TypesDB.listAll()); // Criamos jÃƒÂ¡ a seguir
+        comboTipo.getItems().addAll(TypesDB.listAll()); // Criamos jÃƒÆ’Ã‚Â¡ a seguir
         comboTipo.getSelectionModel().select(p.getType());
 
         Button btnSalvar = StyleUtil.primaryButton("Salvar", _ -> {
@@ -715,6 +769,13 @@ public class AdminScreens {
         popup.showAndWait();
     }
 }
+
+
+
+
+
+
+
 
 
 
