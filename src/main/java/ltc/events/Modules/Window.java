@@ -1,36 +1,37 @@
 package ltc.events.Modules; // Declara o pacote onde esta classe reside
 
-import javafx.beans.property.SimpleStringProperty; // Importa uma classe para criar propriedades observáveis de ‘String’, útil para ligar dados a componentes da UI (ex: TableView)
-import javafx.collections.FXCollections; // Importa utilitários para criar coleções observáveis (listas a notificar a UI sobre mudanças)
-import javafx.collections.ObservableList; // Importa a ‘interface’ para listas que permitem que os componentes da UI sejam notificados quando a lista é alterada
+import javafx.beans.property.SimpleStringProperty; // Importa uma classe para criar propriedades observÃ¡veis de â€˜Stringâ€™, Ãºtil para ligar dados a componentes da UI (ex: TableView)
+import javafx.collections.FXCollections; // Importa utilitÃ¡rios para criar coleÃ§Ãµes observÃ¡veis (listas a notificar a UI sobre mudanÃ§as)
+import javafx.collections.ObservableList; // Importa a â€˜interfaceâ€™ para listas que permitem que os componentes da UI sejam notificados quando a lista Ã© alterada
 import javafx.scene.Cursor;
 import javafx.scene.control.cell.PropertyValueFactory; // Importa uma classe usada em TableView para ligar as colunas aos campos (propriedades) dos objetos
-import javafx.stage.Modality; // Importa enumeração que define o comportamento de modalidade de uma janela (ex: bloquear a janela principal)
+import javafx.stage.Modality; // Importa enumeraÃ§Ã£o que define o comportamento de modalidade de uma janela (ex: bloquear a janela principal)
 import javafx.stage.Stage; // Importa a classe principal Stage, que representa uma janela no JavaFX
-import javafx.stage.StageStyle; // Importa enumeração que define a decoração e estilo da janela (ex: sem borda, utilitário)
-import javafx.scene.Scene; // Importa a classe Scene, que é o contentor para todo o conteúdo da interface gráfica (o que está dentro da Stage)
-import javafx.scene.control.*; // Importa todos os componentes de controlo da UI (botões, caixas de texto, tabelas, etc.)
+import javafx.stage.StageStyle; // Importa enumeraÃ§Ã£o que define a decoraÃ§Ã£o e estilo da janela (ex: sem borda, utilitÃ¡rio)
+import javafx.scene.Scene; // Importa a classe Scene, que Ã© o contentor para todo o conteÃºdo da interface grÃ¡fica (o que estÃ¡ dentro da Stage)
+import javafx.scene.control.*; // Importa todos os componentes de controlo da UI (botÃµes, caixas de texto, tabelas, etc.)
 import javafx.scene.image.Image; // Importa a classe Image, usada para carregar imagens
 import javafx.scene.image.ImageView; // Importa o componente para exibir uma imagem na UI
 import javafx.scene.layout.*; // Importa todas as classes de layout (HBox, VBox, BorderPane, StackPane, etc.) para organizar os componentes
-import javafx.geometry.*; // Importa utilitários para definir alinhamentos, preenchimentos (padding) e margens (insets)
+import javafx.geometry.*; // Importa utilitÃ¡rios para definir alinhamentos, preenchimentos (padding) e margens (insets)
 import ltc.events.Modules.admin.AdminScreens;
 import ltc.events.Modules.connection.EventDB; // Importa a classe de acesso ao banco de dados para a tabela Eventos
 import ltc.events.Modules.connection.ParticipantDB;// Importa a classe de acesso ao banco de dados para a tabela Participantes
-import ltc.events.Modules.connection.SessionDB;// Importa a classe de acesso ao banco de dados para a tabela Sessões
+import ltc.events.Modules.connection.SessionDB;// Importa a classe de acesso ao banco de dados para a tabela SessÃµes
 import ltc.events.Modules.connection.TypesDB;// Importa a classe de acesso ao banco de dados para a tabela Tipos de Participantes
-import ltc.events.Modules.visual.CalendarEventoView; // Importa a classe de visualização específica para o calendário de eventos
-import ltc.events.Modules.visual.Login; // Importa a classe que define a interface e lógica da tela de Login
-import ltc.events.Modules.visual.Register; // Importa a classe que define a interface e lógica da tela de Registo
+import ltc.events.Modules.visual.CalendarEventoView; // Importa a classe de visualizaÃ§Ã£o especÃ­fica para o calendÃ¡rio de eventos
+import ltc.events.Modules.visual.Login; // Importa a classe que define a interface e lÃ³gica da tela de Login
+import ltc.events.Modules.visual.Register; // Importa a classe que define a interface e lÃ³gica da tela de Registo
 import ltc.events.Modules.visual.StyleUtil;
 import ltc.events.Modules.visual.CustomAlert;
 import ltc.events.Modules.account.AccountScreens;
 import ltc.events.classes.Event; // Importa a classe modelo (POJO) que representa um Evento
 import ltc.events.classes.Participant; // Importa a classe modelo (POJO) que representa um Participante
-import ltc.events.classes.Session; // Importa a classe modelo (POJO) que representa uma Sessão
+import ltc.events.classes.Session; // Importa a classe modelo (POJO) que representa uma SessÃ£o
 import ltc.events.classes.Types; // Importa a classe modelo (POJO) que representa os Tipos de Participantes
-import ltc.events.classes.hashs.PasswordUtil; // Importa a classe utilitária para operações com hashes de password
-import ltc.events.classes.hashs.SessionEntry; // Importa a classe que armazena informações da sessão ativa do utilizador logado (ex: ‘ID’ e Tipo)
+import ltc.events.classes.hashs.PasswordUtil; // Importa a classe utilitÃ¡ria para operaÃ§Ãµes com hashes de password
+import ltc.events.classes.hashs.SessionEntry;
+import ltc.events.Modules.util.LoggingUtil; // Importa a classe que armazena informaÃ§Ãµes da sessÃ£o ativa do utilizador logado (ex: â€˜IDâ€™ e Tipo)
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -42,8 +43,8 @@ import java.util.List;
 
 public class Window{
 
-    private VBox centro; // conteúdo principal (eventos ou admin menu)
-    // 🔥 Armazena a referência do Stage para conseguir recarregar a UI
+    private VBox centro; // conteÃºdo principal (eventos ou admin menu)
+    // ðŸ”¥ Armazena a referÃªncia do Stage para conseguir recarregar a UI
     private Stage palcoRef;
 
 
@@ -51,21 +52,21 @@ public class Window{
 
 
     // ============================================================
-    // 🔥 Função principal — chama setup e guarda o Stage
+    // ðŸ”¥ FunÃ§Ã£o principal â€” chama setup e guarda o Stage
     // ============================================================
     public void mostrar(Stage palco) {
-        this.palcoRef = palco; // 🔥 guarda referência
+        this.palcoRef = palco; // ðŸ”¥ guarda referÃªncia
         palco.initStyle(StageStyle.UNDECORATED);
         criarUI();
     }
     // ============================================================
-    // 🔥 Recarrega a UI após login/logout
+    // ðŸ”¥ Recarrega a UI apÃ³s login/logout
     // ============================================================
     public void refresh() {
         criarUI();
     }
     // ============================================================
-    // 🔥 Aqui fica toda a criação da UI
+    // ðŸ”¥ Aqui fica toda a criaÃ§Ã£o da UI
     // ============================================================
     private void criarUI() {
         NavbarUtil navbarUtil = new NavbarUtil();
@@ -94,8 +95,8 @@ public class Window{
                 .filter(ev -> dataEventoOuHoje(ev).compareTo(hoje) < 0)
                 .toList();
 
-        // Título
-        Label titulo = new Label("🎟️ Eventos Disponíveis");
+        // TÃ­tulo
+        Label titulo = new Label("ðŸŽŸï¸ Eventos DisponÃ­veis");
         titulo.setStyle("-fx-font-size: 22px; -fx-font-weight: bold;");
 
         Button btnAntigos = StyleUtil.secondaryButton(
@@ -132,12 +133,12 @@ public class Window{
 
                     HBox filtros = new HBox(10,
                             new Label("Ano:"), anoBox,
-                            new Label("Mês:"), mesBox
+                            new Label("MÃªs:"), mesBox
                     );
                     filtros.setAlignment(Pos.CENTER_LEFT);
 
                     // ===========================
-                    // ÁREA DO CALENDÁRIO
+                    // ÃREA DO CALENDÃRIO
                     // ===========================
                     ScrollPane scroll = new ScrollPane();
                     scroll.setFitToWidth(true);
@@ -146,7 +147,7 @@ public class Window{
                     scroll.setContent(calendario);
 
                     // ===========================
-                    // FUNÇÃO PARA DESENHAR O CALENDÁRIO
+                    // FUNÃ‡ÃƒO PARA DESENHAR O CALENDÃRIO
                     // ===========================
                     Runnable atualizarCalendario = () -> {
 
@@ -159,8 +160,8 @@ public class Window{
                         calendario.setHgap(10);
                         calendario.setVgap(10);
 
-                        // Cabeçalho dias da semana
-                        String[] dias = {"Seg", "Ter", "Qua", "Qui", "Sex", "Sáb", "Dom"};
+                        // CabeÃ§alho dias da semana
+                        String[] dias = {"Seg", "Ter", "Qua", "Qui", "Sex", "SÃ¡b", "Dom"};
                         for (int i = 0; i < dias.length; i++) {
                             Label lbl = new Label(dias[i]);
                             lbl.setStyle("-fx-font-weight: bold; -fx-font-size: 14px;");
@@ -182,7 +183,7 @@ public class Window{
                                     .filter(ev -> ev.getStartdate().toLocalDateTime().toLocalDate().equals(diaAtual))
                                     .toList();
 
-                            // ---- CÉLULA DO CALENDÁRIO ----
+                            // ---- CÃ‰LULA DO CALENDÃRIO ----
                             VBox celula = new VBox(5);
                             celula.setPadding(new Insets(10));
                             celula.setPrefSize(140, 110);
@@ -196,14 +197,14 @@ public class Window{
                             // Cursor de clickable
                             celula.setCursor(Cursor.HAND);
 
-                            // Número do dia
+                            // NÃºmero do dia
                             Label lblDia = new Label(String.valueOf(dia));
                             lblDia.setStyle("-fx-font-weight: bold; -fx-font-size: 16px;");
                             celula.getChildren().add(lblDia);
 
-                            // Mostrar eventos dentro da célula
+                            // Mostrar eventos dentro da cÃ©lula
                             for (Event ev : eventosDoDia) {
-                                Label lblEvento = new Label("• " + ev.getName());
+                                Label lblEvento = new Label("â€¢ " + ev.getName());
                                 lblEvento.setStyle("-fx-font-size: 12px; -fx-text-fill: #1976d2;");
                                 celula.getChildren().add(lblEvento);
                             }
@@ -221,7 +222,7 @@ public class Window{
                                 conteudo.setPadding(new Insets(20));
                                 conteudo.setAlignment(Pos.TOP_CENTER);
 
-                                // Reutiliza o teu método criarCardEvento()
+                                // Reutiliza o teu mÃ©todo criarCardEvento()
                                 for (Event ev : eventosDoDia) {
                                     conteudo.getChildren().add(criarCardEvento(ev));
                                 }
@@ -256,7 +257,7 @@ public class Window{
                         atualizarCalendario.run();
                     });
 
-                    // Atualizar quando muda MÊS
+                    // Atualizar quando muda MÃŠS
                     mesBox.setOnAction(_2 -> atualizarCalendario.run());
 
                     atualizarCalendario.run(); // primeira vez
@@ -307,7 +308,7 @@ public class Window{
         }
         colunaBotoes.setPadding(new Insets(5, 0, 5, 5)); // opcional
 
-        // Mostrar apenas os atuais no ecrã
+        // Mostrar apenas os atuais no ecrÃ£
         for (Event ev : eventosAtuais) {
             tiles.getChildren().add(criarCardEvento(ev));
         }
@@ -329,10 +330,10 @@ public class Window{
     }
 
     // ============================================================
-    // 🔥 Barra superior — Login/Register ou User Info + Logout
+    // ðŸ”¥ Barra superior â€” Login/Register ou User Info + Logout
     // ============================================================
 // ============================================================
-// 🔥 Lógica de Login/Register ou User Info + Logout
+// ðŸ”¥ LÃ³gica de Login/Register ou User Info + Logout
 // ============================================================
     private HBox criarRightBoxSessao() {
 
@@ -345,7 +346,7 @@ public class Window{
 
             var user = SessionEntry.getUser();
 
-            Label lblUser = new Label("👤 " + user.getName() + " (" + user.getType().getName() + ")");
+            Label lblUser = new Label("ðŸ‘¤ " + user.getName() + " (" + user.getType().getName() + ")");
             lblUser.setStyle("-fx-font-weight: bold; -fx-font-size: 13px;");
 
         Button btnLogout = StyleUtil.secondaryButton("Sair", _ -> {
@@ -364,8 +365,8 @@ public class Window{
         } else {
 
             // ================= DESLOGADO ==================
-            Button btnLogin = StyleUtil.primaryButton("🔐 Login", _ -> new Login(this).mostrarLogin());
-            Button btnRegister = StyleUtil.primaryButton("📝 Register", _ -> new Register().mostrarRegister()); // Corrigir chamada
+            Button btnLogin = StyleUtil.primaryButton("ðŸ” Login", _ -> new Login(this).mostrarLogin());
+            Button btnRegister = StyleUtil.primaryButton("ðŸ“ Register", _ -> new Register().mostrarRegister()); // Corrigir chamada
 
             rightBox.getChildren().addAll(btnLogin, btnRegister);
         }
@@ -382,7 +383,7 @@ public class Window{
 
             var user = SessionEntry.getUser();
 
-            Label lblUser = new Label("👤 " + user.getName() + " (" + user.getType().getName() + ")");
+            Label lblUser = new Label("ðŸ‘¤ " + user.getName() + " (" + user.getType().getName() + ")");
             lblUser.setStyle("-fx-font-weight: bold; -fx-font-size: 13px;");
 
         Button btnLogout = StyleUtil.secondaryButton("Sair", _ -> {
@@ -405,8 +406,8 @@ public class Window{
         } else {
 
             // ================= DESLOGADO ==================
-            Button btnLogin = StyleUtil.primaryButton("🔐 Login", _ -> new Login(this).mostrarLogin());
-            Button btnRegister = StyleUtil.primaryButton("📝 Register", _ -> new Register().mostrarRegister());
+            Button btnLogin = StyleUtil.primaryButton("ðŸ” Login", _ -> new Login(this).mostrarLogin());
+            Button btnRegister = StyleUtil.primaryButton("ðŸ“ Register", _ -> new Register().mostrarRegister());
 
             HBox rightBox = new HBox(10, btnLogin, btnRegister);
             rightBox.setAlignment(Pos.CENTER_RIGHT);
@@ -415,7 +416,7 @@ public class Window{
             barra.setRight(rightBox);
         }
 
-        // Botões de janela à esquerda
+        // BotÃµes de janela Ã  esquerda
         barra.setLeft(botoesMac);
 
         barra.setStyle("-fx-background-color: linear-gradient(to bottom, #e0e0e0, #cfcfcf); "
@@ -433,10 +434,10 @@ public class Window{
 
         // Limpar centro
         centro.getChildren().clear();
-        Label titulo = new Label("⚙️ Painel de Administração");
+        Label titulo = new Label("âš™ï¸ Painel de AdministraÃ§Ã£o");
         titulo.setStyle("-fx-font-size: 24px; -fx-font-weight: bold;");
 
-        // Botões do menu
+        // BotÃµes do menu
 
         AdminScreens admin = new AdminScreens(centro);
         Button btnParticipantes = StyleUtil.adminButton(
@@ -445,7 +446,7 @@ public class Window{
         );
 
         Button btnSessoes = StyleUtil.adminButton(
-                "Sessões",
+                "SessÃµes",
                 _ -> admin.mostrarSessoes()
         );
 
@@ -458,27 +459,89 @@ public class Window{
                 "Recursos",
                 _ -> admin.mostrarRecursos()
         );
+        VBox feed = new VBox(8);
+        feed.setPadding(new Insets(10));
+        feed.setStyle("-fx-background-color: white;");
+
+        Runnable carregarFeed = () -> {
+            feed.getChildren().clear();
+            String raw = LoggingUtil.readLogs();
+            String[] linhas = raw.split("\\R");
+            if (linhas.length == 0 || (linhas.length == 1 && linhas[0].isBlank())) {
+                feed.getChildren().add(new Label("Sem logs ainda."));
+                return;
+            }
+            for (String linha : linhas) {
+                if (linha.isBlank()) continue;
+                Label lbl = new Label(linha);
+                lbl.setStyle("-fx-font-family: 'Consolas'; -fx-font-size: 12px; -fx-text-fill: #111827;");
+
+                HBox item = new HBox(lbl);
+                item.setAlignment(Pos.CENTER_LEFT);
+                item.setPadding(new Insets(8));
+                item.setStyle("""
+                    -fx-background-color: #f3f4f6;
+                    -fx-background-radius: 8;
+                """);
+                feed.getChildren().add(item);
+            }
+        };
+        carregarFeed.run();
+
+        ScrollPane scrollLogs = new ScrollPane(feed);
+        scrollLogs.setFitToWidth(true);
+        scrollLogs.setPrefViewportHeight(260);
+        scrollLogs.setStyle("-fx-background-color: transparent;");
+
+        Button btnRefresh = StyleUtil.secondaryButton("Atualizar Logs", _ -> carregarFeed.run());
+        Button btnLimpar = StyleUtil.dangerButton("Limpar Logs", _ -> {
+            try {
+                java.nio.file.Files.deleteIfExists(java.nio.file.Path.of("logs_app.txt"));
+                carregarFeed.run();
+            } catch (Exception e) {
+                CustomAlert.Error("Erro ao limpar logs: " + e.getMessage());
+            }
+        });
+        HBox barraLogs = new HBox(10, btnRefresh, btnLimpar);
+        barraLogs.setAlignment(Pos.CENTER_LEFT);
+
+        VBox painelLogs = new VBox(8,
+                new Label("Logs em tempo real"),
+                barraLogs,
+                scrollLogs
+        );
+        painelLogs.setPadding(new Insets(10, 20, 20, 20));
+        painelLogs.setStyle("""
+            -fx-background-color: linear-gradient(to bottom, #f8fafc, #eef2ff);
+            -fx-background-radius: 12;
+            -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.08), 10, 0, 0, 4);
+        """);
+
         VBox menu = new VBox(15, btnParticipantes, btnSessoes, btnEventos, btnRecursos);
         menu.setAlignment(Pos.TOP_LEFT);
         menu.setPadding(new Insets(20));
 
+        VBox layout = new VBox(20, titulo, menu, painelLogs);
+        layout.setAlignment(Pos.TOP_LEFT);
+        layout.setPadding(new Insets(10));
+
         // Substituir tudo no centro
-        centro.getChildren().addAll(titulo, menu);
+        centro.getChildren().add(layout);
     }
 
     private void mostrarEventosAdmin() {
         // 1. LIMPAR O CENTRO
         centro.getChildren().clear();
 
-        // 2. TÍTULO E BOTÕES DE AÇÃO
-        Label titulo = new Label("🎟️ Gestão de Eventos");
+        // 2. TÃTULO E BOTÃ•ES DE AÃ‡ÃƒO
+        Label titulo = new Label("ðŸŽŸï¸ GestÃ£o de Eventos");
         titulo.setStyle("-fx-font-size: 24px; -fx-font-weight: bold;");
 
         TableView<Event> tabelaEventos = new TableView<>();
 
         Button btnCriar = StyleUtil.primaryButton(
                 "Adicionar",
-                _ -> abrirJanelaCriarEvento(tabelaEventos) // 👈 só chama outro método
+                _ -> abrirJanelaCriarEvento(tabelaEventos) // ðŸ‘ˆ sÃ³ chama outro mÃ©todo
         );
 
         Button btnEditar = StyleUtil.secondaryButton("Editar", _ -> CustomAlert.Info("Funcionalidade de editar evento ainda nao implementada."));
@@ -500,7 +563,7 @@ public class Window{
         colLocal.setCellValueFactory(new PropertyValueFactory<>("local"));
         colLocal.setPrefWidth(150);
 
-        TableColumn<Event, Timestamp> colInicio = new TableColumn<>("Início");
+        TableColumn<Event, Timestamp> colInicio = new TableColumn<>("InÃ­cio");
         colInicio.setCellValueFactory(new PropertyValueFactory<>("startdate"));
         colInicio.setPrefWidth(180);
 
@@ -546,7 +609,7 @@ public class Window{
 
         Button btnGuardar = StyleUtil.primaryButton("Guardar", _ -> {
             try {
-                // 👇 adapta isto ao teu EventDB
+                // ðŸ‘‡ adapta isto ao teu EventDB
                 /*EventDB.createEvent(
                         txtNome.getText(),
                         txtLocal.getText(),
@@ -568,7 +631,7 @@ public class Window{
         VBox layout = new VBox(10,
                 new Label("Nome:"), txtNome,
                 new Label("Local:"), txtLocal,
-                new Label("Início:"), dpInicio,
+                new Label("InÃ­cio:"), dpInicio,
                 new Label("Fim:"), dpFim,
                 btnGuardar
         );
@@ -612,7 +675,7 @@ public class Window{
                     throw new IllegalArgumentException("Data de inicio deve ser depois do dia de hoje para submeter.");
                 }
                 if (dataFim.isBefore(dataInicio)) {
-                    throw new IllegalArgumentException("Data de fim nao pode ser anterior à de inicio.");
+                    throw new IllegalArgumentException("Data de fim nao pode ser anterior Ã  de inicio.");
                 }
 
                 Timestamp inicio = Timestamp.valueOf(dataInicio.atStartOfDay());
@@ -714,12 +777,12 @@ public class Window{
         stage.showAndWait();
     }
     // ============================================================
-    // 🔥 Criação dos cards de eventos
+    // ðŸ”¥ CriaÃ§Ã£o dos cards de eventos
     // ============================================================
     private VBox criarCardEvento(Event ev) {
-// ─────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         // 1) Calcular proximidade do evento (por dias)
-        // ─────────────────────────────────────────────
+        // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         LocalDate hoje = LocalDate.now();
         LocalDate dataInicio = dataEventoOuHoje(ev);
 
@@ -730,9 +793,9 @@ public class Window{
         double[] size = calcularTamanho(dias);
         double width = size[0];
         double height = size[1];
-        // ─────────────────────────────────────────────
-        // 2) Configuração base do card
-        // ─────────────────────────────────────────────
+        // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+        // 2) ConfiguraÃ§Ã£o base do card
+        // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         VBox card = new VBox(10);
         card.setPrefSize(width, height);
         card.setPadding(new Insets(15));
@@ -745,9 +808,9 @@ public class Window{
         -fx-cursor: hand;
     """);
 
-        // ─────────────────────────────────────────────
+        // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         // 3) Imagem
-        // ─────────────────────────────────────────────
+        // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         ImageView img;
         try {
             img = new ImageView(new Image(ev.getImage(), 220, 130, false, true));
@@ -758,9 +821,9 @@ public class Window{
             ));
         }
 
-        // ─────────────────────────────────────────────
+        // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         // 4) Labels
-        // ─────────────────────────────────────────────
+        // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         Label lblNome = new Label(ev.getName());
         lblNome.setStyle("-fx-font-weight: bold; -fx-font-size: 16px; -fx-text-fill: #333;");
         lblNome.setWrapText(true);
@@ -774,14 +837,14 @@ public class Window{
         Label lblEstado = new Label(ev.getState().getName());
         lblEstado.setStyle(defineCorEstado(ev.getState().getName()));
 
-        // ─────────────────────────────────────────────
+        // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         // 5) Montar o card
-        // ─────────────────────────────────────────────
+        // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         card.getChildren().addAll(img, lblNome, lblData, lblLocal, lblEstado);
 
-        // ─────────────────────────────────────────────
-        // 6) Click → detalhes
-        // ─────────────────────────────────────────────
+        // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+        // 6) Click â†’ detalhes
+        // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         card.setOnMouseClicked(_ -> {
             List<Session> sessoes = SessionDB.getSessionsByEvent(ev.getId());
             new CalendarEventoView(ev, sessoes).mostrar();
@@ -817,6 +880,7 @@ public class Window{
         };
     }
 }
+
 
 
 
