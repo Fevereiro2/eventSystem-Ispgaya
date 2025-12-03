@@ -585,8 +585,55 @@ public class AdminScreens {
 
     private void gerarLogs() {
         try {
-            String content = "Logs da aplicacao - " + LocalDateTime.now();
-            Files.writeString(Path.of("logs_app.txt"), content);
+            var participantes = ParticipantDB.listAll();
+            var eventos = EventDB.getAllEvents();
+            var recursos = ResourcesDB.listAll();
+
+            StringBuilder sb = new StringBuilder();
+            sb.append("Logs da aplicacao - ").append(LocalDateTime.now()).append("\n\n");
+
+            sb.append("=== PARTICIPANTES ===\n");
+            participantes.forEach(p -> sb.append("- ")
+                    .append(p.getName()).append(" | ")
+                    .append(p.getEmail()).append(" | ")
+                    .append(p.getType() != null ? p.getType().getName() : "sem tipo")
+                    .append(" | tel: ").append(p.getPhone() != null ? p.getPhone() : "")
+                    .append("\n"));
+
+            sb.append("\n=== EVENTOS ===\n");
+            eventos.forEach(ev -> {
+                int sessoes = SessionDB.getSessionsByEvent(ev.getId()).size();
+                int inscritos = SessionParticipantDB.countDistinctParticipantsByEvent(ev.getId());
+                sb.append("- ").append(ev.getName())
+                        .append(" | estado: ").append(ev.getState() != null ? ev.getState().getName() : "")
+                        .append(" | inicio: ").append(ev.getStartdate())
+                        .append(" | fim: ").append(ev.getFinaldate())
+                        .append(" | sessoes: ").append(sessoes)
+                        .append(" | inscritos: ").append(inscritos)
+                        .append("\n");
+            });
+
+            sb.append("\n=== SESSOES ===\n");
+            eventos.forEach(ev -> {
+                var ses = SessionDB.getSessionsByEvent(ev.getId());
+                if (ses.isEmpty()) return;
+                sb.append("Evento: ").append(ev.getName()).append("\n");
+                ses.forEach(s -> sb.append("  * ").append(s.getName())
+                        .append(" | ").append(s.getStartdate())
+                        .append(" -> ").append(s.getFinaldate())
+                        .append(" | local: ").append(s.getLocal())
+                        .append("\n"));
+            });
+
+            sb.append("\n=== RECURSOS ===\n");
+            recursos.forEach(r -> sb.append("- ")
+                    .append(r.getNameresources())
+                    .append(" | qtd: ").append(r.getQuantity())
+                    .append(" | custo: ").append(r.getUnitarycost())
+                    .append(" | categoria: ").append(r.getCategoryid() != null ? r.getCategoryid().getName() : "")
+                    .append("\n"));
+
+            Files.writeString(Path.of("logs_app.txt"), sb.toString());
             CustomAlert.Success("Logs gerados em logs_app.txt");
         } catch (Exception ex) {
             CustomAlert.Error("Erro ao gerar logs: " + ex.getMessage());
