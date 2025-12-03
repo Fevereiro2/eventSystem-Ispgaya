@@ -1,4 +1,4 @@
-﻿# LTC Events (Java 25 + JavaFX 25)
+# LTC Events (Java 25 + JavaFX 25)
 
 ## Visao Geral
 - Aplicacao desktop para gestao de eventos, participantes, sessoes e recursos, com UI JavaFX.
