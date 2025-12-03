@@ -15,8 +15,7 @@ import javafx.stage.Stage;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.sql.Timestamp;
-import java.nio.file.Files;
-import java.nio.file.Path;
+
 import ltc.events.Modules.connection.EventDB;
 import ltc.events.Modules.connection.ParticipantDB;
 import ltc.events.Modules.connection.TypesDB;
@@ -53,9 +52,9 @@ public class AdminScreens {
         centro.getChildren().clear();
 
         // -------------------------------
-        // TÃƒÆ’Ã‚ÂTULO + FILTRO
+        // TÃƒÆ’Ã†â€™Ãƒâ€šÃ‚ÂTULO + FILTRO
         // -------------------------------
-        javafx.scene.control.Label titulo = new javafx.scene.control.Label("ÃƒÂ°Ã…Â¸Ã¢â‚¬ËœÃ‚Â¤ GestÃƒÆ’Ã‚Â£o de Participantes");
+        javafx.scene.control.Label titulo = new javafx.scene.control.Label("ÃƒÆ’Ã‚Â°Ãƒâ€¦Ã‚Â¸ÃƒÂ¢Ã¢â€šÂ¬Ã‹Å“Ãƒâ€šÃ‚Â¤ GestÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â£o de Participantes");
         titulo.setStyle("-fx-font-size: 20px; -fx-font-weight: bold;");
 
         ComboBox<String> filtro = new ComboBox<>();
@@ -108,7 +107,7 @@ public class AdminScreens {
         });
 
         // -------------------------------
-        // BOTÃƒÆ’Ã¢â‚¬Â¢ES
+        // BOTÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¢ES
         // -------------------------------
         Button btnEditar = StyleUtil.secondaryButton("Editar", _ -> {
             Participant sel = tabela.getSelectionModel().getSelectedItem();
@@ -159,7 +158,7 @@ public class AdminScreens {
         // LAYOUT FINAL
         // -------------------------------
         VBox layout = new VBox(15, topo, tabela, contador, botoes);
-        addAdminActions(layout);
+        
 
         layout.setAlignment(Pos.TOP_CENTER);
         layout.setPadding(new Insets(20));
@@ -255,7 +254,7 @@ public class AdminScreens {
         botoes.setPadding(new Insets(10, 0, 0, 0));
 
         VBox layout = new VBox(12, titulo, tabelaEventos, tabelaSessoes, botoes);
-        addAdminActions(layout);
+        
 
         layout.setAlignment(Pos.TOP_LEFT);
         layout.setPadding(new Insets(20));
@@ -347,7 +346,7 @@ public class AdminScreens {
         botoes.setPadding(new Insets(10, 0, 0, 0));
 
         VBox layout = new VBox(15, titulo, tabela, botoes);
-        addAdminActions(layout);
+        
         layout.setPadding(new Insets(20));
         layout.setAlignment(Pos.TOP_LEFT);
 
@@ -509,7 +508,7 @@ public class AdminScreens {
         botoes.setPadding(new Insets(10, 0, 0, 0));
 
         VBox layout = new VBox(15, titulo, tabela, botoes);
-        addAdminActions(layout);
+        
 
         layout.setAlignment(Pos.TOP_CENTER);
         layout.setPadding(new Insets(20));
@@ -572,107 +571,6 @@ public class AdminScreens {
         stage.setScene(new Scene(layout, 400, 420));
         stage.showAndWait();
     }
-
-    private void addAdminActions(VBox layout) {
-        Button btnLogs = StyleUtil.secondaryButton("Gerar Logs", _ -> gerarLogs());
-        Button btnRel = StyleUtil.primaryButton("Gerar Relatorios", _ -> gerarRelatorios());
-        TextArea logArea = new TextArea(ltc.events.Modules.util.LoggingUtil.readLogs());
-        logArea.setEditable(false);
-        logArea.setWrapText(true);
-        logArea.setPrefRowCount(8);
-        Button btnRefreshLogs = StyleUtil.secondaryButton("Atualizar Logs", _ -> logArea.setText(ltc.events.Modules.util.LoggingUtil.readLogs()));
-
-        HBox extras = new HBox(10, btnLogs, btnRel, btnRefreshLogs);
-        extras.setAlignment(Pos.CENTER_LEFT);
-        extras.setPadding(new Insets(8, 0, 0, 0));
-
-        VBox blocoLogs = new VBox(6, extras, logArea);
-        blocoLogs.setPadding(new Insets(10, 0, 0, 0));
-
-        layout.getChildren().add(blocoLogs);
-    }
-
-    private void gerarLogs() {
-        try {
-            var participantes = ParticipantDB.listAll();
-            var eventos = EventDB.getAllEvents();
-            var recursos = ResourcesDB.listAll();
-
-            StringBuilder sb = new StringBuilder();
-            sb.append("Logs da aplicacao - ").append(LocalDateTime.now()).append("\n\n");
-
-            sb.append("=== PARTICIPANTES ===\n");
-            participantes.forEach(p -> sb.append("- ")
-                    .append(p.getName()).append(" | ")
-                    .append(p.getEmail()).append(" | ")
-                    .append(p.getType() != null ? p.getType().getName() : "sem tipo")
-                    .append(" | tel: ").append(p.getPhone() != null ? p.getPhone() : "")
-                    .append("\n"));
-
-            sb.append("\n=== EVENTOS ===\n");
-            eventos.forEach(ev -> {
-                int sessoes = SessionDB.getSessionsByEvent(ev.getId()).size();
-                int inscritos = SessionParticipantDB.countDistinctParticipantsByEvent(ev.getId());
-                sb.append("- ").append(ev.getName())
-                        .append(" | estado: ").append(ev.getState() != null ? ev.getState().getName() : "")
-                        .append(" | inicio: ").append(ev.getStartdate())
-                        .append(" | fim: ").append(ev.getFinaldate())
-                        .append(" | sessoes: ").append(sessoes)
-                        .append(" | inscritos: ").append(inscritos)
-                        .append("\n");
-            });
-
-            sb.append("\n=== SESSOES ===\n");
-            eventos.forEach(ev -> {
-                var ses = SessionDB.getSessionsByEvent(ev.getId());
-                if (ses.isEmpty()) return;
-                sb.append("Evento: ").append(ev.getName()).append("\n");
-                ses.forEach(s -> sb.append("  * ").append(s.getName())
-                        .append(" | ").append(s.getStartdate())
-                        .append(" -> ").append(s.getFinaldate())
-                        .append(" | local: ").append(s.getLocal())
-                        .append("\n"));
-            });
-
-            sb.append("\n=== RECURSOS ===\n");
-            recursos.forEach(r -> sb.append("- ")
-                    .append(r.getNameresources())
-                    .append(" | qtd: ").append(r.getQuantity())
-                    .append(" | custo: ").append(r.getUnitarycost())
-                    .append(" | categoria: ").append(r.getCategoryid() != null ? r.getCategoryid().getName() : "")
-                    .append("\n"));
-
-            Files.writeString(Path.of("logs_app.txt"), sb.toString());
-            CustomAlert.Success("Logs gerados em logs_app.txt");
-        } catch (Exception ex) {
-            CustomAlert.Error("Erro ao gerar logs: " + ex.getMessage());
-        }
-    }
-
-    private void gerarRelatorios() {
-        try {
-            int totalParticipantes = ParticipantDB.listAll().size();
-            int totalEventos = EventDB.getAllEvents().size();
-            int totalRecursos = ResourcesDB.listAll().size();
-            int totalSessoes = EventDB.getAllEvents().stream()
-                    .mapToInt(ev -> SessionDB.getSessionsByEvent(ev.getId()).size())
-                    .sum();
-
-            String rel = """
-                    Relatorio geral - %s
-                    Participantes: %d
-                    Eventos: %d
-                    Recursos: %d
-                    Sessoes: %d
-                    """.formatted(LocalDateTime.now(), totalParticipantes, totalEventos, totalRecursos, totalSessoes);
-
-            Files.writeString(Path.of("relatorio_admin.txt"), rel);
-            CustomAlert.Success("Relatorio gerado em relatorio_admin.txt");
-        } catch (Exception ex) {
-            CustomAlert.Error("Erro ao gerar relatorio: " + ex.getMessage());
-        }
-    }
-
     private void carregarSessoes(TableView<Session> tabela, Event ev) {
         tabela.setItems(FXCollections.observableArrayList(SessionDB.getSessionsByEvent(ev.getId())));
     }
@@ -749,7 +647,7 @@ public class AdminScreens {
     }
 
     private void aplicarFiltro(TableView<Participant> tabela, String filtro) {
-        ObservableList<Participant> todos = ParticipantDB.listAll(); // jÃƒÆ’Ã‚Â¡ tens isto
+        ObservableList<Participant> todos = ParticipantDB.listAll(); // jÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¡ tens isto
         switch (filtro) {
             case "Admins" ->
                     tabela.setItems(
@@ -802,7 +700,7 @@ public class AdminScreens {
         TextField txtPhone = new TextField(p.getPhone());
 
         ComboBox<Types> comboTipo = new ComboBox<>();
-        comboTipo.getItems().addAll(TypesDB.listAll()); // Criamos jÃƒÆ’Ã‚Â¡ a seguir
+        comboTipo.getItems().addAll(TypesDB.listAll()); // Criamos jÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¡ a seguir
         comboTipo.getSelectionModel().select(p.getType());
 
         Button btnSalvar = StyleUtil.primaryButton("Salvar", _ -> {
@@ -825,6 +723,11 @@ public class AdminScreens {
         popup.showAndWait();
     }
 }
+
+
+
+
+
 
 
 
