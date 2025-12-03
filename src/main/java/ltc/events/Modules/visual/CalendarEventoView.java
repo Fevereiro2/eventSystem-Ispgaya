@@ -12,6 +12,7 @@ import javafx.stage.Stage;
 import ltc.events.Modules.visual.StyleUtil;
 import ltc.events.Modules.visual.CustomAlert;
 import ltc.events.Modules.connection.SessionParticipantDB;
+import ltc.events.Modules.Permissions;
 import ltc.events.classes.Event;
 import ltc.events.classes.Participant;
 import ltc.events.classes.Session;
@@ -42,13 +43,13 @@ public class CalendarEventoView {
 
     public void mostrar() {
         Stage stage = new Stage();
-        stage.setTitle("CalendÃ¡rio de SessÃµes - " + evento.getName());
+        stage.setTitle("Calendario de Sessões - " + evento.getName());
 
         VBox root = new VBox(16);
         root.setPadding(new Insets(20));
         root.setStyle("-fx-background-color: #f7f9fc;");
 
-        Label titulo = new Label("SessÃµes de " + evento.getName());
+        Label titulo = new Label("Sessões de " + evento.getName());
         titulo.setStyle("-fx-font-size: 20px; -fx-font-weight: bold; -fx-text-fill: #1f2937;");
         root.getChildren().add(titulo);
 
@@ -130,13 +131,17 @@ public class CalendarEventoView {
         lblCount.setStyle("-fx-text-fill: #111827; -fx-font-weight: bold;");
 
         boolean logged = SessionEntry.isLogged();
-        boolean alreadyIn = logged && SessionParticipantDB.isParticipantInSession(s.getId(), SessionEntry.getUser().getId());
+        boolean adminUser = Permissions.isAdmin() || Permissions.isModerador();
+        boolean alreadyIn = logged && !adminUser && SessionParticipantDB.isParticipantInSession(s.getId(), SessionEntry.getUser().getId());
         boolean cheio = inscritos >= 20;
 
         final Button btn = StyleUtil.primaryButton("Inscrever", null);
         btn.setMinWidth(110);
 
-        if (!logged) {
+        if (adminUser) {
+            btn.setText("Admin");
+            btn.setDisable(true);
+        } else if (!logged) {
             btn.setText("Login p/ entrar");
             btn.setDisable(true);
         } else if (alreadyIn) {
@@ -148,6 +153,10 @@ public class CalendarEventoView {
         } else {
             btn.setOnAction(_ -> {
                 try {
+                    if (adminUser) {
+                        CustomAlert.Info("Modo admin direto nao inscreve em sessoes.");
+                        return;
+                    }
                     SessionParticipantDB.addParticipant(s.getId(), SessionEntry.getUser().getId());
                     btn.setText("Inscrito");
                     btn.setDisable(true);
