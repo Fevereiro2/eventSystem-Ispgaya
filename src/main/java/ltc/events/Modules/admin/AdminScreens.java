@@ -1,6 +1,7 @@
 package ltc.events.Modules.admin;
 
 import javafx.beans.property.SimpleStringProperty;
+import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
@@ -11,12 +12,15 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.sql.Timestamp;
 import ltc.events.Modules.connection.EventDB;
 import ltc.events.Modules.connection.ParticipantDB;
 import ltc.events.Modules.connection.TypesDB;
 import ltc.events.Modules.connection.CategoryDB;
 import ltc.events.Modules.connection.ResourcesDB;
+import ltc.events.Modules.connection.SessionDB;
 import ltc.events.Modules.visual.CustomAlert;
 import ltc.events.Modules.visual.StyleUtil;
 import ltc.events.Modules.connection.StateDB;
@@ -26,6 +30,7 @@ import ltc.events.classes.Types;
 import ltc.events.classes.State;
 import ltc.events.classes.Category;
 import ltc.events.classes.Resources;
+import ltc.events.classes.Session;
 
 import static ltc.events.Modules.ui.AlterPassword.abrirJanelaAlterarPassword;
 
@@ -45,9 +50,9 @@ public class AdminScreens {
         centro.getChildren().clear();
 
         // -------------------------------
-        // TÃTULO + FILTRO
+        // TÃƒÂTULO + FILTRO
         // -------------------------------
-        javafx.scene.control.Label titulo = new javafx.scene.control.Label("ðŸ‘¤ GestÃ£o de Participantes");
+        javafx.scene.control.Label titulo = new javafx.scene.control.Label("Ã°Å¸â€˜Â¤ GestÃƒÂ£o de Participantes");
         titulo.setStyle("-fx-font-size: 20px; -fx-font-weight: bold;");
 
         ComboBox<String> filtro = new ComboBox<>();
@@ -100,7 +105,7 @@ public class AdminScreens {
         });
 
         // -------------------------------
-        // BOTÃ•ES
+        // BOTÃƒâ€¢ES
         // -------------------------------
         Button btnEditar = StyleUtil.secondaryButton("Editar", _ -> {
             Participant sel = tabela.getSelectionModel().getSelectedItem();
@@ -158,11 +163,98 @@ public class AdminScreens {
 
     }
 
-    public void mostrarSessoes() {
+        public void mostrarSessoes() {
         centro.getChildren().clear();
-        // ... cÃ³digo da interface de sessÃµes
-    }
 
+        Label titulo = new Label("Sessoes por Evento");
+        titulo.setStyle("-fx-font-size: 20px; -fx-font-weight: bold;");
+
+        TableView<Event> tabelaEventos = new TableView<>();
+        TableColumn<Event, String> colNomeEv = new TableColumn<>("Evento");
+        colNomeEv.setCellValueFactory(new PropertyValueFactory<>("name"));
+        TableColumn<Event, String> colInicioEv = new TableColumn<>("Inicio");
+        colInicioEv.setCellValueFactory(c -> new SimpleStringProperty(
+                c.getValue().getStartdate() != null ? c.getValue().getStartdate().toString() : ""
+        ));
+        TableColumn<Event, String> colFimEv = new TableColumn<>("Fim");
+        colFimEv.setCellValueFactory(c -> new SimpleStringProperty(
+                c.getValue().getFinaldate() != null ? c.getValue().getFinaldate().toString() : ""
+        ));
+        TableColumn<Event, String> colEstadoEv = new TableColumn<>("Estado");
+        colEstadoEv.setCellValueFactory(c -> new SimpleStringProperty(
+                c.getValue().getState() != null ? c.getValue().getState().getName() : ""
+        ));
+        tabelaEventos.getColumns().addAll(colNomeEv, colInicioEv, colFimEv, colEstadoEv);
+        tabelaEventos.setItems(EventDB.getAllEvents());
+        tabelaEventos.setPrefHeight(200);
+
+        TableView<Session> tabelaSessoes = new TableView<>();
+        TableColumn<Session, String> colNomeSes = new TableColumn<>("Sessao");
+        colNomeSes.setCellValueFactory(new PropertyValueFactory<>("name"));
+        colNomeSes.setPrefWidth(160);
+        TableColumn<Session, String> colInicioSes = new TableColumn<>("Inicio");
+        colInicioSes.setCellValueFactory(c -> new SimpleStringProperty(
+                c.getValue().getStartdate() != null ? c.getValue().getStartdate().toString() : ""
+        ));
+        TableColumn<Session, String> colFimSes = new TableColumn<>("Fim");
+        colFimSes.setCellValueFactory(c -> new SimpleStringProperty(
+                c.getValue().getFinaldate() != null ? c.getValue().getFinaldate().toString() : ""
+        ));
+        TableColumn<Session, String> colLocalSes = new TableColumn<>("Local");
+        colLocalSes.setCellValueFactory(new PropertyValueFactory<>("local"));
+        TableColumn<Session, String> colEstadoSes = new TableColumn<>("Estado");
+        colEstadoSes.setCellValueFactory(c -> new SimpleStringProperty(
+                c.getValue().getState() != null ? c.getValue().getState().getName() : ""
+        ));
+        tabelaSessoes.getColumns().addAll(colNomeSes, colInicioSes, colFimSes, colLocalSes, colEstadoSes);
+        tabelaSessoes.setPrefHeight(200);
+
+        Button btnVer = StyleUtil.secondaryButton("Ver sessoes", _ -> {
+            Event sel = tabelaEventos.getSelectionModel().getSelectedItem();
+            if (sel == null) {
+                CustomAlert.Warning("Selecione um evento.");
+                return;
+            }
+            carregarSessoes(tabelaSessoes, sel);
+        });
+
+        Button btnGerar = StyleUtil.primaryButton("Gerar sessoes (manha/tarde)", _ -> {
+            Event sel = tabelaEventos.getSelectionModel().getSelectedItem();
+            if (sel == null) {
+                CustomAlert.Warning("Selecione um evento.");
+                return;
+            }
+            criarSessoesPadrao(sel, tabelaSessoes);
+        });
+
+        Button btnRemover = StyleUtil.dangerButton("Remover sessao", _ -> {
+            Session ses = tabelaSessoes.getSelectionModel().getSelectedItem();
+            if (ses == null) {
+                CustomAlert.Warning("Selecione uma sessao.");
+                return;
+            }
+            if (!CustomAlert.Confirm("Confirmar", "Apagar " + ses.getName() + "?")) return;
+            try {
+                SessionDB.delete(ses.getId());
+                Event evSel = tabelaEventos.getSelectionModel().getSelectedItem();
+                if (evSel != null) {
+                    carregarSessoes(tabelaSessoes, evSel);
+                }
+            } catch (Exception ex) {
+                CustomAlert.Error("Erro ao remover: " + ex.getMessage());
+            }
+        });
+
+        HBox botoes = new HBox(10, btnVer, btnGerar, btnRemover);
+        botoes.setAlignment(Pos.CENTER_LEFT);
+        botoes.setPadding(new Insets(10, 0, 0, 0));
+
+        VBox layout = new VBox(12, titulo, tabelaEventos, tabelaSessoes, botoes);
+        layout.setAlignment(Pos.TOP_LEFT);
+        layout.setPadding(new Insets(20));
+
+        centro.getChildren().add(layout);
+    }
     public void mostrarEventos() {
         centro.getChildren().clear();
 
@@ -471,6 +563,59 @@ public class AdminScreens {
         stage.showAndWait();
     }
 
+    private void carregarSessoes(TableView<Session> tabela, Event ev) {
+        tabela.setItems(FXCollections.observableArrayList(SessionDB.getSessionsByEvent(ev.getId())));
+    }
+
+    private void criarSessoesPadrao(Event ev, TableView<Session> tabela) {
+        if (ev.getStartdate() == null) {
+            CustomAlert.Warning("O evento nao tem data de inicio definida.");
+            return;
+        }
+
+        LocalDate dia = ev.getStartdate().toLocalDateTime().toLocalDate();
+        LocalDateTime manha = dia.atTime(9, 0);
+        LocalDateTime tarde = dia.atTime(14, 0);
+
+        var existentes = SessionDB.getSessionsByEvent(ev.getId());
+        boolean temManha = existentes.stream().anyMatch(s -> s.getName().equalsIgnoreCase("Sessao Manha"));
+        boolean temTarde = existentes.stream().anyMatch(s -> s.getName().equalsIgnoreCase("Sessao Tarde"));
+
+        try {
+            if (!temManha) {
+                SessionDB.createForEvent(
+                        ev.getId(),
+                        "Sessao Manha",
+                        "Bloco da manha (1h30)",
+                        ev.getLocal(),
+                        Timestamp.valueOf(manha),
+                        Timestamp.valueOf(manha.plusMinutes(90)),
+                        "Planeado",
+                        null
+                );
+            }
+
+            if (!temTarde) {
+                SessionDB.createForEvent(
+                        ev.getId(),
+                        "Sessao Tarde",
+                        "Bloco da tarde (1h30)",
+                        ev.getLocal(),
+                        Timestamp.valueOf(tarde),
+                        Timestamp.valueOf(tarde.plusMinutes(90)),
+                        "Planeado",
+                        null
+                );
+            }
+
+            carregarSessoes(tabela, ev);
+            CustomAlert.Success("Sessoes geradas.");
+
+        } catch (Exception ex) {
+            CustomAlert.Error("Erro ao criar sessoes: " + ex.getMessage());
+        }
+    }
+
     private void atualizarContador(Label label, ObservableList<Participant> lista) {
         long total = lista.size();
         long admins = lista.stream().filter(p ->
@@ -494,7 +639,7 @@ public class AdminScreens {
     }
 
     private void aplicarFiltro(TableView<Participant> tabela, String filtro) {
-        ObservableList<Participant> todos = ParticipantDB.listAll(); // jÃ¡ tens isto
+        ObservableList<Participant> todos = ParticipantDB.listAll(); // jÃƒÂ¡ tens isto
         switch (filtro) {
             case "Admins" ->
                     tabela.setItems(
@@ -547,7 +692,7 @@ public class AdminScreens {
         TextField txtPhone = new TextField(p.getPhone());
 
         ComboBox<Types> comboTipo = new ComboBox<>();
-        comboTipo.getItems().addAll(TypesDB.listAll()); // Criamos jÃ¡ a seguir
+        comboTipo.getItems().addAll(TypesDB.listAll()); // Criamos jÃƒÂ¡ a seguir
         comboTipo.getSelectionModel().select(p.getType());
 
         Button btnSalvar = StyleUtil.primaryButton("Salvar", _ -> {
@@ -570,6 +715,7 @@ public class AdminScreens {
         popup.showAndWait();
     }
 }
+
 
 
 
