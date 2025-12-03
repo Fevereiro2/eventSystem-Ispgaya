@@ -3,13 +3,18 @@ package ltc.events.Modules.visual;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
+import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
+import ltc.events.Modules.visual.StyleUtil;
+import ltc.events.Modules.visual.CustomAlert;
+import ltc.events.Modules.connection.SessionParticipantDB;
 import ltc.events.classes.Event;
 import ltc.events.classes.Session;
+import ltc.events.classes.hashs.SessionEntry;
 
 import java.sql.Timestamp;
 import java.time.LocalDate;
@@ -26,26 +31,32 @@ public class CalendarEventoView {
     private final Event evento;
     private final List<Session> sessoes;
     private static final DateTimeFormatter HORA = DateTimeFormatter.ofPattern("HH:mm");
+    private final int participantesEvento;
 
     public CalendarEventoView(Event evento, List<Session> sessoes) {
         this.evento = evento;
         this.sessoes = sessoes;
+        this.participantesEvento = SessionParticipantDB.countDistinctParticipantsByEvent(evento.getId());
     }
 
     public void mostrar() {
         Stage stage = new Stage();
-        stage.setTitle("Calendário de Sessões - " + evento.getName());
+        stage.setTitle("CalendÃ¡rio de SessÃµes - " + evento.getName());
 
         VBox root = new VBox(16);
         root.setPadding(new Insets(20));
         root.setStyle("-fx-background-color: #f7f9fc;");
 
-        Label titulo = new Label("Sessões de " + evento.getName());
+        Label titulo = new Label("SessÃµes de " + evento.getName());
         titulo.setStyle("-fx-font-size: 20px; -fx-font-weight: bold; -fx-text-fill: #1f2937;");
         root.getChildren().add(titulo);
 
+        Label resumo = new Label("Inscritos neste evento: " + participantesEvento + "   | Limite por sessÃ£o: 20");
+        resumo.setStyle("-fx-text-fill: #374151; -fx-font-size: 13px;");
+        root.getChildren().add(resumo);
+
         if (sessoes == null || sessoes.isEmpty()) {
-            Label vazio = new Label("Nenhuma sessão criada para este evento.");
+            Label vazio = new Label("Nenhuma sessÃ£o criada para este evento.");
             vazio.setStyle("-fx-text-fill: #6b7280; -fx-font-size: 14px;");
             root.getChildren().add(vazio);
         } else {
@@ -53,7 +64,7 @@ public class CalendarEventoView {
             porDia.forEach((dia, lista) -> root.getChildren().add(criarDiaBox(dia, lista)));
         }
 
-        Scene cena = new Scene(root, 700, 600);
+        Scene cena = new Scene(root, 750, 620);
         stage.setScene(cena);
         stage.show();
     }
@@ -113,13 +124,44 @@ public class CalendarEventoView {
         Label lblLocal = new Label(s.getLocal() != null ? s.getLocal() : "");
         lblLocal.setStyle("-fx-text-fill: #6b7280;");
 
-        Label lblEstado = new Label(s.getState() != null ? s.getState().getName() : "");
-        lblEstado.setStyle("-fx-text-fill: #2563eb; -fx-font-weight: bold;");
+        final int inscritos = SessionParticipantDB.countBySession(s.getId());
+        Label lblCount = new Label(inscritos + "/20");
+        lblCount.setStyle("-fx-text-fill: #111827; -fx-font-weight: bold;");
+
+        boolean logged = SessionEntry.isLogged();
+        boolean alreadyIn = logged && SessionParticipantDB.isParticipantInSession(s.getId(), SessionEntry.getUser().getId());
+        boolean cheio = inscritos >= 20;
+
+        final Button btn = StyleUtil.primaryButton("Inscrever", null);
+        btn.setMinWidth(110);
+
+        if (!logged) {
+            btn.setText("Login p/ entrar");
+            btn.setDisable(true);
+        } else if (alreadyIn) {
+            btn.setText("Inscrito");
+            btn.setDisable(true);
+        } else if (cheio) {
+            btn.setText("Cheio");
+            btn.setDisable(true);
+        } else {
+            btn.setOnAction(_ -> {
+                try {
+                    SessionParticipantDB.addParticipant(s.getId(), SessionEntry.getUser().getId());
+                    btn.setText("Inscrito");
+                    btn.setDisable(true);
+                    lblCount.setText((inscritos + 1) + "/20");
+                    CustomAlert.Success("Inscrito na sessao.");
+                } catch (Exception ex) {
+                    CustomAlert.Error(ex.getMessage());
+                }
+            });
+        }
 
         VBox info = new VBox(4, lblNome, lblLocal);
         HBox.setHgrow(info, Priority.ALWAYS);
 
-        linha.getChildren().addAll(lblHora, info, lblEstado);
+        linha.getChildren().addAll(lblHora, info, lblCount, btn);
         return linha;
     }
 
@@ -128,3 +170,5 @@ public class CalendarEventoView {
         return ts.toLocalDateTime().toLocalTime();
     }
 }
+
+
