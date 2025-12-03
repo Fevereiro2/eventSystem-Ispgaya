@@ -13,6 +13,7 @@ import ltc.events.Modules.visual.StyleUtil;
 import ltc.events.Modules.visual.CustomAlert;
 import ltc.events.Modules.connection.SessionParticipantDB;
 import ltc.events.classes.Event;
+import ltc.events.classes.Participant;
 import ltc.events.classes.Session;
 import ltc.events.classes.hashs.SessionEntry;
 
@@ -100,7 +101,7 @@ public class CalendarEventoView {
         return diaBox;
     }
 
-    private HBox criarSessaoRow(Session s) {
+    private VBox criarSessaoRow(Session s) {
         HBox linha = new HBox(12);
         linha.setAlignment(Pos.CENTER_LEFT);
         linha.setPadding(new Insets(8, 10, 8, 10));
@@ -166,7 +167,8 @@ public class CalendarEventoView {
         inscritosBox.setVisible(false);
         inscritosBox.setManaged(false);
 
-        Button btnLista = StyleUtil.secondaryButton("Ver inscritos", _ -> {
+        Button btnLista = StyleUtil.secondaryButton("Ver inscritos", null);
+        btnLista.setOnAction(_ -> {
             if (inscritosBox.isVisible()) {
                 inscritosBox.setVisible(false);
                 inscritosBox.setManaged(false);
@@ -179,9 +181,38 @@ public class CalendarEventoView {
                 inscritosBox.getChildren().add(new Label("Nenhum inscrito."));
             } else {
                 for (Participant p : lista) {
-                    Label lp = new Label(p.getName() + " (" + p.getEmail() + ")");
-                    lp.setStyle("-fx-text-fill: #374151;");
-                    inscritosBox.getChildren().add(lp);
+                    Label nome = new Label(p.getName());
+                    nome.setStyle("-fx-font-weight: bold; -fx-text-fill: #111827;");
+
+                    Label email = new Label(p.getEmail() != null ? p.getEmail() : "");
+                    email.setStyle("-fx-text-fill: #374151;");
+
+                    Label tipo = new Label(p.getType() != null ? p.getType().getName() : "");
+                    tipo.setStyle("-fx-text-fill: #2563eb; -fx-font-weight: bold;");
+
+                    // Avatar simples com iniciais em vez de imagem real (mais leve e seguro)
+                    String initials = p.getName() != null && !p.getName().isBlank()
+                            ? p.getName().trim().substring(0, 1).toUpperCase()
+                            : "?";
+                    Label avatar = new Label(initials);
+                    avatar.setStyle("""
+                        -fx-background-color: #e5e7eb;
+                        -fx-text-fill: #111827;
+                        -fx-font-weight: bold;
+                        -fx-alignment: center;
+                        -fx-min-width: 28px;
+                        -fx-min-height: 28px;
+                        -fx-max-width: 28px;
+                        -fx-max-height: 28px;
+                        -fx-background-radius: 50%;
+                        -fx-padding: 4;
+                    """);
+
+                    VBox dados = new VBox(2, nome, email, tipo);
+                    HBox linhaP = new HBox(10, avatar, dados);
+                    linhaP.setAlignment(Pos.CENTER_LEFT);
+                    linhaP.setPadding(new Insets(4, 0, 4, 0));
+                    inscritosBox.getChildren().add(linhaP);
                 }
             }
             inscritosBox.setVisible(true);
@@ -203,5 +234,3 @@ public class CalendarEventoView {
         return ts.toLocalDateTime().toLocalTime();
     }
 }
-
-
