@@ -18,6 +18,7 @@ ltc\events\classes\hashs\PasswordUtil.class
 ltc\events\Modules\visual\CustomAlert.class
 ltc\events\classes\Resourceevent.class
 ltc\events\Modules\connection\ParticipantDB.class
+ltc\events\Modules\connection\SessionParticipantDB.class
 ltc\events\Main.class
 ltc\events\Modules\admin\AdminScreens.class
 ltc\events\Modules\connection\ResourcesDB.class
