@@ -5,6 +5,7 @@ C:\projects\eventSystem-Ispgaya\src\main\java\ltc\events\Modules\visual\Login.ja
 C:\projects\eventSystem-Ispgaya\src\main\java\ltc\events\classes\Event.java
 C:\projects\eventSystem-Ispgaya\src\main\java\ltc\events\Modules\connection\EventDB.java
 C:\projects\eventSystem-Ispgaya\src\main\java\ltc\events\Modules\db.java
+C:\projects\eventSystem-Ispgaya\src\main\java\ltc\events\Modules\util\NifUtil.java
 C:\projects\eventSystem-Ispgaya\src\main\java\ltc\events\Modules\ui\Settings.java
 C:\projects\eventSystem-Ispgaya\src\main\java\ltc\events\classes\hashs\PasswordUtil.java
 C:\projects\eventSystem-Ispgaya\src\main\java\ltc\events\classes\Sessionevent.java
@@ -21,6 +22,7 @@ C:\projects\eventSystem-Ispgaya\src\main\java\ltc\events\Main.java
 C:\projects\eventSystem-Ispgaya\src\main\java\ltc\events\classes\Session.java
 C:\projects\eventSystem-Ispgaya\src\main\java\ltc\events\Modules\connection\SessionDB.java
 C:\projects\eventSystem-Ispgaya\src\main\java\ltc\events\Modules\NavbarUtil.java
+C:\projects\eventSystem-Ispgaya\src\main\java\ltc\events\Modules\util\LoggingUtil.java
 C:\projects\eventSystem-Ispgaya\src\main\java\ltc\events\classes\ParticipantSession.java
 C:\projects\eventSystem-Ispgaya\src\main\java\ltc\events\classes\hashs\SessionEntry.java
 C:\projects\eventSystem-Ispgaya\src\main\java\ltc\events\classes\Resources.java
