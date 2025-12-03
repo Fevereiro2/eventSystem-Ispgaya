@@ -35,6 +35,20 @@ public class Participant {
         );
     }
 
+    // Construtor simples para criar um utilizador em memoria (ex.: sessao admin direta).
+    public Participant(String id, String name, String email, String phone, Types type) {
+        this.id = id;
+        this.name = name;
+        this.email = email;
+        this.phone = phone;
+        this.type = type;
+        this.password = null;
+        this.gender = null;
+        this.taxNumber = null;
+        this.birthdate = null;
+        this.photo = null;
+    }
+
     // Getters
     public String getId() { return id; }
     public String getName() { return name; }
