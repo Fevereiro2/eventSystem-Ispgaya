@@ -75,7 +75,9 @@ public class EventDB {
 
             if (!rs.next()) throw new SQLException("Erro ao carregar evento criado.");
 
-            return new Event(rs);
+            Event ev = new Event(rs);
+            ltc.events.Modules.util.LoggingUtil.log("EVENTO CRIADO: " + ev.getName());
+            return ev;
         } finally {
             if (conn != null) conn.close();
         }
