@@ -16,16 +16,21 @@ public class CategoryDB {
         ObservableList<Category> lista = FXCollections.observableArrayList();
         String sql = "SELECT category_id, name FROM category ORDER BY name";
 
-        try (Connection conn = db.connect();
-             PreparedStatement stmt = conn.prepareStatement(sql);
-             ResultSet rs = stmt.executeQuery()) {
+        try (Connection conn = db.connect()) {
 
-            while (rs.next()) {
-                lista.add(Category.of(
-                        rs.getInt("category_id"),
-                        rs.getString("name")
-                ));
+            ensureDefaults(conn);
+
+            try (PreparedStatement stmt = conn.prepareStatement(sql);
+                 ResultSet rs = stmt.executeQuery()) {
+
+                while (rs.next()) {
+                    lista.add(Category.of(
+                            rs.getInt("category_id"),
+                            rs.getString("name")
+                    ));
+                }
             }
+
         } catch (SQLException e) {
             System.out.println("Erro ao carregar categorias: " + e.getMessage());
         }
@@ -53,5 +58,34 @@ public class CategoryDB {
         }
 
         return null;
+    }
+
+    private static void ensureDefaults(Connection conn) {
+        String countSql = "SELECT COUNT(*) FROM category";
+        String insertSql = "INSERT OR IGNORE INTO category (name) VALUES (?)";
+        String[] defaults = new String[]{
+                "Projetor",
+                "Computador",
+                "Hub/Router",
+                "Sistema de Som",
+                "Microfone",
+                "Cabos/Adaptadores",
+                "Mobiliario"
+        };
+
+        try (PreparedStatement count = conn.prepareStatement(countSql);
+             ResultSet rs = count.executeQuery()) {
+            if (rs.next() && rs.getInt(1) == 0) {
+                try (PreparedStatement insert = conn.prepareStatement(insertSql)) {
+                    for (String name : defaults) {
+                        insert.setString(1, name);
+                        insert.addBatch();
+                    }
+                    insert.executeBatch();
+                }
+            }
+        } catch (SQLException e) {
+            System.out.println("Erro ao garantir categorias por defeito: " + e.getMessage());
+        }
     }
 }
