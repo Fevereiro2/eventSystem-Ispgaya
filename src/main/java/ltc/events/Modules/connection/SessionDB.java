@@ -110,7 +110,9 @@ public class SessionDB {
             f.setInt(1, newId);
             ResultSet rs = f.executeQuery();
             if (!rs.next()) throw new SQLException("Falha ao carregar sessao criada.");
-            return new Session(rs);
+            Session s = new Session(rs);
+            ltc.events.Modules.util.LoggingUtil.log("SESSAO CRIADA: " + s.getName() + " (event " + eventId + ")");
+            return s;
         } finally {
             conn.close();
         }
