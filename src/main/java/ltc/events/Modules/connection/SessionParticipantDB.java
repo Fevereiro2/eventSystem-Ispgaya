@@ -53,6 +53,7 @@ public class SessionParticipantDB {
             stmt.setInt(1, sessionId);
             stmt.setInt(2, Integer.parseInt(participantId));
             stmt.executeUpdate();
+            ltc.events.Modules.util.LoggingUtil.log("INSCRICAO SESSAO: session=" + sessionId + " participant=" + participantId);
         }
     }
 
