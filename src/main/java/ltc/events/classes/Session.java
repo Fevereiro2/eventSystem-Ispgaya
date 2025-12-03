@@ -15,9 +15,14 @@ public class Session {
     private final Timestamp initialDate;
     private final Timestamp finishDate;
 
-    // Construtor original
-    public Session(int sessionId, String name, String description, String local,
-                   State state, String image, Timestamp initialDate, Timestamp finishDate) {
+    public Session(int sessionId,
+                   String name,
+                   String description,
+                   String local,
+                   State state,
+                   String image,
+                   Timestamp initialDate,
+                   Timestamp finishDate) {
 
         this.session_id = sessionId;
         this.name = name;
@@ -29,53 +34,23 @@ public class Session {
         this.finishDate = finishDate;
     }
 
-    // 🔥 NOVO CONSTRUTOR — recebe diretamente o ResultSet
+    // Construtor a partir de ResultSet (robusto para datas como texto em SQLite)
     public Session(ResultSet rs) throws SQLException {
-
-        // 1. Ler as datas como STRING para evitar o erro de parsing do driver SQLite
         String startDateString = rs.getString("initial_date");
         String finalDateString = rs.getString("finish_date");
 
-        Timestamp startTimestamp = null;
-        if (startDateString != null && !startDateString.isEmpty()) {
-            try {
-                // Tenta converter a string completa (funciona se a hora estiver presente)
-                startTimestamp = Timestamp.valueOf(startDateString);
-            } catch (IllegalArgumentException e) {
-                // FALLBACK: Se falhar, é porque a hora está em falta (dados antigos).
-                // Adicionamos " 00:00:00" para que a conversão funcione.
-                // Não adicionamos System.err.println para manter a consola limpa.
-                startTimestamp = Timestamp.valueOf(startDateString + " 00:00:00");
-            }
-        }
-
-        Timestamp finalTimestamp = null;
-        if (finalDateString != null && !finalDateString.isEmpty()) {
-            try {
-                finalTimestamp = Timestamp.valueOf(finalDateString);
-            } catch (IllegalArgumentException e) {
-                // FALLBACK
-                finalTimestamp = Timestamp.valueOf(finalDateString + " 00:00:00");
-            }
-        }
-
-        this(
-                rs.getInt("session_id"),
-                rs.getString("name"),
-                rs.getString("description"),
-                rs.getString("local"),
-
-                new State(
-                        rs.getInt("state_id"),
-                        rs.getString("state_name")
-                ),
-
-                rs.getString("image"),
-                startTimestamp, // Usamos o valor convertido/fallback
-                finalTimestamp // Usamos o valor convertido/fallback
+        this.session_id = rs.getInt("session_id");
+        this.name = rs.getString("name");
+        this.description = rs.getString("description");
+        this.local = rs.getString("local");
+        this.state = new State(
+                rs.getInt("state_id"),
+                rs.getString("state_name")
         );
+        this.image = rs.getString("image");
+        this.initialDate = parseTimestampSafe(startDateString);
+        this.finishDate = parseTimestampSafe(finalDateString);
     }
-
 
     public int getId() { return session_id; }
     public String getName() { return name; }
@@ -89,5 +64,19 @@ public class Session {
     @Override
     public String toString() {
         return name + " (" + local + ")";
+    }
+
+    private Timestamp parseTimestampSafe(String value) {
+        if (value == null || value.isBlank()) return null;
+        String trimmed = value.trim();
+        try {
+            return Timestamp.valueOf(trimmed);
+        } catch (IllegalArgumentException e) {
+            try {
+                return Timestamp.valueOf(trimmed + " 00:00:00");
+            } catch (Exception ignored) {
+                return null;
+            }
+        }
     }
 }
