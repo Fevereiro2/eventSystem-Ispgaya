@@ -76,7 +76,9 @@ public class ParticipantDB {
 
             if (!rs.next()) throw new SQLException("Erro ao carregar participante.");
 
-            return new Participant(rs);
+            Participant p = new Participant(rs);
+            ltc.events.Modules.util.LoggingUtil.log("REGISTER: " + p.getEmail());
+            return p;
         }
     }
     public static ObservableList<Participant> listAll() {
