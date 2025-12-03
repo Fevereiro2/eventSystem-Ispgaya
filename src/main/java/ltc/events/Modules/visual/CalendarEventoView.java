@@ -161,8 +161,41 @@ public class CalendarEventoView {
         VBox info = new VBox(4, lblNome, lblLocal);
         HBox.setHgrow(info, Priority.ALWAYS);
 
-        linha.getChildren().addAll(lblHora, info, lblCount, btn);
-        return linha;
+        VBox inscritosBox = new VBox(4);
+        inscritosBox.setPadding(new Insets(6, 0, 0, 0));
+        inscritosBox.setVisible(false);
+        inscritosBox.setManaged(false);
+
+        Button btnLista = StyleUtil.secondaryButton("Ver inscritos", _ -> {
+            if (inscritosBox.isVisible()) {
+                inscritosBox.setVisible(false);
+                inscritosBox.setManaged(false);
+                btnLista.setText("Ver inscritos");
+                return;
+            }
+            inscritosBox.getChildren().clear();
+            var lista = SessionParticipantDB.listParticipants(s.getId());
+            if (lista.isEmpty()) {
+                inscritosBox.getChildren().add(new Label("Nenhum inscrito."));
+            } else {
+                for (Participant p : lista) {
+                    Label lp = new Label(p.getName() + " (" + p.getEmail() + ")");
+                    lp.setStyle("-fx-text-fill: #374151;");
+                    inscritosBox.getChildren().add(lp);
+                }
+            }
+            inscritosBox.setVisible(true);
+            inscritosBox.setManaged(true);
+            btnLista.setText("Esconder");
+        });
+
+        VBox colunaBtns = new VBox(6, btn, btnLista);
+
+        linha.getChildren().addAll(lblHora, info, lblCount, colunaBtns);
+
+        VBox bloco = new VBox(4, linha, inscritosBox);
+
+        return bloco;
     }
 
     private LocalTime safeTime(Timestamp ts) {
