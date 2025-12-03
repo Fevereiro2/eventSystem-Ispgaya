@@ -3,6 +3,8 @@ package ltc.events.classes;
 import java.sql.Date;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.time.LocalDate;
+import java.time.format.DateTimeParseException;
 
 public class Participant {
     private final String id;
@@ -24,7 +26,7 @@ public class Participant {
         this.password = rs.getString("password");
         this.gender = rs.getString("gender");
         this.taxNumber = rs.getString("tax_number");
-        this.birthdate = rs.getDate("birthdate");
+        this.birthdate = parseBirthdate(rs.getString("birthdate"));
         this.photo = rs.getString("photo");
 
         this.type = new Types(
@@ -52,6 +54,21 @@ public class Participant {
     public void setTaxNumber(String tax) { this.taxNumber = tax; }
     public void setBirthdate(Date birthdate) { this.birthdate = birthdate; }
     public void setPhoto(String photo) { this.photo = photo; }
+
+    private Date parseBirthdate(String value) {
+        if (value == null || value.isBlank()) return null;
+        try {
+            long epoch = Long.parseLong(value.trim());
+            return new Date(epoch);
+        } catch (NumberFormatException ignored) {
+            try {
+                LocalDate d = LocalDate.parse(value.trim());
+                return Date.valueOf(d);
+            } catch (DateTimeParseException ex) {
+                return null;
+            }
+        }
+    }
 
     @Override
     public String toString() {
