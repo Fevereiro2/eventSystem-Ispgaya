@@ -54,7 +54,7 @@ public class AdminScreens {
         // -------------------------------
         // TÃƒÆ’Ã†â€™Ãƒâ€šÃ‚ÂTULO + FILTRO
         // -------------------------------
-        javafx.scene.control.Label titulo = new javafx.scene.control.Label("ÃƒÆ’Ã‚Â°Ãƒâ€¦Ã‚Â¸ÃƒÂ¢Ã¢â€šÂ¬Ã‹Å“Ãƒâ€šÃ‚Â¤ GestÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â£o de Participantes");
+        javafx.scene.control.Label titulo = new javafx.scene.control.Label("Gestão de Participantes");
         titulo.setStyle("-fx-font-size: 20px; -fx-font-weight: bold;");
 
         ComboBox<String> filtro = new ComboBox<>();
