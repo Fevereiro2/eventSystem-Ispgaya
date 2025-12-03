@@ -8,6 +8,10 @@ public class Category {
         this.id = id;
         this.name = name;
     }
+
+    public static Category of(int id, String name) {
+        return new Category(id, name);
+    }
     public int getId() { return id; }
     public String getName() { return name; }
 
