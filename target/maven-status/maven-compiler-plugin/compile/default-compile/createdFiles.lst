@@ -1,14 +1,11 @@
-ltc\events\Modules\ui\Settings.class
 ltc\events\classes\Category.class
 ltc\events\classes\Session.class
 ltc\events\classes\Sessionevent.class
-ltc\events\Modules\visual\Login.class
 ltc\events\Modules\visual\CalendarEventoView.class
 ltc\events\Modules\util\LoggingUtil.class
 ltc\events\Modules\connection\SessionDB.class
 ltc\events\classes\hashs\SessionEntry.class
 ltc\events\classes\Participant.class
-ltc\events\classes\hashs\AuthService.class
 ltc\events\Modules\Window.class
 ltc\events\classes\Types.class
 ltc\events\Modules\connection\EventDB.class
@@ -25,12 +22,9 @@ ltc\events\Modules\admin\AdminScreens.class
 ltc\events\Modules\connection\ResourcesDB.class
 ltc\events\Modules\connection\StateDB.class
 ltc\events\Modules\ui\AlterPassword.class
-ltc\events\Modules\account\AccountScreens.class
-ltc\events\Modules\visual\Register.class
 ltc\events\Modules\db.class
 ltc\events\Modules\connection\TypesDB.class
 ltc\events\Modules\visual\StyleUtil.class
-ltc\events\Modules\util\NifUtil.class
 ltc\events\Modules\Permissions.class
 ltc\events\classes\Resources.class
 ltc\events\Modules\connection\CategoryDB.class
