@@ -1,4 +1,4 @@
-﻿package ltc.events.Modules.visual; // Declara que a classe Register pertence a este pacote.
+package ltc.events.Modules.visual; // Declara que a classe Register pertence a este pacote.
 
 // ImportaÃƒÂ§ÃƒÂµes JavaFX 'standard' para UI
 import javafx.geometry.Insets;      // Para definir espaÃƒÂ§amentos internos (padding).
@@ -98,20 +98,19 @@ public class Register { // InÃƒÂ­cio da classe Register.
                         return; // Sai se falhar.
                     }
 
-                    if (!phone.matches("\\d{9}")) { // ValidaÃƒÂ§ÃƒÂ£o do formato do telefone (9 dÃƒÂ­gitos).
-                        CustomAlert.Warning("O telefone deve ter 9 dÃƒÂ­gitos!"); // Alerta.
-                        return; // Sai se falhar.
+                    if (!phone.matches("\\d{9}")) {
+                        CustomAlert.Warning("O telefone deve ter 9 digitos!");
+                        return;
                     }
                     if (genero == null) {
-                        CustomAlert.Warning("Selecione um gÃƒÂ©nero.");
+                        CustomAlert.Warning("Selecione um genero.");
                         return;
                     }
-                    if (!nif.matches("\\d{9}")) {
-                        CustomAlert.Warning("O NIF deve ter 9 dÃƒÂ­gitos!");
+                    if (!NifUtil.validarNif(nif)) {
+                        CustomAlert.Warning("NIF invalido.");
                         return;
                     }
-
-                                        if (birthdate == null) {
+                    if (birthdate == null) {
                         CustomAlert.Warning("Selecione uma data de nascimento.");
                         return;
                     }
