@@ -348,7 +348,6 @@ public class AdminScreens {
 
         VBox layout = new VBox(15, titulo, tabela, botoes);
         addAdminActions(layout);
-
         layout.setPadding(new Insets(20));
         layout.setAlignment(Pos.TOP_LEFT);
 
@@ -577,10 +576,20 @@ public class AdminScreens {
     private void addAdminActions(VBox layout) {
         Button btnLogs = StyleUtil.secondaryButton("Gerar Logs", _ -> gerarLogs());
         Button btnRel = StyleUtil.primaryButton("Gerar Relatorios", _ -> gerarRelatorios());
-        HBox extras = new HBox(10, btnLogs, btnRel);
+        TextArea logArea = new TextArea(ltc.events.Modules.util.LoggingUtil.readLogs());
+        logArea.setEditable(false);
+        logArea.setWrapText(true);
+        logArea.setPrefRowCount(8);
+        Button btnRefreshLogs = StyleUtil.secondaryButton("Atualizar Logs", _ -> logArea.setText(ltc.events.Modules.util.LoggingUtil.readLogs()));
+
+        HBox extras = new HBox(10, btnLogs, btnRel, btnRefreshLogs);
         extras.setAlignment(Pos.CENTER_LEFT);
         extras.setPadding(new Insets(8, 0, 0, 0));
-        layout.getChildren().add(extras);
+
+        VBox blocoLogs = new VBox(6, extras, logArea);
+        blocoLogs.setPadding(new Insets(10, 0, 0, 0));
+
+        layout.getChildren().add(blocoLogs);
     }
 
     private void gerarLogs() {
