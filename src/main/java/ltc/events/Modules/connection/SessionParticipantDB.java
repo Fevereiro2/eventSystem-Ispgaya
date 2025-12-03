@@ -1,11 +1,14 @@
 package ltc.events.Modules.connection;
 
 import ltc.events.Modules.db;
+import ltc.events.classes.Participant;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
 
 public class SessionParticipantDB {
 
@@ -69,5 +72,30 @@ public class SessionParticipantDB {
             System.out.println("Erro ao contar participantes do evento: " + e.getMessage());
         }
         return 0;
+    }
+
+    public static List<Participant> listParticipants(int sessionId) {
+        List<Participant> lista = new ArrayList<>();
+        String sql = """
+            SELECT p.participant_id, p.name, p.email, p.phone, p.password, p.gender,
+                   p.tax_number, p.birthdate, p.photo, p.types_id, t.name AS types_name
+            FROM session_participant sp
+            JOIN participant p ON p.participant_id = sp.participant_id
+            LEFT JOIN types t ON t.types_id = p.types_id
+            WHERE sp.session_id = ?
+            ORDER BY p.name
+        """;
+
+        try (Connection conn = db.connect();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setInt(1, sessionId);
+            ResultSet rs = stmt.executeQuery();
+            while (rs.next()) {
+                lista.add(new Participant(rs));
+            }
+        } catch (SQLException e) {
+            System.out.println("Erro ao listar participantes da sessao: " + e.getMessage());
+        }
+        return lista;
     }
 }
