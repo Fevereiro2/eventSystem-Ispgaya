@@ -15,6 +15,8 @@ import java.sql.Timestamp;
 import ltc.events.Modules.connection.EventDB;
 import ltc.events.Modules.connection.ParticipantDB;
 import ltc.events.Modules.connection.TypesDB;
+import ltc.events.Modules.connection.CategoryDB;
+import ltc.events.Modules.connection.ResourcesDB;
 import ltc.events.Modules.visual.CustomAlert;
 import ltc.events.Modules.visual.StyleUtil;
 import ltc.events.Modules.connection.StateDB;
@@ -22,6 +24,8 @@ import ltc.events.classes.Participant;
 import ltc.events.classes.Event;
 import ltc.events.classes.Types;
 import ltc.events.classes.State;
+import ltc.events.classes.Category;
+import ltc.events.classes.Resources;
 
 import static ltc.events.Modules.ui.AlterPassword.abrirJanelaAlterarPassword;
 
@@ -41,9 +45,9 @@ public class AdminScreens {
         centro.getChildren().clear();
 
         // -------------------------------
-        // TÍTULO + FILTRO
+        // TÃTULO + FILTRO
         // -------------------------------
-        javafx.scene.control.Label titulo = new javafx.scene.control.Label("👤 Gestão de Participantes");
+        javafx.scene.control.Label titulo = new javafx.scene.control.Label("ðŸ‘¤ GestÃ£o de Participantes");
         titulo.setStyle("-fx-font-size: 20px; -fx-font-weight: bold;");
 
         ComboBox<String> filtro = new ComboBox<>();
@@ -96,7 +100,7 @@ public class AdminScreens {
         });
 
         // -------------------------------
-        // BOTÕES
+        // BOTÃ•ES
         // -------------------------------
         Button btnEditar = StyleUtil.secondaryButton("Editar", _ -> {
             Participant sel = tabela.getSelectionModel().getSelectedItem();
@@ -156,7 +160,7 @@ public class AdminScreens {
 
     public void mostrarSessoes() {
         centro.getChildren().clear();
-        // ... código da interface de sessões
+        // ... cÃ³digo da interface de sessÃµes
     }
 
     public void mostrarEventos() {
@@ -338,11 +342,134 @@ public class AdminScreens {
         stage.setScene(new Scene(layout, 400, 500));
         stage.showAndWait();
     }
+
     public void mostrarRecursos() {
         centro.getChildren().clear();
-        // ... código da interface de recursos
+
+        Label titulo = new Label("Gestao de Recursos");
+        titulo.setStyle("-fx-font-size: 20px; -fx-font-weight: bold;");
+
+        TableView<Resources> tabela = new TableView<>();
+
+        TableColumn<Resources, String> colNome = new TableColumn<>("Nome");
+        colNome.setCellValueFactory(new PropertyValueFactory<>("nameresources"));
+        colNome.setPrefWidth(200);
+
+        TableColumn<Resources, String> colQtd = new TableColumn<>("Quantidade");
+        colQtd.setCellValueFactory(c -> new SimpleStringProperty(String.valueOf(c.getValue().getQuantity())));
+        colQtd.setPrefWidth(120);
+
+        TableColumn<Resources, String> colCusto = new TableColumn<>("Custo Unitario");
+        colCusto.setCellValueFactory(c -> new SimpleStringProperty(c.getValue().getUnitarycost()));
+        colCusto.setPrefWidth(150);
+
+        TableColumn<Resources, String> colCat = new TableColumn<>("Categoria");
+        colCat.setCellValueFactory(c -> new SimpleStringProperty(
+                c.getValue().getCategoryid() != null ? c.getValue().getCategoryid().getName() : ""
+        ));
+        colCat.setPrefWidth(150);
+
+        tabela.getColumns().addAll(colNome, colQtd, colCusto, colCat);
+        tabela.setItems(ResourcesDB.listAll());
+
+        Button btnCriar = StyleUtil.primaryButton("Criar", _ -> abrirFormRecurso(null, tabela));
+
+        Button btnEditar = StyleUtil.secondaryButton("Editar", _ -> {
+            Resources sel = tabela.getSelectionModel().getSelectedItem();
+            if (sel == null) {
+                CustomAlert.Warning("Selecione um recurso.");
+                return;
+            }
+            abrirFormRecurso(sel, tabela);
+        });
+
+        Button btnRemover = StyleUtil.dangerButton("Remover", _ -> {
+            Resources sel = tabela.getSelectionModel().getSelectedItem();
+            if (sel == null) {
+                CustomAlert.Warning("Selecione um recurso.");
+                return;
+            }
+
+            if (!CustomAlert.Confirm("Confirmar", "Apagar " + sel.getNameresources() + "?")) {
+                return;
+            }
+
+            try {
+                ResourcesDB.delete(sel.getId_resources());
+                tabela.setItems(ResourcesDB.listAll());
+            } catch (Exception ex) {
+                CustomAlert.Error("Erro ao remover: " + ex.getMessage());
+            }
+        });
+
+        Button btnAtualizar = StyleUtil.secondaryButton("Atualizar", _ -> tabela.setItems(ResourcesDB.listAll()));
+
+        HBox botoes = new HBox(10, btnCriar, btnEditar, btnRemover, btnAtualizar);
+        botoes.setAlignment(Pos.CENTER_LEFT);
+        botoes.setPadding(new Insets(10, 0, 0, 0));
+
+        VBox layout = new VBox(15, titulo, tabela, botoes);
+        layout.setAlignment(Pos.TOP_CENTER);
+        layout.setPadding(new Insets(20));
+
+        centro.getChildren().add(layout);
     }
 
+    private void abrirFormRecurso(Resources existente, TableView<Resources> tabela) {
+        Stage stage = new Stage();
+        stage.initModality(Modality.APPLICATION_MODAL);
+        stage.setTitle(existente == null ? "Criar Recurso" : "Editar Recurso");
+
+        TextField txtNome = new TextField(existente != null ? existente.getNameresources() : "");
+        Spinner<Integer> spQuantidade = new Spinner<>(0, 1_000_000, existente != null ? existente.getQuantity() : 0);
+        TextField txtCusto = new TextField(existente != null ? existente.getUnitarycost() : "");
+        ComboBox<Category> cmbCategoria = new ComboBox<>(CategoryDB.listAll());
+        cmbCategoria.setPromptText("Categoria");
+
+        if (existente != null && existente.getCategoryid() != null) {
+            cmbCategoria.getItems().stream()
+                    .filter(c -> c.getId() == existente.getCategoryid().getId())
+                    .findFirst()
+                    .ifPresent(cmbCategoria.getSelectionModel()::select);
+        }
+
+        Button btnSalvar = StyleUtil.primaryButton("Guardar", _ -> {
+            String nome = txtNome.getText().trim();
+            String custo = txtCusto.getText().trim();
+            Integer quantidade = spQuantidade.getValue();
+            Category categoria = cmbCategoria.getSelectionModel().getSelectedItem();
+
+            if (nome.isEmpty()) {
+                CustomAlert.Warning("Nome obrigatorio.");
+                return;
+            }
+
+            try {
+                if (existente == null) {
+                    ResourcesDB.register(nome, quantidade != null ? quantidade : 0, custo, categoria);
+                } else {
+                    ResourcesDB.update(existente.getId_resources(), nome, quantidade != null ? quantidade : 0, custo, categoria);
+                }
+                tabela.setItems(ResourcesDB.listAll());
+                CustomAlert.Success("Guardado com sucesso.");
+                stage.close();
+            } catch (Exception ex) {
+                CustomAlert.Error("Erro ao guardar: " + ex.getMessage());
+            }
+        });
+
+        VBox layout = new VBox(10,
+                new Label("Nome:"), txtNome,
+                new Label("Quantidade:"), spQuantidade,
+                new Label("Custo unitario:"), txtCusto,
+                new Label("Categoria:"), cmbCategoria,
+                btnSalvar
+        );
+        layout.setPadding(new Insets(20));
+
+        stage.setScene(new Scene(layout, 400, 420));
+        stage.showAndWait();
+    }
 
     private void atualizarContador(Label label, ObservableList<Participant> lista) {
         long total = lista.size();
@@ -367,7 +494,7 @@ public class AdminScreens {
     }
 
     private void aplicarFiltro(TableView<Participant> tabela, String filtro) {
-        ObservableList<Participant> todos = ParticipantDB.listAll(); // já tens isto
+        ObservableList<Participant> todos = ParticipantDB.listAll(); // jÃ¡ tens isto
         switch (filtro) {
             case "Admins" ->
                     tabela.setItems(
@@ -420,7 +547,7 @@ public class AdminScreens {
         TextField txtPhone = new TextField(p.getPhone());
 
         ComboBox<Types> comboTipo = new ComboBox<>();
-        comboTipo.getItems().addAll(TypesDB.listAll()); // Criamos já a seguir
+        comboTipo.getItems().addAll(TypesDB.listAll()); // Criamos jÃ¡ a seguir
         comboTipo.getSelectionModel().select(p.getType());
 
         Button btnSalvar = StyleUtil.primaryButton("Salvar", _ -> {
@@ -443,4 +570,6 @@ public class AdminScreens {
         popup.showAndWait();
     }
 }
+
+
 
