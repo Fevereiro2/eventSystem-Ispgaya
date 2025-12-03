@@ -36,7 +36,7 @@ TemplateTrabalhos.docx     # template de relatorio
 ```
 
 ## Funcionalidades
-- Modo admin direto: a aplicaçao arranca autenticada como administrador (sem ecrãs de login/registo) com acesso imediato ao painel.
+- Modo admin direto: a aplicacao arranca autenticada como administrador (sem ecras de login/registo) com acesso imediato ao painel.
 - Login/Logout com BCrypt e migracao automatica de passwords antigas em texto simples.
 - Registo de utilizadores, validacao de email unico e validacao de NIF (`NifUtil`).
 - Listagem e edicao de participantes (admin), incluindo tipo/permissoes.
@@ -67,6 +67,7 @@ mvn clean javafx:run
 - Comando: `mvn test` (no momento nao ha suite de testes automatizados criada).
 
 ## Notas e Limitacoes
+- Sessao admin direta (admin@local, id 1); ecras de login/registo nao sao usados.
 - O README anterior referia PostgreSQL; a versao atual usa SQLite por defeito. Para PostgreSQL, adapte `db.java` e a string de conexao no `.env`.
 - O logging grava em `logs_app.txt` no diretorio raiz; evitar caminhos apenas de leitura.
 - UI e strings em PT; internacionalizacao pode ser adicionada (suggestion).
