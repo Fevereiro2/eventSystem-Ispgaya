@@ -10,6 +10,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
+import java.sql.Statement;
 import java.util.List;
 
 public class SessionDB {
@@ -67,7 +68,6 @@ public class SessionDB {
         String insertSession = """
             INSERT INTO session (name, description, local, initial_date, finish_date, state, image)
             VALUES (?, ?, ?, ?, ?, ?, ?)
-            RETURNING session_id
         """;
         String insertRelation = "INSERT INTO session_event (session_id, event_id) VALUES (?, ?)";
         String fetch = """
@@ -87,7 +87,7 @@ public class SessionDB {
 
         Connection conn = db.connect();
         int newId;
-        try (PreparedStatement ins = conn.prepareStatement(insertSession)) {
+        try (PreparedStatement ins = conn.prepareStatement(insertSession, Statement.RETURN_GENERATED_KEYS)) {
             ins.setString(1, name);
             ins.setString(2, description);
             ins.setString(3, local);
@@ -95,9 +95,20 @@ public class SessionDB {
             ins.setString(5, finish != null ? finish.toLocalDateTime().toString() : null);
             ins.setString(6, state);
             ins.setString(7, image);
-            ResultSet rs = ins.executeQuery();
-            if (!rs.next()) throw new SQLException("Falha ao criar sessao.");
-            newId = rs.getInt("session_id");
+            ins.executeUpdate();
+            try (ResultSet rs = ins.getGeneratedKeys()) {
+                if (rs.next()) {
+                    newId = rs.getInt(1);
+                } else {
+                    // Fallback para SQLite se getGeneratedKeys falhar
+                    try (PreparedStatement lastId = conn.prepareStatement("SELECT last_insert_rowid()")) {
+                        try (ResultSet rsId = lastId.executeQuery()) {
+                            if (!rsId.next()) throw new SQLException("Falha ao obter ID da sessao criada.");
+                            newId = rsId.getInt(1);
+                        }
+                    }
+                }
+            }
         }
 
         try (PreparedStatement link = conn.prepareStatement(insertRelation)) {
