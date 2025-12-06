@@ -75,15 +75,25 @@ public class Session {
     private Timestamp parseTimestampSafe(String value) {
         if (value == null || value.isBlank()) return null;
         String trimmed = value.trim();
+        String normalized = normalizeIso(trimmed);
         try {
-            return Timestamp.valueOf(trimmed);
+            return Timestamp.valueOf(normalized);
         } catch (IllegalArgumentException e) {
             try {
-                return Timestamp.valueOf(trimmed + " 00:00:00");
+                return Timestamp.valueOf(normalized + " 00:00:00");
             } catch (Exception ignored) {
                 return null;
             }
         }
+    }
+
+    private String normalizeIso(String raw) {
+        String s = raw.replace('T', ' ').replace('Z', ' ').trim();
+        // Se vier sem segundos (ex: yyyy-MM-dd HH:mm) acrescenta :00
+        if (s.matches("^\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}$")) {
+            s = s + ":00";
+        }
+        return s;
     }
 
     private Participant parseModerator(ResultSet rs) {
