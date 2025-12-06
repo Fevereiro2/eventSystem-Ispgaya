@@ -62,7 +62,10 @@ public class Event {
 
     private static Timestamp parseTimestamp(String value) {
         if (value == null || value.isEmpty()) return null;
-        String trimmed = value.trim();
+        String trimmed = value.trim().replace('T', ' ').replace('Z', ' ').trim();
+        if (trimmed.matches("^\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}$")) {
+            trimmed = trimmed + ":00";
+        }
         // caso venha em epoch millis (ex: "1765929600000")
         if (trimmed.matches("^\\d{10,}$")) {
             try {
