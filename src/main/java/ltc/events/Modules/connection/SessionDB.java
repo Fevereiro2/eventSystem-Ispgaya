@@ -17,7 +17,7 @@ import java.util.List;
 
 public class SessionDB {
 
-    private static void ensureModeratorColumn(Connection conn) {
+    private static boolean ensureModeratorColumn(Connection conn) {
         try (PreparedStatement info = conn.prepareStatement("PRAGMA table_info(session)");
              ResultSet rs = info.executeQuery()) {
             boolean exists = false;
@@ -27,15 +27,17 @@ public class SessionDB {
                     break;
                 }
             }
-            if (!exists) {
-                try (PreparedStatement alter = conn.prepareStatement("ALTER TABLE session ADD COLUMN moderator_id INTEGER")) {
-                    alter.executeUpdate();
-                } catch (SQLException ignored) {
-                    // se a coluna jÇœ existir ou a BD nÇœo suportar, seguimos em frente
-                }
+            if (exists) return true;
+
+            try (PreparedStatement alter = conn.prepareStatement("ALTER TABLE session ADD COLUMN moderator_id INTEGER")) {
+                alter.executeUpdate();
+                return true;
+            } catch (SQLException ignored) {
+                return false; // nao conseguimos adicionar, prosseguimos sem moderador
             }
         } catch (SQLException e) {
             System.out.println("Erro ao garantir coluna de moderador: " + e.getMessage());
+            return false;
         }
     }
 
@@ -44,7 +46,7 @@ public class SessionDB {
      */
     public static List<Session> getSessionsByEvent(int eventId) {
         ObservableList<Session> sessions = FXCollections.observableArrayList();
-        String sql = """
+        String selectBase = """
             SELECT
                 s.session_id,
                 s.name,
@@ -54,32 +56,40 @@ public class SessionDB {
                 s.state AS state_name,
                 s.image,
                 s.initial_date,
-                s.finish_date,
-                s.moderator_id,
+                s.finish_date
+        """;
+        String selectMod = """
+                ,s.moderator_id,
                 m.name AS moderator_name,
                 m.email AS moderator_email,
                 m.phone AS moderator_phone,
                 m.types_id AS moderator_type_id,
                 t.name AS moderator_type_name
+        """;
+        String fromBase = """
             FROM session s
             INNER JOIN session_event se ON se.session_id = s.session_id
+        """;
+        String joinMod = """
             LEFT JOIN participant m ON m.participant_id = s.moderator_id
             LEFT JOIN types t ON t.types_id = m.types_id
+        """;
+        String tail = """
             WHERE se.event_id = ?
             ORDER BY s.initial_date;
         """;
 
-        try (Connection conn = db.connect();
-             PreparedStatement stmt = conn.prepareStatement(sql)) {
+        try (Connection conn = db.connect()) {
+            boolean hasMod = ensureModeratorColumn(conn);
+            String sql = selectBase + (hasMod ? selectMod : "") + fromBase + (hasMod ? joinMod : "") + tail;
+            try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+                stmt.setInt(1, eventId);
+                ResultSet rs = stmt.executeQuery();
 
-            ensureModeratorColumn(conn);
-            stmt.setInt(1, eventId);
-            ResultSet rs = stmt.executeQuery();
-
-            while (rs.next()) {
-                sessions.add(new Session(rs));
+                while (rs.next()) {
+                    sessions.add(new Session(rs));
+                }
             }
-
         } catch (SQLException e) {
             System.out.println("Erro ao obter sessoes do evento: " + e.getMessage());
         }
