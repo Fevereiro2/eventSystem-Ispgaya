@@ -632,12 +632,23 @@ public class AdminScreens {
         } else {
             cmbEstado.getSelectionModel().selectFirst();
         }
+        if (cmbEstado.getSelectionModel().isEmpty()) {
+            cmbEstado.getSelectionModel().select("Planeado");
+        }
 
         ObservableList<Participant> moderadores = ParticipantDB.listAll().filtered(p ->
                 p.getType() != null && p.getType().getName() != null &&
                         p.getType().getName().toLowerCase().contains("moder")
         );
         ComboBox<Participant> cmbModerador = new ComboBox<>(moderadores);
+        cmbModerador.setCellFactory(_ -> new ListCell<>() {
+            @Override
+            protected void updateItem(Participant item, boolean empty) {
+                super.updateItem(item, empty);
+                setText(empty || item == null ? "" : item.getName());
+            }
+        });
+        cmbModerador.setButtonCell(cmbModerador.getCellFactory().call(null));
         if (existente != null && existente.getModerator() != null) {
             moderadores.stream()
                     .filter(m -> m.getId().equals(existente.getModerator().getId()))
@@ -648,6 +659,14 @@ public class AdminScreens {
         ObservableList<Resources> recursos = ResourcesDB.listAll();
         ComboBox<Resources> cmbRecurso = new ComboBox<>(recursos);
         cmbRecurso.setPromptText("Escolha um recurso");
+        cmbRecurso.setCellFactory(_ -> new ListCell<>() {
+            @Override
+            protected void updateItem(Resources item, boolean empty) {
+                super.updateItem(item, empty);
+                setText(empty || item == null ? "" : item.getNameresources());
+            }
+        });
+        cmbRecurso.setButtonCell(cmbRecurso.getCellFactory().call(null));
         Spinner<Integer> spQtd = new Spinner<>(1, 1000, 1);
 
         Map<Integer, Integer> recursosSelecionados = new HashMap<>();
@@ -721,6 +740,20 @@ public class AdminScreens {
                 Integer moderadorId = cmbModerador.getValue() != null
                         ? Integer.parseInt(cmbModerador.getValue().getId())
                         : null;
+
+                // Garantir que a data da sessao respeita o intervalo do evento (se definido)
+                if (ev.getStartdate() != null) {
+                    LocalDate inicioEvento = ev.getStartdate().toLocalDateTime().toLocalDate();
+                    if (dpDia.getValue().isBefore(inicioEvento)) {
+                        throw new IllegalArgumentException("Dia da sessao nao pode ser antes do inicio do evento (" + inicioEvento + ").");
+                    }
+                }
+                if (ev.getFinaldate() != null) {
+                    LocalDate fimEvento = ev.getFinaldate().toLocalDateTime().toLocalDate();
+                    if (dpDia.getValue().isAfter(fimEvento)) {
+                        throw new IllegalArgumentException("Dia da sessao nao pode ser depois do fim do evento (" + fimEvento + ").");
+                    }
+                }
 
                 // Impede que o mesmo moderador tenha sessoes sobrepostas
                 if (moderadorId != null) {
@@ -968,5 +1001,3 @@ public class AdminScreens {
         popup.showAndWait();
     }
 }
-
-
