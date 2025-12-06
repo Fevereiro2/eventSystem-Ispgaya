@@ -615,15 +615,15 @@ public class AdminScreens {
         DatePicker dpDia = new DatePicker(dataBase);
 
         String horaIni = "09:00";
-        String horaFim = "10:30";
+        String horaFimTexto = "10:30";
         if (existente != null && existente.getStartdate() != null) {
             horaIni = existente.getStartdate().toLocalDateTime().toLocalTime().format(formatter);
         }
         if (existente != null && existente.getFinaldate() != null) {
-            horaFim = existente.getFinaldate().toLocalDateTime().toLocalTime().format(formatter);
+            horaFimTexto = existente.getFinaldate().toLocalDateTime().toLocalTime().format(formatter);
         }
         TextField txtHoraIni = new TextField(horaIni);
-        TextField txtHoraFim = new TextField(horaFim);
+        TextField txtHoraFim = new TextField(horaFimTexto);
 
         ComboBox<String> cmbEstado = new ComboBox<>();
         cmbEstado.getItems().addAll("Planeado", "Em Progresso", "Concluido", "Cancelado");
@@ -656,7 +656,8 @@ public class AdminScreens {
         }
 
         VBox listaRecursos = new VBox(6);
-        Runnable renderRecursos = () -> {
+        final Runnable[] renderRecursos = new Runnable[1];
+        renderRecursos[0] = () -> {
             listaRecursos.getChildren().clear();
             if (recursosSelecionados.isEmpty()) {
                 listaRecursos.getChildren().add(new Label("Nenhum recurso associado."));
@@ -672,14 +673,14 @@ public class AdminScreens {
                 Label lbl = new Label(res.getNameresources() + " x" + entry.getValue());
                 Button btnRem = StyleUtil.dangerButton("Remover", __ -> {
                     recursosSelecionados.remove(entry.getKey());
-                    renderRecursos.run();
+                    renderRecursos[0].run();
                 });
                 HBox linha = new HBox(8, lbl, btnRem);
                 linha.setAlignment(Pos.CENTER_LEFT);
                 listaRecursos.getChildren().add(linha);
             }
         };
-        renderRecursos.run();
+        renderRecursos[0].run();
 
         Button btnAddRecurso = StyleUtil.secondaryButton("Adicionar recurso", __ -> {
             Resources sel = cmbRecurso.getValue();
@@ -699,7 +700,7 @@ public class AdminScreens {
                 return;
             }
             recursosSelecionados.put(sel.getId_resources(), qtd);
-            renderRecursos.run();
+            renderRecursos[0].run();
         });
 
         Button btnGuardar = StyleUtil.primaryButton("Guardar", _ -> {
@@ -708,8 +709,8 @@ public class AdminScreens {
                         txtHoraIni.getText().isBlank() || txtHoraFim.getText().isBlank()) {
                     throw new IllegalArgumentException("Preencha nome, dia e horas.");
                 }
-                LocalTime horaInicio = LocalTime.parse(txtHoraIni.getText());
-                LocalTime horaFim = LocalTime.parse(txtHoraFim.getText());
+                LocalTime horaInicio = parseHora(txtHoraIni.getText(), formatter);
+                LocalTime horaFim = parseHora(txtHoraFim.getText(), formatter);
                 if (!horaFim.isAfter(horaInicio)) {
                     throw new IllegalArgumentException("Hora fim deve ser depois da hora inicio.");
                 }
@@ -800,6 +801,17 @@ public class AdminScreens {
 
         stage.setScene(new Scene(layout, 420, 650));
         stage.showAndWait();
+    }
+
+    private LocalTime parseHora(String value, DateTimeFormatter formatter) {
+        if (value == null || value.trim().isEmpty()) {
+            throw new IllegalArgumentException("Hora em falta (HH:mm).");
+        }
+        try {
+            return LocalTime.parse(value.trim(), formatter);
+        } catch (Exception e) {
+            throw new IllegalArgumentException("Hora invalida. Use o formato HH:mm (ex: 09:00).");
+        }
     }
 
     private void carregarSessoes(TableView<Session> tabela, Event ev) {
@@ -956,9 +968,5 @@ public class AdminScreens {
         popup.showAndWait();
     }
 }
-
-
-
-
 
 
