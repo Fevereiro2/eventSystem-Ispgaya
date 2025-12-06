@@ -14,7 +14,13 @@ import javafx.stage.Modality;
 import javafx.stage.Stage;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.format.DateTimeFormatter;
 import java.sql.Timestamp;
+import java.util.List;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 import ltc.events.Modules.connection.EventDB;
 import ltc.events.Modules.connection.ParticipantDB;
@@ -23,6 +29,7 @@ import ltc.events.Modules.connection.CategoryDB;
 import ltc.events.Modules.connection.ResourcesDB;
 import ltc.events.Modules.connection.SessionDB;
 import ltc.events.Modules.connection.SessionParticipantDB;
+import ltc.events.Modules.connection.SessionResourceDB;
 import ltc.events.Modules.visual.CustomAlert;
 import ltc.events.Modules.visual.StyleUtil;
 import ltc.events.Modules.connection.StateDB;
@@ -210,7 +217,17 @@ public class AdminScreens {
         colEstadoSes.setCellValueFactory(c -> new SimpleStringProperty(
                 c.getValue().getState() != null ? c.getValue().getState().getName() : ""
         ));
-        tabelaSessoes.getColumns().addAll(colNomeSes, colInicioSes, colFimSes, colLocalSes, colEstadoSes);
+        TableColumn<Session, String> colModeradorSes = new TableColumn<>("Moderador");
+        colModeradorSes.setCellValueFactory(c -> new SimpleStringProperty(
+                c.getValue().getModerator() != null ? c.getValue().getModerator().getName() : ""
+        ));
+        TableColumn<Session, String> colRecursosSes = new TableColumn<>("Recursos");
+        colRecursosSes.setCellValueFactory(c -> new SimpleStringProperty(
+                SessionResourceDB.listBySession(c.getValue().getId()).stream()
+                        .map(sr -> sr.getResource().getNameresources() + " x" + sr.getQuantity())
+                        .collect(Collectors.joining(", "))
+        ));
+        tabelaSessoes.getColumns().addAll(colNomeSes, colInicioSes, colFimSes, colLocalSes, colEstadoSes, colModeradorSes, colRecursosSes);
         tabelaSessoes.setPrefHeight(200);
 
         Button btnVer = StyleUtil.secondaryButton("Ver sessoes", _ -> {
@@ -220,6 +237,25 @@ public class AdminScreens {
                 return;
             }
             carregarSessoes(tabelaSessoes, sel);
+        });
+
+        Button btnNova = StyleUtil.primaryButton("Nova sessao", _ -> {
+            Event sel = tabelaEventos.getSelectionModel().getSelectedItem();
+            if (sel == null) {
+                CustomAlert.Warning("Selecione um evento.");
+                return;
+            }
+            abrirFormSessao(sel, null, tabelaSessoes);
+        });
+
+        Button btnEditarSes = StyleUtil.secondaryButton("Editar sessao", _ -> {
+            Event evSel = tabelaEventos.getSelectionModel().getSelectedItem();
+            Session ses = tabelaSessoes.getSelectionModel().getSelectedItem();
+            if (evSel == null || ses == null) {
+                CustomAlert.Warning("Selecione o evento e a sessao.");
+                return;
+            }
+            abrirFormSessao(evSel, ses, tabelaSessoes);
         });
 
         Button btnGerar = StyleUtil.primaryButton("Gerar sessoes (manha/tarde)", _ -> {
@@ -249,7 +285,7 @@ public class AdminScreens {
             }
         });
 
-        HBox botoes = new HBox(10, btnVer, btnGerar, btnRemover);
+        HBox botoes = new HBox(10, btnVer, btnGerar, btnNova, btnEditarSes, btnRemover);
         botoes.setAlignment(Pos.CENTER_LEFT);
         botoes.setPadding(new Insets(10, 0, 0, 0));
 
@@ -301,35 +337,13 @@ public class AdminScreens {
             abrirFormEvento(sel, tabela);
         });
 
-        Button btnAprovar = StyleUtil.primaryButton("Aprovar", _ -> {
+        Button btnRemover = StyleUtil.dangerButton("Remover", _ -> {
             Event sel = tabela.getSelectionModel().getSelectedItem();
             if (sel == null) {
                 CustomAlert.Warning("Selecione um evento.");
                 return;
             }
-            if (sel.getState() != null && !"em aprovacao".equalsIgnoreCase(sel.getState().getName())) {
-                CustomAlert.Warning("Apenas eventos em aprovacao podem ser aprovados.");
-                return;
-            }
-            try {
-                EventDB.updateState(String.valueOf(sel.getId()), 2);
-                tabela.setItems(EventDB.getAllEvents());
-                CustomAlert.Success("Evento aprovado.");
-            } catch (Exception ex) {
-                CustomAlert.Error("Erro ao aprovar: " + ex.getMessage());
-            }
-        });
-
-        Button btnRecusar = StyleUtil.dangerButton("Recusar", _ -> {
-            Event sel = tabela.getSelectionModel().getSelectedItem();
-            if (sel == null) {
-                CustomAlert.Warning("Selecione um evento.");
-                return;
-            }
-            if (sel.getState() != null && !"em aprovacao".equalsIgnoreCase(sel.getState().getName())) {
-                CustomAlert.Warning("Apenas eventos em aprovacao podem ser recusados.");
-                return;
-            }
+            if (!CustomAlert.Confirm("Confirmar", "Eliminar " + sel.getName() + "?")) return;
             try {
                 EventDB.delete(String.valueOf(sel.getId()));
                 tabela.setItems(EventDB.getAllEvents());
@@ -341,7 +355,7 @@ public class AdminScreens {
 
         Button btnAtualizar = StyleUtil.secondaryButton("Atualizar", _ -> tabela.setItems(EventDB.getAllEvents()));
 
-        HBox botoes = new HBox(10, btnCriar, btnEditar, btnAprovar, btnRecusar, btnAtualizar);
+        HBox botoes = new HBox(10, btnCriar, btnEditar, btnRemover, btnAtualizar);
         botoes.setAlignment(Pos.CENTER_LEFT);
         botoes.setPadding(new Insets(10, 0, 0, 0));
 
@@ -364,9 +378,11 @@ public class AdminScreens {
         TextField txtLocal = new TextField();
         DatePicker dpInicio = new DatePicker();
         DatePicker dpFim = new DatePicker();
-        TextField txtImagem = new TextField();
 
-        ComboBox<State> cmbEstado = new ComboBox<>(StateDB.listAll());
+        ObservableList<State> estados = StateDB.listAll().filtered(s ->
+                s.getName() == null || !s.getName().equalsIgnoreCase("em aprovacao")
+        );
+        ComboBox<State> cmbEstado = new ComboBox<>(estados);
         cmbEstado.getSelectionModel().selectFirst();
 
         if (existente != null) {
@@ -375,7 +391,6 @@ public class AdminScreens {
             txtLocal.setText(existente.getLocal());
             if (existente.getStartdate() != null) dpInicio.setValue(existente.getStartdate().toLocalDateTime().toLocalDate());
             if (existente.getFinaldate() != null) dpFim.setValue(existente.getFinaldate().toLocalDateTime().toLocalDate());
-            txtImagem.setText(existente.getImage());
             if (existente.getState() != null) {
                 cmbEstado.getItems().stream()
                         .filter(s -> s.getId() == existente.getState().getId())
@@ -389,8 +404,11 @@ public class AdminScreens {
                 if (txtNome.getText().isBlank() || txtLocal.getText().isBlank() || dpInicio.getValue() == null || dpFim.getValue() == null) {
                     throw new IllegalArgumentException("Preencha nome, local e datas.");
                 }
-                if (dpFim.getValue().isBefore(dpInicio.getValue())) {
-                    throw new IllegalArgumentException("Data fim antes da data inicio.");
+                if (!dpInicio.getValue().isAfter(LocalDate.now())) {
+                    throw new IllegalArgumentException("Data inicio deve ser posterior ao dia de hoje.");
+                }
+                if (!dpFim.getValue().isAfter(dpInicio.getValue())) {
+                    throw new IllegalArgumentException("Data fim tem de ser posterior Çÿ data de inicio.");
                 }
                 State estadoSel = cmbEstado.getValue();
                 int stateId = estadoSel != null ? estadoSel.getId() : 1;
@@ -402,7 +420,7 @@ public class AdminScreens {
                             txtLocal.getText(),
                             Timestamp.valueOf(dpInicio.getValue().atStartOfDay()),
                             Timestamp.valueOf(dpFim.getValue().atStartOfDay()),
-                            txtImagem.getText(),
+                            null,
                             stateId
                     );
                 } else {
@@ -413,7 +431,7 @@ public class AdminScreens {
                             txtLocal.getText(),
                             Timestamp.valueOf(dpInicio.getValue().atStartOfDay()),
                             Timestamp.valueOf(dpFim.getValue().atStartOfDay()),
-                            txtImagem.getText(),
+                            null,
                             stateId
                     );
                 }
@@ -432,7 +450,6 @@ public class AdminScreens {
                 new Label("Local:"), txtLocal,
                 new Label("Inicio:"), dpInicio,
                 new Label("Fim:"), dpFim,
-                new Label("Imagem:"), txtImagem,
                 new Label("Estado:"), cmbEstado,
                 btnSalvar
         );
@@ -467,8 +484,13 @@ public class AdminScreens {
                 c.getValue().getCategoryid() != null ? c.getValue().getCategoryid().getName() : ""
         ));
         colCat.setPrefWidth(150);
+        TableColumn<Resources, String> colDisp = new TableColumn<>("Disponivel");
+        colDisp.setCellValueFactory(c -> new SimpleStringProperty(
+                String.valueOf(SessionResourceDB.availableQuantity(c.getValue().getId_resources(), null))
+        ));
+        colDisp.setPrefWidth(120);
 
-        tabela.getColumns().addAll(colNome, colQtd, colCusto, colCat);
+        tabela.getColumns().addAll(colNome, colQtd, colCusto, colCat, colDisp);
         tabela.setItems(ResourcesDB.listAll());
 
         Button btnCriar = StyleUtil.primaryButton("Criar", _ -> abrirFormRecurso(null, tabela));
@@ -571,6 +593,215 @@ public class AdminScreens {
         stage.setScene(new Scene(layout, 400, 420));
         stage.showAndWait();
     }
+
+    private void abrirFormSessao(Event ev, Session existente, TableView<Session> tabelaSessoes) {
+        Stage stage = new Stage();
+        stage.initModality(Modality.APPLICATION_MODAL);
+        stage.setTitle(existente == null ? "Criar Sessao" : "Editar Sessao");
+
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("HH:mm");
+
+        TextField txtNome = new TextField(existente != null ? existente.getName() : "");
+        TextArea txtDesc = new TextArea(existente != null ? existente.getDescription() : "");
+        txtDesc.setPrefRowCount(3);
+        TextField txtLocal = new TextField(existente != null ? existente.getLocal() : ev.getLocal());
+
+        LocalDate dataBase = null;
+        if (existente != null && existente.getStartdate() != null) {
+            dataBase = existente.getStartdate().toLocalDateTime().toLocalDate();
+        } else if (ev.getStartdate() != null) {
+            dataBase = ev.getStartdate().toLocalDateTime().toLocalDate();
+        }
+        DatePicker dpDia = new DatePicker(dataBase);
+
+        String horaIni = "09:00";
+        String horaFim = "10:30";
+        if (existente != null && existente.getStartdate() != null) {
+            horaIni = existente.getStartdate().toLocalDateTime().toLocalTime().format(formatter);
+        }
+        if (existente != null && existente.getFinaldate() != null) {
+            horaFim = existente.getFinaldate().toLocalDateTime().toLocalTime().format(formatter);
+        }
+        TextField txtHoraIni = new TextField(horaIni);
+        TextField txtHoraFim = new TextField(horaFim);
+
+        ComboBox<String> cmbEstado = new ComboBox<>();
+        cmbEstado.getItems().addAll("Planeado", "Em Progresso", "Concluido", "Cancelado");
+        if (existente != null && existente.getState() != null) {
+            cmbEstado.getSelectionModel().select(existente.getState().getName());
+        } else {
+            cmbEstado.getSelectionModel().selectFirst();
+        }
+
+        ObservableList<Participant> moderadores = ParticipantDB.listAll().filtered(p ->
+                p.getType() != null && p.getType().getName() != null &&
+                        p.getType().getName().toLowerCase().contains("moder")
+        );
+        ComboBox<Participant> cmbModerador = new ComboBox<>(moderadores);
+        if (existente != null && existente.getModerator() != null) {
+            moderadores.stream()
+                    .filter(m -> m.getId().equals(existente.getModerator().getId()))
+                    .findFirst()
+                    .ifPresent(cmbModerador.getSelectionModel()::select);
+        }
+
+        ObservableList<Resources> recursos = ResourcesDB.listAll();
+        ComboBox<Resources> cmbRecurso = new ComboBox<>(recursos);
+        cmbRecurso.setPromptText("Escolha um recurso");
+        Spinner<Integer> spQtd = new Spinner<>(1, 1000, 1);
+
+        Map<Integer, Integer> recursosSelecionados = new HashMap<>();
+        if (existente != null) {
+            recursosSelecionados.putAll(SessionResourceDB.mapBySession(existente.getId()));
+        }
+
+        VBox listaRecursos = new VBox(6);
+        Runnable renderRecursos = () -> {
+            listaRecursos.getChildren().clear();
+            if (recursosSelecionados.isEmpty()) {
+                listaRecursos.getChildren().add(new Label("Nenhum recurso associado."));
+                return;
+            }
+            for (Map.Entry<Integer, Integer> entry : recursosSelecionados.entrySet()) {
+                Resources res = recursos.stream()
+                        .filter(r -> r.getId_resources() == entry.getKey())
+                        .findFirst()
+                        .orElse(ResourcesDB.getById(entry.getKey()));
+                if (res == null) continue;
+
+                Label lbl = new Label(res.getNameresources() + " x" + entry.getValue());
+                Button btnRem = StyleUtil.dangerButton("Remover", __ -> {
+                    recursosSelecionados.remove(entry.getKey());
+                    renderRecursos.run();
+                });
+                HBox linha = new HBox(8, lbl, btnRem);
+                linha.setAlignment(Pos.CENTER_LEFT);
+                listaRecursos.getChildren().add(linha);
+            }
+        };
+        renderRecursos.run();
+
+        Button btnAddRecurso = StyleUtil.secondaryButton("Adicionar recurso", __ -> {
+            Resources sel = cmbRecurso.getValue();
+            if (sel == null) {
+                CustomAlert.Warning("Selecione um recurso.");
+                return;
+            }
+            Integer qtd = spQtd.getValue();
+            if (qtd == null || qtd <= 0) {
+                CustomAlert.Warning("Quantidade invalida.");
+                return;
+            }
+            int atual = recursosSelecionados.getOrDefault(sel.getId_resources(), 0);
+            int disponivel = SessionResourceDB.availableQuantity(sel.getId_resources(), existente != null ? existente.getId() : null) + atual;
+            if (qtd > disponivel) {
+                CustomAlert.Warning("Apenas " + disponivel + " disponivel(s) considerando outras sessoes.");
+                return;
+            }
+            recursosSelecionados.put(sel.getId_resources(), qtd);
+            renderRecursos.run();
+        });
+
+        Button btnGuardar = StyleUtil.primaryButton("Guardar", _ -> {
+            try {
+                if (txtNome.getText().isBlank() || dpDia.getValue() == null ||
+                        txtHoraIni.getText().isBlank() || txtHoraFim.getText().isBlank()) {
+                    throw new IllegalArgumentException("Preencha nome, dia e horas.");
+                }
+                LocalTime horaInicio = LocalTime.parse(txtHoraIni.getText());
+                LocalTime horaFim = LocalTime.parse(txtHoraFim.getText());
+                if (!horaFim.isAfter(horaInicio)) {
+                    throw new IllegalArgumentException("Hora fim deve ser depois da hora inicio.");
+                }
+                Timestamp inicio = Timestamp.valueOf(dpDia.getValue().atTime(horaInicio));
+                Timestamp fim = Timestamp.valueOf(dpDia.getValue().atTime(horaFim));
+
+                String estado = cmbEstado.getValue() != null ? cmbEstado.getValue() : "Planeado";
+                Integer moderadorId = cmbModerador.getValue() != null
+                        ? Integer.parseInt(cmbModerador.getValue().getId())
+                        : null;
+
+                // Impede que o mesmo moderador tenha sessoes sobrepostas
+                if (moderadorId != null) {
+                    List<Session> existentes = SessionDB.getSessionsByEvent(ev.getId());
+                    for (Session outra : existentes) {
+                        if (existente != null && outra.getId() == existente.getId()) continue;
+                        if (outra.getModerator() != null && outra.getModerator().getId().equals(String.valueOf(moderadorId))) {
+                            Timestamp oIni = outra.getStartdate();
+                            Timestamp oFim = outra.getFinaldate();
+                            if (oIni != null && oFim != null) {
+                                boolean overlap = !(fim.before(oIni) || inicio.after(oFim));
+                                if (overlap) {
+                                    throw new IllegalArgumentException("Moderador ja associado a outra sessao neste horario.");
+                                }
+                            }
+                        }
+                    }
+                }
+
+                int sessionId;
+                if (existente == null) {
+                    Session nova = SessionDB.createForEvent(
+                            ev.getId(),
+                            txtNome.getText(),
+                            txtDesc.getText(),
+                            txtLocal.getText(),
+                            inicio,
+                            fim,
+                            estado,
+                            null,
+                            moderadorId
+                    );
+                    sessionId = nova.getId();
+                } else {
+                    SessionDB.update(
+                            existente.getId(),
+                            txtNome.getText(),
+                            txtDesc.getText(),
+                            txtLocal.getText(),
+                            inicio,
+                            fim,
+                            estado,
+                            null,
+                            moderadorId
+                    );
+                    sessionId = existente.getId();
+                }
+
+                SessionResourceDB.replaceAssignments(sessionId, recursosSelecionados);
+                carregarSessoes(tabelaSessoes, ev);
+                CustomAlert.Success("Sessao guardada.");
+                stage.close();
+
+            } catch (Exception ex) {
+                CustomAlert.Error("Erro ao guardar: " + ex.getMessage());
+            }
+        });
+
+        VBox recursosBox = new VBox(6,
+                new Label("Recursos para esta sessao:"),
+                new HBox(8, cmbRecurso, spQtd, btnAddRecurso),
+                listaRecursos
+        );
+
+        VBox layout = new VBox(10,
+                new Label("Nome:"), txtNome,
+                new Label("Descricao:"), txtDesc,
+                new Label("Local:"), txtLocal,
+                new Label("Dia:"), dpDia,
+                new Label("Hora inicio (HH:mm):"), txtHoraIni,
+                new Label("Hora fim (HH:mm):"), txtHoraFim,
+                new Label("Estado:"), cmbEstado,
+                new Label("Moderador:"), cmbModerador,
+                recursosBox,
+                btnGuardar
+        );
+        layout.setPadding(new Insets(20));
+
+        stage.setScene(new Scene(layout, 420, 650));
+        stage.showAndWait();
+    }
+
     private void carregarSessoes(TableView<Session> tabela, Event ev) {
         tabela.setItems(FXCollections.observableArrayList(SessionDB.getSessionsByEvent(ev.getId())));
     }
@@ -599,6 +830,7 @@ public class AdminScreens {
                         Timestamp.valueOf(manha),
                         Timestamp.valueOf(manha.plusMinutes(90)),
                         "Planeado",
+                        null,
                         null
                 );
             }
@@ -612,6 +844,7 @@ public class AdminScreens {
                         Timestamp.valueOf(tarde),
                         Timestamp.valueOf(tarde.plusMinutes(90)),
                         "Planeado",
+                        null,
                         null
                 );
             }
@@ -723,16 +956,6 @@ public class AdminScreens {
         popup.showAndWait();
     }
 }
-
-
-
-
-
-
-
-
-
-
 
 
 
