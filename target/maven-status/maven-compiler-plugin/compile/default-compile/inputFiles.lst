@@ -13,6 +13,7 @@ C:\projects\eventSystem-Ispgaya\src\main\java\ltc\events\classes\Resourceevent.j
 C:\projects\eventSystem-Ispgaya\src\main\java\ltc\events\Modules\connection\ParticipantDB.java
 C:\projects\eventSystem-Ispgaya\src\main\java\ltc\events\classes\Participant.java
 C:\projects\eventSystem-Ispgaya\src\main\java\ltc\events\Modules\connection\ResourcesDB.java
+C:\projects\eventSystem-Ispgaya\src\main\java\ltc\events\Modules\connection\SessionResourceDB.java
 C:\projects\eventSystem-Ispgaya\src\main\java\ltc\events\classes\State.java
 C:\projects\eventSystem-Ispgaya\src\main\java\ltc\events\Main.java
 C:\projects\eventSystem-Ispgaya\src\main\java\ltc\events\classes\Session.java
@@ -24,6 +25,7 @@ C:\projects\eventSystem-Ispgaya\src\main\java\ltc\events\classes\hashs\SessionEn
 C:\projects\eventSystem-Ispgaya\src\main\java\ltc\events\classes\Resources.java
 C:\projects\eventSystem-Ispgaya\src\main\java\ltc\events\Modules\connection\TypesDB.java
 C:\projects\eventSystem-Ispgaya\src\main\java\ltc\events\Modules\visual\CustomAlert.java
+C:\projects\eventSystem-Ispgaya\src\main\java\ltc\events\classes\SessionResource.java
 C:\projects\eventSystem-Ispgaya\src\main\java\ltc\events\Modules\visual\StyleUtil.java
 C:\projects\eventSystem-Ispgaya\src\main\java\ltc\events\Modules\visual\CalendarEventoView.java
 C:\projects\eventSystem-Ispgaya\src\main\java\ltc\events\Modules\connection\SessionParticipantDB.java
