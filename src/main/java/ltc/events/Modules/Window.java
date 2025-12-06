@@ -37,6 +37,8 @@ import java.time.LocalDate;
 import java.time.YearMonth;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
+import java.util.HashMap;
+import java.util.Map;
 
 public class Window{
 
@@ -74,6 +76,8 @@ public class Window{
         LocalDate hoje = LocalDate.now();
 
         ObservableList<Event> eventos = EventDB.getAllEvents();
+        Map<String, Integer> estadosMap = carregarMapaEstados();
+        eventos = atualizarEstadosAutomaticos(eventos, hoje, estadosMap);
 
         // Eventos atuais (data >= hoje)
         List<Event> eventosAtuais = eventos.stream()
@@ -603,7 +607,7 @@ public class Window{
 
         Stage stage = new Stage();
         stage.initStyle(StageStyle.UTILITY);
-        stage.setTitle("Propor Evento (aguarda aprovacao)");
+        stage.setTitle("Propor Evento");
 
         TextField txtNome = new TextField();
         TextArea txtDescricao = new TextArea();
@@ -613,8 +617,6 @@ public class Window{
         TextField txtLocal = new TextField();
         DatePicker dpInicio = new DatePicker();
         DatePicker dpFim = new DatePicker();
-        TextField txtImagem = new TextField();
-        txtImagem.setPromptText("URL da imagem (opcional)");
 
         Button btnSubmeter = StyleUtil.primaryButton("Submeter", _ -> {
             try {
@@ -626,25 +628,24 @@ public class Window{
                 if (!dataInicio.isAfter(LocalDate.now())) {
                     throw new IllegalArgumentException("Data de inicio deve ser depois do dia de hoje para submeter.");
                 }
-                if (dataFim.isBefore(dataInicio)) {
-                    throw new IllegalArgumentException("Data de fim nao pode ser anterior ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â  de inicio.");
+                if (!dataFim.isAfter(dataInicio)) {
+                    throw new IllegalArgumentException("Data de fim deve ser posterior a data de inicio.");
                 }
-
                 Timestamp inicio = Timestamp.valueOf(dataInicio.atStartOfDay());
                 Timestamp fim = Timestamp.valueOf(dataFim.atStartOfDay());
 
-                // state_id=4 (Em Aprovacao) usado como pendente/aguarda aprovacao
+                // state_id=1 (Planeado) usado como padrao
                 EventDB.register(
                         txtNome.getText(),
                         txtDescricao.getText(),
                         txtLocal.getText(),
                         inicio,
                         fim,
-                        txtImagem.getText(),
-                        4
+                        null,
+                        1
                 );
 
-                CustomAlert.Success("Evento enviado para aprovacao do admin.");
+                CustomAlert.Success("Evento criado com sucesso.");
                 stage.close();
                 refresh();
             } catch (Exception ex) {
@@ -658,12 +659,11 @@ public class Window{
                 new Label("Local:"), txtLocal,
                 new Label("Inicio:"), dpInicio,
                 new Label("Fim:"), dpFim,
-                new Label("Imagem:"), txtImagem,
                 btnSubmeter
         );
         layout.setPadding(new Insets(20));
 
-        stage.setScene(new Scene(layout, 360, 480));
+        stage.setScene(new Scene(layout, 360, 420));
         stage.showAndWait();
     }
     private void abrirJanelaCriarUtilizador() {
@@ -806,6 +806,55 @@ public class Window{
 
     }
 
+    private Map<String, Integer> carregarMapaEstados() {
+        Map<String, Integer> mapa = new HashMap<>();
+        for (State s : StateDB.listAll()) {
+            if (s.getName() != null) {
+                mapa.put(s.getName().toLowerCase(), s.getId());
+            }
+        }
+        return mapa;
+    }
+
+    private ObservableList<Event> atualizarEstadosAutomaticos(ObservableList<Event> eventos, LocalDate hoje, Map<String, Integer> estadosMap) {
+        for (Event ev : eventos) {
+            try {
+                String estadoNome = ev.getState() != null && ev.getState().getName() != null
+                        ? ev.getState().getName().toLowerCase()
+                        : "";
+
+                LocalDate inicio = ev.getStartdate() != null ? ev.getStartdate().toLocalDateTime().toLocalDate() : null;
+                LocalDate fim = ev.getFinaldate() != null ? ev.getFinaldate().toLocalDateTime().toLocalDate() : null;
+
+                if ("em aprovacao".equals(estadoNome)) {
+                    Integer planeado = estadosMap.get("planeado");
+                    if (planeado != null) {
+                        EventDB.updateState(String.valueOf(ev.getId()), planeado);
+                    }
+                    continue;
+                }
+
+                if (fim != null && fim.isBefore(hoje) && !"concluido".equals(estadoNome) && !"cancelado".equals(estadoNome)) {
+                    Integer concluido = estadosMap.get("concluido");
+                    if (concluido != null) {
+                        EventDB.updateState(String.valueOf(ev.getId()), concluido);
+                    }
+                    continue;
+                }
+
+                if (inicio != null && !inicio.isAfter(hoje) && !"em progresso".equals(estadoNome) && !"cancelado".equals(estadoNome)) {
+                    Integer progresso = estadosMap.get("em progresso");
+                    if (progresso != null) {
+                        EventDB.updateState(String.valueOf(ev.getId()), progresso);
+                    }
+                }
+            } catch (Exception ignored) {
+                // em caso de erro de parsing, seguimos sem interromper a UI
+            }
+        }
+        return EventDB.getAllEvents();
+    }
+
     private double[] calcularTamanho(long dias) {
         if (dias <= 0) return new double[]{300, 360};
         if (dias <= 2) return new double[]{250, 330};
@@ -832,6 +881,8 @@ public class Window{
         };
     }
 }
+
+
 
 
 
