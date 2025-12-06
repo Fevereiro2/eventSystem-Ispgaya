@@ -15,17 +15,12 @@ import javafx.scene.image.ImageView; // Importa o componente para exibir uma ima
 import javafx.scene.layout.*; // Importa todas as classes de layout (HBox, VBox, BorderPane, StackPane, etc.) para organizar os componentes
 import javafx.geometry.*; // Importa utilitÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¡rios para definir alinhamentos, preenchimentos (padding) e margens (insets)
 import ltc.events.Modules.admin.AdminScreens;
-import ltc.events.Modules.connection.EventDB; // Importa a classe de acesso ao banco de dados para a tabela Eventos
-import ltc.events.Modules.connection.ParticipantDB;// Importa a classe de acesso ao banco de dados para a tabela Participantes
-import ltc.events.Modules.connection.SessionDB;// Importa a classe de acesso ao banco de dados para a tabela SessÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Âµes
-import ltc.events.Modules.connection.TypesDB;// Importa a classe de acesso ao banco de dados para a tabela Tipos de Participantes
+import ltc.events.Modules.connection.*;
 import ltc.events.Modules.visual.CalendarEventoView; // Importa a classe de visualizaÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â§ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â£o especÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â­fica para o calendÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¡rio de eventos
 import ltc.events.Modules.visual.StyleUtil;
-import ltc.events.Modules.visual.CustomAlert;
-import ltc.events.classes.Event; // Importa a classe modelo (POJO) que representa um Evento
-import ltc.events.classes.Participant; // Importa a classe modelo (POJO) que representa um Participante
-import ltc.events.classes.Session; // Importa a classe modelo (POJO) que representa uma SessÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â£o
-import ltc.events.classes.Types; // Importa a classe modelo (POJO) que representa os Tipos de Participantes
+import ltc.events.Modules.visual.CustomAlert;
+
+import ltc.events.classes.*;
 import ltc.events.classes.hashs.PasswordUtil; // Importa a classe utilitÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¡ria para operaÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â§ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Âµes com hashes de password
 import ltc.events.classes.hashs.SessionEntry;
 import ltc.events.Modules.util.LoggingUtil; // Importa a classe que armazena informaÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â§ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Âµes da sessÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â£o ativa do utilizador logado (ex: ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¹Ã…â€œIDÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â‚¬Å¾Ã‚Â¢ e Tipo)
