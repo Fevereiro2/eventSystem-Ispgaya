@@ -57,6 +57,17 @@ public class SessionParticipantDB {
         }
     }
 
+    public static void removeParticipant(int sessionId, String participantId) throws SQLException {
+        String sql = "DELETE FROM session_participant WHERE session_id = ? AND participant_id = ?";
+        try (Connection conn = db.connect();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setInt(1, sessionId);
+            stmt.setInt(2, Integer.parseInt(participantId));
+            stmt.executeUpdate();
+            ltc.events.Modules.util.LoggingUtil.log("DESINSCRICAO SESSAO: session=" + sessionId + " participant=" + participantId);
+        }
+    }
+
     public static int countDistinctParticipantsByEvent(int eventId) {
         String sql = """
             SELECT COUNT(DISTINCT sp.participant_id)
