@@ -4,7 +4,9 @@ import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
+import javafx.scene.control.CheckBox;
 import javafx.scene.control.Label;
+import javafx.scene.control.ScrollPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
@@ -12,16 +14,20 @@ import javafx.stage.Stage;
 import ltc.events.Modules.visual.StyleUtil;
 import ltc.events.Modules.visual.CustomAlert;
 import ltc.events.Modules.connection.SessionParticipantDB;
+import ltc.events.Modules.connection.ParticipantDB;
+import ltc.events.Modules.connection.SessionResourceDB;
 import ltc.events.Modules.Permissions;
 import ltc.events.classes.Event;
 import ltc.events.classes.Participant;
 import ltc.events.classes.Session;
+import ltc.events.classes.SessionResource;
 import ltc.events.classes.hashs.SessionEntry;
 
 import java.sql.Timestamp;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
+import java.util.HashMap;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -126,6 +132,20 @@ public class CalendarEventoView {
         Label lblLocal = new Label(s.getLocal() != null ? s.getLocal() : "");
         lblLocal.setStyle("-fx-text-fill: #6b7280;");
 
+        Label lblModerador = new Label(
+                s.getModerator() != null ? "Moderador: " + s.getModerator().getName() : "Moderador: --"
+        );
+        lblModerador.setStyle("-fx-text-fill: #6b7280; -fx-font-size: 12px;");
+
+        List<SessionResource> recursos = SessionResourceDB.listBySession(s.getId());
+        String recursosTxt = recursos.isEmpty()
+                ? "Recursos: --"
+                : recursos.stream()
+                .map(r -> r.getResource().getNameresources() + " x" + r.getQuantity())
+                .collect(Collectors.joining(", "));
+        Label lblRecursos = new Label(recursosTxt);
+        lblRecursos.setStyle("-fx-text-fill: #6b7280; -fx-font-size: 12px;");
+
         final int inscritos = SessionParticipantDB.countBySession(s.getId());
         Label lblCount = new Label(inscritos + "/20");
         lblCount.setStyle("-fx-text-fill: #111827; -fx-font-weight: bold;");
@@ -139,8 +159,9 @@ public class CalendarEventoView {
         btn.setMinWidth(110);
 
         if (adminUser) {
-            btn.setText("Admin");
-            btn.setDisable(true);
+            btn.setText("Inscrever");
+            btn.setDisable(false);
+            btn.setOnAction(_ -> abrirGestaoInscritos(s, lblCount));
         } else if (!logged) {
             btn.setText("Login p/ entrar");
             btn.setDisable(true);
@@ -168,7 +189,7 @@ public class CalendarEventoView {
             });
         }
 
-        VBox info = new VBox(4, lblNome, lblLocal);
+        VBox info = new VBox(4, lblNome, lblLocal, lblModerador, lblRecursos);
         HBox.setHgrow(info, Priority.ALWAYS);
 
         VBox inscritosBox = new VBox(4);
@@ -236,6 +257,60 @@ public class CalendarEventoView {
         VBox bloco = new VBox(4, linha, inscritosBox);
 
         return bloco;
+    }
+
+    private void abrirGestaoInscritos(Session sessao, Label lblCount) {
+        Stage stage = new Stage();
+        stage.setTitle("Inscricoes - " + sessao.getName());
+
+        List<Participant> todos = ParticipantDB.listAll();
+        List<Participant> inscritos = SessionParticipantDB.listParticipants(sessao.getId());
+
+        Map<String, CheckBox> checkboxes = new HashMap<>();
+        VBox lista = new VBox(6);
+        for (Participant p : todos) {
+            String texto = p.getName();
+            if (p.getEmail() != null) texto += " (" + p.getEmail() + ")";
+
+            CheckBox cb = new CheckBox(texto);
+            cb.setSelected(inscritos.stream().anyMatch(i -> i.getId().equals(p.getId())));
+            checkboxes.put(p.getId(), cb);
+            lista.getChildren().add(cb);
+        }
+
+        ScrollPane scroll = new ScrollPane(lista);
+        scroll.setFitToWidth(true);
+        scroll.setPrefViewportHeight(360);
+
+        Button btnGuardar = StyleUtil.primaryButton("Guardar", _ -> {
+            try {
+                for (Participant p : todos) {
+                    boolean marcado = checkboxes.get(p.getId()).isSelected();
+                    boolean jaInscrito = inscritos.stream().anyMatch(i -> i.getId().equals(p.getId()));
+                    if (marcado && !jaInscrito) {
+                        SessionParticipantDB.addParticipant(sessao.getId(), p.getId());
+                    } else if (!marcado && jaInscrito) {
+                        SessionParticipantDB.removeParticipant(sessao.getId(), p.getId());
+                    }
+                }
+                int count = SessionParticipantDB.countBySession(sessao.getId());
+                lblCount.setText(count + "/20");
+                CustomAlert.Success("Inscricoes atualizadas.");
+                stage.close();
+            } catch (Exception ex) {
+                CustomAlert.Error(ex.getMessage());
+            }
+        });
+
+        VBox root = new VBox(12,
+                new Label("Selecione participantes para esta sessao:"),
+                scroll,
+                btnGuardar
+        );
+        root.setPadding(new Insets(16));
+
+        stage.setScene(new Scene(root, 430, 520));
+        stage.showAndWait();
     }
 
     private LocalTime safeTime(Timestamp ts) {
