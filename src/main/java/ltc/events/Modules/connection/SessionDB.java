@@ -109,86 +109,93 @@ public class SessionDB {
                                          String state,
                                          String image,
                                          Integer moderatorId) throws SQLException {
-        String insertSession = """
-            INSERT INTO session (name, description, local, initial_date, finish_date, state, image, moderator_id)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-        """;
         String insertRelation = "INSERT INTO session_event (session_id, event_id) VALUES (?, ?)";
-        String fetch = """
-            SELECT
-                s.session_id,
-                s.name,
-                s.description,
-                s.local,
-                s.state AS state_id,
-                s.state AS state_name,
-                s.image,
-                s.initial_date,
-                s.finish_date,
-                s.moderator_id,
-                m.name AS moderator_name,
-                m.email AS moderator_email,
-                m.phone AS moderator_phone,
-                m.types_id AS moderator_type_id,
-                t.name AS moderator_type_name
-            FROM session s
-            LEFT JOIN participant m ON m.participant_id = s.moderator_id
-            LEFT JOIN types t ON t.types_id = m.types_id
-            WHERE s.session_id = ?
-        """;
-
         Connection conn = db.connect();
         int newId;
-        try (PreparedStatement ins = conn.prepareStatement(insertSession, Statement.RETURN_GENERATED_KEYS)) {
-            ensureModeratorColumn(conn);
-            ins.setString(1, name);
-            ins.setString(2, description);
-            ins.setString(3, local);
-            ins.setString(4, start != null ? start.toLocalDateTime().toString() : null);
-            ins.setString(5, finish != null ? finish.toLocalDateTime().toString() : null);
-            ins.setString(6, state);
-            ins.setString(7, image);
-            if (moderatorId != null) {
-                ins.setInt(8, moderatorId);
-            } else {
-                ins.setNull(8, java.sql.Types.INTEGER);
-            }
-            ins.executeUpdate();
-            try (ResultSet rs = ins.getGeneratedKeys()) {
-                if (rs.next()) {
-                    newId = rs.getInt(1);
-                } else {
-                    // Fallback para SQLite se getGeneratedKeys falhar
-                    try (PreparedStatement lastId = conn.prepareStatement("SELECT last_insert_rowid()")) {
-                        try (ResultSet rsId = lastId.executeQuery()) {
-                            if (!rsId.next()) throw new SQLException("Falha ao obter ID da sessao criada.");
-                            newId = rsId.getInt(1);
+        try {
+            boolean hasMod = ensureModeratorColumn(conn);
+            String insertSession = hasMod
+                    ? "INSERT INTO session (name, description, local, initial_date, finish_date, state, image, moderator_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?)"
+                    : "INSERT INTO session (name, description, local, initial_date, finish_date, state, image) VALUES (?, ?, ?, ?, ?, ?, ?)";
+
+            try (PreparedStatement ins = conn.prepareStatement(insertSession, Statement.RETURN_GENERATED_KEYS)) {
+                ins.setString(1, name);
+                ins.setString(2, description);
+                ins.setString(3, local);
+                ins.setString(4, start != null ? start.toLocalDateTime().toString() : null);
+                ins.setString(5, finish != null ? finish.toLocalDateTime().toString() : null);
+                ins.setString(6, state);
+                ins.setString(7, image);
+                if (hasMod) {
+                    if (moderatorId != null) {
+                        ins.setInt(8, moderatorId);
+                    } else {
+                        ins.setNull(8, java.sql.Types.INTEGER);
+                    }
+                }
+                ins.executeUpdate();
+                try (ResultSet rs = ins.getGeneratedKeys()) {
+                    if (rs.next()) {
+                        newId = rs.getInt(1);
+                    } else {
+                        try (PreparedStatement lastId = conn.prepareStatement("SELECT last_insert_rowid()")) {
+                            try (ResultSet rsId = lastId.executeQuery()) {
+                                if (!rsId.next()) throw new SQLException("Falha ao obter ID da sessao criada.");
+                                newId = rsId.getInt(1);
+                            }
                         }
                     }
                 }
             }
-        }
 
-        try (PreparedStatement link = conn.prepareStatement(insertRelation)) {
-            link.setInt(1, newId);
-            link.setInt(2, eventId);
-            link.executeUpdate();
-        }
+            try (PreparedStatement link = conn.prepareStatement(insertRelation)) {
+                link.setInt(1, newId);
+                link.setInt(2, eventId);
+                link.executeUpdate();
+            }
 
-        try (PreparedStatement f = conn.prepareStatement(fetch)) {
-            f.setInt(1, newId);
-            ResultSet rs = f.executeQuery();
-            if (!rs.next()) throw new SQLException("Falha ao carregar sessao criada.");
-            Session s = new Session(rs);
-            ltc.events.Modules.util.LoggingUtil.log("SESSAO CRIADA: " + s.getName() + " (event " + eventId + ")");
-            return s;
+            String fetch = """
+                SELECT
+                    s.session_id,
+                    s.name,
+                    s.description,
+                    s.local,
+                    s.state AS state_id,
+                    s.state AS state_name,
+                    s.image,
+                    s.initial_date,
+                    s.finish_date
+            """ + (hasMod ? """
+                    ,s.moderator_id,
+                    m.name AS moderator_name,
+                    m.email AS moderator_email,
+                    m.phone AS moderator_phone,
+                    m.types_id AS moderator_type_id,
+                    t.name AS moderator_type_name
+            """ : "") + """
+                FROM session s
+            """ + (hasMod ? """
+                LEFT JOIN participant m ON m.participant_id = s.moderator_id
+                LEFT JOIN types t ON t.types_id = m.types_id
+            """ : "") + """
+                WHERE s.session_id = ?
+            """;
+
+            try (PreparedStatement f = conn.prepareStatement(fetch)) {
+                f.setInt(1, newId);
+                ResultSet rs = f.executeQuery();
+                if (!rs.next()) throw new SQLException("Falha ao carregar sessao criada.");
+                Session s = new Session(rs);
+                ltc.events.Modules.util.LoggingUtil.log("SESSAO CRIADA: " + s.getName() + " (event " + eventId + ")");
+                return s;
+            }
         } finally {
             conn.close();
         }
     }
 
     public static Session getById(int sessionId) {
-        String sql = """
+        String base = """
             SELECT
                 s.session_id,
                 s.name,
@@ -198,26 +205,32 @@ public class SessionDB {
                 s.state AS state_name,
                 s.image,
                 s.initial_date,
-                s.finish_date,
-                s.moderator_id,
+                s.finish_date
+        """;
+        String mod = """
+                ,s.moderator_id,
                 m.name AS moderator_name,
                 m.email AS moderator_email,
                 m.phone AS moderator_phone,
                 m.types_id AS moderator_type_id,
                 t.name AS moderator_type_name
-            FROM session s
+        """;
+        String from = " FROM session s ";
+        String join = """
             LEFT JOIN participant m ON m.participant_id = s.moderator_id
             LEFT JOIN types t ON t.types_id = m.types_id
-            WHERE s.session_id = ?
         """;
+        String tail = " WHERE s.session_id = ? ";
 
-        try (Connection conn = db.connect();
-             PreparedStatement stmt = conn.prepareStatement(sql)) {
-            ensureModeratorColumn(conn);
-            stmt.setInt(1, sessionId);
-            ResultSet rs = stmt.executeQuery();
-            if (rs.next()) {
-                return new Session(rs);
+        try (Connection conn = db.connect()) {
+            boolean hasMod = ensureModeratorColumn(conn);
+            String sql = base + (hasMod ? mod : "") + from + (hasMod ? join : "") + tail;
+            try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+                stmt.setInt(1, sessionId);
+                ResultSet rs = stmt.executeQuery();
+                if (rs.next()) {
+                    return new Session(rs);
+                }
             }
         } catch (SQLException e) {
             System.out.println("Erro ao obter sessao: " + e.getMessage());
@@ -234,31 +247,40 @@ public class SessionDB {
                               String state,
                               String image,
                               Integer moderatorId) throws SQLException {
-        String sql = """
-            UPDATE session
-            SET name = ?, description = ?, local = ?, initial_date = ?, finish_date = ?, state = ?, image = ?, moderator_id = ?
-            WHERE session_id = ?
-        """;
+        try (Connection conn = db.connect()) {
+            boolean hasMod = ensureModeratorColumn(conn);
+            String sql = hasMod
+                    ? """
+                        UPDATE session
+                        SET name = ?, description = ?, local = ?, initial_date = ?, finish_date = ?, state = ?, image = ?, moderator_id = ?
+                        WHERE session_id = ?
+                    """
+                    : """
+                        UPDATE session
+                        SET name = ?, description = ?, local = ?, initial_date = ?, finish_date = ?, state = ?, image = ?
+                        WHERE session_id = ?
+                    """;
 
-        try (Connection conn = db.connect();
-             PreparedStatement stmt = conn.prepareStatement(sql)) {
-
-            ensureModeratorColumn(conn);
-            stmt.setString(1, name);
-            stmt.setString(2, description);
-            stmt.setString(3, local);
-            stmt.setString(4, start != null ? start.toLocalDateTime().toString() : null);
-            stmt.setString(5, finish != null ? finish.toLocalDateTime().toString() : null);
-            stmt.setString(6, state);
-            stmt.setString(7, image);
-            if (moderatorId != null) {
-                stmt.setInt(8, moderatorId);
-            } else {
-                stmt.setNull(8, java.sql.Types.INTEGER);
+            try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+                stmt.setString(1, name);
+                stmt.setString(2, description);
+                stmt.setString(3, local);
+                stmt.setString(4, start != null ? start.toLocalDateTime().toString() : null);
+                stmt.setString(5, finish != null ? finish.toLocalDateTime().toString() : null);
+                stmt.setString(6, state);
+                stmt.setString(7, image);
+                if (hasMod) {
+                    if (moderatorId != null) {
+                        stmt.setInt(8, moderatorId);
+                    } else {
+                        stmt.setNull(8, java.sql.Types.INTEGER);
+                    }
+                    stmt.setInt(9, sessionId);
+                } else {
+                    stmt.setInt(8, sessionId);
+                }
+                stmt.executeUpdate();
             }
-            stmt.setInt(9, sessionId);
-
-            stmt.executeUpdate();
         }
     }
 
