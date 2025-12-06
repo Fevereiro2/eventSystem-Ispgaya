@@ -14,6 +14,7 @@ public class Session {
     private final String image;
     private final Timestamp initialDate;
     private final Timestamp finishDate;
+    private final Participant moderator;
 
     public Session(int sessionId,
                    String name,
@@ -22,7 +23,8 @@ public class Session {
                    State state,
                    String image,
                    Timestamp initialDate,
-                   Timestamp finishDate) {
+                   Timestamp finishDate,
+                   Participant moderator) {
 
         this.session_id = sessionId;
         this.name = name;
@@ -32,12 +34,14 @@ public class Session {
         this.image = image;
         this.initialDate = initialDate;
         this.finishDate = finishDate;
+        this.moderator = moderator;
     }
 
     // Construtor a partir de ResultSet (robusto para datas como texto em SQLite)
     public Session(ResultSet rs) throws SQLException {
         String startDateString = rs.getString("initial_date");
         String finalDateString = rs.getString("finish_date");
+        Participant mod = parseModerator(rs);
 
         this.session_id = rs.getInt("session_id");
         this.name = rs.getString("name");
@@ -50,6 +54,7 @@ public class Session {
         this.image = rs.getString("image");
         this.initialDate = parseTimestampSafe(startDateString);
         this.finishDate = parseTimestampSafe(finalDateString);
+        this.moderator = mod;
     }
 
     public int getId() { return session_id; }
@@ -60,6 +65,7 @@ public class Session {
     public String getImage() { return image; }
     public Timestamp getStartdate() { return initialDate; }
     public Timestamp getFinaldate() { return finishDate; }
+    public Participant getModerator() { return moderator; }
 
     @Override
     public String toString() {
@@ -77,6 +83,34 @@ public class Session {
             } catch (Exception ignored) {
                 return null;
             }
+        }
+    }
+
+    private Participant parseModerator(ResultSet rs) {
+        try {
+            Object modObj = rs.getObject("moderator_id");
+            if (modObj == null) return null;
+
+            String modId = String.valueOf(rs.getInt("moderator_id"));
+            String modName = rs.getString("moderator_name");
+            String modEmail = rs.getString("moderator_email");
+            String modPhone = rs.getString("moderator_phone");
+
+            Types modType = null;
+            Object modTypeObj = rs.getObject("moderator_type_id");
+            if (modTypeObj != null) {
+                modType = new Types(
+                        rs.getInt("moderator_type_id"),
+                        rs.getString("moderator_type_name")
+                );
+            } else {
+                modType = new Types(1, "Moderador");
+            }
+
+            return new Participant(modId, modName, modEmail, modPhone, modType);
+
+        } catch (Exception ignored) {
+            return null;
         }
     }
 }
