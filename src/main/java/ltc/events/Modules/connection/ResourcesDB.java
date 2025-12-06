@@ -118,6 +118,42 @@ public class ResourcesDB {
         }
     }
 
+    public static Resources getById(int id) {
+        String sql = """
+            SELECT r.resources_id,
+                   r.name,
+                   r.quantity,
+                   r.unitary_cost,
+                   r.category_id,
+                   c.name AS category_name
+            FROM resources r
+            LEFT JOIN category c ON r.category_id = c.category_id
+            WHERE r.resources_id = ?
+        """;
+
+        try (Connection conn = db.connect();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setInt(1, id);
+            ResultSet rs = stmt.executeQuery();
+            if (rs.next()) {
+                Category cat = null;
+                if (rs.getObject("category_id") != null) {
+                    cat = Category.of(rs.getInt("category_id"), rs.getString("category_name"));
+                }
+                return new Resources(
+                        rs.getInt("resources_id"),
+                        rs.getString("name"),
+                        rs.getInt("quantity"),
+                        rs.getString("unitary_cost"),
+                        cat
+                );
+            }
+        } catch (SQLException e) {
+            System.out.println("Erro ao obter recurso: " + e.getMessage());
+        }
+        return null;
+    }
+
     public static void update(int id, String name, int quantity, String unitaryCost, Category category) throws SQLException {
         String sql = """
             UPDATE resources
