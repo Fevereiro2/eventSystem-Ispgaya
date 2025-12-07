@@ -39,6 +39,7 @@ import ltc.events.Modules.visual.StyleUtil;
 import ltc.events.Modules.connection.StateDB;
 import ltc.events.Modules.db;
 import ltc.events.classes.hashs.PasswordUtil;
+import ltc.events.Modules.util.ValidationUtil;
 import ltc.events.classes.Participant;
 import ltc.events.classes.Event;
 import ltc.events.classes.Types;
@@ -157,7 +158,7 @@ public class AdminScreens {
                 CustomAlert.Warning("Selecione um participante para alterar a password.");
                 return;
             }
-            //abrirJanelaAlterarPassword(sel);
+            CustomAlert.Info("Funcao de alterar password nao implementada nesta versao.");
         });
 
         HBox botoes = new HBox(10, btnCriar, btnEditar, btnRemover, btnRefresh, btnPass);
@@ -564,7 +565,6 @@ public class AdminScreens {
 
         Button btnSalvar = StyleUtil.primaryButton("Guardar", _ -> {
             String nome = txtNome.getText().trim();
-            String custo = txtCusto.getText().trim();
             Integer quantidade = spQuantidade.getValue();
             Category categoria = cmbCategoria.getSelectionModel().getSelectedItem();
 
@@ -572,12 +572,19 @@ public class AdminScreens {
                 CustomAlert.Warning("Nome obrigatorio.");
                 return;
             }
+            double custoValor;
+            try {
+                custoValor = ValidationUtil.parsePositiveDouble(txtCusto.getText(), "Custo unitario");
+            } catch (Exception ex) {
+                CustomAlert.Warning(ex.getMessage());
+                return;
+            }
 
             try {
                 if (existente == null) {
-                    ResourcesDB.register(nome, quantidade != null ? quantidade : 0, custo, categoria);
+                    ResourcesDB.register(nome, quantidade != null ? quantidade : 0, String.valueOf(custoValor), categoria);
                 } else {
-                    ResourcesDB.update(existente.getId_resources(), nome, quantidade != null ? quantidade : 0, custo, categoria);
+                    ResourcesDB.update(existente.getId_resources(), nome, quantidade != null ? quantidade : 0, String.valueOf(custoValor), categoria);
                 }
                 tabela.setItems(ResourcesDB.listAll());
                 CustomAlert.Success("Guardado com sucesso.");
@@ -873,9 +880,11 @@ public class AdminScreens {
 
         Button btnSalvar = StyleUtil.primaryButton("Criar", _ -> {
             try {
-                if (txtNome.getText().isBlank() || txtEmail.getText().isBlank() || txtPass.getText().isBlank()) {
-                    throw new IllegalArgumentException("Nome, email e password sao obrigatorios.");
+                if (txtNome.getText().isBlank() || txtPass.getText().isBlank()) {
+                    throw new IllegalArgumentException("Nome e password sao obrigatorios.");
                 }
+                ValidationUtil.requireEmail(txtEmail.getText());
+                ValidationUtil.requirePhone9(txtPhone.getText());
                 if (dpNasc.getValue() == null) {
                     throw new IllegalArgumentException("Data de nascimento obrigatoria.");
                 }
@@ -883,6 +892,7 @@ public class AdminScreens {
                 if (tipoSel == null) {
                     throw new IllegalArgumentException("Selecione o tipo de utilizador.");
                 }
+                ValidationUtil.requireDigits(txtNif.getText(), "NIF");
 
                 ParticipantDB.register(
                         txtNome.getText().trim(),
@@ -1321,6 +1331,9 @@ public class AdminScreens {
 
         Button btnSalvar = StyleUtil.primaryButton("Salvar", _ -> {
             try {
+                if (txtNome.getText().isBlank()) throw new IllegalArgumentException("Nome obrigatorio.");
+                ValidationUtil.requireEmail(txtEmail.getText());
+                ValidationUtil.requirePhone9(txtPhone.getText());
                 ParticipantDB.update(p.getId(), txtNome.getText(), txtEmail.getText(),
                         txtPhone.getText(), comboTipo.getValue());
 
