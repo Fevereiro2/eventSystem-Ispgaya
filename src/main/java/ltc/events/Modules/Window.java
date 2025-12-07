@@ -18,7 +18,6 @@ import ltc.events.Modules.visual.StyleUtil;
 import ltc.events.Modules.visual.CustomAlert;
 import ltc.events.classes.*;
 import ltc.events.classes.hashs.SessionEntry;
-import ltc.events.Modules.util.LoggingUtil; // Importa a classe que armazena informaÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â§ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Âµes da sessÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â£o ativa do utilizador logado (ex: ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¹Ã…â€œIDÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â‚¬Å¾Ã‚Â¢ e Tipo)
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.Timestamp;
@@ -336,65 +335,13 @@ public class Window{
                 "Relatorio de Sessoes",
                 _ -> admin.mostrarRelatorioSessoes()
         );
-        VBox feed = new VBox(8);
-        feed.setPadding(new Insets(10));
-        feed.setStyle("-fx-background-color: white;");
-        Runnable carregarFeed = () -> {
-            feed.getChildren().clear();
-            String raw = LoggingUtil.readLogs();
-            String[] linhas = raw.split("\\R");
-            if (linhas.length == 0 || (linhas.length == 1 && linhas[0].isBlank())) {
-                feed.getChildren().add(new Label("Sem logs ainda."));
-                return;
-            }
-            for (String linha : linhas) {
-                if (linha.isBlank()) continue;
-                Label lbl = new Label(linha);
-                lbl.setStyle("-fx-font-family: 'Consolas'; -fx-font-size: 12px; -fx-text-fill: #111827;");
-                HBox item = new HBox(lbl);
-                item.setAlignment(Pos.CENTER_LEFT);
-                item.setPadding(new Insets(8));
-                item.setStyle("""
-                    -fx-background-color: #f3f4f6;
-                    -fx-background-radius: 8;
-                """);
-                feed.getChildren().add(item);
-            }
-        };
-        carregarFeed.run();
-        ScrollPane scrollLogs = new ScrollPane(feed);
-        scrollLogs.setFitToWidth(true);
-        scrollLogs.setPrefViewportHeight(260);
-        scrollLogs.setStyle("-fx-background-color: transparent;");
-        Button btnRefresh = StyleUtil.secondaryButton("Atualizar Logs", _ -> carregarFeed.run());
-        Button btnLimpar = StyleUtil.dangerButton("Limpar Logs", _ -> {
-            try {
-                java.nio.file.Files.deleteIfExists(java.nio.file.Path.of("logs_app.txt"));
-                carregarFeed.run();
-            } catch (Exception e) {
-                CustomAlert.Error("Erro ao limpar logs: " + e.getMessage());
-            }
-        });
-        HBox barraLogs = new HBox(10, btnRefresh, btnLimpar);
-        barraLogs.setAlignment(Pos.CENTER_LEFT);
-        VBox painelLogs = new VBox(8,
-                new Label("Logs em tempo real"),
-                barraLogs,
-                scrollLogs
-        );
-        painelLogs.setPadding(new Insets(10, 20, 20, 20));
-        painelLogs.setStyle("""
-            -fx-background-color: linear-gradient(to bottom, #f8fafc, #eef2ff);
-            -fx-background-radius: 12;
-            -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.08), 10, 0, 0, 4);
-        """);
         VBox menu = new VBox(15,
                 btnParticipantes, btnSessoes, btnEventos, btnRecursos,
                 btnRelEventos, btnRelParticipantes, btnRelRecursos, btnRelSessoes
         );
         menu.setAlignment(Pos.TOP_LEFT);
         menu.setPadding(new Insets(20));
-        VBox layout = new VBox(20, cabecalho, menu, painelLogs);
+        VBox layout = new VBox(20, cabecalho, menu);
         layout.setAlignment(Pos.TOP_LEFT);
         layout.setPadding(new Insets(10));
         // Substituir tudo no centro
@@ -694,8 +641,6 @@ public class Window{
         };
     }
 }
-
-
 
 
 
