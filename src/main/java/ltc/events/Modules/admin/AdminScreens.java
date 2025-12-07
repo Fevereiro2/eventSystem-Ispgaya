@@ -17,6 +17,10 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.sql.Timestamp;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.text.DecimalFormat;
 import java.util.List;
 import java.util.HashMap;
 import java.util.Map;
@@ -33,6 +37,7 @@ import ltc.events.Modules.connection.SessionResourceDB;
 import ltc.events.Modules.visual.CustomAlert;
 import ltc.events.Modules.visual.StyleUtil;
 import ltc.events.Modules.connection.StateDB;
+import ltc.events.Modules.db;
 import ltc.events.classes.hashs.PasswordUtil;
 import ltc.events.classes.Participant;
 import ltc.events.classes.Event;
@@ -915,6 +920,269 @@ public class AdminScreens {
 
         stage.setScene(new Scene(layout, 360, 520));
         stage.showAndWait();
+    }
+
+    // ================== RELATORIOS ==================
+    public void mostrarRelatorioEventos() {
+        VBox box = new VBox(10);
+        box.setPadding(new Insets(16));
+
+        long ativos = scalarLong("""
+            SELECT COUNT(*) FROM event e
+            LEFT JOIN state s ON s.state_id = e.state_id
+            WHERE lower(coalesce(s.name,'')) IN ('planeado','em progresso','ativo')
+        """);
+        box.getChildren().add(new Label("Total de eventos ativos: " + ativos));
+
+        Map<String, Long> porEstado = mapContagem("""
+            SELECT coalesce(lower(s.name),'sem estado') AS estado, COUNT(*) AS total
+            FROM event e
+            LEFT JOIN state s ON s.state_id = e.state_id
+            GROUP BY coalesce(lower(s.name),'sem estado')
+        """);
+        box.getChildren().add(new Label("Eventos por estado: " + formatMap(porEstado)));
+
+        List<String> atrasados = listaStrings("""
+            SELECT e.name || ' (fim: ' || coalesce(e.finish_date,'-') || ')' AS info
+            FROM event e
+            LEFT JOIN state s ON s.state_id = e.state_id
+            WHERE e.finish_date IS NOT NULL
+              AND date(e.finish_date) < date('now')
+              AND lower(coalesce(s.name,'')) NOT IN ('concluido','cancelado')
+        """);
+        box.getChildren().add(new Label("Eventos atrasados: " + formatList(atrasados)));
+
+        Map<String, Long> sessoesPorEvento = mapContagem("""
+            SELECT e.name AS nome, COUNT(se.session_id) AS total
+            FROM event e
+            LEFT JOIN session_event se ON se.event_id = e.event_id
+            GROUP BY e.name
+        """);
+        box.getChildren().add(new Label("Total de sessoes por evento: " + formatMap(sessoesPorEvento)));
+
+        double tempoMedioSessoes = scalarDouble("""
+            SELECT avg(julianday(finish_date) - julianday(initial_date)) FROM session
+            WHERE initial_date IS NOT NULL AND finish_date IS NOT NULL
+        """);
+        box.getChildren().add(new Label("Tempo medio para concluir sessoes (dias): " + formatDecimal(tempoMedioSessoes)));
+
+        List<String> atrasosSessoes = listaStrings("""
+            SELECT s.name || ' / ' || e.name || ' (fim: ' || coalesce(s.finish_date,'-') || ')' AS info
+            FROM session s
+            JOIN session_event se ON se.session_id = s.session_id
+            JOIN event e ON e.event_id = se.event_id
+            WHERE s.finish_date IS NOT NULL
+              AND date(s.finish_date) < date('now')
+              AND lower(coalesce(s.state,'')) NOT IN ('concluido','cancelado')
+        """);
+        box.getChildren().add(new Label("Sessoes atrasadas: " + formatList(atrasosSessoes)));
+
+        Map<String, Double> custoPorEvento = mapDouble("""
+            SELECT e.name AS nome,
+                   SUM(COALESCE(CAST(r.unitary_cost AS REAL),0) * COALESCE(sr.quantity,0)) AS custo
+            FROM event e
+            LEFT JOIN session_event se ON se.event_id = e.event_id
+            LEFT JOIN session_resource sr ON sr.session_id = se.session_id
+            LEFT JOIN resources r ON r.resources_id = sr.resources_id
+            GROUP BY e.name
+        """);
+        box.getChildren().add(new Label("Custo por evento: " + formatMapDouble(custoPorEvento)));
+
+        mostrarPopup("Relatorio de Eventos", box);
+    }
+
+    public void mostrarRelatorioParticipantes() {
+        VBox box = new VBox(10);
+        box.setPadding(new Insets(16));
+
+        long total = scalarLong("SELECT COUNT(*) FROM participant");
+        box.getChildren().add(new Label("Total de participantes: " + total));
+
+        Map<String, Long> porTipo = mapContagem("""
+            SELECT coalesce(lower(t.name),'sem tipo') AS tipo, COUNT(*) AS total
+            FROM participant p
+            LEFT JOIN types t ON t.types_id = p.types_id
+            GROUP BY coalesce(lower(t.name),'sem tipo')
+        """);
+        box.getChildren().add(new Label("Distribuicao por tipo: " + formatMap(porTipo)));
+
+        List<String> maisAtivos = listaStrings("""
+            SELECT p.name || ' - ' || COUNT(sp.session_id) || ' inscricoes' AS info
+            FROM participant p
+            LEFT JOIN session_participant sp ON sp.participant_id = p.participant_id
+            GROUP BY p.participant_id
+            ORDER BY COUNT(sp.session_id) DESC
+            LIMIT 5
+        """);
+        box.getChildren().add(new Label("Participantes mais envolvidos: " + formatList(maisAtivos)));
+
+        mostrarPopup("Relatorio de Participantes", box);
+    }
+
+    public void mostrarRelatorioRecursos() {
+        VBox box = new VBox(10);
+        box.setPadding(new Insets(16));
+
+        long totalStock = scalarLong("SELECT COALESCE(SUM(quantity),0) FROM resources");
+        box.getChildren().add(new Label("Total de recursos em stock: " + totalStock));
+
+        Map<String, Long> porCategoria = mapContagem("""
+            SELECT coalesce(c.name,'sem categoria') AS cat, SUM(r.quantity) AS total
+            FROM resources r
+            LEFT JOIN category c ON c.category_id = r.category_id
+            GROUP BY coalesce(c.name,'sem categoria')
+        """);
+        box.getChildren().add(new Label("Recursos por categoria: " + formatMap(porCategoria)));
+
+        Map<String, Long> usoPorEvento = mapContagem("""
+            SELECT e.name AS nome, SUM(COALESCE(sr.quantity,0)) AS total
+            FROM event e
+            LEFT JOIN session_event se ON se.event_id = e.event_id
+            LEFT JOIN session_resource sr ON sr.session_id = se.session_id
+            GROUP BY e.name
+        """);
+        box.getChildren().add(new Label("Uso de recursos por evento (quantidade): " + formatMap(usoPorEvento)));
+
+        mostrarPopup("Relatorio de Recursos", box);
+    }
+
+    public void mostrarRelatorioSessoes() {
+        VBox box = new VBox(10);
+        box.setPadding(new Insets(16));
+
+        Map<String, Long> sessoesPorEvento = mapContagem("""
+            SELECT e.name AS nome, COUNT(se.session_id) AS total
+            FROM event e
+            LEFT JOIN session_event se ON se.event_id = e.event_id
+            GROUP BY e.name
+        """);
+        box.getChildren().add(new Label("Total de sessoes por evento: " + formatMap(sessoesPorEvento)));
+
+        double tempoMedio = scalarDouble("""
+            SELECT avg(julianday(finish_date) - julianday(initial_date)) FROM session
+            WHERE initial_date IS NOT NULL AND finish_date IS NOT NULL
+        """);
+        box.getChildren().add(new Label("Tempo medio para concluir sessoes (dias): " + formatDecimal(tempoMedio)));
+
+        List<String> atrasosSessoes = listaStrings("""
+            SELECT s.name || ' / ' || e.name || ' (fim: ' || coalesce(s.finish_date,'-') || ')' AS info
+            FROM session s
+            JOIN session_event se ON se.session_id = s.session_id
+            JOIN event e ON e.event_id = se.event_id
+            WHERE s.finish_date IS NOT NULL
+              AND date(s.finish_date) < date('now')
+              AND lower(coalesce(s.state,'')) NOT IN ('concluido','cancelado')
+        """);
+        box.getChildren().add(new Label("Sessoes atrasadas: " + formatList(atrasosSessoes)));
+
+        List<String> proximos15 = listaStrings("""
+            SELECT e.name || ' (inicio: ' || e.initial_date || ')' AS info
+            FROM event e
+            WHERE e.initial_date IS NOT NULL
+              AND date(e.initial_date) BETWEEN date('now') AND date('now','+15 day')
+        """);
+        box.getChildren().add(new Label("Eventos nos proximos 15 dias: " + formatList(proximos15)));
+
+        mostrarPopup("Relatorio de Sessoes", box);
+    }
+
+    private long scalarLong(String sql) {
+        try (Connection conn = db.connect();
+             PreparedStatement ps = conn.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+            if (rs.next()) return rs.getLong(1);
+        } catch (Exception e) {
+            System.out.println("Erro query long: " + e.getMessage());
+        }
+        return 0;
+    }
+
+    private double scalarDouble(String sql) {
+        try (Connection conn = db.connect();
+             PreparedStatement ps = conn.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+            if (rs.next()) return rs.getDouble(1);
+        } catch (Exception e) {
+            System.out.println("Erro query double: " + e.getMessage());
+        }
+        return 0;
+    }
+
+    private Map<String, Long> mapContagem(String sql) {
+        Map<String, Long> mapa = new HashMap<>();
+        try (Connection conn = db.connect();
+             PreparedStatement ps = conn.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+            while (rs.next()) {
+                mapa.put(rs.getString(1), rs.getLong(2));
+            }
+        } catch (Exception e) {
+            System.out.println("Erro map contagem: " + e.getMessage());
+        }
+        return mapa;
+    }
+
+    private Map<String, Double> mapDouble(String sql) {
+        Map<String, Double> mapa = new HashMap<>();
+        try (Connection conn = db.connect();
+             PreparedStatement ps = conn.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+            while (rs.next()) {
+                mapa.put(rs.getString(1), rs.getDouble(2));
+            }
+        } catch (Exception e) {
+            System.out.println("Erro map double: " + e.getMessage());
+        }
+        return mapa;
+    }
+
+    private List<String> listaStrings(String sql) {
+        List<String> lista = FXCollections.observableArrayList();
+        try (Connection conn = db.connect();
+             PreparedStatement ps = conn.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+            while (rs.next()) {
+                lista.add(rs.getString(1));
+            }
+        } catch (Exception e) {
+            System.out.println("Erro lista strings: " + e.getMessage());
+        }
+        return lista;
+    }
+
+    private void mostrarPopup(String titulo, VBox conteudo) {
+        ScrollPane scroll = new ScrollPane(conteudo);
+        scroll.setFitToWidth(true);
+        Scene cena = new Scene(scroll, 560, 520);
+        Stage stage = new Stage();
+        stage.setTitle(titulo);
+        stage.setScene(cena);
+        stage.showAndWait();
+    }
+
+    private String formatMap(Map<String, Long> mapa) {
+        if (mapa.isEmpty()) return "N/A";
+        return mapa.entrySet().stream()
+                .map(e -> e.getKey() + ": " + e.getValue())
+                .collect(Collectors.joining(" | "));
+    }
+
+    private String formatMapDouble(Map<String, Double> mapa) {
+        if (mapa.isEmpty()) return "N/A";
+        DecimalFormat df = new DecimalFormat("#,##0.00");
+        return mapa.entrySet().stream()
+                .map(e -> e.getKey() + ": €" + df.format(e.getValue()))
+                .collect(Collectors.joining(" | "));
+    }
+
+    private String formatDecimal(double val) {
+        DecimalFormat df = new DecimalFormat("#,##0.00");
+        return df.format(val);
+    }
+
+    private String formatList(List<String> lista) {
+        if (lista == null || lista.isEmpty()) return "Nenhum";
+        return String.join(", ", lista);
     }
 
     private void carregarSessoes(TableView<Session> tabela, Event ev) {
