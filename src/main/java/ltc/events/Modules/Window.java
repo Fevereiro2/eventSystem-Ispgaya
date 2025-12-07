@@ -410,6 +410,22 @@ public class Window{
                 "Recursos",
                 _ -> admin.mostrarRecursos()
         );
+        Button btnRelEventos = StyleUtil.adminButton(
+                "Relatorio de Eventos",
+                _ -> admin.mostrarRelatorioEventos()
+        );
+        Button btnRelParticipantes = StyleUtil.adminButton(
+                "Relatorio de Participantes",
+                _ -> admin.mostrarRelatorioParticipantes()
+        );
+        Button btnRelRecursos = StyleUtil.adminButton(
+                "Relatorio de Recursos",
+                _ -> admin.mostrarRelatorioRecursos()
+        );
+        Button btnRelSessoes = StyleUtil.adminButton(
+                "Relatorio de Sessoes",
+                _ -> admin.mostrarRelatorioSessoes()
+        );
         VBox feed = new VBox(8);
         feed.setPadding(new Insets(10));
         feed.setStyle("-fx-background-color: white;");
@@ -468,7 +484,10 @@ public class Window{
             -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.08), 10, 0, 0, 4);
         """);
 
-        VBox menu = new VBox(15, btnParticipantes, btnSessoes, btnEventos, btnRecursos);
+        VBox menu = new VBox(15,
+                btnParticipantes, btnSessoes, btnEventos, btnRecursos,
+                btnRelEventos, btnRelParticipantes, btnRelRecursos, btnRelSessoes
+        );
         menu.setAlignment(Pos.TOP_LEFT);
         menu.setPadding(new Insets(20));
 
