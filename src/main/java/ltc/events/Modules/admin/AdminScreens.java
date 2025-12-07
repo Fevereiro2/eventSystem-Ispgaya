@@ -65,9 +65,9 @@ public class AdminScreens {
         centro.getChildren().clear();
 
         // -------------------------------
-        // TÃƒÆ’Ã†â€™Ãƒâ€šÃ‚ÂTULO + FILTRO
+        // TTULO + FILTRO
         // -------------------------------
-        javafx.scene.control.Label titulo = new javafx.scene.control.Label("Gestão de Participantes");
+        javafx.scene.control.Label titulo = new javafx.scene.control.Label("Gestao de Participantes");
         titulo.setStyle("-fx-font-size: 20px; -fx-font-weight: bold;");
 
         ComboBox<String> filtro = new ComboBox<>();
@@ -120,7 +120,7 @@ public class AdminScreens {
         });
 
         // -------------------------------
-        // BOTÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¢ES
+        // BOTES
         // -------------------------------
         Button btnEditar = StyleUtil.secondaryButton("Editar", _ -> {
             Participant sel = tabela.getSelectionModel().getSelectedItem();
@@ -414,7 +414,7 @@ public class AdminScreens {
                     throw new IllegalArgumentException("Data inicio deve ser posterior ao dia de hoje.");
                 }
                 if (!dpFim.getValue().isAfter(dpInicio.getValue())) {
-                    throw new IllegalArgumentException("Data fim tem de ser posterior Çÿ data de inicio.");
+                    throw new IllegalArgumentException("Data fim tem de ser posterior  data de inicio.");
                 }
                 State estadoSel = cmbEstado.getValue();
                 int stateId = estadoSel != null ? estadoSel.getId() : 1;
@@ -1157,7 +1157,7 @@ public class AdminScreens {
         if (mapa.isEmpty()) return "N/A";
         DecimalFormat df = new DecimalFormat("#,##0.00");
         return mapa.entrySet().stream()
-                .map(e -> e.getKey() + ": €" + df.format(e.getValue()))
+                .map(e -> e.getKey() + ": " + df.format(e.getValue()))
                 .collect(Collectors.joining(" | "));
     }
 
@@ -1247,7 +1247,7 @@ public class AdminScreens {
     }
 
     private void aplicarFiltro(TableView<Participant> tabela, String filtro) {
-        ObservableList<Participant> todos = ParticipantDB.listAll(); // jÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¡ tens isto
+        ObservableList<Participant> todos = ParticipantDB.listAll(); // j tens isto
         switch (filtro) {
             case "Admins" ->
                     tabela.setItems(
@@ -1300,7 +1300,7 @@ public class AdminScreens {
         TextField txtPhone = new TextField(p.getPhone());
 
         ComboBox<Types> comboTipo = new ComboBox<>();
-        comboTipo.getItems().addAll(TypesDB.listAll()); // Criamos jÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¡ a seguir
+        comboTipo.getItems().addAll(TypesDB.listAll()); // Criamos j a seguir
         comboTipo.getSelectionModel().select(p.getType());
 
         Button btnSalvar = StyleUtil.primaryButton("Salvar", _ -> {
