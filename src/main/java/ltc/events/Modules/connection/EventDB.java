@@ -23,12 +23,11 @@ public class EventDB {
             String local,
             Timestamp initialDate,
             Timestamp finishDate,
-            String image,
             int stateId) throws SQLException {
 
         String insertSql = """
-            INSERT INTO event (name, description, local, initial_date, finish_date, image, state_id)
-            VALUES (?, ?, ?, ?, ?, ?, ?)
+            INSERT INTO event (name, description, local, initial_date, finish_date, state_id)
+            VALUES (?, ?, ?, ?, ?, ?)
             RETURNING event_id;
             """;
 
@@ -41,7 +40,6 @@ public class EventDB {
                 e.local,
                 e.initial_date,
                 e.finish_date,
-                e.image,
                 s.name AS state_name,
                 s.state_id
             FROM event e
@@ -59,8 +57,7 @@ public class EventDB {
             insert.setString(3, local);
             insert.setString(4, initialDate != null ? initialDate.toLocalDateTime().toLocalDate().toString() : null);
             insert.setString(5, finishDate != null ? finishDate.toLocalDateTime().toLocalDate().toString() : null);
-            insert.setString(6, image);
-            insert.setInt(7, stateId);
+            insert.setInt(6, stateId);
 
             ResultSet rs = insert.executeQuery();
             if (!rs.next()) throw new SQLException("Erro ao criar evento.");
@@ -96,7 +93,6 @@ public class EventDB {
             e.local,
             e.initial_date,
             e.finish_date,
-            e.image,
             s.name AS state_name,
             s.state_id
         FROM event e
@@ -128,12 +124,11 @@ public class EventDB {
             String local,
             Timestamp initialDate,
             Timestamp finishDate,
-            String image,
             int stateId) throws SQLException {
 
         String sql = """
             UPDATE event
-            SET name = ?, description = ?, local = ?, initial_date = ?, finish_date = ?, image = ?, state_id = ?
+            SET name = ?, description = ?, local = ?, initial_date = ?, finish_date = ?, state_id = ?
             WHERE event_id = ?
         """;
 
@@ -145,9 +140,8 @@ public class EventDB {
             stmt.setString(3, local);
             stmt.setString(4, initialDate != null ? initialDate.toLocalDateTime().toLocalDate().toString() : null);
             stmt.setString(5, finishDate != null ? finishDate.toLocalDateTime().toLocalDate().toString() : null);
-            stmt.setString(6, image);
-            stmt.setInt(7, stateId);
-            stmt.setInt(8, Integer.parseInt(id)); // Parse do ID
+            stmt.setInt(6, stateId);
+            stmt.setInt(7, Integer.parseInt(id)); // Parse do ID
 
             stmt.executeUpdate();
         }
