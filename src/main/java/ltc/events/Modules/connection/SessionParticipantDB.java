@@ -89,8 +89,8 @@ public class SessionParticipantDB {
     public static List<Participant> listParticipants(int sessionId) {
         List<Participant> lista = new ArrayList<>();
         String sql = """
-            SELECT p.participant_id, p.name, p.email, p.phone, p.password, p.gender,
-                   p.tax_number, p.birthdate, p.photo, p.types_id, t.name AS types_name
+            SELECT p.participant_id, p.name, p.email, p.phone, p.password,
+                   p.types_id, t.name AS types_name
             FROM session_participant sp
             JOIN participant p ON p.participant_id = sp.participant_id
             LEFT JOIN types t ON t.types_id = p.types_id
