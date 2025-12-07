@@ -10,9 +10,7 @@ import ltc.events.Modules.NavbarUtil;
 
 public class StyleUtil {
 
-    // ============================================================
-    // 🔵 1. MÉTODO ORIGINAL — NÃO MEXEMOS
-    // ============================================================
+    // Botão com gradiente (mantido do original)
     public static Button gradientButton(String text, String colorStart, String colorEnd, EventHandler<ActionEvent> handler) {
         Button button = new Button(text);
 
@@ -25,44 +23,40 @@ public class StyleUtil {
             -fx-padding: 8 18 8 18;
         """, colorStart, colorEnd));
 
-        if (handler != null)
+        if (handler != null) {
             button.setOnAction(handler);
+        }
 
         return button;
     }
 
-
+    // Botão de admin: tamanho fixo e cor consistente
     public static Button adminButton(String text, EventHandler<ActionEvent> handler) {
         Button button = new Button(text);
 
-        button.setStyle(String.format("""
+        button.setStyle("""
         -fx-background-color: #007aff;
         -fx-text-fill: white;
         -fx-font-size: 14px;
         -fx-font-weight: bold;
         -fx-padding: 10;
         -fx-background-radius: 6;
-        -fx-pref-width: 200px;  // <--- 💡 Adiciona largura
-        -fx-pref-height: 50px; // <--- 💡 Adiciona altura
-        """));
+        -fx-pref-width: 200px;  // largura fixa
+        -fx-pref-height: 50px;  // altura fixa
+        """);
 
-        if (handler != null)
+        if (handler != null) {
             button.setOnAction(handler);
+        }
 
         return button;
     }
 
-
-    // ============================================================
-    // 🔵 2. BOTÕES MODERNOS (NOVOS)
-    // ============================================================
-
-    // ==== BOTÃO PRIMÁRIO ====
+    // ==== BOTÕES MODERNOS ====
     public static Button primaryButton(String text, EventHandler<ActionEvent> handler) {
         return gradientButton(text, "#2EC4B6", "#1A9E8C", handler);
     }
 
-    // ==== BOTÃO SECUNDÁRIO ====
     public static Button secondaryButton(String text, EventHandler<ActionEvent> handler) {
         Button b = new Button(text);
 
@@ -91,21 +85,18 @@ public class StyleUtil {
             -fx-padding: 8 16;
         """));
 
-        if (handler != null)
+        if (handler != null) {
             b.setOnAction(handler);
+        }
 
         return b;
     }
 
-    // ==== BOTÃO DE PERIGO ====
     public static Button dangerButton(String text, EventHandler<ActionEvent> handler) {
         return gradientButton(text, "#FF5C5C", "#E64545", handler);
     }
 
-
-    // ============================================================
-    // 🟦 3. MÉTODO ORIGINAL DO LAYOUT — NÃO MEXEMOS
-    // ============================================================
+    // Layout raiz com navbar
     public static BorderPane createRootLayout(Stage stage, Node centerContent) {
         NavbarUtil navbar = new NavbarUtil();
         BorderPane barra = navbar.createNavbar(stage);
@@ -123,4 +114,3 @@ public class StyleUtil {
         return raiz;
     }
 }
-
