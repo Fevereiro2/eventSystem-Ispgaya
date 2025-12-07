@@ -67,7 +67,6 @@ CREATE TABLE Event (
     finish_date TEXT,
     state_id INTEGER,
     participant_id INTEGER,
-    image BLOB, -- Alterado de BYTEA para BLOB
     CONSTRAINT fk_event_state
         FOREIGN KEY (state_id) REFERENCES State (state_id)
             ON UPDATE CASCADE ON DELETE SET NULL,
@@ -84,7 +83,10 @@ CREATE TABLE Session (
     initial_date TEXT,
     finish_date TEXT,
     state TEXT, -- Assumindo que o estado aqui era uma string (VARCHAR)
-    image BLOB -- Alterado de BYTEA para BLOB
+    moderator_id INTEGER,
+    CONSTRAINT fk_session_moderator
+        FOREIGN KEY (moderator_id) REFERENCES Participant (participant_id)
+            ON UPDATE CASCADE ON DELETE SET NULL
 );
 
 -- =========================================================
@@ -124,5 +126,18 @@ CREATE TABLE Resource_event (
             ON UPDATE CASCADE ON DELETE CASCADE,
     CONSTRAINT fk_resource_event_event
         FOREIGN KEY (event_id) REFERENCES Event (event_id)
+            ON UPDATE CASCADE ON DELETE CASCADE
+);
+
+CREATE TABLE Session_resource (
+    session_id INTEGER NOT NULL,
+    resources_id INTEGER NOT NULL,
+    quantity INTEGER NOT NULL DEFAULT 1,
+    PRIMARY KEY (session_id, resources_id),
+    CONSTRAINT fk_session_resource_session
+        FOREIGN KEY (session_id) REFERENCES Session (session_id)
+            ON UPDATE CASCADE ON DELETE CASCADE,
+    CONSTRAINT fk_session_resource_resources
+        FOREIGN KEY (resources_id) REFERENCES Resources (resources_id)
             ON UPDATE CASCADE ON DELETE CASCADE
 );
