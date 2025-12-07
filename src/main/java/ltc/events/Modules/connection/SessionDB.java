@@ -54,7 +54,6 @@ public class SessionDB {
                 s.local,
                 s.state AS state_id,
                 s.state AS state_name,
-                s.image,
                 s.initial_date,
                 s.finish_date
         """;
@@ -107,7 +106,6 @@ public class SessionDB {
                                          Timestamp start,
                                          Timestamp finish,
                                          String state,
-                                         String image,
                                          Integer moderatorId) throws SQLException {
         String insertRelation = "INSERT INTO session_event (session_id, event_id) VALUES (?, ?)";
         Connection conn = db.connect();
@@ -115,8 +113,8 @@ public class SessionDB {
         try {
             boolean hasMod = ensureModeratorColumn(conn);
             String insertSession = hasMod
-                    ? "INSERT INTO session (name, description, local, initial_date, finish_date, state, image, moderator_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?)"
-                    : "INSERT INTO session (name, description, local, initial_date, finish_date, state, image) VALUES (?, ?, ?, ?, ?, ?, ?)";
+                    ? "INSERT INTO session (name, description, local, initial_date, finish_date, state, moderator_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?)"
+                    : "INSERT INTO session (name, description, local, initial_date, finish_date, state) VALUES (?, ?, ?, ?, ?, ?, ?)";
 
             try (PreparedStatement ins = conn.prepareStatement(insertSession, Statement.RETURN_GENERATED_KEYS)) {
                 ins.setString(1, name);
@@ -125,7 +123,6 @@ public class SessionDB {
                 ins.setString(4, start != null ? start.toLocalDateTime().toString() : null);
                 ins.setString(5, finish != null ? finish.toLocalDateTime().toString() : null);
                 ins.setString(6, state);
-                ins.setString(7, image);
                 if (hasMod) {
                     if (moderatorId != null) {
                         ins.setInt(8, moderatorId);
@@ -162,7 +159,6 @@ public class SessionDB {
                     s.local,
                     s.state AS state_id,
                     s.state AS state_name,
-                    s.image,
                     s.initial_date,
                     s.finish_date
             """ + (hasMod ? """
@@ -203,7 +199,6 @@ public class SessionDB {
                 s.local,
                 s.state AS state_id,
                 s.state AS state_name,
-                s.image,
                 s.initial_date,
                 s.finish_date
         """;
@@ -245,20 +240,18 @@ public class SessionDB {
                               Timestamp start,
                               Timestamp finish,
                               String state,
-                              String image,
                               Integer moderatorId) throws SQLException {
         try (Connection conn = db.connect()) {
             boolean hasMod = ensureModeratorColumn(conn);
             String sql = hasMod
                     ? """
                         UPDATE session
-                        SET name = ?, description = ?, local = ?, initial_date = ?, finish_date = ?, state = ?, image = ?, moderator_id = ?
+                        SET name = ?, description = ?, local = ?, initial_date = ?, finish_date = ?, state = ?, moderator_id = ?
                         WHERE session_id = ?
                     """
                     : """
                         UPDATE session
-                        SET name = ?, description = ?, local = ?, initial_date = ?, finish_date = ?, state = ?, image = ?
-                        WHERE session_id = ?
+                        SET name = ?, description = ?, local = ?, initial_date = ?, finish_date = ?, state = ?                        WHERE session_id = ?
                     """;
 
             try (PreparedStatement stmt = conn.prepareStatement(sql)) {
@@ -268,7 +261,6 @@ public class SessionDB {
                 stmt.setString(4, start != null ? start.toLocalDateTime().toString() : null);
                 stmt.setString(5, finish != null ? finish.toLocalDateTime().toString() : null);
                 stmt.setString(6, state);
-                stmt.setString(7, image);
                 if (hasMod) {
                     if (moderatorId != null) {
                         stmt.setInt(8, moderatorId);
