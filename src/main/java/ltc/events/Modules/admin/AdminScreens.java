@@ -886,10 +886,6 @@ public class AdminScreens {
                         txtNome.getText().trim(),
                         txtEmail.getText().trim(),
                         txtPhone.getText().trim(),
-                        null,
-                        null,
-                        null,
-                        null,
                         tipoSel
                 );
 
