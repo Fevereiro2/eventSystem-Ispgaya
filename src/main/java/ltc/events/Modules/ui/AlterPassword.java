@@ -15,32 +15,10 @@ public class AlterPassword {
         stage.initModality(Modality.APPLICATION_MODAL);
         stage.setTitle("Alterar Password");
 
-        PasswordField passAtual = new PasswordField();
-        passAtual.setPromptText("Password atual");
+        Label info = new Label("Gestao de password desativada nesta versao.");
+        Button btnFechar = StyleUtil.primaryButton("Fechar", _ -> stage.close());
 
-        PasswordField passNova = new PasswordField();
-        passNova.setPromptText("Nova password");
-
-        PasswordField passConfirm = new PasswordField();
-        passConfirm.setPromptText("Confirmar nova password");
-
-        Button btnAlterar = StyleUtil.primaryButton("Alterar", _ -> {
-            try {
-                if (!passNova.getText().equals(passConfirm.getText())) {
-                    throw new Exception("As passwords nao coincidem!");
-                }
-
-                ParticipantDB.updatePassword(userId, passNova.getText());
-
-                CustomAlert.Success("Password alterada!");
-                stage.close();
-
-            } catch (Exception ex) {
-                CustomAlert.Error(ex.getMessage());
-            }
-        });
-
-        VBox box = new VBox(10, passAtual, passNova, passConfirm, btnAlterar);
+        VBox box = new VBox(10, info, btnFechar);
         box.setPadding(new Insets(20));
 
         stage.setScene(new Scene(box, 300, 250));
