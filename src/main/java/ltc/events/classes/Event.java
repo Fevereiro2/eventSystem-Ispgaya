@@ -15,17 +15,15 @@ public class Event {
     private final Timestamp finaldate;
     private final Participant participantid;
     private final State state;
-    private final String image;
 
     public Event(int event_id, String name, String description, String local,
-                 Timestamp startdate, Timestamp finaldate, String image, State state, Participant participantid) {
+                 Timestamp startdate, Timestamp finaldate, State state, Participant participantid) {
         this.event_id = event_id;
         this.name = name;
         this.description = description;
         this.local = local;
         this.startdate = startdate;
         this.finaldate = finaldate;
-        this.image = image;
         this.participantid = participantid;
         this.state = state;
     }
@@ -41,7 +39,6 @@ public class Event {
                 rs.getString("local"),
                 startTimestamp,
                 finalTimestamp,
-                rs.getString("image"),
                 new State(
                         rs.getInt("state_id"),
                         rs.getString("state_name")
@@ -58,7 +55,6 @@ public class Event {
     public Timestamp getFinaldate() { return finaldate; }
     public State getState() { return state; }
     public Participant getParticipantid() { return participantid; }
-    public String getImage() { return image; }
 
     private static Timestamp parseTimestamp(String value) {
         if (value == null || value.isEmpty()) return null;
