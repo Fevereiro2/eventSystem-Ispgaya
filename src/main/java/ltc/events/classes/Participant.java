@@ -15,7 +15,6 @@ public class Participant {
         this.name = rs.getString("name");
         this.email = rs.getString("email");
         this.phone = rs.getString("phone");
-        this.password = rs.getString("password");
 
         this.type = new Types(
                 rs.getInt("types_id"),
@@ -30,7 +29,6 @@ public class Participant {
         this.email = email;
         this.phone = phone;
         this.type = type;
-        this.password = null;
     }
 
     // Getters
