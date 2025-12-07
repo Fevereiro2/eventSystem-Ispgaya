@@ -26,6 +26,7 @@ ltc\events\Modules\connection\StateDB.class
 ltc\events\Modules\ui\AlterPassword.class
 ltc\events\classes\SessionResource.class
 ltc\events\Modules\db.class
+ltc\events\Modules\util\ValidationUtil.class
 ltc\events\Modules\connection\SessionResourceDB.class
 ltc\events\Modules\connection\TypesDB.class
 ltc\events\Modules\visual\StyleUtil.class
