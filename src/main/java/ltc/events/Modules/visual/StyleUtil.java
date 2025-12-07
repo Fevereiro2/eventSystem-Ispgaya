@@ -75,7 +75,7 @@ public class StyleUtil {
             -fx-cursor: hand;
         """);
 
-        b.setOnMouseEntered(e -> b.setStyle("""
+        b.setOnMouseEntered(_ -> b.setStyle("""
             -fx-background-color: #d5d5d5;
             -fx-text-fill: #111;
             -fx-font-weight: bold;
@@ -83,7 +83,7 @@ public class StyleUtil {
             -fx-padding: 8 16;
         """));
 
-        b.setOnMouseExited(e -> b.setStyle("""
+        b.setOnMouseExited(_ -> b.setStyle("""
             -fx-background-color: #e0e0e0;
             -fx-text-fill: #333;
             -fx-font-weight: bold;
