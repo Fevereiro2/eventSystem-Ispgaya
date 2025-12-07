@@ -374,8 +374,6 @@ public class Window{
     private Participant criarAdminLocal() {
         Types adminType = new Types(1, "admin");
         Participant admin = new Participant("1", "Admin Local", "admin@local", "000000000", adminType);
-        admin.setGender("N/A");
-        admin.setTaxNumber("000000000");
         return admin;
     }
     public void mostrarPainelAdmin() {
