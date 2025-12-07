@@ -11,7 +11,7 @@ import javafx.scene.layout.VBox;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
-import ltc.events.Modules.NavbarUtil;
+
 
 public class CustomAlert {
 
@@ -71,12 +71,7 @@ public class CustomAlert {
             default -> throw new IllegalStateException("Tipo de alerta desconhecido");
         }
 
-        Stage stage = new Stage();
-        stage.initStyle(StageStyle.UNDECORATED);
-        stage.initModality(Modality.APPLICATION_MODAL);
-
-        NavbarUtil navbar = new NavbarUtil();
-        BorderPane barra = navbar.createNavbar(stage);
+        Stage stage = createBaseStage();
 
         Label lblTitulo = new Label(titulo);
         lblTitulo.setStyle(String.format("-fx-font-size: 16px; -fx-font-weight: bold; -fx-padding: 0 0 10 0; -fx-text-fill: %s;", tituloColor));
@@ -106,12 +101,7 @@ public class CustomAlert {
     private static boolean showConfirm(String titulo, String mensagem) {
         final boolean[] resultado = {false};
 
-        Stage stage = new Stage();
-        stage.initStyle(StageStyle.UNDECORATED);
-        stage.initModality(Modality.APPLICATION_MODAL);
-
-        NavbarUtil navbar = new NavbarUtil();
-        BorderPane barra = navbar.createNavbar(stage);
+        Stage stage = createBaseStage();
 
         Label lblTitulo = new Label(titulo);
         lblTitulo.setStyle("-fx-font-size: 16px; -fx-font-weight: bold; -fx-padding: 0 0 10 0; -fx-text-fill: #1565C0;");
@@ -127,10 +117,10 @@ public class CustomAlert {
         });
         Button btnCancelar = StyleUtil.secondaryButton("Cancelar", _ -> stage.close());
 
-        HBox botoes = new HBox(10, btnCancelar, btnSim);
-        botoes.setAlignment(Pos.CENTER_RIGHT);
+        HBox botoes2 = new HBox(10, btnCancelar, btnSim);
+        botoes2.setAlignment(Pos.CENTER_RIGHT);
 
-        VBox conteudo = new VBox(15, lblTitulo, lblMensagem, botoes);
+        VBox conteudo = new VBox(15, lblTitulo, lblMensagem, botoes2);
         conteudo.setAlignment(Pos.TOP_LEFT);
         conteudo.setPadding(new Insets(20));
 
@@ -143,5 +133,12 @@ public class CustomAlert {
 
         return resultado[0];
     }
-}
 
+    // Base comum para modais (sem decoração e modal).
+    private static Stage createBaseStage() {
+        Stage stage = new Stage();
+        stage.initStyle(StageStyle.UNDECORATED);
+        stage.initModality(Modality.APPLICATION_MODAL);
+        return stage;
+    }
+}
