@@ -426,7 +426,6 @@ public class AdminScreens {
                             txtLocal.getText(),
                             Timestamp.valueOf(dpInicio.getValue().atStartOfDay()),
                             Timestamp.valueOf(dpFim.getValue().atStartOfDay()),
-                            null,
                             stateId
                     );
                 } else {
@@ -437,7 +436,6 @@ public class AdminScreens {
                             txtLocal.getText(),
                             Timestamp.valueOf(dpInicio.getValue().atStartOfDay()),
                             Timestamp.valueOf(dpFim.getValue().atStartOfDay()),
-                            null,
                             stateId
                     );
                 }
