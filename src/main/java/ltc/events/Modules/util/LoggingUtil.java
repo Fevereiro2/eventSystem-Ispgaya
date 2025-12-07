@@ -19,15 +19,4 @@ public class LoggingUtil {
             // Evitar quebra de fluxo por falha de log
         }
     }
-
-    public static String readLogs() {
-        try {
-            if (!Files.exists(LOG_PATH)) {
-                return "Sem logs ainda.";
-            }
-            return Files.readString(LOG_PATH);
-        } catch (Exception e) {
-            return "Erro ao ler logs: " + e.getMessage();
-        }
-    }
 }
