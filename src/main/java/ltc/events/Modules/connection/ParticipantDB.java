@@ -53,7 +53,11 @@ public class ParticipantDB {
             insert.setString(4, password);
             insert.setString(5, gender);
             insert.setString(6, nif);
-            insert.setDate(7, java.sql.Date.valueOf(birthdate));
+            if (birthdate != null) {
+                insert.setDate(7, java.sql.Date.valueOf(birthdate));
+            } else {
+                insert.setNull(7, Types.DATE);
+            }
             insert.setInt(8, type.getId());
 
             ResultSet rs = insert.executeQuery();
@@ -163,12 +167,12 @@ public class ParticipantDB {
     public static void updateProfile(int participantId,
                                      String name,
                                      String email,
-                                     String phone,
-                                     String gender,
-                                     String address,
-                                     String taxNumber,
-                                     LocalDate birthdate,
-                                     String photoUrl) throws SQLException {
+                                    String phone,
+                                    String gender,
+                                    String address,
+                                    String taxNumber,
+                                    LocalDate birthdate,
+                                    String photoUrl) throws SQLException {
         String sql = """
             UPDATE participant
             SET name = ?, email = ?, phone = ?, gender = ?, address = ?, tax_number = ?, birthdate = ?, photo = ?, types_id = types_id
