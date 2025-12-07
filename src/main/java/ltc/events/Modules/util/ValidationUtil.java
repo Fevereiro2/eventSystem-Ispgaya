@@ -21,13 +21,6 @@ public class ValidationUtil {
         }
     }
 
-    public static void requireDigits(String value, String fieldName) {
-        if (value == null || value.isBlank()) return;
-        String v = value.trim();
-        if (!DIGITS.matcher(v).matches()) {
-            throw new IllegalArgumentException(fieldName + " deve conter apenas numeros.");
-        }
-    }
 
     public static double parsePositiveDouble(String value, String fieldName) {
         if (value == null || value.isBlank()) return 0.0;
