@@ -113,8 +113,8 @@ public class SessionDB {
         try {
             boolean hasMod = ensureModeratorColumn(conn);
             String insertSession = hasMod
-                    ? "INSERT INTO session (name, description, local, initial_date, finish_date, state, moderator_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?)"
-                    : "INSERT INTO session (name, description, local, initial_date, finish_date, state) VALUES (?, ?, ?, ?, ?, ?, ?)";
+                    ? "INSERT INTO session (name, description, local, initial_date, finish_date, state, moderator_id) VALUES (?, ?, ?, ?, ?, ?, ?)"
+                    : "INSERT INTO session (name, description, local, initial_date, finish_date, state) VALUES (?, ?, ?, ?, ?, ?)";
 
             try (PreparedStatement ins = conn.prepareStatement(insertSession, Statement.RETURN_GENERATED_KEYS)) {
                 ins.setString(1, name);
@@ -125,9 +125,9 @@ public class SessionDB {
                 ins.setString(6, state);
                 if (hasMod) {
                     if (moderatorId != null) {
-                        ins.setInt(8, moderatorId);
+                        ins.setInt(7, moderatorId);
                     } else {
-                        ins.setNull(8, java.sql.Types.INTEGER);
+                        ins.setNull(7, java.sql.Types.INTEGER);
                     }
                 }
                 ins.executeUpdate();
@@ -251,7 +251,8 @@ public class SessionDB {
                     """
                     : """
                         UPDATE session
-                        SET name = ?, description = ?, local = ?, initial_date = ?, finish_date = ?, state = ?                        WHERE session_id = ?
+                        SET name = ?, description = ?, local = ?, initial_date = ?, finish_date = ?, state = ?
+                        WHERE session_id = ?
                     """;
 
             try (PreparedStatement stmt = conn.prepareStatement(sql)) {
@@ -263,13 +264,13 @@ public class SessionDB {
                 stmt.setString(6, state);
                 if (hasMod) {
                     if (moderatorId != null) {
-                        stmt.setInt(8, moderatorId);
+                        stmt.setInt(7, moderatorId);
                     } else {
-                        stmt.setNull(8, java.sql.Types.INTEGER);
+                        stmt.setNull(7, java.sql.Types.INTEGER);
                     }
-                    stmt.setInt(9, sessionId);
-                } else {
                     stmt.setInt(8, sessionId);
+                } else {
+                    stmt.setInt(7, sessionId);
                 }
                 stmt.executeUpdate();
             }
