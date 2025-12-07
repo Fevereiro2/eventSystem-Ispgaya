@@ -793,7 +793,6 @@ public class AdminScreens {
                             inicio,
                             fim,
                             estado,
-                            null,
                             moderadorId
                     );
                     sessionId = nova.getId();
@@ -806,7 +805,6 @@ public class AdminScreens {
                             inicio,
                             fim,
                             estado,
-                            null,
                             moderadorId
                     );
                     sessionId = existente.getId();
@@ -1201,7 +1199,6 @@ public class AdminScreens {
                         Timestamp.valueOf(manha),
                         Timestamp.valueOf(manha.plusMinutes(90)),
                         "Planeado",
-                        null,
                         null
                 );
             }
@@ -1215,7 +1212,6 @@ public class AdminScreens {
                         Timestamp.valueOf(tarde),
                         Timestamp.valueOf(tarde.plusMinutes(90)),
                         "Planeado",
-                        null,
                         null
                 );
             }
