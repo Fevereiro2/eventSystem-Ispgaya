@@ -66,7 +66,6 @@ CREATE TABLE Event (
                        finish_date DATE,
                        state_id INT,
                        participant_id INT,
-                       image BYTEA,
                        CONSTRAINT fk_event_state
                            FOREIGN KEY (state_id) REFERENCES State (state_id)
                                ON UPDATE CASCADE ON DELETE SET NULL,
@@ -83,7 +82,10 @@ CREATE TABLE Session (
                          initial_date DATE,
                          finish_date DATE,
                          state VARCHAR(100),
-                         image BYTEA
+                         moderator_id INT,
+                         CONSTRAINT fk_session_moderator
+                             FOREIGN KEY (moderator_id) REFERENCES Participant (participant_id)
+                                 ON UPDATE CASCADE ON DELETE SET NULL
 );
 
 -- =========================================================
@@ -124,4 +126,17 @@ CREATE TABLE Resource_event (
                                 CONSTRAINT fk_resource_event_event
                                     FOREIGN KEY (event_id) REFERENCES Event (event_id)
                                         ON UPDATE CASCADE ON DELETE CASCADE
+);
+
+CREATE TABLE Session_resource (
+                                  session_id INT NOT NULL,
+                                  resources_id INT NOT NULL,
+                                  quantity INT NOT NULL DEFAULT 1,
+                                  PRIMARY KEY (session_id, resources_id),
+                                  CONSTRAINT fk_session_resource_session
+                                      FOREIGN KEY (session_id) REFERENCES Session (session_id)
+                                          ON UPDATE CASCADE ON DELETE CASCADE,
+                                  CONSTRAINT fk_session_resource_resources
+                                      FOREIGN KEY (resources_id) REFERENCES Resources (resources_id)
+                                          ON UPDATE CASCADE ON DELETE CASCADE
 );
