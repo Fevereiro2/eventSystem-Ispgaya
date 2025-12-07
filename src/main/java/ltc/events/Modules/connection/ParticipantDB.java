@@ -10,7 +10,6 @@ import ltc.events.classes.Types;
 import ltc.events.classes.hashs.PasswordUtil;
 
 import java.sql.*;
-import java.time.LocalDate;
 
 public class ParticipantDB {
 
@@ -19,16 +18,13 @@ public class ParticipantDB {
             String email,
             String phone,
             String password,
-            String gender,
-            String nif,
-            LocalDate birthdate,
             Types type
     ) throws SQLException {
 
         String checkSql = "SELECT participant_id FROM participant WHERE email = ?";
         String insertSql = """
-            INSERT INTO participant (name, email, phone, password, gender, tax_number, birthdate, types_id)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            INSERT INTO participant (name, email, phone, password, types_id)
+            VALUES (?, ?, ?, ?, ?)
             RETURNING participant_id;
             """;
 
@@ -51,14 +47,7 @@ public class ParticipantDB {
             insert.setString(2, email);
             insert.setString(3, phone);
             insert.setString(4, password);
-            insert.setString(5, gender);
-            insert.setString(6, nif);
-            if (birthdate != null) {
-                insert.setDate(7, java.sql.Date.valueOf(birthdate));
-            } else {
-                insert.setNull(7, Types.DATE);
-            }
-            insert.setInt(8, type.getId());
+            insert.setInt(5, type.getId());
 
             ResultSet rs = insert.executeQuery();
             if (!rs.next()) throw new SQLException("Erro ao criar participante.");
@@ -167,15 +156,10 @@ public class ParticipantDB {
     public static void updateProfile(int participantId,
                                      String name,
                                      String email,
-                                    String phone,
-                                    String gender,
-                                    String address,
-                                    String taxNumber,
-                                    LocalDate birthdate,
-                                    String photoUrl) throws SQLException {
+                                     String phone) throws SQLException {
         String sql = """
             UPDATE participant
-            SET name = ?, email = ?, phone = ?, gender = ?, address = ?, tax_number = ?, birthdate = ?, photo = ?, types_id = types_id
+            SET name = ?, email = ?, phone = ?, types_id = types_id
             WHERE participant_id = ?
             """;
 
@@ -185,16 +169,7 @@ public class ParticipantDB {
             stmt.setString(1, name);
             stmt.setString(2, email);
             stmt.setString(3, phone);
-            stmt.setString(4, gender);
-            stmt.setString(5, address);
-            stmt.setString(6, taxNumber);
-            if (birthdate != null) {
-                stmt.setDate(7, java.sql.Date.valueOf(birthdate));
-            } else {
-                stmt.setNull(7, java.sql.Types.DATE);
-            }
-            stmt.setString(8, photoUrl);
-            stmt.setInt(9, participantId);
+            stmt.setInt(4, participantId);
 
             stmt.executeUpdate();
         }
