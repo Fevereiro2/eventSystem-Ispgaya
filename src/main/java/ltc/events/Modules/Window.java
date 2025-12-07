@@ -18,8 +18,6 @@ import ltc.events.Modules.visual.StyleUtil;
 import ltc.events.Modules.visual.CustomAlert;
 import ltc.events.classes.*;
 import ltc.events.classes.hashs.SessionEntry;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
 import java.sql.Timestamp;
 import java.time.LocalDate;
 import java.time.YearMonth;
@@ -142,7 +140,7 @@ public class Window{
                             List<Event> eventosDoDia = eventosAntigos.stream()
                                     .filter(ev -> ev.getStartdate().toLocalDateTime().toLocalDate().equals(diaAtual))
                                     .toList();
-                            // ---- CLULA DO CALENDRIO ----
+                            // ---- Celula DO Calendario ----
                             VBox celula = new VBox(5);
                             celula.setPadding(new Insets(10));
                             celula.setPrefSize(140, 110);
@@ -154,18 +152,18 @@ public class Window{
                              """);
                             // Cursor de clickable
                             celula.setCursor(Cursor.HAND);
-                            // Nmero do dia
+                            // Numero do dia
                             Label lblDia = new Label(String.valueOf(dia));
                             lblDia.setStyle("-fx-font-weight: bold; -fx-font-size: 16px;");
                             celula.getChildren().add(lblDia);
-                            // Mostrar eventos dentro da clula
+                            // Mostrar eventos dentro da celula
                             for (Event ev : eventosDoDia) {
                                 Label lblEvento = new Label("Evento: " + ev.getName());
                                 lblEvento.setStyle("-fx-font-size: 12px; -fx-text-fill: #1976d2;");
                                 celula.getChildren().add(lblEvento);
                             }
                             // ---- EVENTO DE CLICK ----
-                            celula.setOnMouseClicked(e -> {
+                            celula.setOnMouseClicked(_ -> {
                                 if (eventosDoDia.isEmpty()) return; // nada para mostrar
                                 Stage detalhes = new Stage();
                                 detalhes.initModality(Modality.APPLICATION_MODAL);
@@ -193,7 +191,7 @@ public class Window{
                         }
                     };
                     // Atualizar quando muda ANO
-                    anoBox.setOnAction(_2 -> {
+                    anoBox.setOnAction(_ -> {
                         mesBox.getItems().clear();
                         for (int m = 1; m <= 12; m++)
                             mesBox.getItems().add(YearMonth.of(anoBox.getValue(), m));
@@ -201,7 +199,7 @@ public class Window{
                         atualizarCalendario.run();
                     });
                     // Atualizar quando muda MS
-                    mesBox.setOnAction(_2 -> atualizarCalendario.run());
+                    mesBox.setOnAction(_ -> atualizarCalendario.run());
                     atualizarCalendario.run(); // primeira vez
                     root.getChildren().addAll(filtros, scroll);
                     janela.setScene(new Scene(root, 900, 650));
@@ -265,23 +263,7 @@ public class Window{
         rightBox.getChildren().addAll(lblUser, btnAdmin);
         return rightBox;
     }
-    private BorderPane getBorderPane(Stage palco, HBox botoesMac) {
-        BorderPane barra = new BorderPane();
-        garantirSessaoAdmin();
-        var user = SessionEntry.getUser();
-        Label lblUser = new Label("Admin direto: " + user.getName() + " (" + user.getType().getName() + ")");
-        lblUser.setStyle("-fx-font-weight: bold; -fx-font-size: 13px;");
-        Button btnAdmin = StyleUtil.primaryButton("Painel Admin", _ -> this.mostrarPainelAdmin());
-        HBox rightBox = new HBox(10, lblUser, btnAdmin);
-        rightBox.setAlignment(Pos.CENTER_RIGHT);
-        rightBox.setPadding(new Insets(6, 10, 6, 0));
-        barra.setRight(rightBox);
-        // Botoes de janela a esquerda
-        barra.setLeft(botoesMac);
-        barra.setStyle("-fx-background-color: linear-gradient(to bottom, #e0e0e0, #cfcfcf); "
-                + "-fx-border-color: #b0b0b0; -fx-border-width: 0 0 1 0;");
-        return barra;
-    }
+
     // Garante que a sessao tem sempre um admin direto (sem login/registo).
     private void garantirSessaoAdmin() {
         if (!SessionEntry.isLogged()) {
@@ -347,94 +329,6 @@ public class Window{
         // Substituir tudo no centro
         centro.getChildren().add(layout);
     }
-    private void mostrarEventosAdmin() {
-        // 1. LIMPAR O CENTRO
-        centro.getChildren().clear();
-        // 2. TTULO E BOTES DE AO
-        Label titulo = new Label("Gestao de Eventos");
-        titulo.setStyle("-fx-font-size: 24px; -fx-font-weight: bold;");
-        TableView<Event> tabelaEventos = new TableView<>();
-        Button btnCriar = StyleUtil.primaryButton(
-                "Adicionar",
-                _ -> abrirJanelaCriarEvento(tabelaEventos) //  s chama outro mtodo
-        );
-        Button btnEditar = StyleUtil.secondaryButton("Editar", _ -> CustomAlert.Info("Funcionalidade de editar evento ainda nao implementada."));
-        Button btnRemover = StyleUtil.dangerButton("Remover", _ -> CustomAlert.Info("Funcionalidade de remover evento ainda nao implementada."));
-        Button btnAtualizar = StyleUtil.secondaryButton("Atualizar", _ -> {
-            tabelaEventos.setItems(FXCollections.observableArrayList(EventDB.getAllEvents()));
-        });
-        HBox botoesAcao = new HBox(10, btnCriar, btnEditar, btnRemover, btnAtualizar);
-        botoesAcao.setPadding(new Insets(10, 0, 10, 0));
-        // 3. TABELA DE EVENTOS
-        TableColumn<Event, String> colNome = new TableColumn<>("Nome");
-        colNome.setCellValueFactory(new PropertyValueFactory<>("name"));
-        colNome.setPrefWidth(250);
-        TableColumn<Event, String> colLocal = new TableColumn<>("Local");
-        colLocal.setCellValueFactory(new PropertyValueFactory<>("local"));
-        colLocal.setPrefWidth(150);
-        TableColumn<Event, Timestamp> colInicio = new TableColumn<>("Incio");
-        colInicio.setCellValueFactory(new PropertyValueFactory<>("startdate"));
-        colInicio.setPrefWidth(180);
-        TableColumn<Event, Timestamp> colFim = new TableColumn<>("Fim");
-        colFim.setCellValueFactory(new PropertyValueFactory<>("finaldate"));
-        colFim.setPrefWidth(180);
-        TableColumn<Event, String> colEstado = new TableColumn<>("Estado");
-        colEstado.setCellValueFactory(cd ->
-                new SimpleStringProperty(cd.getValue().getState().getName())
-        );
-        colEstado.setPrefWidth(100);
-        tabelaEventos.getColumns().addAll(colNome, colLocal, colInicio, colFim, colEstado);
-        try {
-            ObservableList<Event> listaEventos =
-                    FXCollections.observableArrayList(EventDB.getAllEvents());
-            tabelaEventos.setItems(listaEventos);
-        } catch (Exception ex) {
-            System.err.println("Erro ao carregar eventos: " + ex.getMessage());
-        }
-        tabelaEventos.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
-        VBox content = new VBox(20, titulo, botoesAcao, tabelaEventos);
-        content.setPadding(new Insets(20));
-        content.setAlignment(Pos.TOP_LEFT);
-        content.prefWidthProperty().bind(centro.widthProperty());
-        centro.getChildren().add(content);
-    }
-    private void abrirJanelaCriarEvento(TableView<Event> tabelaEventos) {
-        Stage stage = new Stage();
-        stage.initStyle(StageStyle.UTILITY);
-        stage.setTitle("Criar Evento");
-        TextField txtNome = new TextField();
-        TextField txtLocal = new TextField();
-        DatePicker dpInicio = new DatePicker();
-        DatePicker dpFim = new DatePicker();
-        Button btnGuardar = StyleUtil.primaryButton("Guardar", _ -> {
-            try {
-                //  adapta isto ao teu EventDB
-                /*EventDB.createEvent(
-                        txtNome.getText(),
-                        txtLocal.getText(),
-                        Timestamp.valueOf(dpInicio.getValue().atStartOfDay()),
-                        Timestamp.valueOf(dpFim.getValue().atStartOfDay())
-                );*/
-                tabelaEventos.setItems(
-                        FXCollections.observableArrayList(EventDB.getAllEvents())
-                );
-                CustomAlert.Success("Evento criado com sucesso!");
-                stage.close();
-            } catch (Exception ex) {
-                CustomAlert.Error("Erro: " + ex.getMessage());
-            }
-        });
-        VBox layout = new VBox(10,
-                new Label("Nome:"), txtNome,
-                new Label("Local:"), txtLocal,
-                new Label("Incio:"), dpInicio,
-                new Label("Fim:"), dpFim,
-                btnGuardar
-        );
-        layout.setPadding(new Insets(20));
-        stage.setScene(new Scene(layout, 350, 350));
-        stage.showAndWait();
-    }
 
     private void abrirJanelaCriarEventoParticipante() {
         if (!SessionEntry.isLogged()) {
@@ -494,33 +388,7 @@ public class Window{
         stage.setScene(new Scene(layout, 360, 420));
         stage.showAndWait();
     }
-    private void abrirJanelaCriarUtilizador() {
-        Stage stage = new Stage();
-        stage.initStyle(StageStyle.UTILITY);
-        stage.setTitle("Criar Novo Utilizador");
-        Label lblNome = new Label("Nome:");
-        TextField txtNome = new TextField();
-        Label lblEmail = new Label("Email:");
-        TextField txtEmail = new TextField();
-        Label lblPhone = new Label("Telefone:");
-        TextField txtPhone = new TextField();
-        
-        Label lblTipo = new Label("Tipo:");
-        ComboBox<Types> cmbTipo = new ComboBox<>(TypesDB.getAll());
-        cmbTipo.getSelectionModel().selectFirst();
-        Button btnCriar = StyleUtil.primaryButton("Criar", _ -> { /* TODO: implementar criacao de utilizador */ });
 
-        VBox layout = new VBox(10, lblNome, txtNome, lblEmail, txtEmail, lblPhone, txtPhone, lblTipo, cmbTipo, btnCriar);
-        layout.setPadding(new Insets(20));
-        stage.setScene(new Scene(layout, 300, 450));
-        stage.showAndWait();
-    }
-    private void abrirJanelaAlterarPassword(Participant user) {
-        CustomAlert.Info("Gestao de password desativada nesta versao.");
-    }
-    // ============================================================
-    //  Criao dos cards de eventos
-    // ============================================================
     private VBox criarCardEvento(Event ev) {
 // 
         // 1) Calcular proximidade do evento (por dias)
