@@ -38,7 +38,6 @@ import ltc.events.Modules.visual.CustomAlert;
 import ltc.events.Modules.visual.StyleUtil;
 import ltc.events.Modules.connection.StateDB;
 import ltc.events.Modules.db;
-import ltc.events.classes.hashs.PasswordUtil;
 import ltc.events.Modules.util.ValidationUtil;
 import ltc.events.classes.Participant;
 import ltc.events.classes.Event;
@@ -868,40 +867,29 @@ public class AdminScreens {
         TextField txtNome = new TextField();
         TextField txtEmail = new TextField();
         TextField txtPhone = new TextField();
-        PasswordField txtPass = new PasswordField();
-        ComboBox<String> cmbGenero = new ComboBox<>();
-        cmbGenero.getItems().addAll("Masculino", "Feminino", "Outro");
-        cmbGenero.setPromptText("Genero (opcional)");
-        TextField txtNif = new TextField();
-        txtNif.setPromptText("NIF (opcional)");
-        DatePicker dpNasc = new DatePicker();
         ComboBox<Types> cmbTipo = new ComboBox<>(TypesDB.listAll());
         cmbTipo.getSelectionModel().selectFirst();
 
         Button btnSalvar = StyleUtil.primaryButton("Criar", _ -> {
             try {
-                if (txtNome.getText().isBlank() || txtPass.getText().isBlank()) {
-                    throw new IllegalArgumentException("Nome e password sao obrigatorios.");
+                if (txtNome.getText().isBlank()) {
+                    throw new IllegalArgumentException("Nome obrigatorio.");
                 }
                 ValidationUtil.requireEmail(txtEmail.getText());
                 ValidationUtil.requirePhone9(txtPhone.getText());
-                if (dpNasc.getValue() == null) {
-                    throw new IllegalArgumentException("Data de nascimento obrigatoria.");
-                }
                 Types tipoSel = cmbTipo.getValue();
                 if (tipoSel == null) {
                     throw new IllegalArgumentException("Selecione o tipo de utilizador.");
                 }
-                ValidationUtil.requireDigits(txtNif.getText(), "NIF");
 
                 ParticipantDB.register(
                         txtNome.getText().trim(),
                         txtEmail.getText().trim(),
                         txtPhone.getText().trim(),
-                        PasswordUtil.hashPassword(txtPass.getText()),
-                        cmbGenero.getValue(),
-                        txtNif.getText().trim(),
-                        dpNasc.getValue(),
+                        null,
+                        null,
+                        null,
+                        null,
                         tipoSel
                 );
 
@@ -919,10 +907,6 @@ public class AdminScreens {
                 new Label("Nome:"), txtNome,
                 new Label("Email:"), txtEmail,
                 new Label("Telefone:"), txtPhone,
-                new Label("Password:"), txtPass,
-                new Label("Genero:"), cmbGenero,
-                new Label("NIF:"), txtNif,
-                new Label("Data nascimento:"), dpNasc,
                 new Label("Tipo:"), cmbTipo,
                 btnSalvar
         );
