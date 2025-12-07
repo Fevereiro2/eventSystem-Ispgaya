@@ -13,7 +13,6 @@ ltc\events\Modules\connection\EventDB.class
 ltc\events\classes\Event.class
 ltc\events\classes\ParticipantSession.class
 ltc\events\Modules\visual\CustomAlert$Type.class
-ltc\events\classes\hashs\PasswordUtil.class
 ltc\events\Modules\visual\CustomAlert.class
 ltc\events\classes\Resourceevent.class
 ltc\events\Modules\connection\ParticipantDB.class
