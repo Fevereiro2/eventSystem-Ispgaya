@@ -11,7 +11,6 @@ public class Session {
     private final String description;
     private final String local;
     private final State state;
-    private final String image;
     private final Timestamp initialDate;
     private final Timestamp finishDate;
     private final Participant moderator;
@@ -21,7 +20,6 @@ public class Session {
                    String description,
                    String local,
                    State state,
-                   String image,
                    Timestamp initialDate,
                    Timestamp finishDate,
                    Participant moderator) {
@@ -31,7 +29,6 @@ public class Session {
         this.description = description;
         this.local = local;
         this.state = state;
-        this.image = image;
         this.initialDate = initialDate;
         this.finishDate = finishDate;
         this.moderator = moderator;
@@ -51,7 +48,6 @@ public class Session {
                 rs.getInt("state_id"),
                 rs.getString("state_name")
         );
-        this.image = rs.getString("image");
         this.initialDate = parseTimestampSafe(startDateString);
         this.finishDate = parseTimestampSafe(finalDateString);
         this.moderator = mod;
@@ -62,7 +58,6 @@ public class Session {
     public String getDescription() { return description; }
     public String getLocal() { return local; }
     public State getState() { return state; }
-    public String getImage() { return image; }
     public Timestamp getStartdate() { return initialDate; }
     public Timestamp getFinaldate() { return finishDate; }
     public Participant getModerator() { return moderator; }
