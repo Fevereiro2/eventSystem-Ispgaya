@@ -1,5 +1,6 @@
 ltc\events\classes\Category.class
 ltc\events\classes\Session.class
+ltc\events\Modules\admin\AdminScreens$1.class
 ltc\events\classes\Sessionevent.class
 ltc\events\Modules\visual\CalendarEventoView.class
 ltc\events\Modules\util\LoggingUtil.class
@@ -20,6 +21,7 @@ ltc\events\Modules\connection\SessionParticipantDB.class
 ltc\events\Main.class
 ltc\events\Modules\admin\AdminScreens.class
 ltc\events\Modules\connection\ResourcesDB.class
+ltc\events\Modules\admin\AdminScreens$2.class
 ltc\events\Modules\connection\StateDB.class
 ltc\events\Modules\ui\AlterPassword.class
 ltc\events\classes\SessionResource.class
