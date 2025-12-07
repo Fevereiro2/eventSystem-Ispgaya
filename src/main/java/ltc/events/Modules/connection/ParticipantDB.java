@@ -1,15 +1,15 @@
 package ltc.events.Modules.connection;
 
-import javafx.scene.control.Alert;
 import ltc.events.Modules.db;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
-import ltc.events.Modules.db;
 import ltc.events.classes.Participant;
 import ltc.events.classes.Types;
-import ltc.events.classes.hashs.PasswordUtil;
 
-import java.sql.*;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 
 public class ParticipantDB {
 
@@ -17,25 +17,24 @@ public class ParticipantDB {
             String name,
             String email,
             String phone,
-            String password,
             Types type
     ) throws SQLException {
 
         String checkSql = "SELECT participant_id FROM participant WHERE email = ?";
         String insertSql = """
-            INSERT INTO participant (name, email, phone, password, types_id)
-            VALUES (?, ?, ?, ?, ?)
+            INSERT INTO participant (name, email, phone, types_id)
+            VALUES (?, ?, ?, ?)
             RETURNING participant_id;
             """;
 
         Connection conn = db.connect();
 
-        // Verifica email
+        // Verifica email duplicado
         try (PreparedStatement check = conn.prepareStatement(checkSql)) {
             check.setString(1, email);
             ResultSet rs = check.executeQuery();
             if (rs.next()) {
-                throw new SQLException("Já existe uma conta com este email.");
+                throw new SQLException("Ja existe uma conta com este email.");
             }
         }
 
@@ -46,8 +45,7 @@ public class ParticipantDB {
             insert.setString(1, name);
             insert.setString(2, email);
             insert.setString(3, phone);
-            insert.setString(4, password);
-            insert.setInt(5, type.getId());
+            insert.setInt(4, type.getId());
 
             ResultSet rs = insert.executeQuery();
             if (!rs.next()) throw new SQLException("Erro ao criar participante.");
@@ -55,13 +53,13 @@ public class ParticipantDB {
             newId = rs.getInt("participant_id");
         }
 
-        // AGORA buscar tudo corretamente
+        // Buscar o participante completo
         String fetchSql = """
             SELECT p.*, t.name AS types_name
             FROM participant p
             JOIN types t ON p.types_id = t.types_id
             WHERE p.participant_id = ?
-    """;
+        """;
 
         try (PreparedStatement fetch = conn.prepareStatement(fetchSql)) {
             fetch.setInt(1, newId);
@@ -69,20 +67,19 @@ public class ParticipantDB {
 
             if (!rs.next()) throw new SQLException("Erro ao carregar participante.");
 
-            Participant p = new Participant(rs);
-            ltc.events.Modules.util.LoggingUtil.log("REGISTER: " + p.getEmail());
-            return p;
+            return new Participant(rs);
         }
     }
+
     public static ObservableList<Participant> listAll() {
         ObservableList<Participant> lista = FXCollections.observableArrayList();
 
         String sql = """
-        SELECT p.*, t.name AS types_name
-        FROM participant p
-        JOIN types t ON p.types_id = t.types_id
-        ORDER BY p.name
-    """;
+            SELECT p.*, t.name AS types_name
+            FROM participant p
+            JOIN types t ON p.types_id = t.types_id
+            ORDER BY p.name
+        """;
 
         try (Connection conn = db.connect();
              PreparedStatement stmt = conn.prepareStatement(sql);
@@ -101,10 +98,10 @@ public class ParticipantDB {
 
     public static void update(String id, String name, String email, String phone, Types type) throws SQLException {
         String sql = """
-        UPDATE participant
-        SET name = ?, email = ?, phone = ?, types_id = ?
-        WHERE participant_id = ?
-    """;
+            UPDATE participant
+            SET name = ?, email = ?, phone = ?, types_id = ?
+            WHERE participant_id = ?
+        """;
 
         try (Connection conn = db.connect();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
@@ -118,6 +115,7 @@ public class ParticipantDB {
             stmt.executeUpdate();
         }
     }
+
     public static void delete(String id) throws SQLException {
         String sql = "DELETE FROM participant WHERE participant_id = ?";
 
@@ -129,28 +127,8 @@ public class ParticipantDB {
         }
     }
 
-    public static void count() throws SQLException {
-        String sql = "SELECT COUNT(*) FROM participant";
-        try (Connection conn = db.connect();
-             PreparedStatement stmt = conn.prepareStatement(sql)) {
-            ResultSet rs = stmt.executeQuery();
-            if (rs.next()) {
-                System.out.println("Total de participantes: " + rs.getInt(1));
-            }
-        }
-    }
-
-    public static void updatePassword(int participantId, String newPassword) throws SQLException {
-        String sql = "UPDATE participant SET password = ? WHERE participant_id = ?";
-
-        try (Connection connection = db.connect();
-             PreparedStatement stmt = connection.prepareStatement(sql)) {
-
-            stmt.setString(1, PasswordUtil.hashPassword(newPassword)); // hash seguro
-            stmt.setInt(2, participantId);
-
-            stmt.executeUpdate();
-        }
+    public static void updatePassword(int participantId, String newPassword) {
+        // passwords removidas nesta versao
     }
 
     public static void updateProfile(int participantId,
@@ -161,7 +139,7 @@ public class ParticipantDB {
             UPDATE participant
             SET name = ?, email = ?, phone = ?, types_id = types_id
             WHERE participant_id = ?
-            """;
+        """;
 
         try (Connection conn = db.connect();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
