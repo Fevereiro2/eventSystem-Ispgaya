@@ -9,8 +9,6 @@ import javafx.stage.Stage; // Importa a classe principal Stage, que representa u
 import javafx.stage.StageStyle; // Importa enumeraÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â§ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â£o que define a decoraÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â§ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â£o e estilo da janela (ex: sem borda, utilitÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¡rio)
 import javafx.scene.Scene; // Importa a classe Scene, que ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â© o contentor para todo o conteÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Âºdo da interface grÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¡fica (o que estÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¡ dentro da Stage)
 import javafx.scene.control.*; // Importa todos os componentes de controlo da UI (botÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Âµes, caixas de texto, tabelas, etc.)
-import javafx.scene.image.Image; // Importa a classe Image, usada para carregar imagens
-import javafx.scene.image.ImageView; // Importa o componente para exibir uma imagem na UI
 import javafx.scene.layout.*; // Importa todas as classes de layout (HBox, VBox, BorderPane, StackPane, etc.) para organizar os componentes
 import javafx.geometry.*; // Importa utilitÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¡rios para definir alinhamentos, preenchimentos (padding) e margens (insets)
 import ltc.events.Modules.admin.AdminScreens;
@@ -528,7 +526,6 @@ public class Window{
                         txtLocal.getText(),
                         inicio,
                         fim,
-                        null,
                         1
                 );
                 CustomAlert.Success("Evento criado com sucesso.");
@@ -560,43 +557,19 @@ public class Window{
         TextField txtEmail = new TextField();
         Label lblPhone = new Label("Telefone:");
         TextField txtPhone = new TextField();
-        Label lblPass = new Label("Password:");
-        PasswordField txtPass = new PasswordField();
+        
         Label lblTipo = new Label("Tipo:");
         ComboBox<Types> cmbTipo = new ComboBox<>(TypesDB.getAll());
         cmbTipo.getSelectionModel().selectFirst();
         Button btnCriar = StyleUtil.primaryButton("Criar", _ -> { /* TODO: implementar criacao de utilizador */ });
 
-        VBox layout = new VBox(10, lblNome, txtNome, lblEmail, txtEmail, lblPhone, txtPhone, lblPass, txtPass, lblTipo, cmbTipo, btnCriar);
+        VBox layout = new VBox(10, lblNome, txtNome, lblEmail, txtEmail, lblPhone, txtPhone, lblTipo, cmbTipo, btnCriar);
         layout.setPadding(new Insets(20));
         stage.setScene(new Scene(layout, 300, 450));
         stage.showAndWait();
     }
     private void abrirJanelaAlterarPassword(Participant user) {
-        Stage stage = new Stage();
-        stage.initStyle(StageStyle.UTILITY);
-        stage.setTitle("Alterar Password");
-        Label lblPass = new Label("Nova Password:");
-        PasswordField txtPass = new PasswordField();
-        Button btnSalvar = StyleUtil.primaryButton("Guardar", _ -> {});
-        btnSalvar.setOnAction(_ -> {
-            try (Connection conn = db.connect()) {
-                PreparedStatement stmt = conn.prepareStatement(
-                        "UPDATE participant SET password = ? WHERE participant_id = ?"
-                );
-                stmt.setString(1, ""));
-                stmt.setInt(2, Integer.parseInt(user.getId()));
-                stmt.executeUpdate();
-                CustomAlert.Success("Password atualizada!");
-                stage.close();
-            } catch (Exception ex) {
-                CustomAlert.Error("Erro: " + ex.getMessage());
-            }
-        });
-        VBox layout = new VBox(10, lblPass, txtPass, btnSalvar);
-        layout.setPadding(new Insets(20));
-        stage.setScene(new Scene(layout, 250, 150));
-        stage.showAndWait();
+        CustomAlert.Info("Gestao de password desativada nesta versao.");
     }
     // ============================================================
     // ÃƒÆ’Ã‚Â°Ãƒâ€¦Ã‚Â¸ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒâ€šÃ‚Â¥ CriaÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â§ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â£o dos cards de eventos
@@ -729,6 +702,7 @@ public class Window{
         };
     }
 }
+
 
 
 
