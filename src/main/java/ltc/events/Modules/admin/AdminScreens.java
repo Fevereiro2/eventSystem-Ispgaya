@@ -33,6 +33,7 @@ import ltc.events.Modules.connection.SessionResourceDB;
 import ltc.events.Modules.visual.CustomAlert;
 import ltc.events.Modules.visual.StyleUtil;
 import ltc.events.Modules.connection.StateDB;
+import ltc.events.classes.hashs.PasswordUtil;
 import ltc.events.classes.Participant;
 import ltc.events.classes.Event;
 import ltc.events.classes.Types;
@@ -143,7 +144,7 @@ public class AdminScreens {
         });
 
         Button btnCriar = StyleUtil.primaryButton("Criar Utilizador", _ -> {
-            CustomAlert.Info("Criar utilizador ainda nao implementado.");
+            abrirFormCriarParticipante(tabela, filtro, contador);
         });
         Button btnPass = StyleUtil.primaryButton("Alterar Password", _ -> {
             Participant sel = tabela.getSelectionModel().getSelectedItem();
@@ -845,6 +846,75 @@ public class AdminScreens {
         } catch (Exception e) {
             throw new IllegalArgumentException("Hora invalida. Use o formato HH:mm (ex: 09:00).");
         }
+    }
+
+    private void abrirFormCriarParticipante(TableView<Participant> tabela, ComboBox<String> filtro, Label contador) {
+        Stage stage = new Stage();
+        stage.initModality(Modality.APPLICATION_MODAL);
+        stage.setTitle("Criar Utilizador");
+
+        TextField txtNome = new TextField();
+        TextField txtEmail = new TextField();
+        TextField txtPhone = new TextField();
+        PasswordField txtPass = new PasswordField();
+        ComboBox<String> cmbGenero = new ComboBox<>();
+        cmbGenero.getItems().addAll("Masculino", "Feminino", "Outro");
+        cmbGenero.setPromptText("Genero (opcional)");
+        TextField txtNif = new TextField();
+        txtNif.setPromptText("NIF (opcional)");
+        DatePicker dpNasc = new DatePicker();
+        ComboBox<Types> cmbTipo = new ComboBox<>(TypesDB.listAll());
+        cmbTipo.getSelectionModel().selectFirst();
+
+        Button btnSalvar = StyleUtil.primaryButton("Criar", _ -> {
+            try {
+                if (txtNome.getText().isBlank() || txtEmail.getText().isBlank() || txtPass.getText().isBlank()) {
+                    throw new IllegalArgumentException("Nome, email e password sao obrigatorios.");
+                }
+                if (dpNasc.getValue() == null) {
+                    throw new IllegalArgumentException("Data de nascimento obrigatoria.");
+                }
+                Types tipoSel = cmbTipo.getValue();
+                if (tipoSel == null) {
+                    throw new IllegalArgumentException("Selecione o tipo de utilizador.");
+                }
+
+                ParticipantDB.register(
+                        txtNome.getText().trim(),
+                        txtEmail.getText().trim(),
+                        txtPhone.getText().trim(),
+                        PasswordUtil.hashPassword(txtPass.getText()),
+                        cmbGenero.getValue(),
+                        txtNif.getText().trim(),
+                        dpNasc.getValue(),
+                        tipoSel
+                );
+
+                tabela.setItems(ParticipantDB.listAll());
+                aplicarFiltro(tabela, filtro.getValue());
+                atualizarContador(contador, tabela.getItems());
+                CustomAlert.Success("Utilizador criado com sucesso.");
+                stage.close();
+            } catch (Exception ex) {
+                CustomAlert.Error("Erro ao criar utilizador: " + ex.getMessage());
+            }
+        });
+
+        VBox layout = new VBox(10,
+                new Label("Nome:"), txtNome,
+                new Label("Email:"), txtEmail,
+                new Label("Telefone:"), txtPhone,
+                new Label("Password:"), txtPass,
+                new Label("Genero:"), cmbGenero,
+                new Label("NIF:"), txtNif,
+                new Label("Data nascimento:"), dpNasc,
+                new Label("Tipo:"), cmbTipo,
+                btnSalvar
+        );
+        layout.setPadding(new Insets(20));
+
+        stage.setScene(new Scene(layout, 360, 520));
+        stage.showAndWait();
     }
 
     private void carregarSessoes(TableView<Session> tabela, Event ev) {
