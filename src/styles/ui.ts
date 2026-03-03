@@ -3,15 +3,18 @@ export const appRoot = 'min-h-screen bg-white font-sans text-slate-800 antialias
 export const container = 'mx-auto w-full max-w-6xl px-4 sm:px-6 lg:px-8';
 export const sectionSpace = 'py-12 md:py-16';
 
-export const topBar = 'border-b border-slate-200 bg-[#f7f8fa]';
-export const topBarInner = 'flex flex-wrap items-center justify-between gap-2 py-2';
-export const topBarGroup =
-  'flex flex-wrap items-center gap-x-4 gap-y-1 text-[11px] leading-none text-slate-600';
-export const topBarLink =
-  'text-[11px] font-medium transition-colors hover:text-[#dd8609]';
-export const topBarLocaleWrap = 'flex items-center gap-2';
-export const topBarLocale = 'text-[11px] font-semibold text-slate-700';
-export const topBarSeparator = 'text-slate-400';
+export const topBar = 'bg-white';
+export const topBarInner =
+  'relative container mx-auto px-4 sm:px-6 xl:px-8 z-10 flex items-center justify-between py-2.5';
+export const topBarGroup = 'text-sm font-medium tracking-tight space-x-6';
+export const topBarRightGroup =
+  'flex items-center text-sm font-medium tracking-tight space-x-6';
+export const topBarRightLinks = 'space-x-6';
+export const topBarLocaleWrap = 'ml-14 space-x-1';
+export const topBarLink = 'text-black transition-opacity hover:opacity-80';
+export const topBarLocaleActive =
+  'text-black transition-opacity hover:opacity-80 font-bold';
+export const topBarLocale = 'text-black transition-opacity hover:opacity-80';
 
 export const headerNav = 'border-b border-slate-200 bg-white';
 export const headerNavInner = 'flex items-center justify-between gap-6 py-4';
