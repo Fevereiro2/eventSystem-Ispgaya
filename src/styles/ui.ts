@@ -20,6 +20,14 @@ export const brandLogo = 'h-11 w-auto md:h-12';
 export const desktopMenu = 'hidden items-center gap-7 lg:flex';
 export const navLink =
   'text-[14px] font-medium text-[#3f4a58] transition-colors hover:text-[#dd8609]';
+export const navItemGroup = 'group relative';
+export const navDropdownWrap =
+  'right-0 transition-opacity pt-2 absolute w-64 hidden opacity-0 group-hover:block group-hover:opacity-100';
+export const navDropdownList =
+  'bg-white border border-gray-100 rounded shadow-lg px-4 py-3 space-y-3';
+export const navDropdownItem =
+  'flex items-center font-medium text-black hover:text-orange-400 hover:underline underline-offset-2';
+export const navDropdownAnchor = 'inline-block w-full';
 export const mobileMenuButton =
   'inline-flex items-center rounded-lg border border-slate-300 px-3 py-2 text-xs font-semibold uppercase tracking-wide text-slate-600 transition-colors hover:border-[#dd8609] hover:text-[#dd8609] lg:hidden';
 
@@ -28,17 +36,23 @@ export const breadcrumbsInner = 'flex items-center gap-2 py-3 text-sm text-slate
 export const breadcrumbsLink = 'transition-colors hover:text-[#dd8609]';
 export const breadcrumbsCurrent = 'font-medium text-slate-700';
 export const heroPatternWrap =
-  "relative mt-2 md:mt-6 before:hidden before:content-[''] before:absolute before:inset-0 before:bg-[linear-gradient(125deg,rgba(221,134,9,0.08),transparent_40%)] before:pointer-events-none after:hidden after:content-[''] after:absolute after:inset-0 after:bg-[radial-gradient(circle_at_25%_20%,rgba(15,23,42,0.12)_1px,transparent_1px)] after:[background-size:18px_18px] after:opacity-20 after:pointer-events-none lg:before:block lg:after:block hero-triangles hero-dots-pattern";
-export const heroPatternSection = 'relative z-10';
-export const breadcrumbsNav = 'relative z-10 flex';
-export const breadcrumbsList = 'hidden items-center space-x-1 pl-1 md:flex md:space-x-2';
-export const breadcrumbsItemMuted = 'items-center text-gray-500 hover:text-gray-600 md:flex';
-export const breadcrumbsItemCurrent = 'items-center font-semibold text-black md:flex';
+  "before:hidden lg:before:block relative hero-triangles hero-dots-pattern mt-2 md:mt-6 after:hidden lg:after:block before:content-[''] before:absolute before:h-[260px] before:w-[280px] before:-left-[132px] before:-top-5 before:z-[1] before:opacity-90 before:bg-[url('/images/triangles-pattern-2.svg')] before:bg-no-repeat before:bg-left-top after:content-[''] after:absolute after:right-0 after:-bottom-[6px] after:h-[66px] after:w-[28%] after:opacity-60 after:[background-image:radial-gradient(ellipse_at_center,#fb923c,#fb923c_1px,transparent_0,transparent_100%)] after:[background-size:18px_18px]";
+export const heroPatternSection =
+  'relative container mx-auto px-4 sm:px-6 xl:px-8 z-10';
+export const breadcrumbsNav = 'flex relative z-10';
+export const breadcrumbsList =
+  'hidden pl-1 items-center space-x-1 md:flex md:space-x-2';
+export const breadcrumbsItemMuted =
+  'items-center md:flex text-gray-500 hover:text-gray-600';
+export const breadcrumbsItemCurrent =
+  'items-center md:flex font-semibold text-black';
 export const breadcrumbsSlash = 'ml-1 flex-shrink-0 md:ml-2';
 export const breadcrumbsAnchor = 'text-sm';
-export const heroIntroWrap = 'mt-6 max-w-4xl';
-export const heroIntroTitle = 'mb-2 font-heading text-4xl font-semibold text-slate-900';
-export const heroIntroText = 'mt-0 max-w-3xl text-[17px] leading-normal text-slate-700';
+export const heroIntroWrap = 'mt-6 xl:max-w-3xl 2xl:max-w-4xl';
+export const heroIntroTitle =
+  'mb-2 2xl:mb-2 font-heading text-4xl font-semibold text-slate-900';
+export const heroIntroText =
+  'mt-0 leading-normal 2xl:mt-0 text-[17px] text-slate-700';
 
 export const mainContent = 'bg-white';
 export const heroWrap = 'border-b border-slate-100 py-10 md:py-12';
