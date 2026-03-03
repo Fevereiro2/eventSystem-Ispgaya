@@ -22,14 +22,83 @@ type MenuItem = {
 };
 
 const menuItems: MenuItem[] = [
-  { label: 'Instituicao', href: '#' },
-  { label: 'Ensino', href: '#' },
-  { label: 'Empregabilidade', href: '#' },
-  { label: 'Investigacao', href: '#' },
-  { label: 'Internacional', href: '#' },
+  {
+    label: 'Instituicao',
+    href: 'https://ispgaya.pt/pt/instituicao',
+    dropdown: [
+      { label: 'O ISPGAYA', href: 'https://ispgaya.pt/pt/instituicao/ispgaya' },
+      { label: 'Organizacao', href: 'https://ispgaya.pt/pt/instituicao/organizacao' },
+      { label: 'Qualidade', href: 'https://ispgaya.pt/pt/instituicao/qualidade' },
+      { label: 'Legislacao', href: 'https://ispgaya.pt/pt/instituicao/legislacao' },
+      { label: 'Recrutamento', href: 'https://ispgaya.pt/pt/instituicao/recrutamento' },
+      { label: 'Instalacoes', href: 'https://ispgaya.pt/pt/instituicao/instalacoes' },
+      { label: 'Visita Virtual', href: 'https://ispgaya.pt/pt/instituicao/visita-virtual' },
+      { label: 'Contactos', href: 'https://ispgaya.pt/pt/instituicao/contactos' }
+    ]
+  },
+  {
+    label: 'Ensino',
+    href: 'https://ispgaya.pt/pt/ensino',
+    dropdown: [
+      { label: 'Oferta Formativa', href: 'https://ispgaya.pt/pt/ensino/oferta-formativa' },
+      {
+        label: 'Programas Avancados',
+        href: 'https://ispgaya.pt/pt/ensino/programas-avancados'
+      },
+      { label: 'Candidaturas', href: 'https://ispgaya.pt/pt/ensino/candidaturas' },
+      {
+        label: 'Bolsas e Financiamento',
+        href: 'https://ispgaya.pt/pt/ensino/bolsas-e-financiamento'
+      },
+      {
+        label: 'Academia Cisco',
+        href: 'https://ispgaya.pt/pt/ensino/oferta-formativa/academia-cisco'
+      }
+    ]
+  },
+  {
+    label: 'Empregabilidade',
+    href: 'https://ispgaya.pt/pt/empregabilidade',
+    dropdown: [
+      { label: 'Estagios e Emprego', href: 'https://ispgaya.pt/pt/empregabilidade/estagios-e-emprego' },
+      { label: 'Alumni', href: 'https://ispgaya.pt/pt/empregabilidade/alumni' }
+    ]
+  },
+  {
+    label: 'Investigacao',
+    href: 'https://ispgaya.pt/pt/investigacao',
+    dropdown: [
+      {
+        label: 'Publicacoes Cientificas',
+        href: 'https://ispgaya.pt/pt/investigacao/publicacoes-cientificas'
+      },
+      {
+        label: 'Atividades Cientificas',
+        href: 'https://ispgaya.pt/pt/investigacao/atividades-cientificas'
+      },
+      { label: 'Biblioteca', href: 'https://ispgaya.pt/pt/investigacao/biblioteca' },
+      { label: 'WIDESKILLS', href: 'https://ispgaya.pt/pt/investigacao/wideskills' },
+      {
+        label: 'Politecnica',
+        href: 'https://ispgaya.pt/pt/investigacao/politecnica-revista'
+      }
+    ]
+  },
+  {
+    label: 'Internacional',
+    href: 'https://ispgaya.pt/pt/internacional',
+    dropdown: [
+      {
+        label: 'Estudantes Internacionais',
+        href: 'https://international.ispgaya.pt/pt'
+      },
+      { label: 'Erasmus+', href: 'https://ispgaya.pt/pt/internacional/erasmus+' },
+      { label: 'Guia ECTS', href: 'https://ispgaya.pt/pt/internacional/guia-ects' }
+    ]
+  },
   {
     label: 'Vida Academica',
-    href: '#',
+    href: 'https://ispgaya.pt/pt/vida-academica',
     dropdown: [
       { label: 'Noticias', href: 'https://ispgaya.pt/pt/vida-academica/noticias' },
       { label: 'Eventos', href: 'https://ispgaya.pt/pt/vida-academica/eventos' },
