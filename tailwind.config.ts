@@ -16,8 +16,16 @@ export default {
         }
       },
       fontFamily: {
-        sans: ['var(--font-body)', 'Inter', 'system-ui', 'sans-serif'],
-        heading: ['var(--font-heading)', 'Inter', 'system-ui', 'sans-serif']
+        sans: ['var(--font-body)', 'Open Sans', 'Inter', 'system-ui', 'sans-serif'],
+        heading: [
+          'var(--font-heading)',
+          'ui-serif',
+          'Georgia',
+          'Cambria',
+          'Times New Roman',
+          'Times',
+          'serif'
+        ]
       }
     }
   },
