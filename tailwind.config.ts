@@ -7,14 +7,17 @@ export default {
       colors: {
         accent: {
           DEFAULT: '#DD8609',
-          soft: '#E5A345',
-          deep: '#B36A06'
+          soft: '#F0A343',
+          deep: '#B46A06'
         },
-        brand: {
-          ink: '#252321',
-          stone: '#7C6E66',
-          fog: '#EFEAE5'
+        navy: {
+          DEFAULT: '#102A43',
+          soft: '#243B53'
         }
+      },
+      fontFamily: {
+        sans: ['var(--font-body)', 'Inter', 'system-ui', 'sans-serif'],
+        heading: ['var(--font-heading)', 'Inter', 'system-ui', 'sans-serif']
       }
     }
   },
