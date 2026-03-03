@@ -2,6 +2,7 @@ import Breadcrumbs from '../components/Breadcrumbs';
 import DocumentRow from '../components/DocumentRow';
 import Footer from '../components/Footer';
 import HeaderNav from '../components/HeaderNav';
+import PieChartHero from '../components/PieChartHero';
 import StatCard from '../components/StatCard';
 import TopBar from '../components/TopBar';
 import {
@@ -10,17 +11,12 @@ import {
   container,
   docsList,
   docsSection,
-  heroContent,
-  heroImage,
-  heroOverlay,
-  heroWrap,
-  leadText,
   mainContent,
-  pageTitle,
+  pieSection,
   sectionSpace,
-  statsGrid
+  statsGrid,
+  statsSection
 } from '../styles/ui';
-import skyline from '../assets/gaia-skyline.webp';
 
 const stats = [
   { value: 611, label: 'Publicacoes' },
@@ -30,81 +26,50 @@ const stats = [
   { value: 114, label: 'Artigos em atas' }
 ];
 
-const documents = [
-  {
-    name: 'Relatorio de Producao Cientifica 2025',
-    meta: 'PDF · 2.4 MB · Janeiro 2026',
-    href: '#'
-  },
-  {
-    name: 'Guia de Publicacao e Boas Praticas de Investigacao',
-    meta: 'PDF · 1.1 MB · Novembro 2025',
-    href: '#'
-  },
-  {
-    name: 'Resumo Estatistico de Publicacoes 2010-2025',
-    meta: 'PDF · 3.0 MB · Dezembro 2025',
-    href: '#'
-  }
-];
+const document = {
+  name: 'Publicacoes Cientificas 2010-2024-janeiro.pdf',
+  meta: '853KB',
+  href: '#'
+};
 
 function PublicacoesCientificas() {
   return (
     <>
       <TopBar />
       <HeaderNav />
-      <Breadcrumbs />
+      <Breadcrumbs
+        title="Publicacoes Cientificas"
+        description="O ISPGAYA desenvolve investigacao cientifica nas diversas areas em que oferece formacao, resultando em publicacoes, livros, capitulos e artigos cientificos."
+      />
 
       <main className={mainContent}>
-        <section className={heroWrap}>
-          <img src={skyline} alt="" className={heroImage} />
-          <div className={heroOverlay} />
-          <div className={`${container} ${sectionSpace} ${heroContent}`}>
-            <h1 className={pageTitle}>Publicacoes Cientificas</h1>
-            <p className={leadText}>
-              Esta pagina apresenta, de forma demonstrativa, a atividade editorial e
-              cientifica desenvolvida por equipas academicas e parceiros de
-              investigacao. O conteudo abaixo usa dados de exemplo para refletir a
-              organizacao visual de um portal institucional.
+        <section className={statsSection}>
+          <div className={container}>
+            <h2 className={blockTitle}>Research at ISPGAYA</h2>
+            <p className={blockText}>
+              A producao cientifica institucional tem registado crescimento
+              sustentado, refletindo colaboracao nacional e internacional em
+              diferentes areas de conhecimento.
             </p>
+            <div className={statsGrid}>
+              {stats.map((item) => (
+                <StatCard key={item.label} value={item.value} label={item.label} />
+              ))}
+            </div>
           </div>
         </section>
 
-        <section>
-          <div className={`${container} ${sectionSpace}`}>
-            <h2 className={blockTitle}>Research at ISPGAYA</h2>
-            <p className={blockText}>
-              Desde 2010, a atividade de investigacao evoluiu de forma consistente,
-              com maior colaboracao internacional, reforco da publicacao em revistas
-              indexadas e crescimento da producao aplicada em contextos
-              profissionais. Os indicadores abaixo ilustram esse percurso.
-            </p>
-
-            <div className={statsGrid}>
-              {stats.map((stat) => (
-                <StatCard key={stat.label} value={stat.value} label={stat.label} />
-              ))}
-            </div>
+        <section className={pieSection}>
+          <div className={container}>
+            <PieChartHero />
           </div>
         </section>
 
         <section className={docsSection}>
           <div className={`${container} ${sectionSpace}`}>
             <h2 className={blockTitle}>Documentos</h2>
-            <p className={blockText}>
-              Aceda a documentos institucionais de exemplo com informacao sobre
-              resultados, diretrizes editoriais e panorama de publicacoes.
-            </p>
-
             <div className={docsList}>
-              {documents.map((document) => (
-                <DocumentRow
-                  key={document.name}
-                  name={document.name}
-                  meta={document.meta}
-                  href={document.href}
-                />
-              ))}
+              <DocumentRow name={document.name} meta={document.meta} href={document.href} />
             </div>
           </div>
         </section>
