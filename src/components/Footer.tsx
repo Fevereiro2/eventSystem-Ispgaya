@@ -1,93 +1,176 @@
+import { Facebook, Instagram, Linkedin } from 'lucide-react';
 import {
-  container,
-  footerBrand,
-  footerBrandText,
-  footerBottom,
+  footerBottomContainer,
+  footerBottomCopyright,
+  footerBottomGaia,
   footerBottomInner,
+  footerBottomLink,
   footerBottomLinks,
+  footerBottomSeparator,
+  footerBottomText,
+  footerBottomUpdated,
+  footerBrand,
   footerCertIcon,
   footerCertRow,
+  footerCol,
+  footerContactAddress,
+  footerContactEmail,
+  footerContactHint,
+  footerContactPhone,
+  footerContactStrong,
+  footerFollowTitle,
   footerGrid,
   footerLink,
   footerList,
+  footerListItem,
   footerLogo,
+  footerSection,
+  footerSocialIcon,
+  footerSocialLink,
+  footerSocialLinks,
+  footerSrOnly,
+  footerSubTitle,
   footerTitle,
   footerWrap
 } from '../styles/ui';
 import iso14001 from '../assets/ISO-14001.svg';
 import iso21001 from '../assets/ISO-21001.svg';
 import iso9001 from '../assets/ISO-9001.svg';
+import gaiaSkyline from '../assets/gaia-skyline.webp';
 import logoNegative from '../assets/ispgaya-logo-negative.svg';
 
-const columns = [
-  {
-    title: 'Instituicao',
-    items: ['Sobre', 'Mensagem da Direcao', 'Campus', 'Qualidade']
-  },
-  {
-    title: 'Ensino',
-    items: ['Licenciaturas', 'Pos-graduacoes', 'Formacao Executiva', 'Candidaturas']
-  },
-  {
-    title: 'Investigacao',
-    items: ['Centros', 'Projetos', 'Publicacoes', 'Parcerias']
-  }
+const ensinoLinks = [
+  'CTeSP',
+  'Licenciaturas',
+  'Mestrados',
+  'Pos-Graduacoes',
+  'Candidaturas',
+  'Bolsas e Financiamento',
+  'Programas Avancados'
+];
+
+const hubLinks = [
+  'Inforestudante',
+  'Infordocente',
+  'Email',
+  'Wi-Fi',
+  'Password',
+  'Cartao ISPGAYA',
+  'Identidade Visual'
+];
+
+const interesseLinks = [
+  'DGES',
+  'A3ES',
+  'Ciencia Vitae',
+  'Governo de Portugal',
+  'Projetos Cofinanciados',
+  'Repositorio de Documentos'
 ];
 
 function Footer() {
   return (
     <footer className={footerWrap}>
-      <div className={`${container} ${footerGrid}`}>
-        <section className={footerBrand}>
-          <img src={logoNegative} alt="ISPGAYA" className={footerLogo} />
-          <p className={footerBrandText}>
-            Comunidade academica orientada para ensino superior, inovacao aplicada
-            e transferencia de conhecimento para a sociedade.
-          </p>
-          <div className={footerCertRow}>
-            <img src={iso9001} alt="Certificacao ISO 9001" className={footerCertIcon} />
-            <img
-              src={iso14001}
-              alt="Certificacao ISO 14001"
-              className={footerCertIcon}
-            />
-            <img
-              src={iso21001}
-              alt="Certificacao ISO 21001"
-              className={footerCertIcon}
-            />
+      <section className={footerSection}>
+        <div className={footerGrid}>
+          <div className={footerBrand}>
+            <img src={logoNegative} width={175} height={54} className={footerLogo} alt="ISPGAYA" />
+            <p className={footerFollowTitle}>Segue-nos</p>
+            <div className={footerSocialLinks}>
+              <a href="#" className={footerSocialLink}>
+                <span className={footerSrOnly}>ISPGAYA Facebook</span>
+                <Facebook className={footerSocialIcon} aria-hidden="true" />
+              </a>
+              <a href="#" className={footerSocialLink}>
+                <span className={footerSrOnly}>ISPGAYA Instagram</span>
+                <Instagram className={footerSocialIcon} aria-hidden="true" />
+              </a>
+              <a href="#" className={footerSocialLink}>
+                <span className={footerSrOnly}>ISPGAYA LinkedIn</span>
+                <Linkedin className={footerSocialIcon} aria-hidden="true" />
+              </a>
+            </div>
           </div>
-        </section>
 
-        {columns.map((column) => (
-          <section key={column.title}>
-            <h4 className={footerTitle}>{column.title}</h4>
+          <div className={footerCol}>
+            <p className={footerTitle}>Ensino</p>
             <ul className={footerList}>
-              {column.items.map((item) => (
-                <li key={item}>
+              {ensinoLinks.map((item) => (
+                <li key={item} className={footerListItem}>
                   <a href="#" className={footerLink}>
                     {item}
                   </a>
                 </li>
               ))}
             </ul>
-          </section>
-        ))}
-      </div>
+          </div>
 
-      <div className={footerBottom}>
-        <div className={`${container} ${footerBottomInner}`}>
-          <p>© 2026 ISPGAYA Placeholder. Todos os direitos reservados.</p>
-          <div className={footerBottomLinks}>
-            <a href="#" className={footerLink}>
-              Termos
-            </a>
-            <a href="#" className={footerLink}>
-              Privacidade
-            </a>
+          <div className={footerCol}>
+            <p className={footerTitle}>ISPGAYA HUB</p>
+            <ul className={footerList}>
+              {hubLinks.map((item) => (
+                <li key={item} className={footerListItem}>
+                  <a href="#" className={footerLink}>
+                    {item}
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          <div className={footerCol}>
+            <p className={footerSubTitle}>Links de Interesse</p>
+            <ul className={footerList}>
+              {interesseLinks.map((item) => (
+                <li key={item} className={footerListItem}>
+                  <a href="#" className={footerLink}>
+                    {item}
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          <div className={footerCol}>
+            <p className={footerTitle}>Contactos</p>
+            <address className={footerContactAddress}>
+              <p className={footerContactStrong}>Av. dos Descobrimentos, 333</p>
+              <p className={footerContactStrong}>4400-103 Santa Marinha - V.N.Gaia</p>
+              <p className={footerContactPhone}>
+                (+351) 223 745 730 <span className={footerContactHint}>O valor da chamada corresponde ao valor de uma chamada para a rede fixa, em funcao do seu plano tarifario.</span>
+              </p>
+              <p className={footerContactEmail}>info@ispgaya.pt</p>
+            </address>
+
+            <div className={footerCertRow}>
+              <img className={footerCertIcon} src={iso9001} alt="ISO 9001" width={142} height={155} />
+              <img className={footerCertIcon} src={iso21001} alt="ISO 21001" width={404} height={446} />
+              <img className={footerCertIcon} src={iso14001} alt="ISO 14001" width={404} height={446} />
+            </div>
           </div>
         </div>
-      </div>
+
+        <div className={footerBottomContainer}>
+          <div className={footerBottomInner}>
+            <div className={footerBottomText}>
+              <span className={footerBottomCopyright}>© 2026 Instituto Superior Politecnico Gaya</span>
+              <span className={footerBottomUpdated}>Atualizado em 02/03/2026 - 12:28</span>
+            </div>
+
+            <div className={footerBottomLinks}>
+              <a href="#" className={footerBottomLink}>
+                Termos e Condicoes
+              </a>
+              <span className={footerBottomSeparator}>/</span>
+              <a href="#" className={footerBottomLink}>
+                Politica de Privacidade
+              </a>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <img src={gaiaSkyline} width={795} height={140} className={footerBottomGaia} alt="Vila Nova de Gaia" />
     </footer>
   );
 }
