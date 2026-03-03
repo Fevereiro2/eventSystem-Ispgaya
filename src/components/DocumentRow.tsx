@@ -1,6 +1,8 @@
+import { Download } from 'lucide-react';
 import {
-  docAction,
   docBadge,
+  docDownloadAction,
+  docDownloadIcon,
   docMain,
   docMeta,
   docName,
@@ -17,16 +19,17 @@ type DocumentRowProps = {
 function DocumentRow({ name, meta, href }: DocumentRowProps) {
   return (
     <article className={docRow}>
+      <span className={docBadge}>PDF</span>
+
       <div className={docMain}>
         <div className={docTop}>
-          <span className={docBadge}>PDF</span>
           <h3 className={docName}>{name}</h3>
         </div>
         <p className={docMeta}>{meta}</p>
       </div>
 
-      <a href={href} className={docAction}>
-        Abrir / Download
+      <a href={href} className={docDownloadAction} aria-label={`Download ${name}`}>
+        <Download className={docDownloadIcon} />
       </a>
     </article>
   );

@@ -13,10 +13,10 @@ import logo from '../assets/ispgaya-logo.svg';
 const menuItems = [
   'Instituicao',
   'Ensino',
+  'Empregabilidade',
   'Investigacao',
   'Internacional',
-  'Noticias',
-  'Contactos'
+  'Vida Academica'
 ];
 
 function HeaderNav() {
