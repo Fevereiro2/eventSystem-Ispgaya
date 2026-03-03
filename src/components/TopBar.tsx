@@ -5,34 +5,40 @@ import {
   topBarInner,
   topBarLink,
   topBarLocale,
-  topBarLogo
+  topBarLocaleWrap,
+  topBarSeparator
 } from '../styles/ui';
-import logoNegative from '../assets/ispgaya-logo-negative.svg';
 
-const leftLinks = ['PT', 'EN'];
-const rightLinks = ['Email', 'Inforestudante', 'Biblioteca'];
+const leftLinks = ['Inforestudante', 'Infordocente', 'Email', 'Horarios'];
+const rightLinks = ['Perguntas Frequentes', 'Candidatura Online', 'Contactos'];
 
 function TopBar() {
   return (
     <div className={topBar}>
       <div className={`${container} ${topBarInner}`}>
         <div className={topBarGroup}>
-          <img src={logoNegative} alt="ISPGAYA" className={topBarLogo} />
+          {leftLinks.map((item) => (
+            <a key={item} href="#" className={topBarLink}>
+              {item}
+            </a>
+          ))}
         </div>
+
         <div className={topBarGroup}>
-          <span className={topBarLocale}>
-            {leftLinks.map((item, index) => (
-              <a key={item} href="#" className={topBarLink}>
-                {item}
-                {index === 0 ? ' |' : ''}
-              </a>
-            ))}
-          </span>
           {rightLinks.map((item) => (
             <a key={item} href="#" className={topBarLink}>
               {item}
             </a>
           ))}
+          <span className={topBarLocaleWrap}>
+            <a href="#" className={topBarLocale}>
+              PT
+            </a>
+            <span className={topBarSeparator}>|</span>
+            <a href="#" className={topBarLocale}>
+              EN
+            </a>
+          </span>
         </div>
       </div>
     </div>
