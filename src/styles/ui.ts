@@ -16,16 +16,16 @@ export const topBarLocaleActive =
   'text-black transition-opacity hover:opacity-80 font-bold';
 export const topBarLocale = 'text-black transition-opacity hover:opacity-80';
 
-export const headerNav = 'border-b border-slate-200 bg-white';
+export const headerNav = 'relative z-[80] border-b border-slate-200 bg-white';
 export const headerNavInner = 'flex items-center justify-between gap-6 py-4';
 export const brandWrap = 'flex items-center';
 export const brandLogo = 'h-11 w-auto md:h-12';
-export const desktopMenu = 'hidden items-center gap-7 lg:flex';
+export const desktopMenu = 'relative z-[80] hidden items-center gap-7 lg:flex';
 export const navLink =
   'text-[14px] font-medium text-[#3f4a58] transition-colors hover:text-[#dd8609]';
 export const navItemGroup = 'group relative';
 export const navDropdownWrap =
-  'right-0 transition-opacity pt-2 absolute w-64 hidden opacity-0 group-hover:block group-hover:opacity-100';
+  'right-0 z-[90] transition-opacity pt-2 absolute w-72 hidden opacity-0 group-hover:block group-hover:opacity-100 group-focus-within:block group-focus-within:opacity-100';
 export const navDropdownList =
   'bg-white border border-gray-100 rounded shadow-lg px-4 py-3 space-y-3';
 export const navDropdownItem =
