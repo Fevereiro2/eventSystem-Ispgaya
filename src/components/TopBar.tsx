@@ -4,13 +4,56 @@ import {
   topBarGroup,
   topBarInner,
   topBarLink,
+  topBarLocaleActive,
   topBarLocale,
   topBarLocaleWrap,
-  topBarSeparator
+  topBarRightGroup,
+  topBarRightLinks
 } from '../styles/ui';
 
-const leftLinks = ['Inforestudante', 'Infordocente', 'Email', 'Horarios'];
-const rightLinks = ['Perguntas Frequentes', 'Candidatura Online', 'Contactos'];
+const leftLinks = [
+  {
+    label: 'Inforestudante',
+    href: 'https://inforestudante.ispgaya.pt',
+    target: '_blank',
+    rel: 'noindex nofollow'
+  },
+  {
+    label: 'Infordocente',
+    href: 'https://infordocente.ispgaya.pt',
+    target: '_blank',
+    rel: 'noindex nofollow'
+  },
+  {
+    label: 'Email',
+    href: 'https://outlook.office.com',
+    target: '_blank',
+    rel: 'noindex nofollow'
+  },
+  {
+    label: 'Horarios',
+    href: 'https://horarios.ispgaya.pt/geral/',
+    target: '_blank',
+    rel: 'noindex nofollow'
+  }
+];
+
+const rightLinks = [
+  {
+    label: 'Perguntas Frequentes',
+    href: 'https://ispgaya.pt/pt/perguntas-frequentes'
+  },
+  {
+    label: 'Candidatura Online',
+    href: 'https://inforestudante.ispgaya.pt/nonio/security/preRegisto.do?origem=CANDIDATURAS',
+    target: '_blank',
+    rel: 'noopener noreferrer'
+  },
+  {
+    label: 'Contactos',
+    href: 'https://ispgaya.pt/pt/instituicao/contactos'
+  }
+];
 
 function TopBar() {
   return (
@@ -18,29 +61,55 @@ function TopBar() {
       <div className={`${container} ${topBarInner}`}>
         <div className={topBarGroup}>
           {leftLinks.map((item) => (
-            <a key={item} href="#" className={topBarLink}>
-              {item}
+            <a
+              key={item.label}
+              href={item.href}
+              target={item.target}
+              rel={item.rel}
+              className={topBarLink}
+            >
+              {item.label}
             </a>
           ))}
         </div>
 
-        <div className={topBarGroup}>
-          {rightLinks.map((item) => (
-            <a key={item} href="#" className={topBarLink}>
-              {item}
-            </a>
-          ))}
+        <div className={topBarRightGroup}>
+          <div className={topBarRightLinks}>
+            {rightLinks.map((item) => (
+              <a
+                key={item.label}
+                href={item.href}
+                target={item.target}
+                rel={item.rel}
+                className={topBarLink}
+              >
+                {item.label}
+              </a>
+            ))}
+          </div>
           <span className={topBarLocaleWrap}>
-            <a href="#" className={topBarLocale}>
+            <a
+              href="https://ispgaya.pt/pt/investigacao/publicacoes-cientificas"
+              title="pt"
+              rel="alternate"
+              hrefLang="pt"
+              className={topBarLocaleActive}
+            >
               PT
             </a>
-            <span className={topBarSeparator}>|</span>
-            <a href="#" className={topBarLocale}>
+            <a
+              href="https://ispgaya.pt/en/investigacao/publicacoes-cientificas"
+              title="en"
+              rel="alternate"
+              hrefLang="en"
+              className={topBarLocale}
+            >
               EN
             </a>
           </span>
         </div>
       </div>
+      <hr />
     </div>
   );
 }
