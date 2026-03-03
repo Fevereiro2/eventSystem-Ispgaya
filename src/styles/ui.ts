@@ -1,81 +1,121 @@
-export const appRoot =
-  'min-h-screen bg-[linear-gradient(180deg,#ffffff_0%,#f7f5f2_100%)] text-brand-ink [font-family:IspgayaSans,ui-sans-serif,system-ui,sans-serif]';
+export const appRoot = 'min-h-screen bg-white font-sans text-slate-800 antialiased';
 
 export const container = 'mx-auto w-full max-w-6xl px-4 sm:px-6 lg:px-8';
 export const sectionSpace = 'py-12 md:py-16';
 
-export const topBar = 'bg-brand-ink text-slate-200';
-export const topBarInner = 'flex flex-wrap items-center justify-between gap-3 py-2';
+export const topBar = 'border-b border-slate-200 bg-[#f7f8fa]';
+export const topBarInner = 'flex flex-wrap items-center justify-between gap-2 py-2';
 export const topBarGroup =
-  'flex flex-wrap items-center gap-x-4 gap-y-1 text-[11px] font-medium uppercase tracking-[0.12em] sm:text-xs';
-export const topBarLink = 'transition-colors hover:text-accent-soft';
-export const topBarLogo = 'h-5 w-auto opacity-95';
-export const topBarLocale =
-  'inline-flex items-center gap-1.5 rounded-full border border-white/20 px-2.5 py-0.5';
+  'flex flex-wrap items-center gap-x-4 gap-y-1 text-[11px] leading-none text-slate-600';
+export const topBarLink =
+  'text-[11px] font-medium transition-colors hover:text-[#dd8609]';
+export const topBarLocaleWrap = 'flex items-center gap-2';
+export const topBarLocale = 'text-[11px] font-semibold text-slate-700';
+export const topBarSeparator = 'text-slate-400';
 
-export const headerNav = 'border-b border-[#e4ddd4] bg-white';
+export const headerNav = 'border-b border-slate-200 bg-white';
 export const headerNavInner = 'flex items-center justify-between gap-6 py-4';
 export const brandWrap = 'flex items-center';
-export const brandLogo = 'h-11 w-auto sm:h-12';
+export const brandLogo = 'h-11 w-auto md:h-12';
 export const desktopMenu = 'hidden items-center gap-7 lg:flex';
 export const navLink =
-  'text-[13px] font-semibold uppercase tracking-[0.1em] text-brand-stone transition-colors hover:text-accent';
+  'text-[14px] font-medium text-[#3f4a58] transition-colors hover:text-[#dd8609]';
 export const mobileMenuButton =
-  'inline-flex items-center rounded-lg border border-[#d4ccc3] px-3 py-2 text-xs font-semibold uppercase tracking-wide text-brand-stone transition-colors hover:border-accent hover:text-accent lg:hidden';
+  'inline-flex items-center rounded-lg border border-slate-300 px-3 py-2 text-xs font-semibold uppercase tracking-wide text-slate-600 transition-colors hover:border-[#dd8609] hover:text-[#dd8609] lg:hidden';
 
-export const breadcrumbsWrap = 'border-b border-[#ece5dd] bg-brand-fog';
-export const breadcrumbsInner = 'flex items-center gap-2 py-3 text-sm text-brand-stone';
-export const breadcrumbsLink = 'transition-colors hover:text-accent-deep';
-export const breadcrumbsCurrent = 'font-semibold text-brand-ink';
+export const breadcrumbsWrap = 'border-b border-slate-200 bg-white';
+export const breadcrumbsInner = 'flex items-center gap-2 py-3 text-sm text-slate-500';
+export const breadcrumbsLink = 'transition-colors hover:text-[#dd8609]';
+export const breadcrumbsCurrent = 'font-medium text-slate-700';
+export const heroPatternWrap =
+  "relative mt-2 md:mt-6 before:hidden before:content-[''] before:absolute before:inset-0 before:bg-[linear-gradient(125deg,rgba(221,134,9,0.08),transparent_40%)] before:pointer-events-none after:hidden after:content-[''] after:absolute after:inset-0 after:bg-[radial-gradient(circle_at_25%_20%,rgba(15,23,42,0.12)_1px,transparent_1px)] after:[background-size:18px_18px] after:opacity-20 after:pointer-events-none lg:before:block lg:after:block hero-triangles hero-dots-pattern";
+export const heroPatternSection = 'relative z-10';
+export const breadcrumbsNav = 'relative z-10 flex';
+export const breadcrumbsList = 'hidden items-center space-x-1 pl-1 md:flex md:space-x-2';
+export const breadcrumbsItemMuted = 'items-center text-gray-500 hover:text-gray-600 md:flex';
+export const breadcrumbsItemCurrent = 'items-center font-semibold text-black md:flex';
+export const breadcrumbsSlash = 'ml-1 flex-shrink-0 md:ml-2';
+export const breadcrumbsAnchor = 'text-sm';
+export const heroIntroWrap = 'mt-6 max-w-4xl';
+export const heroIntroTitle = 'mb-2 font-heading text-4xl font-semibold text-slate-900';
+export const heroIntroText = 'mt-0 max-w-3xl text-[17px] leading-normal text-slate-700';
 
-export const mainContent = 'bg-transparent';
-export const heroWrap = 'relative overflow-hidden border-b border-[#ebe3db] bg-white';
-export const heroImage =
-  'pointer-events-none absolute inset-y-0 right-0 hidden h-full w-[56%] object-cover object-center opacity-35 md:block';
-export const heroOverlay =
-  'pointer-events-none absolute inset-0 bg-gradient-to-r from-white via-white/95 to-white/45';
-export const heroContent = 'relative z-10';
-export const pageTitle =
-  'text-3xl font-semibold tracking-tight text-brand-ink md:text-4xl';
-export const leadText =
-  'mt-5 max-w-3xl text-base leading-7 text-brand-stone md:text-lg';
+export const mainContent = 'bg-white';
+export const heroWrap = 'border-b border-slate-100 py-10 md:py-12';
+export const heroContent = '';
+export const pageTitle = 'font-heading text-4xl font-semibold text-slate-900 md:text-5xl';
+export const leadText = 'mt-5 max-w-3xl text-[16px] leading-8 text-slate-600 md:text-lg';
 
-export const blockTitle =
-  'text-2xl font-semibold tracking-tight text-brand-ink md:text-[1.75rem]';
-export const blockText = 'mt-4 max-w-3xl text-base leading-7 text-brand-stone';
+export const blockTitle = 'font-heading text-[32px] font-semibold text-slate-900';
+export const blockText = 'mt-4 max-w-3xl text-base leading-7 text-slate-600';
 
+export const statsSection = 'pb-8 pt-12';
 export const statsGrid = 'mt-8 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5';
 export const statCard =
-  'rounded-2xl border border-[#e8e1d9] bg-white p-6 shadow-sm transition-transform duration-200 hover:-translate-y-0.5';
-export const statValue = 'text-4xl font-semibold text-accent-deep';
-export const statLabel =
-  'mt-2 text-xs font-semibold uppercase tracking-[0.12em] text-brand-stone';
+  'rounded-xl border border-slate-200 bg-white p-5 text-center shadow-[0_1px_4px_rgba(15,23,42,0.06)]';
+export const statValue = 'text-3xl font-semibold text-[#dd8609]';
+export const statLabel = 'mt-2 text-xs font-semibold uppercase tracking-[0.12em] text-slate-500';
 
-export const docsSection = 'border-t border-[#ebe3db]';
-export const docsList = 'mt-6 space-y-3';
+export const pieSection = 'pb-12 pt-4 md:pb-14';
+export const pieChartWrap = 'mt-8 flex flex-col items-center';
+export const pieTitle = 'font-heading text-[28px] font-semibold text-slate-900';
+export const pieSubtitle =
+  'mt-2 text-sm font-medium uppercase tracking-[0.08em] text-slate-500';
+export const pieCircle =
+  'h-[320px] w-[320px] rounded-full border border-slate-200 shadow-sm md:h-[420px] md:w-[420px]';
+export const pieLegend =
+  'mt-8 flex max-w-4xl flex-wrap items-center justify-center gap-x-7 gap-y-3';
+export const pieLegendItem = 'flex items-center gap-2 text-sm text-slate-600';
+export const pieLegendDot = 'h-3 w-3 rounded-full';
+
+export const docsSection = 'border-t border-slate-100 pb-16';
+export const docsList = 'mt-6 max-w-4xl';
 export const docRow =
-  'flex flex-col gap-3 rounded-2xl border border-[#e8e1d9] bg-white p-4 shadow-sm sm:flex-row sm:items-center sm:justify-between sm:p-5';
-export const docMain = 'space-y-1';
-export const docTop = 'flex flex-wrap items-center gap-2';
+  'flex items-center gap-4 rounded-xl border border-[#e7ebf0] bg-[#f4f6f8] px-4 py-4';
 export const docBadge =
-  'inline-flex rounded-full bg-accent px-2.5 py-1 text-xs font-semibold uppercase tracking-wide text-white';
-export const docName = 'text-base font-semibold text-brand-ink';
-export const docMeta = 'text-sm text-brand-stone';
-export const docAction =
-  'inline-flex items-center justify-center rounded-lg border border-accent px-4 py-2 text-sm font-semibold text-accent-deep transition-colors hover:bg-accent hover:text-white';
+  'flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-slate-300 text-[11px] font-bold tracking-[0.12em] text-slate-700';
+export const docMain = 'min-w-0 flex-1';
+export const docTop = 'flex items-center';
+export const docName = 'truncate text-[15px] font-medium text-slate-800';
+export const docMeta = 'mt-1 text-xs text-slate-500';
+export const docDownloadAction =
+  'flex h-10 w-10 shrink-0 items-center justify-center rounded-md text-slate-500 transition-colors hover:text-[#dd8609]';
+export const docDownloadIcon = 'h-5 w-5';
 
-export const footerWrap = 'mt-16 border-t border-[#d6cec4] bg-brand-ink text-slate-200';
-export const footerGrid = 'grid grid-cols-1 gap-10 py-12 sm:grid-cols-2 lg:grid-cols-4';
-export const footerBrand = 'space-y-4';
-export const footerLogo = 'h-10 w-auto';
-export const footerBrandText = 'max-w-xs text-sm leading-6 text-slate-300';
-export const footerCertRow = 'flex flex-wrap items-center gap-3';
-export const footerCertIcon = 'h-9 w-auto opacity-90';
-export const footerTitle =
-  'text-sm font-semibold uppercase tracking-[0.18em] text-accent-soft';
-export const footerList = 'mt-4 space-y-2';
-export const footerLink = 'text-sm text-slate-300 transition-colors hover:text-accent-soft';
-export const footerBottom = 'border-t border-white/10 py-4';
+export const footerWrap = 'relative z-10 mt-auto w-full bg-[#151B26]';
+export const footerSection =
+  'relative z-10 container mx-auto px-4 pb-8 pt-16 sm:px-6 xl:px-8';
+export const footerGrid = 'grid gap-4 text-white md:grid-cols-5';
+export const footerCol = 'mt-4 sm:mt-0';
+export const footerBrand = '';
+export const footerLogo = 'block h-auto w-[175px]';
+export const footerFollowTitle = 'mt-5 text-lg font-bold tracking-tight';
+export const footerSocialLinks = 'mt-2 flex items-center space-x-4 text-white';
+export const footerSocialLink = 'transition-opacity hover:opacity-80';
+export const footerSocialIcon = 'h-5 w-5';
+export const footerSrOnly = 'sr-only';
+export const footerTitle = 'text-lg font-bold';
+export const footerSubTitle = 'text-lg font-bold';
+export const footerList = 'mt-4 space-y-2 text-sm text-gray-300';
+export const footerListItem = 'underline-offset-2 hover:underline';
+export const footerLink = '';
+export const footerContactAddress = 'mt-4 not-italic';
+export const footerContactStrong = 'font-bold not-italic';
+export const footerContactPhone = 'mt-1 text-gray-300';
+export const footerContactHint = 'inline-block text-xs text-gray-400';
+export const footerContactEmail = 'text-gray-300';
+export const footerCertRow = 'mt-5 flex gap-4';
+export const footerCertIcon = 'w-[62px]';
+
+export const footerBottomContainer =
+  'relative mx-auto mt-12 max-w-screen-2xl px-4 sm:px-6 xl:px-8';
 export const footerBottomInner =
-  'flex flex-col gap-2 text-sm text-slate-400 sm:flex-row sm:items-center sm:justify-between';
-export const footerBottomLinks = 'flex items-center gap-4';
+  'flex flex-col border-t border-white/20 pt-6 md:flex-row md:items-center md:justify-between';
+export const footerBottomText = 'text-xs text-white';
+export const footerBottomCopyright = 'block md:inline';
+export const footerBottomUpdated = 'block md:inline md:ml-4';
+export const footerBottomLinks = 'mt-2 text-xs text-white md:mt-0';
+export const footerBottomLink = 'underline-offset-2 hover:underline';
+export const footerBottomSeparator = 'px-3';
+export const footerBottomGaia =
+  'pointer-events-none absolute bottom-0 -left-12 h-auto w-[795px] opacity-10';
