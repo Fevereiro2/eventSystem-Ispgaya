@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom';
 import {
   brandLogo,
   brandWrap,
@@ -15,10 +16,14 @@ import {
 } from '../styles/ui';
 import logo from '../assets/ispgaya-logo.svg';
 
-type MenuItem = {
+type LinkItem = {
   label: string;
   href: string;
-  dropdown?: Array<{ label: string; href: string }>;
+  internal?: boolean;
+};
+
+type MenuItem = LinkItem & {
+  dropdown?: LinkItem[];
 };
 
 const menuItems: MenuItem[] = [
@@ -60,7 +65,10 @@ const menuItems: MenuItem[] = [
     label: 'Empregabilidade',
     href: 'https://ispgaya.pt/pt/empregabilidade',
     dropdown: [
-      { label: 'Estagios e Emprego', href: 'https://ispgaya.pt/pt/empregabilidade/estagios-e-emprego' },
+      {
+        label: 'Estagios e Emprego',
+        href: 'https://ispgaya.pt/pt/empregabilidade/estagios-e-emprego'
+      },
       { label: 'Alumni', href: 'https://ispgaya.pt/pt/empregabilidade/alumni' }
     ]
   },
@@ -78,34 +86,30 @@ const menuItems: MenuItem[] = [
       },
       { label: 'Biblioteca', href: 'https://ispgaya.pt/pt/investigacao/biblioteca' },
       { label: 'WIDESKILLS', href: 'https://ispgaya.pt/pt/investigacao/wideskills' },
-      {
-        label: 'Politecnica',
-        href: 'https://ispgaya.pt/pt/investigacao/politecnica-revista'
-      }
+      { label: 'Politecnica', href: 'https://ispgaya.pt/pt/investigacao/politecnica-revista' }
     ]
   },
   {
     label: 'Internacional',
     href: 'https://ispgaya.pt/pt/internacional',
     dropdown: [
-      {
-        label: 'Estudantes Internacionais',
-        href: 'https://international.ispgaya.pt/pt'
-      },
+      { label: 'Estudantes Internacionais', href: 'https://international.ispgaya.pt/pt' },
       { label: 'Erasmus+', href: 'https://ispgaya.pt/pt/internacional/erasmus+' },
       { label: 'Guia ECTS', href: 'https://ispgaya.pt/pt/internacional/guia-ects' }
     ]
   },
   {
     label: 'Laboratorio Cultural',
-    href: 'https://ispgaya.pt/pt/internacional',
+    href: '/laboratorio-cultural',
+    internal: true,
     dropdown: [
+      { label: 'Tuna Academica', href: '/laboratorio-cultural/tuna', internal: true },
       {
-        label: 'Estudantes Internacionais',
-        href: 'https://international.ispgaya.pt/pt'
+        label: 'Clube de Leitura',
+        href: '/laboratorio-cultural/clube-leitura',
+        internal: true
       },
-      { label: 'Erasmus+', href: 'https://ispgaya.pt/pt/internacional/erasmus+' },
-      { label: 'Guia ECTS', href: 'https://ispgaya.pt/pt/internacional/guia-ects' }
+      { label: 'Teatro', href: '/laboratorio-cultural/teatro', internal: true }
     ]
   },
   {
@@ -122,45 +126,48 @@ const menuItems: MenuItem[] = [
         label: 'Associacao de Estudantes',
         href: 'https://ispgaya.pt/pt/vida-academica/associacao-estudantes'
       },
-      {
-        label: 'Tuna Academica',
-        href: 'https://ispgaya.pt/pt/vida-academica/tuna-academica'
-      }
+      { label: 'Tuna Academica', href: 'https://ispgaya.pt/pt/vida-academica/tuna-academica' }
     ]
   }
 ];
+
+function renderMenuLink(item: LinkItem, className: string) {
+  return item.internal ? (
+    <Link to={item.href} className={className}>
+      {item.label}
+    </Link>
+  ) : (
+    <a href={item.href} className={className}>
+      {item.label}
+    </a>
+  );
+}
 
 function HeaderNav() {
   return (
     <header className={headerNav}>
       <div className={`${container} ${headerNavInner}`}>
-        <a href="#" className={brandWrap}>
+        <Link to="/" className={brandWrap}>
           <img src={logo} alt="ISPGAYA" className={brandLogo} />
-        </a>
+        </Link>
 
         <nav className={desktopMenu} aria-label="Principal">
           {menuItems.map((item) =>
             item.dropdown ? (
               <div key={item.label} className={navItemGroup}>
-                <a href={item.href} className={navLink}>
-                  {item.label}
-                </a>
+                {renderMenuLink(item, navLink)}
                 <div className={navDropdownWrap}>
                   <ul className={navDropdownList}>
                     {item.dropdown.map((child) => (
                       <li key={child.label} className={navDropdownItem}>
-                        <a className={navDropdownAnchor} href={child.href}>
-                          {child.label}
-                        </a>
+                        {renderMenuLink(child, navDropdownAnchor)}
                       </li>
                     ))}
                   </ul>
                 </div>
               </div>
             ) : (
-              <a key={item.label} href={item.href} className={navLink}>
-                {item.label}
-              </a>
+              <div key={item.label}>{renderMenuLink(item, navLink)}</div>
             )
           )}
         </nav>
