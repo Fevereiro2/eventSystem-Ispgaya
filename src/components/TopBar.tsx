@@ -26,7 +26,7 @@ const leftLinks = [
   },
   {
     label: 'Infocultura',
-    href: '',
+    href: '/infocultura',
     target: '_blank',
     rel: 'noindex nofollow'
   },
