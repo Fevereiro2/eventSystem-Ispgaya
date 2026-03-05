@@ -81,6 +81,48 @@ export const contentItemStatus =
   'inline-flex items-center rounded-full bg-orange-100 px-2.5 py-1 text-xs font-semibold text-orange-700';
 export const contentEmpty =
   'mt-6 rounded-lg border border-dashed border-slate-300 p-5 text-sm text-slate-500';
+export const labIntroSection = 'border-b border-slate-100 bg-white py-10 md:py-14';
+export const labKicker =
+  'inline-flex items-center rounded-full bg-orange-100 px-3 py-1 text-xs font-semibold uppercase tracking-[0.12em] text-orange-700';
+export const labHeadline = 'mt-4 font-heading text-4xl font-semibold text-slate-900 md:text-5xl';
+export const labLead = 'mt-4 max-w-4xl text-base leading-8 text-slate-600 md:text-lg';
+export const labHighlightStrip =
+  'mt-8 grid grid-cols-2 gap-3 md:grid-cols-4';
+export const labHighlightCard =
+  'rounded-xl border border-slate-200 bg-slate-50 px-4 py-4 text-center';
+export const labHighlightValue = 'text-xl font-semibold text-slate-900 md:text-2xl';
+export const labHighlightLabel =
+  'mt-1 text-[11px] font-semibold uppercase tracking-[0.1em] text-slate-500';
+export const labOfferSection = 'bg-[#f7f8fb] py-10 md:py-14';
+export const labFilters = 'mb-6 flex flex-wrap gap-2';
+export const labFilter =
+  'rounded-full border border-slate-300 bg-white px-4 py-1.5 text-sm font-medium text-slate-700 transition-colors hover:border-[#dd8609] hover:text-[#dd8609]';
+export const labFilterActive =
+  'rounded-full border border-[#dd8609] bg-orange-50 px-4 py-1.5 text-sm font-semibold text-[#dd8609]';
+export const labOfferLayout = 'grid grid-cols-1 gap-5 lg:grid-cols-[280px_1fr]';
+export const labSidebar =
+  'rounded-2xl border border-slate-200 bg-white p-5 shadow-[0_1px_3px_rgba(15,23,42,0.05)]';
+export const labSidebarTitle = 'text-base font-semibold text-slate-900';
+export const labSidebarText = 'mt-2 text-sm leading-6 text-slate-600';
+export const labSidebarList = 'mt-5 space-y-2';
+export const labSidebarItem =
+  'rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm font-medium text-slate-700';
+export const labSidebarItemActive =
+  'rounded-lg border border-orange-200 bg-orange-50 px-3 py-2 text-sm font-semibold text-[#dd8609]';
+export const labCardsGrid = 'grid grid-cols-1 gap-4 md:grid-cols-2';
+export const labCard =
+  'group rounded-2xl border border-slate-200 bg-white p-5 shadow-[0_1px_4px_rgba(15,23,42,0.06)] transition-transform duration-200 hover:-translate-y-0.5';
+export const labCardTop = 'flex items-center justify-between gap-3';
+export const labCardBadge =
+  'inline-flex rounded-full bg-slate-100 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.08em] text-slate-600';
+export const labCardStatus =
+  'inline-flex rounded-full bg-green-100 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.08em] text-green-700';
+export const labCardTitle = 'mt-4 font-heading text-2xl font-semibold text-slate-900';
+export const labCardText = 'mt-3 text-sm leading-7 text-slate-600';
+export const labCardMetaRow = 'mt-5 flex items-center justify-between gap-2';
+export const labCardMeta = 'text-xs font-medium uppercase tracking-[0.08em] text-slate-500';
+export const labCardLink =
+  'text-sm font-semibold text-[#dd8609] underline-offset-2 group-hover:underline';
 
 export const adminHeaderRow =
   'mb-6 flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 pb-4';
