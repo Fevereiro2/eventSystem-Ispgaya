@@ -140,6 +140,20 @@ export const infoRightBody = 'mt-4';
 export const infoForgot = 'mt-2 inline-block text-sm text-[#dd8609] underline-offset-2 hover:underline';
 export const infoSubmitRow = 'mt-4 min-h-[50px] text-center';
 export const infoHelperText = 'mt-2 text-sm leading-6 text-slate-600';
+export const infoPage = 'min-h-screen bg-slate-100';
+export const infoPageHeader =
+  'border-b border-slate-200 bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/85';
+export const infoPageHeaderInner =
+  'mx-auto flex w-full max-w-6xl items-center justify-between px-4 py-3 sm:px-6 lg:px-8';
+export const infoPageBrand = 'text-lg font-semibold tracking-tight text-slate-900';
+export const infoPageBrandAccent = 'text-[#dd8609]';
+export const infoPageNav = 'flex items-center gap-3';
+export const infoPageNavLink =
+  'rounded-md border border-slate-300 px-3 py-2 text-sm font-medium text-slate-700 transition-colors hover:border-[#dd8609] hover:text-[#dd8609]';
+export const infoPageMain = 'pb-10 pt-6 md:pt-8';
+export const infoPageFooter = 'mt-8 border-t border-slate-200 bg-white';
+export const infoPageFooterInner =
+  'mx-auto w-full max-w-6xl px-4 py-4 text-xs text-slate-500 sm:px-6 lg:px-8';
 
 export const statsSection = 'pb-8 pt-12';
 export const statsGrid = 'mt-8 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5';
