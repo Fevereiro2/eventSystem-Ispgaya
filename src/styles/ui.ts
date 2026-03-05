@@ -154,6 +154,47 @@ export const infoPageMain = 'pb-10 pt-6 md:pt-8';
 export const infoPageFooter = 'mt-8 border-t border-slate-200 bg-white';
 export const infoPageFooterInner =
   'mx-auto w-full max-w-6xl px-4 py-4 text-xs text-slate-500 sm:px-6 lg:px-8';
+export const infoLegacyPage = 'flex min-h-screen flex-col bg-[#eceff3] text-slate-800';
+export const infoLegacyHeader = 'border-b border-slate-300 bg-white';
+export const infoLegacyHeaderInner =
+  'mx-auto flex w-full max-w-6xl items-center justify-between px-4 py-4 sm:px-6 lg:px-8';
+export const infoLegacyBrandWrap = 'flex items-center gap-3';
+export const infoLegacyBrandMark =
+  'flex h-9 w-9 items-center justify-center rounded-sm bg-[#dd8609] text-xs font-bold tracking-[0.12em] text-white';
+export const infoLegacyBrandLogo = 'h-11 w-auto';
+export const infoLegacyBrandText = 'text-xl font-semibold tracking-tight text-slate-900';
+export const infoLegacyBrandSub = 'text-xs text-slate-500';
+export const infoLegacyLang = 'text-sm font-semibold tracking-tight text-slate-700';
+export const infoLegacyMain = 'flex-1 px-4 py-6 sm:px-6 md:py-10 lg:px-8';
+export const infoLegacyPanel =
+  'mx-auto w-full max-w-6xl border border-slate-300 bg-white shadow-sm';
+export const infoLegacyGrid = 'grid grid-cols-1 lg:grid-cols-[1.1fr_0.9fr]';
+export const infoLegacyLeft = 'space-y-4 border-b border-slate-200 p-5 lg:border-b-0 lg:border-r';
+export const infoLegacyBlock = 'border border-slate-200 bg-slate-50 p-4';
+export const infoLegacyBlockTitle = 'text-lg font-semibold text-slate-900';
+export const infoLegacyBlockText = 'mt-2 text-sm leading-6 text-slate-700';
+export const infoLegacyBlockList = 'mt-3 list-disc space-y-1 pl-5 text-sm text-slate-700';
+export const infoLegacyRight = 'p-5 md:p-6';
+export const infoLegacyLoginTitle = 'text-2xl font-semibold tracking-tight text-slate-900';
+export const infoLegacyLoginHint = 'mt-1 text-sm text-slate-600';
+export const infoLegacyLoginForm = 'mt-5 space-y-4';
+export const infoLegacyInput =
+  'w-full rounded-none border border-slate-300 bg-white px-3 py-2 text-sm outline-none transition-colors focus:border-[#dd8609]';
+export const infoLegacyPrimaryButton =
+  'inline-flex items-center justify-center rounded-none border border-[#cb7a08] bg-[#dd8609] px-5 py-2 text-sm font-semibold text-white transition-colors hover:bg-[#cb7a08]';
+export const infoLegacyMeta = 'mt-4 text-xs text-slate-500';
+export const infoLegacyFooter = 'border-t border-slate-300 bg-white';
+export const infoLegacyFooterInner =
+  'mx-auto flex w-full max-w-6xl flex-col gap-1 px-4 py-3 text-xs text-slate-600 sm:px-6 md:flex-row md:items-center md:justify-between lg:px-8';
+export const infoLegacyLoginStage = 'relative min-h-screen overflow-hidden';
+export const infoLegacyBackdropImage =
+  'absolute inset-0 h-full w-full object-cover object-center';
+export const infoLegacyBackdropOverlay =
+  'absolute inset-0 bg-slate-900/55 backdrop-blur-[1px]';
+export const infoLegacyChrome = 'relative z-10 flex min-h-screen flex-col';
+export const infoLegacyCenter = 'relative z-10 flex flex-1 items-center justify-center p-4';
+export const infoLegacyLoginCard =
+  'w-full max-w-md rounded-xl border border-white/20 bg-white/95 p-6 shadow-2xl backdrop-blur';
 
 export const statsSection = 'pb-8 pt-12';
 export const statsGrid = 'mt-8 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5';
