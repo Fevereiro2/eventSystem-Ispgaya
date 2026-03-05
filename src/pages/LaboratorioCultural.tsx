@@ -53,6 +53,11 @@ function LaboratorioCultural() {
                     Teatro
                   </Link>
                 </li>
+                <li>
+                  <Link to="/laboratorio-cultural/infocultura" className={contentLink}>
+                    InfoCultura
+                  </Link>
+                </li>
               </ul>
             </div>
           </div>
