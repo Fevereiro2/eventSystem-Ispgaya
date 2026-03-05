@@ -70,6 +70,50 @@ export const contentCard =
   'max-w-4xl rounded-xl border border-slate-200 bg-white p-6 shadow-sm';
 export const contentList = 'mt-5 space-y-2';
 export const contentLink = 'font-medium text-[#dd8609] underline-offset-2 hover:underline';
+export const contentItems = 'mt-8 space-y-4';
+export const contentItemCard =
+  'rounded-lg border border-slate-200 bg-slate-50 p-4 shadow-sm';
+export const contentItemHeader = 'flex flex-wrap items-start justify-between gap-3';
+export const contentItemTitle = 'text-lg font-semibold text-slate-900';
+export const contentItemDate = 'text-xs font-medium uppercase tracking-wide text-slate-500';
+export const contentItemDesc = 'mt-2 text-sm leading-6 text-slate-700';
+export const contentItemStatus =
+  'inline-flex items-center rounded-full bg-orange-100 px-2.5 py-1 text-xs font-semibold text-orange-700';
+export const contentEmpty =
+  'mt-6 rounded-lg border border-dashed border-slate-300 p-5 text-sm text-slate-500';
+
+export const adminHeaderRow =
+  'mb-6 flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 pb-4';
+export const adminBadge =
+  'inline-flex items-center rounded-full bg-slate-900 px-3 py-1 text-xs font-semibold text-white';
+export const adminInfo = 'text-sm text-slate-600';
+export const adminLink =
+  'inline-flex items-center rounded-md border border-slate-300 px-3 py-2 text-sm font-medium text-slate-700 transition-colors hover:border-[#dd8609] hover:text-[#dd8609]';
+export const adminFormGrid = 'grid grid-cols-1 gap-4 md:grid-cols-2';
+export const adminField = 'space-y-1';
+export const adminLabel = 'text-sm font-semibold text-slate-700';
+export const adminInput =
+  'w-full rounded-md border border-slate-300 px-3 py-2 text-sm outline-none transition-colors focus:border-[#dd8609]';
+export const adminTextarea =
+  'w-full rounded-md border border-slate-300 px-3 py-2 text-sm outline-none transition-colors focus:border-[#dd8609]';
+export const adminActions = 'mt-4 flex flex-wrap gap-2';
+export const adminBtnPrimary =
+  'rounded-md bg-[#dd8609] px-4 py-2 text-sm font-semibold text-white transition-opacity hover:opacity-90';
+export const adminBtnSecondary =
+  'rounded-md border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 transition-colors hover:border-slate-400';
+export const adminBtnDanger =
+  'rounded-md border border-red-300 px-3 py-1.5 text-xs font-semibold text-red-700 transition-colors hover:bg-red-50';
+export const adminBtnEdit =
+  'rounded-md border border-slate-300 px-3 py-1.5 text-xs font-semibold text-slate-700 transition-colors hover:bg-slate-100';
+export const adminList = 'mt-8 space-y-3';
+export const adminListItem =
+  'rounded-lg border border-slate-200 bg-white p-4 shadow-sm';
+export const adminListTop = 'flex flex-wrap items-start justify-between gap-2';
+export const adminListTitle = 'text-base font-semibold text-slate-900';
+export const adminListMeta = 'mt-1 text-xs text-slate-500';
+export const adminListDesc = 'mt-2 text-sm text-slate-700';
+export const adminListTools = 'mt-3 flex gap-2';
+export const adminLoginWrap = 'max-w-md rounded-xl border border-slate-200 bg-white p-6 shadow-sm';
 
 export const statsSection = 'pb-8 pt-12';
 export const statsGrid = 'mt-8 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5';
