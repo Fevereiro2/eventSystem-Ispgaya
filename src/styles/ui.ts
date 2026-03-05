@@ -1,6 +1,6 @@
 export const appRoot = 'min-h-screen bg-white font-sans text-slate-800 antialiased';
 
-export const container = 'mx-auto w-full max-w-6xl px-4 sm:px-6 lg:px-8';
+export const container = 'mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8';
 export const sectionSpace = 'py-12 md:py-16';
 
 export const topBar = 'bg-white';
@@ -123,6 +123,17 @@ export const labCardMetaRow = 'mt-5 flex items-center justify-between gap-2';
 export const labCardMeta = 'text-xs font-medium uppercase tracking-[0.08em] text-slate-500';
 export const labCardLink =
   'text-sm font-semibold text-[#dd8609] underline-offset-2 group-hover:underline';
+export const labResearchSection = 'bg-white py-12 md:py-14';
+export const labResearchIntro = 'max-w-4xl text-base leading-8 text-slate-600 md:text-lg';
+export const labResearchGrid = 'mt-7 grid grid-cols-1 gap-3 md:grid-cols-2';
+export const labResearchHeroCard =
+  'rounded-2xl border border-slate-200 bg-slate-50 p-6 md:col-span-2';
+export const labResearchHeroTitle = 'font-heading text-[32px] font-semibold text-slate-900';
+export const labResearchHeroText = 'mt-3 max-w-3xl text-sm leading-7 text-slate-700';
+export const labResearchSubcard = 'rounded-2xl bg-white p-6';
+export const labResearchSubtitle = 'font-heading text-2xl font-semibold text-slate-900';
+export const labResearchSubtext = 'mt-3 text-sm leading-7 text-slate-700';
+export const labResearchLink = 'mt-5 inline-block text-sm font-semibold text-[#dd8609]';
 
 export const adminHeaderRow =
   'mb-6 flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 pb-4';
