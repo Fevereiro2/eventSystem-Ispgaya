@@ -4,15 +4,46 @@ import Footer from '../components/Footer';
 import HeaderNav from '../components/HeaderNav';
 import TopBar from '../components/TopBar';
 import {
-  blockText,
-  blockTitle,
   container,
-  contentCard,
-  contentLink,
-  contentList,
-  contentSection,
+  labResearchGrid,
+  labResearchHeroCard,
+  labResearchHeroText,
+  labResearchHeroTitle,
+  labResearchLink,
+  labResearchSection,
+  labResearchSubcard,
+  labResearchSubtext,
+  labResearchSubtitle,
   mainContent
 } from '../styles/ui';
+
+const culturalAreas = [
+  {
+    title: 'InfoCultura',
+    href: '/infocultura',
+    summary:
+      'A plataforma de gestao cultural agrega publicacoes, agenda e comunicacao das iniciativas do Laboratorio Cultural.',
+    featured: false
+  },
+  {
+    title: 'Tuna Academica',
+    href: '/laboratorio-cultural/tuna',
+    summary:
+      'Dinamica artistica orientada para repertorio, ensaios e representacoes no contexto academico e comunitario.'
+  },
+  {
+    title: 'Clube de Leitura',
+    href: '/laboratorio-cultural/clube-leitura',
+    summary:
+      'Espaco de debate e partilha de obras, com encontros regulares e atividades de mediacao de leitura.'
+  },
+  {
+    title: 'Teatro',
+    href: '/laboratorio-cultural/teatro',
+    summary:
+      'Projeto de expressao cenica com foco em criacao colaborativa, ensaios e apresentacoes tematicas.'
+  }
+];
 
 function LaboratorioCultural() {
   return (
@@ -21,7 +52,7 @@ function LaboratorioCultural() {
       <HeaderNav />
       <Breadcrumbs
         title="Laboratorio Cultural"
-        description="Espaco dedicado a dinamicas artisticas e culturais do ISPGAYA, com atividades de Tuna Academica, Clube de Leitura e Teatro."
+        description="A nossa abordagem cultural e interdisciplinar, promovendo criacao artistica, participacao academica e ligacao com a comunidade."
         parentLabel="Laboratorio Cultural"
         parentHref="/laboratorio-cultural"
         currentLabel="Laboratorio Cultural"
@@ -29,36 +60,30 @@ function LaboratorioCultural() {
       />
 
       <main className={mainContent}>
-        <section className={contentSection}>
+        <section className={labResearchSection}>
           <div className={container}>
-            <div className={contentCard}>
-              <h2 className={blockTitle}>Areas do Laboratorio</h2>
-              <p className={blockText}>
-                Escolhe a area que queres desenvolver. Cada bloco tem pagina propria
-                para poderes continuar a construir conteudo especifico.
-              </p>
-              <ul className={contentList}>
-                <li>
-                  <Link to="/laboratorio-cultural/tuna" className={contentLink}>
-                    Tuna Academica
-                  </Link>
-                </li>
-                <li>
-                  <Link to="/laboratorio-cultural/clube-leitura" className={contentLink}>
-                    Clube de Leitura
-                  </Link>
-                </li>
-                <li>
-                  <Link to="/laboratorio-cultural/teatro" className={contentLink}>
-                    Teatro
-                  </Link>
-                </li>
-                <li>
-                  <Link to="/laboratorio-cultural/infocultura" className={contentLink}>
-                    InfoCultura
-                  </Link>
-                </li>
-              </ul>
+
+
+            <div className={labResearchGrid}>
+              {culturalAreas.map((area) =>
+                area.featured ? (
+                  <article key={area.title} className={labResearchHeroCard}>
+                    <h2 className={labResearchHeroTitle}>{area.title}</h2>
+                    <p className={labResearchHeroText}>{area.summary}</p>
+                    <Link to={area.href} className={labResearchLink}>
+                      Ver mais
+                    </Link>
+                  </article>
+                ) : (
+                  <article key={area.title} className={labResearchSubcard}>
+                    <h3 className={labResearchSubtitle}>{area.title}</h3>
+                    <p className={labResearchSubtext}>{area.summary}</p>
+                    <Link to={area.href} className={labResearchLink}>
+                      Ver mais
+                    </Link>
+                  </article>
+                )
+              )}
             </div>
           </div>
         </section>
