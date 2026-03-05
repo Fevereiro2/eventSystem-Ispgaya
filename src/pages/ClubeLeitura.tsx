@@ -29,8 +29,8 @@ function ClubeLeitura() {
       <TopBar />
       <HeaderNav />
       <Breadcrumbs
-        title="Clube de Leitura"
-        description="Pagina de trabalho do Clube de Leitura do Laboratorio Cultural."
+        title="Laboratorio Cultural"
+        description="A nossa abordagem cultural e interdisciplinar, promovendo criacao artistica, participacao academica e ligacao com a comunidade."
         parentLabel="Laboratorio Cultural"
         parentHref="/laboratorio-cultural"
         currentLabel="Clube de Leitura"
