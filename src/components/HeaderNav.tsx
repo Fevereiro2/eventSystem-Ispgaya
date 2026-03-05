@@ -109,12 +109,7 @@ const menuItems: MenuItem[] = [
         href: '/laboratorio-cultural/clube-leitura',
         internal: true
       },
-      { label: 'Teatro', href: '/laboratorio-cultural/teatro', internal: true },
-      {
-        label: 'InfoCultura',
-        href: '/laboratorio-cultural/infocultura',
-        internal: true
-      }
+      { label: 'Clube de Teatro', href: '/laboratorio-cultural/teatro', internal: true },
     ]
   },
   {
