@@ -65,6 +65,11 @@ export const leadText = 'mt-5 max-w-3xl text-[16px] leading-8 text-slate-600 md:
 
 export const blockTitle = 'font-heading text-[32px] font-semibold text-slate-900';
 export const blockText = 'mt-4 max-w-3xl text-base leading-7 text-slate-600';
+export const contentSection = 'py-12 md:py-14';
+export const contentCard =
+  'max-w-4xl rounded-xl border border-slate-200 bg-white p-6 shadow-sm';
+export const contentList = 'mt-5 space-y-2';
+export const contentLink = 'font-medium text-[#dd8609] underline-offset-2 hover:underline';
 
 export const statsSection = 'pb-8 pt-12';
 export const statsGrid = 'mt-8 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5';
