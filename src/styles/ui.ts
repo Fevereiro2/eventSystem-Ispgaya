@@ -90,12 +90,18 @@ export const adminInfo = 'text-sm text-slate-600';
 export const adminLink =
   'inline-flex items-center rounded-md border border-slate-300 px-3 py-2 text-sm font-medium text-slate-700 transition-colors hover:border-[#dd8609] hover:text-[#dd8609]';
 export const adminFormGrid = 'grid grid-cols-1 gap-4 md:grid-cols-2';
+export const adminFormGridSpaced = 'mt-5 grid grid-cols-1 gap-4 md:grid-cols-2';
 export const adminField = 'space-y-1';
+export const adminFieldSpaced = 'mt-4 space-y-1';
 export const adminLabel = 'text-sm font-semibold text-slate-700';
 export const adminInput =
   'w-full rounded-md border border-slate-300 px-3 py-2 text-sm outline-none transition-colors focus:border-[#dd8609]';
 export const adminTextarea =
   'w-full rounded-md border border-slate-300 px-3 py-2 text-sm outline-none transition-colors focus:border-[#dd8609]';
+export const adminLoginForm = 'mt-5 space-y-3';
+export const adminError = 'text-sm text-red-600';
+export const adminPanelForm =
+  'max-w-4xl rounded-xl border border-slate-200 bg-white p-6 shadow-sm';
 export const adminActions = 'mt-4 flex flex-wrap gap-2';
 export const adminBtnPrimary =
   'rounded-md bg-[#dd8609] px-4 py-2 text-sm font-semibold text-white transition-opacity hover:opacity-90';
