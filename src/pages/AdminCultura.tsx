@@ -1,8 +1,6 @@
 import { FormEvent, useMemo, useState } from 'react';
-import Breadcrumbs from '../components/Breadcrumbs';
-import Footer from '../components/Footer';
-import HeaderNav from '../components/HeaderNav';
-import TopBar from '../components/TopBar';
+import infoCulturaBg from '../assets/19825874_uqliU.jpeg';
+import ispgayaLogo from '../assets/ispgaya-logo.svg';
 import {
   adminActions,
   adminBadge,
@@ -10,13 +8,14 @@ import {
   adminBtnEdit,
   adminBtnPrimary,
   adminBtnSecondary,
+  adminError,
   adminField,
-  adminFormGrid,
+  adminFieldSpaced,
+  adminFormGridSpaced,
   adminHeaderRow,
   adminInfo,
   adminInput,
   adminLabel,
-  adminLink,
   adminList,
   adminListDesc,
   adminListItem,
@@ -24,13 +23,41 @@ import {
   adminListTitle,
   adminListTools,
   adminListTop,
-  adminLoginWrap,
+  adminPanelForm,
   adminTextarea,
   blockText,
   blockTitle,
   container,
-  contentSection,
-  mainContent
+  infoLegacyBackdropImage,
+  infoLegacyBackdropOverlay,
+  infoLegacyBrandLogo,
+  infoLegacyBrandSub,
+  infoLegacyBrandText,
+  infoLegacyBrandWrap,
+  infoLegacyCenter,
+  infoLegacyChrome,
+  infoLegacyGrid,
+  infoLegacyFooter,
+  infoLegacyFooterInner,
+  infoLegacyHeader,
+  infoLegacyHeaderInner,
+  infoLegacyLeft,
+  infoLegacyBlock,
+  infoLegacyBlockTitle,
+  infoLegacyBlockText,
+  infoLegacyBlockList,
+  infoLegacyInput,
+  infoLegacyLang,
+  infoLegacyLoginForm,
+  infoLegacyLoginHint,
+  infoLegacyPanel,
+  infoLegacyRight,
+  infoLegacyLoginStage,
+  infoLegacyLoginTitle,
+  infoLegacyMain,
+  infoLegacyMeta,
+  infoLegacyPage,
+  infoLegacyPrimaryButton,
 } from '../styles/ui';
 import {
   createId,
@@ -173,224 +200,287 @@ function AdminCultura() {
     }
   }
 
-  return (
-    <>
-      <TopBar />
-      <HeaderNav />
-      <Breadcrumbs
-        title="Admin Cultura"
-        description="Area de administracao para gerir conteudos do Laboratorio Cultural."
-        parentLabel="Laboratorio Cultural"
-        parentHref="/laboratorio-cultural"
-        currentLabel="Admin Cultura"
-        currentHref="/laboratorio-cultural/admin"
-      />
-
-      <main className={mainContent}>
-        <section className={contentSection}>
-          <div className={container}>
-            {!isAuth ? (
-              <div className={adminLoginWrap}>
-                <h2 className={blockTitle}>Acesso Admin</h2>
-                <p className={blockText}>
-                  Entra com credenciais de administracao para gerir os conteudos.
-                </p>
-                <form className="mt-5 space-y-3" onSubmit={handleLogin}>
-                  <div className={adminField}>
-                    <label htmlFor="admin-user" className={adminLabel}>
-                      Utilizador
-                    </label>
-                    <input
-                      id="admin-user"
-                      className={adminInput}
-                      value={authUser}
-                      onChange={(event) => setAuthUser(event.target.value)}
-                    />
-                  </div>
-                  <div className={adminField}>
-                    <label htmlFor="admin-pass" className={adminLabel}>
-                      Password
-                    </label>
-                    <input
-                      id="admin-pass"
-                      type="password"
-                      className={adminInput}
-                      value={authPass}
-                      onChange={(event) => setAuthPass(event.target.value)}
-                    />
-                  </div>
-                  {authError ? <p className="text-sm text-red-600">{authError}</p> : null}
-                  <div className={adminActions}>
-                    <button type="submit" className={adminBtnPrimary}>
-                      Entrar
-                    </button>
-                    <a
-                      href="https://inforestudante.ispgaya.pt/nonio/security/login.do"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className={adminLink}
-                    >
-                      Login Inforestudante
-                    </a>
-                  </div>
-                </form>
+  if (!isAuth) {
+    return (
+      <div className={infoLegacyLoginStage}>
+        <img src={infoCulturaBg} alt="" className={infoLegacyBackdropImage} />
+        <div className={infoLegacyBackdropOverlay} />
+        <div className={infoLegacyChrome}>
+          <header className={infoLegacyHeader}>
+            <div className={infoLegacyHeaderInner}>
+              <div className={infoLegacyBrandWrap}>
+                <img src={ispgayaLogo} alt="ISPGAYA" className={infoLegacyBrandLogo} />
+                <div>
+                  <p className={infoLegacyBrandText}>InfoCultura</p>
+                  <p className={infoLegacyBrandSub}>Gestao cultural interna</p>
+                </div>
               </div>
-            ) : (
-              <>
-                <div className={adminHeaderRow}>
-                  <span className={adminBadge}>Admin Cultura</span>
-                  <p className={adminInfo}>Gestao de Tuna, Clube de Leitura e Teatro.</p>
-                  <button type="button" onClick={handleLogout} className={adminBtnSecondary}>
-                    Terminar sessao
-                  </button>
+              <p className={infoLegacyLang}>PT | EN</p>
+            </div>
+          </header>
+
+          <main className={infoLegacyCenter}>
+            <div className={infoLegacyPanel}>
+              <div className={infoLegacyGrid}>
+                <div className={infoLegacyLeft}>
+                  <div className={infoLegacyBlock}>
+                    <h3 className={infoLegacyBlockTitle}>Bem-vindo ao InfoCultura</h3>
+                    <p className={infoLegacyBlockText}>
+                      Plataforma de apoio ao Laboratorio Cultural para registo e publicacao de
+                      atividades da Tuna Academica, Clube de Leitura e Teatro.
+                    </p>
+                    <ul className={infoLegacyBlockList}>
+                      <li>Organizar programacao cultural</li>
+                      <li>Atualizar noticias por area</li>
+                      <li>Gerir conteudo em rascunho e publicado</li>
+                    </ul>
+                  </div>
+
+                  <div className={infoLegacyBlock}>
+                    <h3 className={infoLegacyBlockTitle}>Primeiro acesso</h3>
+                    <p className={infoLegacyBlockText}>
+                      Se e a primeira vez a usar o portal, contacte a equipa tecnica para
+                      atribuicao de credenciais de administrador.
+                    </p>
+                  </div>
                 </div>
 
-                <form onSubmit={handleSave} className="max-w-4xl rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
-                  <h2 className={blockTitle}>
-                    {editingId ? 'Editar Conteudo' : 'Novo Conteudo'}
-                  </h2>
-                  <p className={blockText}>
-                    Cria ou atualiza conteudo para as paginas do Laboratorio Cultural.
+                <div className={infoLegacyRight}>
+
+
+                  <h2 className={infoLegacyLoginTitle}>Entrar</h2>
+                  <p className={infoLegacyLoginHint}>
+                    Acesso reservado aos administradores do InfoCultura.
                   </p>
 
-                  <div className={`${adminFormGrid} mt-5`}>
+                  <form className={infoLegacyLoginForm} onSubmit={handleLogin}>
                     <div className={adminField}>
-                      <label className={adminLabel} htmlFor="area">
-                        Area
-                      </label>
-                      <select
-                        id="area"
-                        className={adminInput}
-                        value={form.area}
-                        onChange={(event) =>
-                          setForm((prev) => ({
-                            ...prev,
-                            area: event.target.value as CulturalArea
-                          }))
-                        }
-                      >
-                        <option value="tuna">Tuna Academica</option>
-                        <option value="clube-leitura">Clube de Leitura</option>
-                        <option value="teatro">Teatro</option>
-                      </select>
-                    </div>
-
-                    <div className={adminField}>
-                      <label className={adminLabel} htmlFor="date">
-                        Data
+                      <label htmlFor="admin-user" className={adminLabel}>
+                        Utilizador
                       </label>
                       <input
-                        id="date"
-                        type="date"
-                        className={adminInput}
-                        value={form.date}
-                        onChange={(event) =>
-                          setForm((prev) => ({ ...prev, date: event.target.value }))
-                        }
+                        id="admin-user"
+                        className={infoLegacyInput}
+                        placeholder="Utilizador"
+                        value={authUser}
+                        onChange={(event) => setAuthUser(event.target.value)}
                       />
                     </div>
 
                     <div className={adminField}>
-                      <label className={adminLabel} htmlFor="title">
-                        Titulo
+                      <label htmlFor="admin-pass" className={adminLabel}>
+                        Palavra-chave
                       </label>
                       <input
-                        id="title"
-                        className={adminInput}
-                        value={form.title}
-                        onChange={(event) =>
-                          setForm((prev) => ({ ...prev, title: event.target.value }))
-                        }
+                        id="admin-pass"
+                        type="password"
+                        className={infoLegacyInput}
+                        placeholder="Palavra-chave"
+                        value={authPass}
+                        onChange={(event) => setAuthPass(event.target.value)}
                       />
                     </div>
 
-                    <div className={adminField}>
-                      <label className={adminLabel} htmlFor="status">
-                        Estado
-                      </label>
-                      <select
-                        id="status"
-                        className={adminInput}
-                        value={form.status}
-                        onChange={(event) =>
-                          setForm((prev) => ({
-                            ...prev,
-                            status: event.target.value as 'rascunho' | 'publicado'
-                          }))
-                        }
-                      >
-                        <option value="rascunho">Rascunho</option>
-                        <option value="publicado">Publicado</option>
-                      </select>
-                    </div>
-                  </div>
+                    {authError ? <p className={adminError}>{authError}</p> : null}
 
-                  <div className={`${adminField} mt-4`}>
-                    <label className={adminLabel} htmlFor="description">
-                      Descricao
-                    </label>
-                    <textarea
-                      id="description"
-                      rows={4}
-                      className={adminTextarea}
-                      value={form.description}
-                      onChange={(event) =>
-                        setForm((prev) => ({ ...prev, description: event.target.value }))
-                      }
-                    />
-                  </div>
-
-                  <div className={adminActions}>
-                    <button type="submit" className={adminBtnPrimary}>
-                      {editingId ? 'Atualizar' : 'Criar'}
+                    <button type="submit" className={infoLegacyPrimaryButton}>
+                      Entrar
                     </button>
-                    <button type="button" onClick={resetForm} className={adminBtnSecondary}>
-                      Limpar
-                    </button>
-                  </div>
-                </form>
 
-                <div className={adminList}>
-                  {sortedItems.map((item) => (
-                    <article key={item.id} className={adminListItem}>
-                      <div className={adminListTop}>
-                        <div>
-                          <h3 className={adminListTitle}>{item.title}</h3>
-                          <p className={adminListMeta}>
-                            {getAreaLabel(item.area)} · {item.date} · {item.status}
-                          </p>
-                        </div>
-                      </div>
-
-                      <p className={adminListDesc}>{item.description}</p>
-
-                      <div className={adminListTools}>
-                        <button
-                          type="button"
-                          className={adminBtnEdit}
-                          onClick={() => handleEdit(item)}
-                        >
-                          Editar
-                        </button>
-                        <button
-                          type="button"
-                          className={adminBtnDanger}
-                          onClick={() => handleDelete(item.id)}
-                        >
-                          Apagar
-                        </button>
-                      </div>
-                    </article>
-                  ))}
+                    <p className={infoLegacyMeta}>
+                      Demo local: utilizador <strong>admin</strong> e password{' '}
+                      <strong>cultura2026</strong>.
+                    </p>
+                  </form>
                 </div>
-              </>
-            )}
+              </div>
+            </div>
+          </main>
+
+          <footer className={infoLegacyFooter}>
+            <div className={infoLegacyFooterInner}>
+              <span>2026 · Instituto Superior Politecnico Gaya</span>
+              <span>InfoCultura</span>
+            </div>
+          </footer>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className={infoLegacyPage}>
+      <header className={infoLegacyHeader}>
+        <div className={infoLegacyHeaderInner}>
+          <div className={infoLegacyBrandWrap}>
+            <img src={ispgayaLogo} alt="ISPGAYA" className={infoLegacyBrandLogo} />
+            <div>
+              <p className={infoLegacyBrandText}>InfoCultura</p>
+              <p className={infoLegacyBrandSub}>Gestao cultural interna</p>
+            </div>
           </div>
-        </section>
+          <p className={infoLegacyLang}>PT | EN</p>
+        </div>
+      </header>
+
+      <main className={infoLegacyMain}>
+        <div className={container}>
+          <div className={adminHeaderRow}>
+            <span className={adminBadge}>InfoCultura</span>
+            <p className={adminInfo}>Gestao de Tuna, Clube de Leitura e Teatro.</p>
+            <button type="button" onClick={handleLogout} className={adminBtnSecondary}>
+              Terminar sessao
+            </button>
+          </div>
+
+          <form onSubmit={handleSave} className={adminPanelForm}>
+            <h2 className={blockTitle}>
+              {editingId ? 'Editar Conteudo' : 'Novo Conteudo'}
+            </h2>
+            <p className={blockText}>
+              Cria ou atualiza conteudo para as paginas do Laboratorio Cultural.
+            </p>
+
+            <div className={adminFormGridSpaced}>
+              <div className={adminField}>
+                <label className={adminLabel} htmlFor="area">
+                  Area
+                </label>
+                <select
+                  id="area"
+                  className={adminInput}
+                  value={form.area}
+                  onChange={(event) =>
+                    setForm((prev) => ({
+                      ...prev,
+                      area: event.target.value as CulturalArea
+                    }))
+                  }
+                >
+                  <option value="tuna">Tuna Academica</option>
+                  <option value="clube-leitura">Clube de Leitura</option>
+                  <option value="teatro">Teatro</option>
+                </select>
+              </div>
+
+              <div className={adminField}>
+                <label className={adminLabel} htmlFor="date">
+                  Data
+                </label>
+                <input
+                  id="date"
+                  type="date"
+                  className={adminInput}
+                  value={form.date}
+                  onChange={(event) =>
+                    setForm((prev) => ({ ...prev, date: event.target.value }))
+                  }
+                />
+              </div>
+
+              <div className={adminField}>
+                <label className={adminLabel} htmlFor="title">
+                  Titulo
+                </label>
+                <input
+                  id="title"
+                  className={adminInput}
+                  value={form.title}
+                  onChange={(event) =>
+                    setForm((prev) => ({ ...prev, title: event.target.value }))
+                  }
+                />
+              </div>
+
+              <div className={adminField}>
+                <label className={adminLabel} htmlFor="status">
+                  Estado
+                </label>
+                <select
+                  id="status"
+                  className={adminInput}
+                  value={form.status}
+                  onChange={(event) =>
+                    setForm((prev) => ({
+                      ...prev,
+                      status: event.target.value as 'rascunho' | 'publicado'
+                    }))
+                  }
+                >
+                  <option value="rascunho">Rascunho</option>
+                  <option value="publicado">Publicado</option>
+                </select>
+              </div>
+            </div>
+
+            <div className={adminFieldSpaced}>
+              <label className={adminLabel} htmlFor="description">
+                Descricao
+              </label>
+              <textarea
+                id="description"
+                rows={4}
+                className={adminTextarea}
+                value={form.description}
+                onChange={(event) =>
+                  setForm((prev) => ({ ...prev, description: event.target.value }))
+                }
+              />
+            </div>
+
+            <div className={adminActions}>
+              <button type="submit" className={adminBtnPrimary}>
+                {editingId ? 'Atualizar' : 'Criar'}
+              </button>
+              <button type="button" onClick={resetForm} className={adminBtnSecondary}>
+                Limpar
+              </button>
+            </div>
+          </form>
+
+          <div className={adminList}>
+            {sortedItems.map((item) => (
+              <article key={item.id} className={adminListItem}>
+                <div className={adminListTop}>
+                  <div>
+                    <h3 className={adminListTitle}>{item.title}</h3>
+                    <p className={adminListMeta}>
+                      {getAreaLabel(item.area)} · {item.date} · {item.status}
+                    </p>
+                  </div>
+                </div>
+
+                <p className={adminListDesc}>{item.description}</p>
+
+                <div className={adminListTools}>
+                  <button
+                    type="button"
+                    className={adminBtnEdit}
+                    onClick={() => handleEdit(item)}
+                  >
+                    Editar
+                  </button>
+                  <button
+                    type="button"
+                    className={adminBtnDanger}
+                    onClick={() => handleDelete(item.id)}
+                  >
+                    Apagar
+                  </button>
+                </div>
+              </article>
+            ))}
+          </div>
+        </div>
       </main>
 
-      <Footer />
-    </>
+      <footer className={infoLegacyFooter}>
+        <div className={infoLegacyFooterInner}>
+          <span>2026 · Instituto Superior Politecnico Gaya</span>
+          <span>InfoCultura</span>
+        </div>
+      </footer>
+    </div>
   );
 }
 
