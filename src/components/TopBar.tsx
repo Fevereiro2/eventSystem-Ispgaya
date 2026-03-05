@@ -25,6 +25,12 @@ const leftLinks = [
     rel: 'noindex nofollow'
   },
   {
+    label: 'Infocultura',
+    href: '',
+    target: '_blank',
+    rel: 'noindex nofollow'
+  },
+  {
     label: 'Email',
     href: 'https://outlook.office.com',
     target: '_blank',

@@ -97,6 +97,18 @@ const menuItems: MenuItem[] = [
     ]
   },
   {
+    label: 'Laboratorio Cultural',
+    href: 'https://ispgaya.pt/pt/internacional',
+    dropdown: [
+      {
+        label: 'Estudantes Internacionais',
+        href: 'https://international.ispgaya.pt/pt'
+      },
+      { label: 'Erasmus+', href: 'https://ispgaya.pt/pt/internacional/erasmus+' },
+      { label: 'Guia ECTS', href: 'https://ispgaya.pt/pt/internacional/guia-ects' }
+    ]
+  },
+  {
     label: 'Vida Academica',
     href: 'https://ispgaya.pt/pt/vida-academica',
     dropdown: [
