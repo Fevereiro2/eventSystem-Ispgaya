@@ -120,6 +120,26 @@ export const adminListMeta = 'mt-1 text-xs text-slate-500';
 export const adminListDesc = 'mt-2 text-sm text-slate-700';
 export const adminListTools = 'mt-3 flex gap-2';
 export const adminLoginWrap = 'max-w-md rounded-xl border border-slate-200 bg-white p-6 shadow-sm';
+export const infoMaster = 'mx-auto w-full max-w-6xl';
+export const infoWrap = 'py-8 md:py-12';
+export const infoLoginShell =
+  'rounded-2xl border border-slate-200 bg-gradient-to-br from-white to-slate-50 shadow-md';
+export const infoLoginGrid = 'grid grid-cols-1 gap-0 lg:grid-cols-2';
+export const infoLeft =
+  'space-y-4 border-r-0 bg-slate-100/70 p-6 lg:border-r lg:border-slate-200';
+export const infoLeftBlock = 'rounded-lg border border-slate-200 bg-white p-4';
+export const infoLeftTitle = 'text-xl font-semibold tracking-tight text-slate-900';
+export const infoLeftBody = 'mt-3 text-sm leading-6 text-slate-700';
+export const infoLeftList = 'mt-3 list-disc space-y-1 pl-5 text-sm text-slate-700';
+export const infoLeftHelp = 'mt-2 text-sm text-slate-700';
+export const infoLeftHelpLink = 'font-medium text-[#dd8609] underline-offset-2 hover:underline';
+export const infoLeftRegisterRow = 'mt-4';
+export const infoRight = 'p-6';
+export const infoRightTitle = 'text-2xl font-semibold text-slate-900 md:text-3xl';
+export const infoRightBody = 'mt-4';
+export const infoForgot = 'mt-2 inline-block text-sm text-[#dd8609] underline-offset-2 hover:underline';
+export const infoSubmitRow = 'mt-4 min-h-[50px] text-center';
+export const infoHelperText = 'mt-2 text-sm leading-6 text-slate-600';
 
 export const statsSection = 'pb-8 pt-12';
 export const statsGrid = 'mt-8 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5';
