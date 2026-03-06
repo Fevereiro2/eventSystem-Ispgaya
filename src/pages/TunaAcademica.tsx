@@ -1,9 +1,10 @@
-import { useMemo } from 'react';
+import { useEffect, useState } from 'react';
 import Breadcrumbs from '../components/Breadcrumbs';
 import Footer from '../components/Footer';
 import HeaderNav from '../components/HeaderNav';
 import TopBar from '../components/TopBar';
-import { getCulturalItemsByArea } from '../data/culturalContent';
+import { CulturalItem } from '../data/culturalContent';
+import { fetchPublicContent } from '../data/infoculturaApi';
 import {
   blockText,
   blockTitle,
@@ -22,7 +23,36 @@ import {
 } from '../styles/ui';
 
 function TunaAcademica() {
-  const items = useMemo(() => getCulturalItemsByArea('tuna'), []);
+  const [items, setItems] = useState<CulturalItem[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState('');
+
+  useEffect(() => {
+    let active = true;
+
+    async function loadItems() {
+      try {
+        const next = await fetchPublicContent('tuna');
+        if (!active) return;
+        setItems(next);
+      } catch (error) {
+        if (!active) return;
+        const message =
+          error instanceof Error ? error.message : 'Nao foi possivel carregar os conteudos.';
+        setLoadError(message);
+      } finally {
+        if (active) {
+          setIsLoading(false);
+        }
+      }
+    }
+
+    void loadItems();
+
+    return () => {
+      active = false;
+    };
+  }, []);
 
   return (
     <>
@@ -47,7 +77,11 @@ function TunaAcademica() {
                 repertorio, eventos e informacao para novos elementos.
               </p>
 
-              {items.length === 0 ? (
+              {isLoading ? (
+                <p className={contentEmpty}>A carregar conteudos...</p>
+              ) : loadError ? (
+                <p className={contentEmpty}>{loadError}</p>
+              ) : items.length === 0 ? (
                 <p className={contentEmpty}>Ainda nao existem conteudos publicados.</p>
               ) : (
                 <div className={contentItems}>
