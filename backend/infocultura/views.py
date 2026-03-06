@@ -1,11 +1,12 @@
-from django.contrib.auth import authenticate
+from django.db.models import Q
 from rest_framework import generics, permissions
-from rest_framework.authtoken.models import Token
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from .models import CulturalContent
+from .models import AppUser, CulturalContent
+from .permissions import IsClubAdmin
 from .serializers import CulturalContentSerializer, LoginSerializer, UserSerializer
+from .security import check_password_hash, issue_access_token
 
 
 class LoginView(APIView):
@@ -15,18 +16,31 @@ class LoginView(APIView):
         serializer = LoginSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
-        user = authenticate(
-            username=serializer.validated_data['username'],
-            password=serializer.validated_data['password'],
+        identifier = serializer.validated_data['username'].strip()
+        password = serializer.validated_data['password']
+
+        user = (
+            AppUser.objects.select_related('role')
+            .filter(Q(email__iexact=identifier) | Q(name__iexact=identifier))
+            .first()
         )
 
-        if not user:
+        if not user or not user.is_active:
             return Response({'message': 'Credenciais invalidas.'}, status=401)
 
-        token, _ = Token.objects.get_or_create(user=user)
+        if not check_password_hash(password, user.password_hash):
+            return Response({'message': 'Credenciais invalidas.'}, status=401)
+
+        token = issue_access_token(
+            user_id=user.id,
+            role_name=user.role.name,
+            email=user.email,
+            name=user.name,
+        )
+
         return Response(
             {
-                'token': token.key,
+                'token': token,
                 'user': UserSerializer(user).data,
             }
         )
@@ -58,7 +72,7 @@ class PublicContentListView(generics.ListAPIView):
 
 class AdminContentListCreateView(generics.ListCreateAPIView):
     serializer_class = CulturalContentSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated, IsClubAdmin]
 
     def get_queryset(self):
         queryset = CulturalContent.objects.all()
@@ -76,4 +90,4 @@ class AdminContentListCreateView(generics.ListCreateAPIView):
 class AdminContentDetailView(generics.RetrieveUpdateDestroyAPIView):
     queryset = CulturalContent.objects.all()
     serializer_class = CulturalContentSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated, IsClubAdmin]
