@@ -71,6 +71,30 @@ async function request<T>(
   return (await response.json()) as T;
 }
 
+function normalizeItemsResponse(data: ApiListResponse | CulturalItem[]): CulturalItem[] {
+  if (Array.isArray(data)) {
+    return data;
+  }
+
+  if (data && Array.isArray(data.items)) {
+    return data.items;
+  }
+
+  if (data && 'results' in data && Array.isArray(data.results)) {
+    return data.results as CulturalItem[];
+  }
+
+  return [];
+}
+
+function normalizeItemResponse(data: ApiItemResponse | CulturalItem): CulturalItem {
+  if ('item' in data) {
+    return data.item;
+  }
+
+  return data;
+}
+
 export async function loginInfoCultura(username: string, password: string): Promise<string> {
   const data = await request<ApiLoginResponse>('/auth/login/', {
     method: 'POST',
@@ -81,20 +105,20 @@ export async function loginInfoCultura(username: string, password: string): Prom
 }
 
 export async function fetchAdminContent(token: string): Promise<CulturalItem[]> {
-  const data = await request<ApiListResponse>('/content/admin/', {}, token);
-  return data.items;
+  const data = await request<ApiListResponse | CulturalItem[]>('/content/admin/', {}, token);
+  return normalizeItemsResponse(data);
 }
 
 export async function fetchPublicContent(area: CulturalArea): Promise<CulturalItem[]> {
-  const data = await request<ApiListResponse>(`/content/?area=${area}`);
-  return data.items;
+  const data = await request<ApiListResponse | CulturalItem[]>(`/content/?area=${area}`);
+  return normalizeItemsResponse(data);
 }
 
 export async function createAdminContent(
   token: string,
   payload: ContentPayload
 ): Promise<CulturalItem> {
-  const data = await request<ApiItemResponse>(
+  const data = await request<ApiItemResponse | CulturalItem>(
     '/content/admin/',
     {
       method: 'POST',
@@ -103,7 +127,7 @@ export async function createAdminContent(
     token
   );
 
-  return data.item;
+  return normalizeItemResponse(data);
 }
 
 export async function updateAdminContent(
@@ -111,7 +135,7 @@ export async function updateAdminContent(
   id: string,
   payload: ContentPayload
 ): Promise<CulturalItem> {
-  const data = await request<ApiItemResponse>(
+  const data = await request<ApiItemResponse | CulturalItem>(
     `/content/admin/${id}/`,
     {
       method: 'PUT',
@@ -120,7 +144,7 @@ export async function updateAdminContent(
     token
   );
 
-  return data.item;
+  return normalizeItemResponse(data);
 }
 
 export async function deleteAdminContent(token: string, id: string): Promise<void> {
