@@ -1,4 +1,4 @@
-import { FormEvent, useMemo, useState } from 'react';
+import { FormEvent, useEffect, useMemo, useState } from 'react';
 import infoCulturaBg from '../assets/19825874_uqliU.jpeg';
 import ispgayaLogo from '../assets/ispgaya-logo.svg';
 import {
@@ -60,17 +60,19 @@ import {
   infoLegacyPrimaryButton,
 } from '../styles/ui';
 import {
-  createId,
   CulturalArea,
   CulturalItem,
   getAreaLabel,
-  getCulturalItems,
-  saveCulturalItems
 } from '../data/culturalContent';
+import {
+  createAdminContent,
+  deleteAdminContent,
+  fetchAdminContent,
+  loginInfoCultura,
+  updateAdminContent
+} from '../data/infoculturaApi';
 
-const AUTH_KEY = 'ispgaya_cultura_admin_auth';
-const ADMIN_USER = 'admin';
-const ADMIN_PASS = 'cultura2026';
+const TOKEN_KEY = 'ispgaya_cultura_token';
 
 type FormState = {
   area: CulturalArea;
@@ -92,12 +94,16 @@ function AdminCultura() {
   const [authUser, setAuthUser] = useState('');
   const [authPass, setAuthPass] = useState('');
   const [authError, setAuthError] = useState('');
-  const [isAuth, setIsAuth] = useState<boolean>(() => {
-    if (typeof window === 'undefined') return false;
-    return sessionStorage.getItem(AUTH_KEY) === '1';
+  const [token, setToken] = useState<string>(() => {
+    if (typeof window === 'undefined') return '';
+    return sessionStorage.getItem(TOKEN_KEY) || '';
   });
-
-  const [items, setItems] = useState<CulturalItem[]>(() => getCulturalItems());
+  const isAuth = token.length > 0;
+  const [items, setItems] = useState<CulturalItem[]>([]);
+  const [isLoadingItems, setIsLoadingItems] = useState(false);
+  const [panelError, setPanelError] = useState('');
+  const [isSaving, setIsSaving] = useState(false);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
   const [form, setForm] = useState<FormState>(initialForm);
   const [editingId, setEditingId] = useState<string | null>(null);
 
@@ -106,29 +112,59 @@ function AdminCultura() {
     [items]
   );
 
-  function persist(nextItems: CulturalItem[]) {
-    setItems(nextItems);
-    saveCulturalItems(nextItems);
+  function clearAuth() {
+    setToken('');
+    setItems([]);
+    setPanelError('');
+    sessionStorage.removeItem(TOKEN_KEY);
   }
 
-  function handleLogin(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
+  async function loadAdminItems(authToken: string) {
+    setIsLoadingItems(true);
+    setPanelError('');
 
-    if (authUser === ADMIN_USER && authPass === ADMIN_PASS) {
-      setAuthError('');
-      setIsAuth(true);
-      sessionStorage.setItem(AUTH_KEY, '1');
-      return;
+    try {
+      const nextItems = await fetchAdminContent(authToken);
+      setItems(nextItems);
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : 'Nao foi possivel carregar os conteudos.';
+      setPanelError(message);
+
+      if (message.toLowerCase().includes('token')) {
+        clearAuth();
+      }
+    } finally {
+      setIsLoadingItems(false);
     }
+  }
 
-    setAuthError('Credenciais invalidas.');
+  useEffect(() => {
+    if (!token) return;
+    void loadAdminItems(token);
+  }, [token]);
+
+  async function handleLogin(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setAuthError('');
+
+    try {
+      const nextToken = await loginInfoCultura(authUser, authPass);
+      setToken(nextToken);
+      sessionStorage.setItem(TOKEN_KEY, nextToken);
+      setAuthPass('');
+      setAuthUser('');
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Credenciais invalidas.';
+      setAuthError(message);
+    }
   }
 
   function handleLogout() {
-    setIsAuth(false);
-    sessionStorage.removeItem(AUTH_KEY);
+    clearAuth();
     setAuthUser('');
     setAuthPass('');
+    resetForm();
   }
 
   function resetForm() {
@@ -136,8 +172,9 @@ function AdminCultura() {
     setEditingId(null);
   }
 
-  function handleSave(event: FormEvent<HTMLFormElement>) {
+  async function handleSave(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (!token) return;
 
     const payload = {
       area: form.area,
@@ -148,36 +185,31 @@ function AdminCultura() {
     };
 
     if (!payload.title || !payload.description || !payload.date) {
+      setPanelError('Preenche todos os campos obrigatorios.');
       return;
     }
 
-    if (editingId) {
-      const nextItems = items.map((item) =>
-        item.id === editingId
-          ? {
-              ...item,
-              ...payload,
-              updatedAt: new Date().toISOString()
-            }
-          : item
-      );
+    setIsSaving(true);
+    setPanelError('');
 
-      persist(nextItems);
-      resetForm();
-      return;
-    }
-
-    const nextItems = [
-      ...items,
-      {
-        id: createId(),
-        ...payload,
-        updatedAt: new Date().toISOString()
+    try {
+      if (editingId) {
+        const updated = await updateAdminContent(token, editingId, payload);
+        setItems((prev) => prev.map((item) => (item.id === editingId ? updated : item)));
+        resetForm();
+        return;
       }
-    ];
 
-    persist(nextItems);
-    resetForm();
+      const created = await createAdminContent(token, payload);
+      setItems((prev) => [created, ...prev]);
+      resetForm();
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : 'Nao foi possivel guardar o conteudo.';
+      setPanelError(message);
+    } finally {
+      setIsSaving(false);
+    }
   }
 
   function handleEdit(item: CulturalItem) {
@@ -191,12 +223,25 @@ function AdminCultura() {
     });
   }
 
-  function handleDelete(id: string) {
-    const nextItems = items.filter((item) => item.id !== id);
-    persist(nextItems);
+  async function handleDelete(id: string) {
+    if (!token) return;
 
-    if (editingId === id) {
-      resetForm();
+    setDeletingId(id);
+    setPanelError('');
+
+    try {
+      await deleteAdminContent(token, id);
+      setItems((prev) => prev.filter((item) => item.id !== id));
+
+      if (editingId === id) {
+        resetForm();
+      }
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : 'Nao foi possivel apagar o conteudo.';
+      setPanelError(message);
+    } finally {
+      setDeletingId(null);
     }
   }
 
@@ -224,10 +269,10 @@ function AdminCultura() {
               <div className={infoLegacyGrid}>
                 <div className={infoLegacyLeft}>
                   <div className={infoLegacyBlock}>
-                    <h3 className={infoLegacyBlockTitle}>Bem-vindo ao InfoCultura</h3>
+                    <h3 className={infoLegacyBlockTitle}>Laboratorio Cultural</h3>
                     <p className={infoLegacyBlockText}>
-                      Plataforma de apoio ao Laboratorio Cultural para registo e publicacao de
-                      atividades da Tuna Academica, Clube de Leitura e Teatro.
+                      A nossa abordagem cultural e interdisciplinar, promovendo criacao
+                      artistica, participacao academica e ligacao com a comunidade.
                     </p>
                     <ul className={infoLegacyBlockList}>
                       <li>Organizar programacao cultural</li>
@@ -332,6 +377,7 @@ function AdminCultura() {
               Terminar sessao
             </button>
           </div>
+          {panelError ? <p className={adminError}>{panelError}</p> : null}
 
           <form onSubmit={handleSave} className={adminPanelForm}>
             <h2 className={blockTitle}>
@@ -429,8 +475,8 @@ function AdminCultura() {
             </div>
 
             <div className={adminActions}>
-              <button type="submit" className={adminBtnPrimary}>
-                {editingId ? 'Atualizar' : 'Criar'}
+              <button type="submit" className={adminBtnPrimary} disabled={isSaving}>
+                {isSaving ? 'A guardar...' : editingId ? 'Atualizar' : 'Criar'}
               </button>
               <button type="button" onClick={resetForm} className={adminBtnSecondary}>
                 Limpar
@@ -439,6 +485,9 @@ function AdminCultura() {
           </form>
 
           <div className={adminList}>
+            {isLoadingItems ? (
+              <p className={adminInfo}>A carregar conteudos...</p>
+            ) : null}
             {sortedItems.map((item) => (
               <article key={item.id} className={adminListItem}>
                 <div className={adminListTop}>
@@ -463,9 +512,10 @@ function AdminCultura() {
                   <button
                     type="button"
                     className={adminBtnDanger}
+                    disabled={deletingId === item.id}
                     onClick={() => handleDelete(item.id)}
                   >
-                    Apagar
+                    {deletingId === item.id ? 'A apagar...' : 'Apagar'}
                   </button>
                 </div>
               </article>
