@@ -3,7 +3,7 @@ from django.db import models
 
 
 class Role(models.Model):
-    id = models.BigAutoField(primary_key=True)
+    id = models.AutoField(primary_key=True)
     name = models.CharField(max_length=50, unique=True)
     description = models.TextField(blank=True, null=True)
 
@@ -16,7 +16,7 @@ class Role(models.Model):
 
 
 class AppUser(models.Model):
-    id = models.BigAutoField(primary_key=True)
+    id = models.AutoField(primary_key=True)
     name = models.CharField(max_length=150)
     email = models.EmailField(max_length=150, unique=True)
     password_hash = models.CharField(max_length=255)

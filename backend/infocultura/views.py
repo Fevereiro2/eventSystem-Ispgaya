@@ -3,9 +3,15 @@ from rest_framework import generics, permissions
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from .models import AppUser, CulturalContent
-from .permissions import IsClubAdmin
-from .serializers import CulturalContentSerializer, LoginSerializer, UserSerializer
+from .models import AppUser, CulturalContent, Role
+from .permissions import IsClubAdmin, IsSuperAdmin
+from .serializers import (
+    AdminUserWriteSerializer,
+    CulturalContentSerializer,
+    LoginSerializer,
+    RoleSerializer,
+    UserSerializer,
+)
 from .security import check_password_hash, issue_access_token
 
 
@@ -44,6 +50,7 @@ class LoginView(APIView):
                 'user': UserSerializer(user).data,
             }
         )
+        
 
 
 class MeView(APIView):
@@ -51,6 +58,82 @@ class MeView(APIView):
 
     def get(self, request):
         return Response({'user': UserSerializer(request.user).data})
+
+
+class AdminRoleListView(generics.ListAPIView):
+    serializer_class = RoleSerializer
+    permission_classes = [permissions.IsAuthenticated, IsSuperAdmin]
+
+    def get_queryset(self):
+        return Role.objects.all().order_by('name')
+
+
+class AdminUserListCreateView(generics.ListCreateAPIView):
+    queryset = AppUser.objects.select_related('role').all()
+
+    def get_permissions(self):
+        if self.request.method == 'GET':
+            permission_classes = [permissions.IsAuthenticated, IsClubAdmin]
+        else:
+            permission_classes = [permissions.IsAuthenticated, IsSuperAdmin]
+
+        return [permission() for permission in permission_classes]
+
+    def get_serializer_class(self):
+        if self.request.method == 'GET':
+            return UserSerializer
+        return AdminUserWriteSerializer
+
+    def get_queryset(self):
+        return AppUser.objects.select_related('role').order_by('-is_active', 'name', 'email')
+
+
+class AdminUserDetailView(generics.RetrieveUpdateAPIView):
+    queryset = AppUser.objects.select_related('role').all()
+
+    def get_permissions(self):
+        if self.request.method == 'GET':
+            permission_classes = [permissions.IsAuthenticated, IsClubAdmin]
+        else:
+            permission_classes = [permissions.IsAuthenticated, IsSuperAdmin]
+
+        return [permission() for permission in permission_classes]
+
+    def get_serializer_class(self):
+        if self.request.method == 'GET':
+            return UserSerializer
+        return AdminUserWriteSerializer
+
+    def update(self, request, *args, **kwargs):
+        user = self.get_object()
+        next_is_active = request.data.get('is_active')
+
+        if user.id == request.user.id and next_is_active in (False, 'false', 'False', 0, '0'):
+            return Response(
+                {'message': 'Nao podes desativar o teu proprio utilizador.'},
+                status=400,
+            )
+
+        return super().update(request, *args, **kwargs)
+
+
+class AdminUserDeactivateView(APIView):
+    permission_classes = [permissions.IsAuthenticated, IsSuperAdmin]
+
+    def post(self, request, pk):
+        user = AppUser.objects.select_related('role').filter(pk=pk).first()
+        if not user:
+            return Response({'message': 'Utilizador nao encontrado.'}, status=404)
+
+        if user.id == request.user.id:
+            return Response(
+                {'message': 'Nao podes desativar o teu proprio utilizador.'},
+                status=400,
+            )
+
+        user.is_active = False
+        user.save(update_fields=['is_active'])
+        return Response({'user': UserSerializer(user).data})
 
 
 class PublicContentListView(generics.ListAPIView):
