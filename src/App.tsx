@@ -15,12 +15,12 @@ function App() {
           <Route path="/" element={<PublicacoesCientificas />} />
           <Route path="/laboratorio-cultural" element={<LaboratorioCultural />} />
           <Route
-            path="/infocultura"
+            path="/infocultura/*"
             element={<AdminCultura />}
           />
           <Route
             path="/laboratorio-cultural/admin"
-            element={<Navigate to="/infocultura" replace />}
+            element={<Navigate to="/infocultura/resumo" replace />}
           />
           <Route path="/laboratorio-cultural/tuna" element={<TunaAcademica />} />
           <Route

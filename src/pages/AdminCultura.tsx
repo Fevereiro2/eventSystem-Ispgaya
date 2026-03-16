@@ -1,4 +1,5 @@
 import { FormEvent, useEffect, useMemo, useState } from 'react';
+import { NavLink, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import infoCulturaBg from '../assets/19825874_uqliU.jpeg';
 import ispgayaLogo from '../assets/ispgaya-logo.svg';
 import {
@@ -8,6 +9,7 @@ import {
   adminBtnEdit,
   adminBtnPrimary,
   adminBtnSecondary,
+  adminDashboardGrid,
   adminError,
   adminField,
   adminFieldSpaced,
@@ -23,8 +25,24 @@ import {
   adminListTitle,
   adminListTools,
   adminListTop,
+  adminPanelCard,
   adminPanelForm,
+  adminSectionLink,
+  adminSectionLinkActive,
+  adminSectionNav,
+  adminStatCard,
+  adminStatLabel,
+  adminStatsGrid,
+  adminStatValue,
   adminTextarea,
+  adminUserEmail,
+  adminUserItem,
+  adminUserList,
+  adminUserMeta,
+  adminUserName,
+  adminUserStatus,
+  adminUserStatusActive,
+  adminUserStatusInactive,
   blockText,
   blockTitle,
   container,
@@ -66,10 +84,18 @@ import {
 } from '../data/culturalContent';
 import {
   createAdminContent,
+  createAdminUser,
+  deactivateAdminUser,
   deleteAdminContent,
   fetchAdminContent,
+  fetchAdminRoles,
+  fetchAdminUsers,
+  fetchInfoCulturaMe,
+  InfoCulturaRole,
+  InfoCulturaUser,
   loginInfoCultura,
-  updateAdminContent
+  updateAdminContent,
+  updateAdminUser,
 } from '../data/infoculturaApi';
 
 const TOKEN_KEY = 'ispgaya_cultura_token';
@@ -82,7 +108,22 @@ type FormState = {
   status: 'rascunho' | 'publicado';
 };
 
-const initialForm: FormState = {
+type UserFormState = {
+  name: string;
+  email: string;
+  role: string;
+  password: string;
+};
+
+type AdminSection = 'resumo' | 'utilizadores' | 'conteudos';
+
+type UserPage =
+  | { mode: 'list' }
+  | { mode: 'create' }
+  | { mode: 'edit'; userId: number }
+  | { mode: 'deactivate'; userId: number };
+
+const initialContentForm: FormState = {
   area: 'tuna',
   title: '',
   description: '',
@@ -90,7 +131,75 @@ const initialForm: FormState = {
   status: 'rascunho'
 };
 
+const initialUserForm: UserFormState = {
+  name: '',
+  email: '',
+  role: 'club_admin',
+  password: ''
+};
+
+const adminSections: { id: AdminSection; label: string; href: string }[] = [
+  { id: 'resumo', label: 'Resumo', href: '/infocultura/resumo' },
+  { id: 'utilizadores', label: 'Utilizadores', href: '/infocultura/utilizadores' },
+  { id: 'conteudos', label: 'Conteudos', href: '/infocultura/conteudos' }
+];
+
+function getAdminSection(pathname: string): AdminSection | null {
+  if (pathname === '/infocultura' || pathname === '/infocultura/' || pathname === '/infocultura/resumo') {
+    return 'resumo';
+  }
+
+  if (
+    pathname === '/infocultura/utilizadores' ||
+    pathname.startsWith('/infocultura/utilizadores/')
+  ) {
+    return 'utilizadores';
+  }
+
+  if (pathname === '/infocultura/conteudos') {
+    return 'conteudos';
+  }
+
+  return null;
+}
+
+function getUserPage(pathname: string): UserPage | null {
+  if (pathname === '/infocultura/utilizadores') {
+    return { mode: 'list' };
+  }
+
+  if (pathname === '/infocultura/utilizadores/novo') {
+    return { mode: 'create' };
+  }
+
+  const editMatch = pathname.match(/^\/infocultura\/utilizadores\/(\d+)\/editar\/?$/);
+  if (editMatch) {
+    return { mode: 'edit', userId: Number(editMatch[1]) };
+  }
+
+  const deactivateMatch = pathname.match(
+    /^\/infocultura\/utilizadores\/(\d+)\/desativar\/?$/
+  );
+  if (deactivateMatch) {
+    return { mode: 'deactivate', userId: Number(deactivateMatch[1]) };
+  }
+
+  return null;
+}
+
+function sortUsers(list: InfoCulturaUser[]): InfoCulturaUser[] {
+  return [...list].sort((a, b) => {
+    if (a.is_active !== b.is_active) {
+      return a.is_active ? -1 : 1;
+    }
+
+    return a.name.localeCompare(b.name) || a.email.localeCompare(b.email);
+  });
+}
+
 function AdminCultura() {
+  const location = useLocation();
+  const navigate = useNavigate();
   const [authUser, setAuthUser] = useState('');
   const [authPass, setAuthPass] = useState('');
   const [authError, setAuthError] = useState('');
@@ -100,35 +209,89 @@ function AdminCultura() {
   });
   const isAuth = token.length > 0;
   const [items, setItems] = useState<CulturalItem[]>([]);
+  const [users, setUsers] = useState<InfoCulturaUser[]>([]);
+  const [roles, setRoles] = useState<InfoCulturaRole[]>([]);
+  const [currentUser, setCurrentUser] = useState<InfoCulturaUser | null>(null);
   const [isLoadingItems, setIsLoadingItems] = useState(false);
+  const [isLoadingUsers, setIsLoadingUsers] = useState(false);
+  const [isLoadingRoles, setIsLoadingRoles] = useState(false);
   const [panelError, setPanelError] = useState('');
-  const [isSaving, setIsSaving] = useState(false);
+  const [isSavingContent, setIsSavingContent] = useState(false);
+  const [isSavingUser, setIsSavingUser] = useState(false);
+  const [isDeactivatingUser, setIsDeactivatingUser] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
-  const [form, setForm] = useState<FormState>(initialForm);
+  const [contentForm, setContentForm] = useState<FormState>(initialContentForm);
+  const [userForm, setUserForm] = useState<UserFormState>(initialUserForm);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [userFormError, setUserFormError] = useState('');
 
+  const activeSection = getAdminSection(location.pathname);
+  const userPage = useMemo(() => getUserPage(location.pathname), [location.pathname]);
+  const canManageUsers = currentUser?.role === 'superadmin';
   const sortedItems = useMemo(
     () => [...items].sort((a, b) => (a.updatedAt < b.updatedAt ? 1 : -1)),
     [items]
+  );
+  const sortedUsers = useMemo(() => sortUsers(users), [users]);
+  const selectedUser = useMemo(() => {
+    if (!userPage || userPage.mode === 'list' || userPage.mode === 'create') {
+      return null;
+    }
+
+    return users.find((user) => user.id === userPage.userId) || null;
+  }, [userPage, users]);
+  const publishedItems = useMemo(
+    () => items.filter((item) => item.status === 'publicado').length,
+    [items]
+  );
+  const activeUsers = useMemo(
+    () => users.filter((user) => user.is_active).length,
+    [users]
   );
 
   function clearAuth() {
     setToken('');
     setItems([]);
+    setUsers([]);
+    setRoles([]);
+    setCurrentUser(null);
     setPanelError('');
+    setUserFormError('');
     sessionStorage.removeItem(TOKEN_KEY);
   }
 
-  async function loadAdminItems(authToken: string) {
+  function resetContentForm() {
+    setContentForm(initialContentForm);
+    setEditingId(null);
+  }
+
+  function resetUserForm(defaultRole?: string) {
+    setUserForm({
+      ...initialUserForm,
+      role: defaultRole || roles[0]?.name || initialUserForm.role
+    });
+    setUserFormError('');
+  }
+
+  async function loadAdminData(authToken: string) {
     setIsLoadingItems(true);
+    setIsLoadingUsers(true);
     setPanelError('');
 
     try {
-      const nextItems = await fetchAdminContent(authToken);
+      const [nextItems, nextUsers, nextCurrentUser] = await Promise.all([
+        fetchAdminContent(authToken),
+        fetchAdminUsers(authToken),
+        fetchInfoCulturaMe(authToken)
+      ]);
       setItems(nextItems);
+      setUsers(nextUsers);
+      setCurrentUser(nextCurrentUser);
     } catch (error) {
       const message =
-        error instanceof Error ? error.message : 'Nao foi possivel carregar os conteudos.';
+        error instanceof Error
+          ? error.message
+          : 'Nao foi possivel carregar os dados do painel.';
       setPanelError(message);
 
       if (message.toLowerCase().includes('token')) {
@@ -136,13 +299,63 @@ function AdminCultura() {
       }
     } finally {
       setIsLoadingItems(false);
+      setIsLoadingUsers(false);
     }
   }
 
   useEffect(() => {
     if (!token) return;
-    void loadAdminItems(token);
+    void loadAdminData(token);
   }, [token]);
+
+  useEffect(() => {
+    if (!token || !canManageUsers) {
+      setRoles([]);
+      return;
+    }
+
+    let isMounted = true;
+    setIsLoadingRoles(true);
+
+    void fetchAdminRoles(token)
+      .then((nextRoles) => {
+        if (!isMounted) return;
+        setRoles(nextRoles);
+      })
+      .catch((error) => {
+        if (!isMounted) return;
+        const message =
+          error instanceof Error ? error.message : 'Nao foi possivel carregar os perfis.';
+        setPanelError(message);
+      })
+      .finally(() => {
+        if (!isMounted) return;
+        setIsLoadingRoles(false);
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [token, canManageUsers]);
+
+  useEffect(() => {
+    if (activeSection !== 'utilizadores' || !userPage) return;
+
+    if (userPage.mode === 'create') {
+      resetUserForm();
+      return;
+    }
+
+    if (userPage.mode === 'edit' && selectedUser) {
+      setUserForm({
+        name: selectedUser.name,
+        email: selectedUser.email,
+        role: selectedUser.role,
+        password: ''
+      });
+      setUserFormError('');
+    }
+  }, [activeSection, userPage, selectedUser, roles]);
 
   async function handleLogin(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -164,24 +377,20 @@ function AdminCultura() {
     clearAuth();
     setAuthUser('');
     setAuthPass('');
-    resetForm();
+    resetContentForm();
+    resetUserForm();
   }
 
-  function resetForm() {
-    setForm(initialForm);
-    setEditingId(null);
-  }
-
-  async function handleSave(event: FormEvent<HTMLFormElement>) {
+  async function handleSaveContent(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!token) return;
 
     const payload = {
-      area: form.area,
-      title: form.title.trim(),
-      description: form.description.trim(),
-      date: form.date,
-      status: form.status
+      area: contentForm.area,
+      title: contentForm.title.trim(),
+      description: contentForm.description.trim(),
+      date: contentForm.date,
+      status: contentForm.status
     };
 
     if (!payload.title || !payload.description || !payload.date) {
@@ -189,32 +398,32 @@ function AdminCultura() {
       return;
     }
 
-    setIsSaving(true);
+    setIsSavingContent(true);
     setPanelError('');
 
     try {
       if (editingId) {
         const updated = await updateAdminContent(token, editingId, payload);
         setItems((prev) => prev.map((item) => (item.id === editingId ? updated : item)));
-        resetForm();
+        resetContentForm();
         return;
       }
 
       const created = await createAdminContent(token, payload);
       setItems((prev) => [created, ...prev]);
-      resetForm();
+      resetContentForm();
     } catch (error) {
       const message =
         error instanceof Error ? error.message : 'Nao foi possivel guardar o conteudo.';
       setPanelError(message);
     } finally {
-      setIsSaving(false);
+      setIsSavingContent(false);
     }
   }
 
-  function handleEdit(item: CulturalItem) {
+  function handleEditContent(item: CulturalItem) {
     setEditingId(item.id);
-    setForm({
+    setContentForm({
       area: item.area,
       title: item.title,
       description: item.description,
@@ -223,7 +432,7 @@ function AdminCultura() {
     });
   }
 
-  async function handleDelete(id: string) {
+  async function handleDeleteContent(id: string) {
     if (!token) return;
 
     setDeletingId(id);
@@ -234,7 +443,7 @@ function AdminCultura() {
       setItems((prev) => prev.filter((item) => item.id !== id));
 
       if (editingId === id) {
-        resetForm();
+        resetContentForm();
       }
     } catch (error) {
       const message =
@@ -243,6 +452,99 @@ function AdminCultura() {
     } finally {
       setDeletingId(null);
     }
+  }
+
+  async function handleSaveUser(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    if (!token || !canManageUsers || !userPage) return;
+
+    const payload = {
+      name: userForm.name.trim(),
+      email: userForm.email.trim(),
+      role: userForm.role,
+      ...(userForm.password.trim() ? { password: userForm.password.trim() } : {})
+    };
+
+    if (!payload.name || !payload.email || !payload.role) {
+      setUserFormError('Preenche nome, email e role.');
+      return;
+    }
+
+    if (userPage.mode === 'create' && !payload.password) {
+      setUserFormError('A password e obrigatoria para criar um utilizador.');
+      return;
+    }
+
+    setIsSavingUser(true);
+    setUserFormError('');
+
+    try {
+      const savedUser =
+        userPage.mode === 'create'
+          ? await createAdminUser(token, payload)
+          : userPage.mode === 'edit'
+            ? await updateAdminUser(token, userPage.userId, payload)
+            : null;
+
+      if (!savedUser) {
+        return;
+      }
+
+      setUsers((prev) =>
+        userPage.mode === 'create'
+          ? sortUsers([savedUser, ...prev])
+          : sortUsers(prev.map((user) => (user.id === savedUser.id ? savedUser : user)))
+      );
+
+      if (currentUser?.id === savedUser.id) {
+        setCurrentUser(savedUser);
+      }
+
+      resetUserForm();
+      navigate('/infocultura/utilizadores');
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : 'Nao foi possivel guardar o utilizador.';
+      setUserFormError(message);
+    } finally {
+      setIsSavingUser(false);
+    }
+  }
+
+  async function handleDeactivateUser(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    if (!token || !canManageUsers || !selectedUser) return;
+
+    setIsDeactivatingUser(true);
+    setUserFormError('');
+
+    try {
+      const updatedUser = await deactivateAdminUser(token, selectedUser.id);
+      setUsers((prev) =>
+        sortUsers(prev.map((user) => (user.id === updatedUser.id ? updatedUser : user)))
+      );
+      navigate('/infocultura/utilizadores');
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : 'Nao foi possivel desativar o utilizador.';
+      setUserFormError(message);
+    } finally {
+      setIsDeactivatingUser(false);
+    }
+  }
+
+  if (location.pathname === '/infocultura' || location.pathname === '/infocultura/') {
+    return <Navigate to="/infocultura/resumo" replace />;
+  }
+
+  if (!activeSection) {
+    return <Navigate to="/infocultura/resumo" replace />;
+  }
+
+  if (activeSection === 'utilizadores' && !userPage) {
+    return <Navigate to="/infocultura/utilizadores" replace />;
   }
 
   if (!isAuth) {
@@ -291,8 +593,6 @@ function AdminCultura() {
                 </div>
 
                 <div className={infoLegacyRight}>
-
-
                   <h2 className={infoLegacyLoginTitle}>Entrar</h2>
                   <p className={infoLegacyLoginHint}>
                     Acesso reservado aos administradores do InfoCultura.
@@ -372,155 +672,510 @@ function AdminCultura() {
         <div className={container}>
           <div className={adminHeaderRow}>
             <span className={adminBadge}>InfoCultura</span>
-            <p className={adminInfo}>Gestao de Tuna, Clube de Leitura e Teatro.</p>
+            <p className={adminInfo}>
+              {activeSection === 'utilizadores'
+                ? 'Gestao e consulta dos utilizadores do InfoCultura.'
+                : activeSection === 'conteudos'
+                  ? 'Gestao de Tuna, Clube de Leitura e Teatro.'
+                  : 'Visao geral do painel administrativo.'}
+            </p>
             <button type="button" onClick={handleLogout} className={adminBtnSecondary}>
               Terminar sessao
             </button>
           </div>
           {panelError ? <p className={adminError}>{panelError}</p> : null}
 
-          <form onSubmit={handleSave} className={adminPanelForm}>
-            <h2 className={blockTitle}>
-              {editingId ? 'Editar Conteudo' : 'Novo Conteudo'}
-            </h2>
-            <p className={blockText}>
-              Cria ou atualiza conteudo para as paginas do Laboratorio Cultural.
-            </p>
-
-            <div className={adminFormGridSpaced}>
-              <div className={adminField}>
-                <label className={adminLabel} htmlFor="area">
-                  Area
-                </label>
-                <select
-                  id="area"
-                  className={adminInput}
-                  value={form.area}
-                  onChange={(event) =>
-                    setForm((prev) => ({
-                      ...prev,
-                      area: event.target.value as CulturalArea
-                    }))
-                  }
-                >
-                  <option value="tuna">Tuna Academica</option>
-                  <option value="clube-leitura">Clube de Leitura</option>
-                  <option value="teatro">Teatro</option>
-                </select>
-              </div>
-
-              <div className={adminField}>
-                <label className={adminLabel} htmlFor="date">
-                  Data
-                </label>
-                <input
-                  id="date"
-                  type="date"
-                  className={adminInput}
-                  value={form.date}
-                  onChange={(event) =>
-                    setForm((prev) => ({ ...prev, date: event.target.value }))
-                  }
-                />
-              </div>
-
-              <div className={adminField}>
-                <label className={adminLabel} htmlFor="title">
-                  Titulo
-                </label>
-                <input
-                  id="title"
-                  className={adminInput}
-                  value={form.title}
-                  onChange={(event) =>
-                    setForm((prev) => ({ ...prev, title: event.target.value }))
-                  }
-                />
-              </div>
-
-              <div className={adminField}>
-                <label className={adminLabel} htmlFor="status">
-                  Estado
-                </label>
-                <select
-                  id="status"
-                  className={adminInput}
-                  value={form.status}
-                  onChange={(event) =>
-                    setForm((prev) => ({
-                      ...prev,
-                      status: event.target.value as 'rascunho' | 'publicado'
-                    }))
-                  }
-                >
-                  <option value="rascunho">Rascunho</option>
-                  <option value="publicado">Publicado</option>
-                </select>
-              </div>
-            </div>
-
-            <div className={adminFieldSpaced}>
-              <label className={adminLabel} htmlFor="description">
-                Descricao
-              </label>
-              <textarea
-                id="description"
-                rows={4}
-                className={adminTextarea}
-                value={form.description}
-                onChange={(event) =>
-                  setForm((prev) => ({ ...prev, description: event.target.value }))
+          <nav className={adminSectionNav} aria-label="Secoes do painel">
+            {adminSections.map((section) => (
+              <NavLink
+                key={section.id}
+                to={section.href}
+                className={({ isActive }) =>
+                  isActive ? adminSectionLinkActive : adminSectionLink
                 }
-              />
-            </div>
+              >
+                {section.label}
+              </NavLink>
+            ))}
+          </nav>
 
-            <div className={adminActions}>
-              <button type="submit" className={adminBtnPrimary} disabled={isSaving}>
-                {isSaving ? 'A guardar...' : editingId ? 'Atualizar' : 'Criar'}
-              </button>
-              <button type="button" onClick={resetForm} className={adminBtnSecondary}>
-                Limpar
-              </button>
-            </div>
-          </form>
+          {activeSection === 'resumo' ? (
+            <div className={adminDashboardGrid}>
+              <section className={adminPanelCard}>
+                <h2 className={blockTitle}>Painel InfoCultura</h2>
+                <p className={blockText}>
+                  Consulta a sessao atual e os principais indicadores do sistema.
+                </p>
 
-          <div className={adminList}>
-            {isLoadingItems ? (
-              <p className={adminInfo}>A carregar conteudos...</p>
-            ) : null}
-            {sortedItems.map((item) => (
-              <article key={item.id} className={adminListItem}>
-                <div className={adminListTop}>
-                  <div>
-                    <h3 className={adminListTitle}>{item.title}</h3>
-                    <p className={adminListMeta}>
-                      {getAreaLabel(item.area)} · {item.date} · {item.status}
-                    </p>
+                <div className={adminStatsGrid}>
+                  <div className={adminStatCard}>
+                    <p className={adminStatValue}>{users.length}</p>
+                    <p className={adminStatLabel}>Utilizadores</p>
+                  </div>
+                  <div className={adminStatCard}>
+                    <p className={adminStatValue}>{activeUsers}</p>
+                    <p className={adminStatLabel}>Ativos</p>
+                  </div>
+                  <div className={adminStatCard}>
+                    <p className={adminStatValue}>{publishedItems}</p>
+                    <p className={adminStatLabel}>Publicados</p>
+                  </div>
+                </div>
+              </section>
+
+              <section className={adminPanelCard}>
+                <h2 className={blockTitle}>Sessao Atual</h2>
+                <p className={blockText}>Informacao do utilizador autenticado neste momento.</p>
+
+                <div className={adminUserList}>
+                  <div className={adminUserItem}>
+                    <div>
+                      <h3 className={adminUserName}>Administrador autenticado</h3>
+                      <p className={adminUserEmail}>
+                        {currentUser?.name || (isLoadingUsers ? 'A carregar...' : 'Sem dados')}
+                      </p>
+                      <p className={adminUserMeta}>
+                        {currentUser
+                          ? `${currentUser.email} · ${currentUser.role}`
+                          : 'InfoCultura'}
+                      </p>
+                    </div>
+                    {currentUser ? (
+                      <span
+                        className={`${adminUserStatus} ${
+                          currentUser.is_active
+                            ? adminUserStatusActive
+                            : adminUserStatusInactive
+                        }`}
+                      >
+                        {currentUser.is_active ? 'Ativo' : 'Inativo'}
+                      </span>
+                    ) : null}
+                  </div>
+                </div>
+              </section>
+            </div>
+          ) : null}
+
+          {activeSection === 'utilizadores' && userPage?.mode === 'list' ? (
+            <section className={adminPanelCard}>
+              <h2 className={blockTitle}>Utilizadores</h2>
+              <p className={blockText}>
+                Nesta pagina aparecem todos os utilizadores do InfoCultura.
+              </p>
+
+              <div className={adminStatsGrid}>
+                <div className={adminStatCard}>
+                  <p className={adminStatValue}>{users.length}</p>
+                  <p className={adminStatLabel}>Total</p>
+                </div>
+                <div className={adminStatCard}>
+                  <p className={adminStatValue}>{activeUsers}</p>
+                  <p className={adminStatLabel}>Ativos</p>
+                </div>
+                <div className={adminStatCard}>
+                  <p className={adminStatValue}>{users.length - activeUsers}</p>
+                  <p className={adminStatLabel}>Inativos</p>
+                </div>
+              </div>
+
+              {canManageUsers ? (
+                <div className={adminActions}>
+                  <NavLink to="/infocultura/utilizadores/novo" className={adminBtnPrimary}>
+                    Criar utilizador
+                  </NavLink>
+                </div>
+              ) : (
+                <p className={adminInfo}>
+                  Apenas o superadmin pode criar, editar e desativar utilizadores.
+                </p>
+              )}
+
+              <div className={adminUserList}>
+                {isLoadingUsers ? <p className={adminInfo}>A carregar utilizadores...</p> : null}
+                {!isLoadingUsers && sortedUsers.length === 0 ? (
+                  <p className={adminInfo}>Nao existem utilizadores para mostrar.</p>
+                ) : null}
+                {sortedUsers.map((user) => (
+                  <article key={user.id} className={adminUserItem}>
+                    <div>
+                      <h3 className={adminUserName}>{user.name}</h3>
+                      <p className={adminUserEmail}>{user.email}</p>
+                      <p className={adminUserMeta}>
+                        {user.role}
+                        {currentUser?.id === user.id ? ' · sessao atual' : ''}
+                      </p>
+                    </div>
+                    <div className={adminListTools}>
+                      <span
+                        className={`${adminUserStatus} ${
+                          user.is_active ? adminUserStatusActive : adminUserStatusInactive
+                        }`}
+                      >
+                        {user.is_active ? 'Ativo' : 'Inativo'}
+                      </span>
+                      {canManageUsers ? (
+                        <>
+                          <NavLink
+                            to={`/infocultura/utilizadores/${user.id}/editar`}
+                            className={adminBtnEdit}
+                          >
+                            Editar
+                          </NavLink>
+                          {user.is_active && currentUser?.id !== user.id ? (
+                            <NavLink
+                              to={`/infocultura/utilizadores/${user.id}/desativar`}
+                              className={adminBtnDanger}
+                            >
+                              Desativar
+                            </NavLink>
+                          ) : null}
+                        </>
+                      ) : null}
+                    </div>
+                  </article>
+                ))}
+              </div>
+            </section>
+          ) : null}
+
+          {activeSection === 'utilizadores' &&
+          (userPage?.mode === 'create' || userPage?.mode === 'edit') ? (
+            <section className={adminPanelCard}>
+              <h2 className={blockTitle}>
+                {userPage.mode === 'create' ? 'Criar Utilizador' : 'Editar Utilizador'}
+              </h2>
+              <p className={blockText}>
+                {userPage.mode === 'create'
+                  ? 'Cria um novo utilizador para o InfoCultura.'
+                  : 'Atualiza os dados do utilizador selecionado.'}
+              </p>
+
+              <div className={adminActions}>
+                <NavLink to="/infocultura/utilizadores" className={adminBtnSecondary}>
+                  Voltar aos utilizadores
+                </NavLink>
+              </div>
+
+              {!canManageUsers ? (
+                <p className={adminError}>
+                  Apenas o superadmin pode aceder a esta pagina.
+                </p>
+              ) : userPage.mode === 'edit' && !selectedUser ? (
+                <p className={adminInfo}>
+                  {isLoadingUsers ? 'A carregar utilizador...' : 'Utilizador nao encontrado.'}
+                </p>
+              ) : (
+                <form onSubmit={handleSaveUser} className={adminPanelForm}>
+                  <div className={adminFormGridSpaced}>
+                    <div className={adminField}>
+                      <label className={adminLabel} htmlFor="user-name">
+                        Nome
+                      </label>
+                      <input
+                        id="user-name"
+                        className={adminInput}
+                        value={userForm.name}
+                        onChange={(event) =>
+                          setUserForm((prev) => ({ ...prev, name: event.target.value }))
+                        }
+                      />
+                    </div>
+
+                    <div className={adminField}>
+                      <label className={adminLabel} htmlFor="user-email">
+                        Email
+                      </label>
+                      <input
+                        id="user-email"
+                        type="email"
+                        className={adminInput}
+                        value={userForm.email}
+                        onChange={(event) =>
+                          setUserForm((prev) => ({ ...prev, email: event.target.value }))
+                        }
+                      />
+                    </div>
+
+                    <div className={adminField}>
+                      <label className={adminLabel} htmlFor="user-role">
+                        Role
+                      </label>
+                      <select
+                        id="user-role"
+                        className={adminInput}
+                        value={userForm.role}
+                        onChange={(event) =>
+                          setUserForm((prev) => ({ ...prev, role: event.target.value }))
+                        }
+                      >
+                        {isLoadingRoles ? <option>A carregar roles...</option> : null}
+                        {!isLoadingRoles && roles.length === 0 ? (
+                          <option value="">Sem roles disponiveis</option>
+                        ) : null}
+                        {roles.map((role) => (
+                          <option key={role.id} value={role.name}>
+                            {role.name}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div className={adminField}>
+                      <label className={adminLabel} htmlFor="user-password">
+                        {userPage.mode === 'create'
+                          ? 'Password'
+                          : 'Nova password (opcional)'}
+                      </label>
+                      <input
+                        id="user-password"
+                        type="password"
+                        className={adminInput}
+                        value={userForm.password}
+                        onChange={(event) =>
+                          setUserForm((prev) => ({ ...prev, password: event.target.value }))
+                        }
+                      />
+                    </div>
+                  </div>
+
+                  {userFormError ? <p className={adminError}>{userFormError}</p> : null}
+
+                  <div className={adminActions}>
+                    <button
+                      type="submit"
+                      className={adminBtnPrimary}
+                      disabled={isSavingUser || isLoadingRoles || roles.length === 0}
+                    >
+                      {isSavingUser
+                        ? 'A guardar...'
+                        : userPage.mode === 'create'
+                          ? 'Criar utilizador'
+                          : 'Guardar alteracoes'}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => resetUserForm()}
+                      className={adminBtnSecondary}
+                    >
+                      Limpar
+                    </button>
+                  </div>
+                </form>
+              )}
+            </section>
+          ) : null}
+
+          {activeSection === 'utilizadores' && userPage?.mode === 'deactivate' ? (
+            <section className={adminPanelCard}>
+              <h2 className={blockTitle}>Desativar Utilizador</h2>
+              <p className={blockText}>
+                Confirma a desativacao do utilizador selecionado.
+              </p>
+
+              <div className={adminActions}>
+                <NavLink to="/infocultura/utilizadores" className={adminBtnSecondary}>
+                  Voltar aos utilizadores
+                </NavLink>
+              </div>
+
+              {!canManageUsers ? (
+                <p className={adminError}>
+                  Apenas o superadmin pode aceder a esta pagina.
+                </p>
+              ) : !selectedUser ? (
+                <p className={adminInfo}>
+                  {isLoadingUsers ? 'A carregar utilizador...' : 'Utilizador nao encontrado.'}
+                </p>
+              ) : (
+                <form onSubmit={handleDeactivateUser} className={adminPanelForm}>
+                  <div className={adminUserItem}>
+                    <div>
+                      <h3 className={adminUserName}>{selectedUser.name}</h3>
+                      <p className={adminUserEmail}>{selectedUser.email}</p>
+                      <p className={adminUserMeta}>{selectedUser.role}</p>
+                    </div>
+                    <span
+                      className={`${adminUserStatus} ${
+                        selectedUser.is_active
+                          ? adminUserStatusActive
+                          : adminUserStatusInactive
+                      }`}
+                    >
+                      {selectedUser.is_active ? 'Ativo' : 'Inativo'}
+                    </span>
+                  </div>
+
+                  {userFormError ? <p className={adminError}>{userFormError}</p> : null}
+
+                  <div className={adminActions}>
+                    <button
+                      type="submit"
+                      className={adminBtnDanger}
+                      disabled={isDeactivatingUser || !selectedUser.is_active}
+                    >
+                      {isDeactivatingUser ? 'A desativar...' : 'Confirmar desativacao'}
+                    </button>
+                  </div>
+                </form>
+              )}
+            </section>
+          ) : null}
+
+          {activeSection === 'conteudos' ? (
+            <>
+              <form onSubmit={handleSaveContent} className={adminPanelForm}>
+                <h2 className={blockTitle}>
+                  {editingId ? 'Editar Conteudo' : 'Novo Conteudo'}
+                </h2>
+                <p className={blockText}>
+                  Cria ou atualiza conteudo para as paginas do Laboratorio Cultural.
+                </p>
+
+                <div className={adminFormGridSpaced}>
+                  <div className={adminField}>
+                    <label className={adminLabel} htmlFor="area">
+                      Area
+                    </label>
+                    <select
+                      id="area"
+                      className={adminInput}
+                      value={contentForm.area}
+                      onChange={(event) =>
+                        setContentForm((prev) => ({
+                          ...prev,
+                          area: event.target.value as CulturalArea
+                        }))
+                      }
+                    >
+                      <option value="tuna">Tuna Academica</option>
+                      <option value="clube-leitura">Clube de Leitura</option>
+                      <option value="teatro">Teatro</option>
+                    </select>
+                  </div>
+
+                  <div className={adminField}>
+                    <label className={adminLabel} htmlFor="date">
+                      Data
+                    </label>
+                    <input
+                      id="date"
+                      type="date"
+                      className={adminInput}
+                      value={contentForm.date}
+                      onChange={(event) =>
+                        setContentForm((prev) => ({ ...prev, date: event.target.value }))
+                      }
+                    />
+                  </div>
+
+                  <div className={adminField}>
+                    <label className={adminLabel} htmlFor="title">
+                      Titulo
+                    </label>
+                    <input
+                      id="title"
+                      className={adminInput}
+                      value={contentForm.title}
+                      onChange={(event) =>
+                        setContentForm((prev) => ({ ...prev, title: event.target.value }))
+                      }
+                    />
+                  </div>
+
+                  <div className={adminField}>
+                    <label className={adminLabel} htmlFor="status">
+                      Estado
+                    </label>
+                    <select
+                      id="status"
+                      className={adminInput}
+                      value={contentForm.status}
+                      onChange={(event) =>
+                        setContentForm((prev) => ({
+                          ...prev,
+                          status: event.target.value as 'rascunho' | 'publicado'
+                        }))
+                      }
+                    >
+                      <option value="rascunho">Rascunho</option>
+                      <option value="publicado">Publicado</option>
+                    </select>
                   </div>
                 </div>
 
-                <p className={adminListDesc}>{item.description}</p>
+                <div className={adminFieldSpaced}>
+                  <label className={adminLabel} htmlFor="description">
+                    Descricao
+                  </label>
+                  <textarea
+                    id="description"
+                    rows={4}
+                    className={adminTextarea}
+                    value={contentForm.description}
+                    onChange={(event) =>
+                      setContentForm((prev) => ({ ...prev, description: event.target.value }))
+                    }
+                  />
+                </div>
 
-                <div className={adminListTools}>
+                <div className={adminActions}>
                   <button
-                    type="button"
-                    className={adminBtnEdit}
-                    onClick={() => handleEdit(item)}
+                    type="submit"
+                    className={adminBtnPrimary}
+                    disabled={isSavingContent}
                   >
-                    Editar
+                    {isSavingContent ? 'A guardar...' : editingId ? 'Atualizar' : 'Criar'}
                   </button>
                   <button
                     type="button"
-                    className={adminBtnDanger}
-                    disabled={deletingId === item.id}
-                    onClick={() => handleDelete(item.id)}
+                    onClick={resetContentForm}
+                    className={adminBtnSecondary}
                   >
-                    {deletingId === item.id ? 'A apagar...' : 'Apagar'}
+                    Limpar
                   </button>
                 </div>
-              </article>
-            ))}
-          </div>
+              </form>
+
+              <div className={adminList}>
+                {isLoadingItems ? (
+                  <p className={adminInfo}>A carregar conteudos...</p>
+                ) : null}
+                {sortedItems.map((item) => (
+                  <article key={item.id} className={adminListItem}>
+                    <div className={adminListTop}>
+                      <div>
+                        <h3 className={adminListTitle}>{item.title}</h3>
+                        <p className={adminListMeta}>
+                          {getAreaLabel(item.area)} · {item.date} · {item.status}
+                        </p>
+                      </div>
+                    </div>
+
+                    <p className={adminListDesc}>{item.description}</p>
+
+                    <div className={adminListTools}>
+                      <button
+                        type="button"
+                        className={adminBtnEdit}
+                        onClick={() => handleEditContent(item)}
+                      >
+                        Editar
+                      </button>
+                      <button
+                        type="button"
+                        className={adminBtnDanger}
+                        disabled={deletingId === item.id}
+                        onClick={() => handleDeleteContent(item.id)}
+                      >
+                        {deletingId === item.id ? 'A apagar...' : 'Apagar'}
+                      </button>
+                    </div>
+                  </article>
+                ))}
+              </div>
+            </>
+          ) : null}
         </div>
       </main>
 

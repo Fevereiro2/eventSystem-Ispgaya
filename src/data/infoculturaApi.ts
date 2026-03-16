@@ -1,7 +1,7 @@
 import { CulturalArea, CulturalItem } from './culturalContent';
 
 const API_BASE = (
-  import.meta.env.VITE_INFOCULTURA_API || 'http://127.0.0.1:8000/api'
+  import.meta.env.VITE_INFOCULTURA_API || 'http://127.0.0.1:8001/api'
 ).replace(/\/$/, '');
 
 type ContentPayload = {
@@ -27,6 +27,36 @@ type ApiLoginResponse = {
     username: string;
     is_staff: boolean;
   };
+};
+
+export type InfoCulturaUser = {
+  id: number;
+  name: string;
+  email: string;
+  role: string;
+  is_active: boolean;
+};
+
+export type InfoCulturaRole = {
+  id: number;
+  name: string;
+  description?: string | null;
+};
+
+export type UserPayload = {
+  name: string;
+  email: string;
+  role: string;
+  password?: string;
+  is_active?: boolean;
+};
+
+type ApiMeResponse = {
+  user: InfoCulturaUser;
+};
+
+type ApiUserResponse = {
+  user: InfoCulturaUser;
 };
 
 async function request<T>(
@@ -102,6 +132,67 @@ export async function loginInfoCultura(username: string, password: string): Prom
   });
 
   return data.token;
+}
+
+export async function fetchInfoCulturaMe(token: string): Promise<InfoCulturaUser> {
+  const data = await request<ApiMeResponse>('/auth/me/', {}, token);
+  return data.user;
+}
+
+export async function fetchAdminUsers(token: string): Promise<InfoCulturaUser[]> {
+  return request<InfoCulturaUser[]>('/auth/users/', {}, token);
+}
+
+export async function fetchAdminUser(token: string, id: number): Promise<InfoCulturaUser> {
+  return request<InfoCulturaUser>(`/auth/users/${id}/`, {}, token);
+}
+
+export async function fetchAdminRoles(token: string): Promise<InfoCulturaRole[]> {
+  return request<InfoCulturaRole[]>('/auth/roles/', {}, token);
+}
+
+export async function createAdminUser(
+  token: string,
+  payload: UserPayload
+): Promise<InfoCulturaUser> {
+  return request<InfoCulturaUser>(
+    '/auth/users/',
+    {
+      method: 'POST',
+      body: JSON.stringify(payload)
+    },
+    token
+  );
+}
+
+export async function updateAdminUser(
+  token: string,
+  id: number,
+  payload: UserPayload
+): Promise<InfoCulturaUser> {
+  return request<InfoCulturaUser>(
+    `/auth/users/${id}/`,
+    {
+      method: 'PUT',
+      body: JSON.stringify(payload)
+    },
+    token
+  );
+}
+
+export async function deactivateAdminUser(
+  token: string,
+  id: number
+): Promise<InfoCulturaUser> {
+  const data = await request<ApiUserResponse>(
+    `/auth/users/${id}/deactivate/`,
+    {
+      method: 'POST'
+    },
+    token
+  );
+
+  return data.user;
 }
 
 export async function fetchAdminContent(token: string): Promise<CulturalItem[]> {
