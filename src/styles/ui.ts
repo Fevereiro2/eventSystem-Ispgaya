@@ -137,6 +137,11 @@ export const labResearchLink = 'mt-5 inline-block text-sm font-semibold text-[#d
 
 export const adminHeaderRow =
   'mb-6 flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 pb-4';
+export const adminSectionNav = 'mb-8 flex flex-wrap gap-2';
+export const adminSectionLink =
+  'rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition-colors hover:border-[#dd8609] hover:text-[#dd8609]';
+export const adminSectionLinkActive =
+  'rounded-md border border-[#dd8609] bg-orange-50 px-4 py-2 text-sm font-semibold text-[#dd8609]';
 export const adminBadge =
   'inline-flex items-center rounded-full bg-slate-900 px-3 py-1 text-xs font-semibold text-white';
 export const adminInfo = 'text-sm text-slate-600';
@@ -155,6 +160,8 @@ export const adminLoginForm = 'mt-5 space-y-3';
 export const adminError = 'text-sm text-red-600';
 export const adminPanelForm =
   'max-w-4xl rounded-xl border border-slate-200 bg-white p-6 shadow-sm';
+export const adminPanelCard =
+  'rounded-xl border border-slate-200 bg-white p-6 shadow-sm';
 export const adminActions = 'mt-4 flex flex-wrap gap-2';
 export const adminBtnPrimary =
   'rounded-md bg-[#dd8609] px-4 py-2 text-sm font-semibold text-white transition-opacity hover:opacity-90';
@@ -172,6 +179,22 @@ export const adminListTitle = 'text-base font-semibold text-slate-900';
 export const adminListMeta = 'mt-1 text-xs text-slate-500';
 export const adminListDesc = 'mt-2 text-sm text-slate-700';
 export const adminListTools = 'mt-3 flex gap-2';
+export const adminDashboardGrid = 'mb-8 grid grid-cols-1 gap-4 xl:grid-cols-[0.95fr_1.05fr]';
+export const adminStatsGrid = 'mt-5 grid grid-cols-1 gap-3 sm:grid-cols-3';
+export const adminStatCard = 'rounded-lg border border-slate-200 bg-slate-50 p-4';
+export const adminStatValue = 'text-2xl font-semibold text-slate-900';
+export const adminStatLabel =
+  'mt-1 text-xs font-semibold uppercase tracking-[0.12em] text-slate-500';
+export const adminUserList = 'mt-5 space-y-3';
+export const adminUserItem =
+  'flex flex-wrap items-start justify-between gap-3 rounded-lg border border-slate-200 bg-slate-50 p-4';
+export const adminUserName = 'text-sm font-semibold text-slate-900';
+export const adminUserEmail = 'mt-1 text-sm text-slate-600';
+export const adminUserMeta = 'text-xs text-slate-500';
+export const adminUserStatus =
+  'inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold';
+export const adminUserStatusActive = 'bg-green-100 text-green-700';
+export const adminUserStatusInactive = 'bg-slate-200 text-slate-600';
 export const adminLoginWrap = 'max-w-md rounded-xl border border-slate-200 bg-white p-6 shadow-sm';
 export const infoMaster = 'mx-auto w-full max-w-6xl';
 export const infoWrap = 'py-8 md:py-12';
