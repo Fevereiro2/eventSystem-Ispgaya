@@ -27,6 +27,38 @@ python manage.py bootstrap_infocultura
 python manage.py runserver 8001
 ```
 
+## 1.1) Alembic numa base de dados já existente
+
+O projeto já tem configuração Alembic, mas a tua base MySQL atual pode já ter tabelas criadas fora destas migrations.
+O `env.py` está configurado para gerir apenas a baseline live (`roles`, `users`, `clubs`, `registrations`) e ignorar tabelas do Django durante `autogenerate`.
+
+Antes de aplicar qualquer revisão:
+
+```bash
+cd backend
+source .venv/bin/activate
+alembic -c alembic.ini current
+python -m infocultura.inspect_schema_alignment --metadata live
+```
+
+Se a base já existir e quiseres apenas passar a controlá-la com Alembic sem recriar tabelas, faz primeiro um `stamp`:
+
+```bash
+alembic -c alembic.ini stamp head
+```
+
+Só deves correr `upgrade head` diretamente numa base vazia ou quando já confirmaste que o schema real está alinhado com o metadata SQLAlchemy:
+
+```bash
+alembic -c alembic.ini upgrade head
+```
+
+Para gerar o SQL sem aplicar:
+
+```bash
+alembic -c alembic.ini upgrade head --sql
+```
+
 ## 2) Variáveis importantes (`.env`)
 
 ```env
@@ -61,6 +93,17 @@ INFOCULTURA_ADMIN_PASS=cultura2026
 - `POST /api/content/admin/` (roles `superadmin` ou `club_admin`)
 - `PUT /api/content/admin/<uuid>/` (roles `superadmin` ou `club_admin`)
 - `DELETE /api/content/admin/<uuid>/` (roles `superadmin` ou `club_admin`)
+
+## 4.1) Ferramentas de schema
+
+- `python -m infocultura.generate_sqlalchemy_ddl`
+  - gera o DDL MySQL do schema alvo alargado em `infocultura/sqlalchemy_models.py`
+- `python -m infocultura.generate_sqlalchemy_live_ddl`
+  - gera o DDL MySQL da baseline real atual em `infocultura/sqlalchemy_live_models.py`
+- `python -m infocultura.inspect_schema_alignment --metadata live`
+  - compara a base de dados real com a baseline Alembic atual
+- `python -m infocultura.inspect_schema_alignment --metadata target`
+  - compara a base de dados real com o schema alvo alargado
 
 ## 5) Frontend (Vite)
 
