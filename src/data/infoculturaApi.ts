@@ -54,6 +54,27 @@ export type InfoCulturaClub = {
   created_at: string;
 };
 
+export type InfoCulturaNewsStatus = {
+  id: number;
+  name: string;
+  description: string;
+};
+
+export type InfoCulturaNews = {
+  id: number;
+  title: string;
+  summary: string;
+  image: string;
+  content: string;
+  published_at: string | null;
+  created_at: string;
+  updated_at: string;
+  news_status_id: number;
+  news_status_name: string;
+  club_id: number;
+  club_name: string;
+};
+
 export type UserPayload = {
   name: string;
   email: string;
@@ -67,6 +88,16 @@ export type ClubPayload = {
   description: string;
   mission?: string;
   is_active?: boolean;
+};
+
+export type NewsPayload = {
+  title: string;
+  summary: string;
+  image: string;
+  content: string;
+  news_status: string;
+  published_at?: string | null;
+  club_id?: number;
 };
 
 type ApiMeResponse = {
@@ -231,6 +262,19 @@ export async function fetchPublicClub(id: number): Promise<InfoCulturaClub> {
   return request<InfoCulturaClub>(`/clubs/${id}/`);
 }
 
+export async function fetchPublicNewsStatuses(): Promise<InfoCulturaNewsStatus[]> {
+  return request<InfoCulturaNewsStatus[]>('/news/statuses/');
+}
+
+export async function fetchPublicNews(clubId?: number): Promise<InfoCulturaNews[]> {
+  const query = typeof clubId === 'number' ? `?club_id=${clubId}` : '';
+  return request<InfoCulturaNews[]>(`/news/${query}`);
+}
+
+export async function fetchPublicNewsItem(id: number): Promise<InfoCulturaNews> {
+  return request<InfoCulturaNews>(`/news/${id}/`);
+}
+
 export async function createAdminContent(
   token: string,
   payload: ContentPayload
@@ -276,6 +320,55 @@ export async function deleteAdminContent(token: string, id: string): Promise<voi
 
 export async function fetchAdminClubs(token: string): Promise<InfoCulturaClub[]> {
   return request<InfoCulturaClub[]>('/clubs/admin/', {}, token);
+}
+
+export async function fetchAdminNewsStatuses(
+  token: string
+): Promise<InfoCulturaNewsStatus[]> {
+  return request<InfoCulturaNewsStatus[]>('/news/admin/statuses/', {}, token);
+}
+
+export async function fetchAdminNews(token: string): Promise<InfoCulturaNews[]> {
+  return request<InfoCulturaNews[]>('/news/admin/', {}, token);
+}
+
+export async function createAdminNews(
+  token: string,
+  payload: NewsPayload
+): Promise<InfoCulturaNews> {
+  return request<InfoCulturaNews>(
+    '/news/admin/',
+    {
+      method: 'POST',
+      body: JSON.stringify(payload)
+    },
+    token
+  );
+}
+
+export async function updateAdminNews(
+  token: string,
+  id: number,
+  payload: NewsPayload
+): Promise<InfoCulturaNews> {
+  return request<InfoCulturaNews>(
+    `/news/admin/${id}/`,
+    {
+      method: 'PUT',
+      body: JSON.stringify(payload)
+    },
+    token
+  );
+}
+
+export async function deleteAdminNews(token: string, id: number): Promise<void> {
+  await request<void>(
+    `/news/admin/${id}/`,
+    {
+      method: 'DELETE'
+    },
+    token
+  );
 }
 
 export async function createAdminClub(
