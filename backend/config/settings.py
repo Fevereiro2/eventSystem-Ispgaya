@@ -101,6 +101,13 @@ REST_FRAMEWORK = {
     'DEFAULT_PERMISSION_CLASSES': ['rest_framework.permissions.AllowAny'],
 }
 
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+        'LOCATION': 'infocultura-default',
+    }
+}
+
 INFOCULTURA_JWT_SECRET = os.getenv('INFOCULTURA_JWT_SECRET', SECRET_KEY)
 INFOCULTURA_JWT_EXPIRES_HOURS = int(os.getenv('INFOCULTURA_JWT_EXPIRES_HOURS', '12'))
 INFOCULTURA_ADMIN_USER = os.getenv('INFOCULTURA_ADMIN_USER', 'admin')
