@@ -31,7 +31,7 @@ class InfoCulturaJWTAuthentication(authentication.BaseAuthentication):
         if not user_id:
             raise exceptions.AuthenticationFailed('Token sem utilizador.')
 
-        user = AppUser.objects.select_related('role').filter(id=user_id, is_active=True).first()
+        user = AppUser.objects.select_related('role', 'club').filter(id=user_id, is_active=True).first()
         if not user:
             raise exceptions.AuthenticationFailed('Utilizador nao encontrado ou inativo.')
 

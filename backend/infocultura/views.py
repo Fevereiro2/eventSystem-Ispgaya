@@ -7,6 +7,7 @@ from .models import AppUser, Club, CulturalContent, Role
 from .permissions import IsClubAdmin, IsSuperAdmin
 from .serializers import (
     AdminUserWriteSerializer,
+    ClubMemberAssignSerializer,
     ClubSerializer,
     CulturalContentSerializer,
     LoginSerializer,
@@ -70,7 +71,7 @@ class AdminRoleListView(generics.ListAPIView):
 
 
 class AdminUserListCreateView(generics.ListCreateAPIView):
-    queryset = AppUser.objects.select_related('role').all()
+    queryset = AppUser.objects.select_related('role', 'club').all()
 
     def get_permissions(self):
         if self.request.method == 'GET':
@@ -86,11 +87,11 @@ class AdminUserListCreateView(generics.ListCreateAPIView):
         return AdminUserWriteSerializer
 
     def get_queryset(self):
-        return AppUser.objects.select_related('role').order_by('-is_active', 'name', 'email')
+        return AppUser.objects.select_related('role', 'club').order_by('-is_active', 'name', 'email')
 
 
 class AdminUserDetailView(generics.RetrieveUpdateAPIView):
-    queryset = AppUser.objects.select_related('role').all()
+    queryset = AppUser.objects.select_related('role', 'club').all()
 
     def get_permissions(self):
         if self.request.method == 'GET':
@@ -122,7 +123,7 @@ class AdminUserDeactivateView(APIView):
     permission_classes = [permissions.IsAuthenticated, IsSuperAdmin]
 
     def post(self, request, pk):
-        user = AppUser.objects.select_related('role').filter(pk=pk).first()
+        user = AppUser.objects.select_related('role', 'club').filter(pk=pk).first()
         if not user:
             return Response({'message': 'Utilizador nao encontrado.'}, status=404)
 
@@ -189,3 +190,54 @@ class AdminClubDetailView(generics.RetrieveUpdateDestroyAPIView):
     queryset = Club.objects.all()
     serializer_class = ClubSerializer
     permission_classes = [permissions.IsAuthenticated, IsSuperAdmin]
+
+    def destroy(self, request, *args, **kwargs):
+        club = self.get_object()
+        if AppUser.objects.filter(club=club).exists():
+            return Response(
+                {'message': 'Nao podes apagar um clube com utilizadores associados.'},
+                status=400,
+            )
+
+        return super().destroy(request, *args, **kwargs)
+
+
+class AdminClubMemberAssignView(APIView):
+    permission_classes = [permissions.IsAuthenticated, IsSuperAdmin]
+
+    def post(self, request, pk):
+        club = Club.objects.filter(pk=pk).first()
+        if not club:
+            return Response({'message': 'Clube nao encontrado.'}, status=404)
+
+        serializer = ClubMemberAssignSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        user = serializer.validated_data['user']
+        user.club = club
+        user.save(update_fields=['club'])
+
+        return Response({'user': UserSerializer(user).data, 'club': ClubSerializer(club).data})
+
+
+class AdminClubMemberRemoveView(APIView):
+    permission_classes = [permissions.IsAuthenticated, IsSuperAdmin]
+
+    def delete(self, request, pk, user_pk):
+        club = Club.objects.filter(pk=pk).first()
+        if not club:
+            return Response({'message': 'Clube nao encontrado.'}, status=404)
+
+        user = AppUser.objects.select_related('role', 'club').filter(pk=user_pk).first()
+        if not user:
+            return Response({'message': 'Utilizador nao encontrado.'}, status=404)
+
+        if user.club_id != club.id:
+            return Response(
+                {'message': 'O utilizador nao pertence a este clube.'},
+                status=400,
+            )
+
+        user.club = None
+        user.save(update_fields=['club'])
+        return Response({'user': UserSerializer(user).data})
