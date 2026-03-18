@@ -170,12 +170,20 @@ class Registration(Base, ReprMixin):
         nullable=True,
         server_default=text("CURRENT_TIMESTAMP"),
     )
+    id_rstatus: Mapped[Optional[int]] = mapped_column(
+        Integer,
+        ForeignKey("rstatus.id_rstatus", name="fk_registrations_rstatus"),
+        nullable=True,
+    )
 
     club_links: Mapped[list[ClubRegistration]] = relationship(back_populates="registration")
     clubs: Mapped[list[Club]] = relationship(
         secondary="clubs_registrations",
         back_populates="registrations",
         viewonly=True,
+    )
+    registration_status: Mapped[Optional[RegistrationStatus]] = relationship(
+        back_populates="registrations"
     )
 
 
@@ -219,6 +227,8 @@ class RegistrationStatus(Base, ReprMixin):
     id_rstatus: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     name: Mapped[str] = mapped_column(String(100), nullable=False)
     description: Mapped[str] = mapped_column(Text, nullable=False)
+
+    registrations: Mapped[list[Registration]] = relationship(back_populates="registration_status")
 
 
 class Book(Base, CreatedAtMixin, ReprMixin):

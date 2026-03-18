@@ -37,17 +37,6 @@ CREATE TABLE nstatus (
 	PRIMARY KEY (id_nstatus)
 );
 
-CREATE TABLE registrations (
-	id_registrations INTEGER NOT NULL AUTO_INCREMENT, 
-	name VARCHAR(100) NOT NULL, 
-	email VARCHAR(150) NOT NULL, 
-	phone VARCHAR(20), 
-	message TEXT, 
-	status VARCHAR(50) NOT NULL DEFAULT 'pending', 
-	created_at DATETIME DEFAULT CURRENT_TIMESTAMP, 
-	PRIMARY KEY (id_registrations)
-);
-
 CREATE TABLE roles (
 	id INTEGER NOT NULL AUTO_INCREMENT, 
 	name VARCHAR(50) NOT NULL, 
@@ -78,14 +67,6 @@ CREATE TABLE books (
 	FOREIGN KEY(id_club) REFERENCES clubs (id_clubs)
 );
 
-CREATE TABLE clubs_registrations (
-	id_clubs INTEGER NOT NULL, 
-	id_registrations INTEGER NOT NULL, 
-	PRIMARY KEY (id_clubs, id_registrations), 
-	FOREIGN KEY(id_clubs) REFERENCES clubs (id_clubs), 
-	FOREIGN KEY(id_registrations) REFERENCES registrations (id_registrations)
-);
-
 CREATE TABLE news (
 	id_news INTEGER NOT NULL AUTO_INCREMENT, 
 	title VARCHAR(255) NOT NULL, 
@@ -100,6 +81,19 @@ CREATE TABLE news (
 	PRIMARY KEY (id_news), 
 	FOREIGN KEY(id_nstatus) REFERENCES nstatus (id_nstatus), 
 	FOREIGN KEY(id_clubs) REFERENCES clubs (id_clubs)
+);
+
+CREATE TABLE registrations (
+	id_registrations INTEGER NOT NULL AUTO_INCREMENT, 
+	name VARCHAR(100) NOT NULL, 
+	email VARCHAR(150) NOT NULL, 
+	phone VARCHAR(20), 
+	message TEXT, 
+	status VARCHAR(50) NOT NULL DEFAULT 'pending', 
+	created_at DATETIME DEFAULT CURRENT_TIMESTAMP, 
+	id_rstatus INTEGER, 
+	PRIMARY KEY (id_registrations), 
+	CONSTRAINT fk_registrations_rstatus FOREIGN KEY(id_rstatus) REFERENCES rstatus (id_rstatus)
 );
 
 CREATE TABLE sessions (
@@ -130,6 +124,14 @@ CREATE TABLE users (
 	CONSTRAINT email UNIQUE (email), 
 	CONSTRAINT fk_user_role FOREIGN KEY(role_id) REFERENCES roles (id), 
 	CONSTRAINT fk_users_clubs FOREIGN KEY(id_clubs) REFERENCES clubs (id_clubs) ON DELETE SET NULL ON UPDATE CASCADE
+);
+
+CREATE TABLE clubs_registrations (
+	id_clubs INTEGER NOT NULL, 
+	id_registrations INTEGER NOT NULL, 
+	PRIMARY KEY (id_clubs, id_registrations), 
+	FOREIGN KEY(id_clubs) REFERENCES clubs (id_clubs), 
+	FOREIGN KEY(id_registrations) REFERENCES registrations (id_registrations)
 );
 
 CREATE TABLE event (
