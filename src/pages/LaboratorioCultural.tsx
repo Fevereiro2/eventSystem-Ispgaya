@@ -1,10 +1,13 @@
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import Breadcrumbs from '../components/Breadcrumbs';
 import Footer from '../components/Footer';
 import HeaderNav from '../components/HeaderNav';
 import TopBar from '../components/TopBar';
+import { fetchPublicClubs, InfoCulturaClub } from '../data/infoculturaApi';
 import {
   container,
+  contentEmpty,
   labResearchGrid,
   labResearchHeroCard,
   labResearchHeroText,
@@ -17,35 +20,64 @@ import {
   mainContent
 } from '../styles/ui';
 
-const culturalAreas = [
-  {
-    title: 'InfoCultura',
-    href: '/infocultura',
-    summary:
-      'A plataforma de gestao cultural agrega publicacoes, agenda e comunicacao das iniciativas do Laboratorio Cultural.',
-    featured: false
-  },
-  {
-    title: 'Tuna Academica',
-    href: '/laboratorio-cultural/tuna',
-    summary:
-      'Dinamica artistica orientada para repertorio, ensaios e representacoes no contexto academico e comunitario.'
-  },
-  {
-    title: 'Clube de Leitura',
-    href: '/laboratorio-cultural/clube-leitura',
-    summary:
-      'Espaco de debate e partilha de obras, com encontros regulares e atividades de mediacao de leitura.'
-  },
-  {
-    title: 'Teatro',
-    href: '/laboratorio-cultural/teatro',
-    summary:
-      'Projeto de expressao cenica com foco em criacao colaborativa, ensaios e apresentacoes tematicas.'
+function normalizeLabel(value: string): string {
+  return value
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .trim();
+}
+
+function getClubHref(club: InfoCulturaClub): string {
+  const label = normalizeLabel(club.name);
+
+  if (label.includes('tuna')) {
+    return '/laboratorio-cultural/tuna';
   }
-];
+
+  if (label.includes('leitura')) {
+    return '/laboratorio-cultural/clube-leitura';
+  }
+
+  if (label.includes('teatro')) {
+    return '/laboratorio-cultural/teatro';
+  }
+
+  return `/laboratorio-cultural/clubes/${club.id}`;
+}
 
 function LaboratorioCultural() {
+  const [clubs, setClubs] = useState<InfoCulturaClub[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState('');
+
+  useEffect(() => {
+    let active = true;
+
+    async function loadClubs() {
+      try {
+        const nextClubs = await fetchPublicClubs();
+        if (!active) return;
+        setClubs(nextClubs);
+      } catch (error) {
+        if (!active) return;
+        const message =
+          error instanceof Error ? error.message : 'Nao foi possivel carregar os clubes.';
+        setLoadError(message);
+      } finally {
+        if (active) {
+          setIsLoading(false);
+        }
+      }
+    }
+
+    void loadClubs();
+
+    return () => {
+      active = false;
+    };
+  }, []);
+
   return (
     <>
       <TopBar />
@@ -62,28 +94,37 @@ function LaboratorioCultural() {
       <main className={mainContent}>
         <section className={labResearchSection}>
           <div className={container}>
-
-
             <div className={labResearchGrid}>
-              {culturalAreas.map((area) =>
-                area.featured ? (
-                  <article key={area.title} className={labResearchHeroCard}>
-                    <h2 className={labResearchHeroTitle}>{area.title}</h2>
-                    <p className={labResearchHeroText}>{area.summary}</p>
-                    <Link to={area.href} className={labResearchLink}>
-                      Ver mais
-                    </Link>
-                  </article>
-                ) : (
-                  <article key={area.title} className={labResearchSubcard}>
-                    <h3 className={labResearchSubtitle}>{area.title}</h3>
-                    <p className={labResearchSubtext}>{area.summary}</p>
-                    <Link to={area.href} className={labResearchLink}>
-                      Ver mais
-                    </Link>
-                  </article>
-                )
-              )}
+              <article className={labResearchHeroCard}>
+                <h2 className={labResearchHeroTitle}>InfoCultura</h2>
+                <p className={labResearchHeroText}>
+                  A plataforma de gestao cultural agrega publicacoes, agenda e comunicacao das
+                  iniciativas do Laboratorio Cultural.
+                </p>
+                <Link to="/infocultura" className={labResearchLink}>
+                  Ver mais
+                </Link>
+              </article>
+
+              {isLoading ? <p className={contentEmpty}>A carregar clubes...</p> : null}
+              {!isLoading && loadError ? <p className={contentEmpty}>{loadError}</p> : null}
+              {!isLoading && !loadError && clubs.length === 0 ? (
+                <p className={contentEmpty}>Ainda nao existem clubes ativos para mostrar.</p>
+              ) : null}
+
+              {!isLoading && !loadError
+                ? clubs.map((club) => (
+                    <article key={club.id} className={labResearchSubcard}>
+                      <h3 className={labResearchSubtitle}>{club.name}</h3>
+                      <p className={labResearchSubtext}>
+                        {club.mission || club.description || 'Clube cultural disponivel no laboratorio.'}
+                      </p>
+                      <Link to={getClubHref(club)} className={labResearchLink}>
+                        Ver mais
+                      </Link>
+                    </article>
+                  ))
+                : null}
             </div>
           </div>
         </section>
