@@ -139,6 +139,96 @@ class News(models.Model):
         return self.title
 
 
+class Book(models.Model):
+    id = models.AutoField(primary_key=True, db_column='id_books')
+    title = models.CharField(max_length=255)
+    author = models.CharField(max_length=255)
+    publisher = models.CharField(max_length=255, blank=True, default='')
+    publication_year = models.IntegerField()
+    cover_image = models.CharField(max_length=500, blank=True, default='')
+    summary = models.TextField()
+    is_featured = models.BooleanField(default=False)
+    created_at = models.DateTimeField(blank=True, null=True)
+    club = models.ForeignKey(
+        Club,
+        on_delete=models.DO_NOTHING,
+        db_column='id_club',
+        related_name='books',
+    )
+
+    class Meta:
+        db_table = 'books'
+        managed = False
+        ordering = ['-is_featured', 'title', '-id']
+
+    def __str__(self):
+        return self.title
+
+
+class Session(models.Model):
+    id = models.AutoField(primary_key=True, db_column='id_sessions')
+    name = models.CharField(max_length=150)
+    title = models.CharField(max_length=255)
+    description = models.TextField()
+    session_date = models.DateField()
+    start_date = models.DateTimeField()
+    end_date = models.DateTimeField()
+    created_at = models.DateTimeField(blank=True, null=True)
+    updated_at = models.DateTimeField(blank=True, null=True)
+    club = models.ForeignKey(
+        Club,
+        on_delete=models.DO_NOTHING,
+        db_column='id_club',
+        related_name='sessions',
+    )
+
+    class Meta:
+        db_table = 'sessions'
+        managed = False
+        ordering = ['session_date', 'start_date', '-id']
+
+    def __str__(self):
+        return self.title
+
+
+class Event(models.Model):
+    id = models.AutoField(primary_key=True, db_column='id_event')
+    title = models.CharField(max_length=255)
+    description = models.TextField()
+    event_date = models.DateField()
+    start_date = models.DateTimeField()
+    end_date = models.DateTimeField()
+    image = models.CharField(max_length=500, blank=True, default='')
+    is_external = models.BooleanField(default=False)
+    status = models.CharField(max_length=50)
+    user = models.ForeignKey(
+        AppUser,
+        on_delete=models.DO_NOTHING,
+        db_column='user_id',
+        related_name='events',
+    )
+    created_at = models.DateTimeField(blank=True, null=True)
+    updated_at = models.DateTimeField(blank=True, null=True)
+    city = models.CharField(max_length=120, blank=True, default='')
+    location = models.CharField(max_length=255, blank=True, default='')
+
+    class Meta:
+        db_table = 'event'
+        managed = False
+        ordering = ['event_date', 'start_date', '-id']
+
+    @property
+    def club_id(self):
+        return self.user.club_id if self.user_id and self.user else None
+
+    @property
+    def club_name(self):
+        return self.user.club.name if self.user_id and self.user and self.user.club else None
+
+    def __str__(self):
+        return self.title
+
+
 class RegistrationStatus(models.Model):
     id = models.AutoField(primary_key=True, db_column='id_rstatus')
     name = models.CharField(max_length=100)
