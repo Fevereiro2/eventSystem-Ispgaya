@@ -83,17 +83,22 @@ import {
   getAreaLabel,
 } from '../data/culturalContent';
 import {
+  createAdminClub,
   createAdminContent,
   createAdminUser,
   deactivateAdminUser,
+  deleteAdminClub,
   deleteAdminContent,
+  fetchAdminClubs,
   fetchAdminContent,
   fetchAdminRoles,
   fetchAdminUsers,
   fetchInfoCulturaMe,
+  InfoCulturaClub,
   InfoCulturaRole,
   InfoCulturaUser,
   loginInfoCultura,
+  updateAdminClub,
   updateAdminContent,
   updateAdminUser,
 } from '../data/infoculturaApi';
@@ -115,7 +120,14 @@ type UserFormState = {
   password: string;
 };
 
-type AdminSection = 'resumo' | 'utilizadores' | 'conteudos';
+type ClubFormState = {
+  name: string;
+  description: string;
+  mission: string;
+  is_active: boolean;
+};
+
+type AdminSection = 'resumo' | 'utilizadores' | 'conteudos' | 'clubes';
 
 type UserPage =
   | { mode: 'list' }
@@ -138,10 +150,18 @@ const initialUserForm: UserFormState = {
   password: ''
 };
 
+const initialClubForm: ClubFormState = {
+  name: '',
+  description: '',
+  mission: '',
+  is_active: true
+};
+
 const adminSections: { id: AdminSection; label: string; href: string }[] = [
   { id: 'resumo', label: 'Resumo', href: '/infocultura/resumo' },
   { id: 'utilizadores', label: 'Utilizadores', href: '/infocultura/utilizadores' },
-  { id: 'conteudos', label: 'Conteudos', href: '/infocultura/conteudos' }
+  { id: 'conteudos', label: 'Conteudos', href: '/infocultura/conteudos' },
+  { id: 'clubes', label: 'Clubes', href: '/infocultura/clubes' }
 ];
 
 function getAdminSection(pathname: string): AdminSection | null {
@@ -158,6 +178,10 @@ function getAdminSection(pathname: string): AdminSection | null {
 
   if (pathname === '/infocultura/conteudos') {
     return 'conteudos';
+  }
+
+  if (pathname === '/infocultura/clubes') {
+    return 'clubes';
   }
 
   return null;
@@ -197,6 +221,16 @@ function sortUsers(list: InfoCulturaUser[]): InfoCulturaUser[] {
   });
 }
 
+function sortClubs(list: InfoCulturaClub[]): InfoCulturaClub[] {
+  return [...list].sort((a, b) => {
+    if (a.is_active !== b.is_active) {
+      return a.is_active ? -1 : 1;
+    }
+
+    return a.name.localeCompare(b.name);
+  });
+}
+
 function AdminCultura() {
   const location = useLocation();
   const navigate = useNavigate();
@@ -210,29 +244,41 @@ function AdminCultura() {
   const isAuth = token.length > 0;
   const [items, setItems] = useState<CulturalItem[]>([]);
   const [users, setUsers] = useState<InfoCulturaUser[]>([]);
+  const [clubs, setClubs] = useState<InfoCulturaClub[]>([]);
   const [roles, setRoles] = useState<InfoCulturaRole[]>([]);
   const [currentUser, setCurrentUser] = useState<InfoCulturaUser | null>(null);
   const [isLoadingItems, setIsLoadingItems] = useState(false);
   const [isLoadingUsers, setIsLoadingUsers] = useState(false);
+  const [isLoadingClubs, setIsLoadingClubs] = useState(false);
   const [isLoadingRoles, setIsLoadingRoles] = useState(false);
   const [panelError, setPanelError] = useState('');
   const [isSavingContent, setIsSavingContent] = useState(false);
   const [isSavingUser, setIsSavingUser] = useState(false);
+  const [isSavingClub, setIsSavingClub] = useState(false);
   const [isDeactivatingUser, setIsDeactivatingUser] = useState(false);
+  const [deletingClubId, setDeletingClubId] = useState<number | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [contentForm, setContentForm] = useState<FormState>(initialContentForm);
   const [userForm, setUserForm] = useState<UserFormState>(initialUserForm);
+  const [clubForm, setClubForm] = useState<ClubFormState>(initialClubForm);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [editingClubId, setEditingClubId] = useState<number | null>(null);
   const [userFormError, setUserFormError] = useState('');
+  const [clubFormError, setClubFormError] = useState('');
 
   const activeSection = getAdminSection(location.pathname);
   const userPage = useMemo(() => getUserPage(location.pathname), [location.pathname]);
   const canManageUsers = currentUser?.role === 'superadmin';
+  const visibleSections = useMemo(
+    () => adminSections.filter((section) => section.id !== 'clubes' || canManageUsers),
+    [canManageUsers]
+  );
   const sortedItems = useMemo(
     () => [...items].sort((a, b) => (a.updatedAt < b.updatedAt ? 1 : -1)),
     [items]
   );
   const sortedUsers = useMemo(() => sortUsers(users), [users]);
+  const sortedClubs = useMemo(() => sortClubs(clubs), [clubs]);
   const selectedUser = useMemo(() => {
     if (!userPage || userPage.mode === 'list' || userPage.mode === 'create') {
       return null;
@@ -248,15 +294,21 @@ function AdminCultura() {
     () => users.filter((user) => user.is_active).length,
     [users]
   );
+  const activeClubs = useMemo(
+    () => clubs.filter((club) => club.is_active).length,
+    [clubs]
+  );
 
   function clearAuth() {
     setToken('');
     setItems([]);
     setUsers([]);
+    setClubs([]);
     setRoles([]);
     setCurrentUser(null);
     setPanelError('');
     setUserFormError('');
+    setClubFormError('');
     sessionStorage.removeItem(TOKEN_KEY);
   }
 
@@ -271,6 +323,12 @@ function AdminCultura() {
       role: defaultRole || roles[0]?.name || initialUserForm.role
     });
     setUserFormError('');
+  }
+
+  function resetClubForm() {
+    setClubForm(initialClubForm);
+    setEditingClubId(null);
+    setClubFormError('');
   }
 
   async function loadAdminData(authToken: string) {
@@ -311,6 +369,7 @@ function AdminCultura() {
   useEffect(() => {
     if (!token || !canManageUsers) {
       setRoles([]);
+      setClubs([]);
       return;
     }
 
@@ -331,6 +390,36 @@ function AdminCultura() {
       .finally(() => {
         if (!isMounted) return;
         setIsLoadingRoles(false);
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [token, canManageUsers]);
+
+  useEffect(() => {
+    if (!token || !canManageUsers) {
+      resetClubForm();
+      return;
+    }
+
+    let isMounted = true;
+    setIsLoadingClubs(true);
+
+    void fetchAdminClubs(token)
+      .then((nextClubs) => {
+        if (!isMounted) return;
+        setClubs(sortClubs(nextClubs));
+      })
+      .catch((error) => {
+        if (!isMounted) return;
+        const message =
+          error instanceof Error ? error.message : 'Nao foi possivel carregar os clubes.';
+        setPanelError(message);
+      })
+      .finally(() => {
+        if (!isMounted) return;
+        setIsLoadingClubs(false);
       });
 
     return () => {
@@ -379,6 +468,7 @@ function AdminCultura() {
     setAuthPass('');
     resetContentForm();
     resetUserForm();
+    resetClubForm();
   }
 
   async function handleSaveContent(event: FormEvent<HTMLFormElement>) {
@@ -535,6 +625,79 @@ function AdminCultura() {
     }
   }
 
+  async function handleSaveClub(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    if (!token || !canManageUsers) return;
+
+    const payload = {
+      name: clubForm.name.trim(),
+      description: clubForm.description.trim(),
+      mission: clubForm.mission.trim(),
+      is_active: clubForm.is_active
+    };
+
+    if (!payload.name) {
+      setClubFormError('O nome do clube e obrigatorio.');
+      return;
+    }
+
+    setIsSavingClub(true);
+    setClubFormError('');
+
+    try {
+      const savedClub = editingClubId
+        ? await updateAdminClub(token, editingClubId, payload)
+        : await createAdminClub(token, payload);
+
+      setClubs((prev) =>
+        editingClubId
+          ? sortClubs(prev.map((club) => (club.id === savedClub.id ? savedClub : club)))
+          : sortClubs([savedClub, ...prev])
+      );
+      resetClubForm();
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : 'Nao foi possivel guardar o clube.';
+      setClubFormError(message);
+    } finally {
+      setIsSavingClub(false);
+    }
+  }
+
+  function handleEditClub(club: InfoCulturaClub) {
+    setEditingClubId(club.id);
+    setClubForm({
+      name: club.name,
+      description: club.description || '',
+      mission: club.mission || '',
+      is_active: club.is_active
+    });
+    setClubFormError('');
+  }
+
+  async function handleDeleteClub(id: number) {
+    if (!token || !canManageUsers) return;
+
+    setDeletingClubId(id);
+    setClubFormError('');
+
+    try {
+      await deleteAdminClub(token, id);
+      setClubs((prev) => prev.filter((club) => club.id !== id));
+
+      if (editingClubId === id) {
+        resetClubForm();
+      }
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : 'Nao foi possivel apagar o clube.';
+      setClubFormError(message);
+    } finally {
+      setDeletingClubId(null);
+    }
+  }
+
   if (location.pathname === '/infocultura' || location.pathname === '/infocultura/') {
     return <Navigate to="/infocultura/resumo" replace />;
   }
@@ -545,6 +708,10 @@ function AdminCultura() {
 
   if (activeSection === 'utilizadores' && !userPage) {
     return <Navigate to="/infocultura/utilizadores" replace />;
+  }
+
+  if (activeSection === 'clubes' && currentUser && !canManageUsers) {
+    return <Navigate to="/infocultura/resumo" replace />;
   }
 
   if (!isAuth) {
@@ -675,6 +842,8 @@ function AdminCultura() {
             <p className={adminInfo}>
               {activeSection === 'utilizadores'
                 ? 'Gestao e consulta dos utilizadores do InfoCultura.'
+                : activeSection === 'clubes'
+                  ? 'Criacao e manutencao dos clubes internos.'
                 : activeSection === 'conteudos'
                   ? 'Gestao de Tuna, Clube de Leitura e Teatro.'
                   : 'Visao geral do painel administrativo.'}
@@ -686,7 +855,7 @@ function AdminCultura() {
           {panelError ? <p className={adminError}>{panelError}</p> : null}
 
           <nav className={adminSectionNav} aria-label="Secoes do painel">
-            {adminSections.map((section) => (
+            {visibleSections.map((section) => (
               <NavLink
                 key={section.id}
                 to={section.href}
@@ -720,6 +889,12 @@ function AdminCultura() {
                     <p className={adminStatValue}>{publishedItems}</p>
                     <p className={adminStatLabel}>Publicados</p>
                   </div>
+                  {canManageUsers ? (
+                    <div className={adminStatCard}>
+                      <p className={adminStatValue}>{clubs.length}</p>
+                      <p className={adminStatLabel}>Clubes</p>
+                    </div>
+                  ) : null}
                 </div>
               </section>
 
@@ -1020,6 +1195,183 @@ function AdminCultura() {
                 </form>
               )}
             </section>
+          ) : null}
+
+          {activeSection === 'clubes' ? (
+            <>
+              <form onSubmit={handleSaveClub} className={adminPanelForm}>
+                <h2 className={blockTitle}>
+                  {editingClubId ? 'Editar Clube' : 'Novo Clube'}
+                </h2>
+                <p className={blockText}>
+                  Cria clubes para organizar a estrutura do InfoCultura. Esta secao e reservada
+                  ao superadmin.
+                </p>
+
+                <div className={adminFormGridSpaced}>
+                  <div className={adminField}>
+                    <label className={adminLabel} htmlFor="club-name">
+                      Nome do clube
+                    </label>
+                    <input
+                      id="club-name"
+                      className={adminInput}
+                      value={clubForm.name}
+                      onChange={(event) =>
+                        setClubForm((prev) => ({ ...prev, name: event.target.value }))
+                      }
+                    />
+                  </div>
+
+                  <div className={adminField}>
+                    <label className={adminLabel} htmlFor="club-mission">
+                      Missao
+                    </label>
+                    <textarea
+                      id="club-mission"
+                      rows={3}
+                      className={adminTextarea}
+                      value={clubForm.mission}
+                      onChange={(event) =>
+                        setClubForm((prev) => ({
+                          ...prev,
+                          mission: event.target.value
+                        }))
+                      }
+                    />
+                  </div>
+
+                  <div className={adminField}>
+                    <label className={adminLabel} htmlFor="club-status">
+                      Estado
+                    </label>
+                    <select
+                      id="club-status"
+                      className={adminInput}
+                      value={clubForm.is_active ? 'ativo' : 'inativo'}
+                      onChange={(event) =>
+                        setClubForm((prev) => ({
+                          ...prev,
+                          is_active: event.target.value === 'ativo'
+                        }))
+                      }
+                    >
+                      <option value="ativo">Ativo</option>
+                      <option value="inativo">Inativo</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className={adminFieldSpaced}>
+                  <label className={adminLabel} htmlFor="club-description">
+                    Descricao
+                  </label>
+                  <textarea
+                    id="club-description"
+                    rows={4}
+                    className={adminTextarea}
+                    value={clubForm.description}
+                    onChange={(event) =>
+                      setClubForm((prev) => ({
+                        ...prev,
+                        description: event.target.value
+                      }))
+                    }
+                  />
+                </div>
+
+                {clubFormError ? <p className={adminError}>{clubFormError}</p> : null}
+
+                <div className={adminActions}>
+                  <button
+                    type="submit"
+                    className={adminBtnPrimary}
+                    disabled={isSavingClub}
+                  >
+                    {isSavingClub
+                      ? 'A guardar...'
+                      : editingClubId
+                        ? 'Guardar alteracoes'
+                        : 'Criar clube'}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={resetClubForm}
+                    className={adminBtnSecondary}
+                  >
+                    Limpar
+                  </button>
+                </div>
+              </form>
+
+              <section className={adminPanelCard}>
+                <h2 className={blockTitle}>Clubes registados</h2>
+                <p className={blockText}>
+                  Lista de clubes disponiveis para futura associacao a utilizadores e conteudos.
+                </p>
+
+                <div className={adminStatsGrid}>
+                  <div className={adminStatCard}>
+                    <p className={adminStatValue}>{clubs.length}</p>
+                    <p className={adminStatLabel}>Total</p>
+                  </div>
+                  <div className={adminStatCard}>
+                    <p className={adminStatValue}>{activeClubs}</p>
+                    <p className={adminStatLabel}>Ativos</p>
+                  </div>
+                  <div className={adminStatCard}>
+                    <p className={adminStatValue}>{clubs.length - activeClubs}</p>
+                    <p className={adminStatLabel}>Inativos</p>
+                  </div>
+                </div>
+
+                <div className={adminUserList}>
+                  {isLoadingClubs ? <p className={adminInfo}>A carregar clubes...</p> : null}
+                  {!isLoadingClubs && sortedClubs.length === 0 ? (
+                    <p className={adminInfo}>Nao existem clubes registados.</p>
+                  ) : null}
+                  {sortedClubs.map((club) => (
+                    <article key={club.id} className={adminUserItem}>
+                      <div>
+                        <h3 className={adminUserName}>{club.name}</h3>
+                        <p className={adminUserEmail}>
+                          {club.mission || 'Sem missao definida'}
+                        </p>
+                        <p className={adminUserMeta}>
+                          {club.description || 'Sem descricao'}
+                        </p>
+                      </div>
+                      <div className={adminListTools}>
+                        <span
+                          className={`${adminUserStatus} ${
+                            club.is_active
+                              ? adminUserStatusActive
+                              : adminUserStatusInactive
+                          }`}
+                        >
+                          {club.is_active ? 'Ativo' : 'Inativo'}
+                        </span>
+                        <button
+                          type="button"
+                          className={adminBtnEdit}
+                          onClick={() => handleEditClub(club)}
+                        >
+                          Editar
+                        </button>
+                        <button
+                          type="button"
+                          className={adminBtnDanger}
+                          disabled={deletingClubId === club.id}
+                          onClick={() => handleDeleteClub(club.id)}
+                        >
+                          {deletingClubId === club.id ? 'A apagar...' : 'Apagar'}
+                        </button>
+                      </div>
+                    </article>
+                  ))}
+                </div>
+              </section>
+            </>
           ) : null}
 
           {activeSection === 'conteudos' ? (

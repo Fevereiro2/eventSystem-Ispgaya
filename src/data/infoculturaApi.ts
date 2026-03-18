@@ -43,11 +43,27 @@ export type InfoCulturaRole = {
   description?: string | null;
 };
 
+export type InfoCulturaClub = {
+  id: number;
+  name: string;
+  description: string;
+  mission: string;
+  is_active: boolean;
+  created_at: string;
+};
+
 export type UserPayload = {
   name: string;
   email: string;
   role: string;
   password?: string;
+  is_active?: boolean;
+};
+
+export type ClubPayload = {
+  name: string;
+  description: string;
+  mission?: string;
   is_active?: boolean;
 };
 
@@ -241,6 +257,49 @@ export async function updateAdminContent(
 export async function deleteAdminContent(token: string, id: string): Promise<void> {
   await request<void>(
     `/content/admin/${id}/`,
+    {
+      method: 'DELETE'
+    },
+    token
+  );
+}
+
+export async function fetchAdminClubs(token: string): Promise<InfoCulturaClub[]> {
+  return request<InfoCulturaClub[]>('/clubs/admin/', {}, token);
+}
+
+export async function createAdminClub(
+  token: string,
+  payload: ClubPayload
+): Promise<InfoCulturaClub> {
+  return request<InfoCulturaClub>(
+    '/clubs/admin/',
+    {
+      method: 'POST',
+      body: JSON.stringify(payload)
+    },
+    token
+  );
+}
+
+export async function updateAdminClub(
+  token: string,
+  id: number,
+  payload: ClubPayload
+): Promise<InfoCulturaClub> {
+  return request<InfoCulturaClub>(
+    `/clubs/admin/${id}/`,
+    {
+      method: 'PUT',
+      body: JSON.stringify(payload)
+    },
+    token
+  );
+}
+
+export async function deleteAdminClub(token: string, id: number): Promise<void> {
+  await request<void>(
+    `/clubs/admin/${id}/`,
     {
       method: 'DELETE'
     },
