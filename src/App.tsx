@@ -1,5 +1,6 @@
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
 import AdminCultura from './pages/AdminCultura';
+import ClubeCultural from './pages/ClubeCultural';
 import ClubeLeitura from './pages/ClubeLeitura';
 import LaboratorioCultural from './pages/LaboratorioCultural';
 import PublicacoesCientificas from './pages/PublicacoesCientificas';
@@ -26,6 +27,10 @@ function App() {
           <Route
             path="/laboratorio-cultural/clube-leitura"
             element={<ClubeLeitura />}
+          />
+          <Route
+            path="/laboratorio-cultural/clubes/:clubId"
+            element={<ClubeCultural />}
           />
           <Route path="/laboratorio-cultural/teatro" element={<Teatro />} />
           <Route path="*" element={<Navigate to="/" replace />} />
