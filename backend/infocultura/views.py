@@ -8,6 +8,7 @@ from .permissions import IsClubAdmin, IsSuperAdmin
 from .serializers import (
     AdminUserWriteSerializer,
     AdminNewsWriteSerializer,
+    ClubRegistrationCreateSerializer,
     ClubMemberAssignSerializer,
     ClubSerializer,
     CulturalContentSerializer,
@@ -172,6 +173,27 @@ class PublicClubDetailView(generics.RetrieveAPIView):
 
     def get_queryset(self):
         return Club.objects.filter(is_active=True)
+
+
+class PublicClubRegistrationCreateView(APIView):
+    permission_classes = [permissions.AllowAny]
+
+    def post(self, request, pk):
+        club = Club.objects.filter(pk=pk, is_active=True).first()
+        if not club:
+            return Response({'message': 'Clube nao encontrado.'}, status=404)
+
+        serializer = ClubRegistrationCreateSerializer(
+            data=request.data,
+            context={'club': club},
+        )
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+
+        return Response(
+            {'message': 'Inscricao submetida com sucesso. Aguarda validacao.'},
+            status=201,
+        )
 
 
 class PublicNewsStatusListView(generics.ListAPIView):
