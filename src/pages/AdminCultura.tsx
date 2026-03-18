@@ -83,6 +83,7 @@ import {
   getAreaLabel,
 } from '../data/culturalContent';
 import {
+  assignUserToClub,
   createAdminClub,
   createAdminContent,
   createAdminUser,
@@ -98,6 +99,7 @@ import {
   InfoCulturaRole,
   InfoCulturaUser,
   loginInfoCultura,
+  removeUserFromClub,
   updateAdminClub,
   updateAdminContent,
   updateAdminUser,
@@ -255,14 +257,17 @@ function AdminCultura() {
   const [isSavingContent, setIsSavingContent] = useState(false);
   const [isSavingUser, setIsSavingUser] = useState(false);
   const [isSavingClub, setIsSavingClub] = useState(false);
+  const [isAssigningClubUser, setIsAssigningClubUser] = useState(false);
   const [isDeactivatingUser, setIsDeactivatingUser] = useState(false);
   const [deletingClubId, setDeletingClubId] = useState<number | null>(null);
+  const [removingClubUserId, setRemovingClubUserId] = useState<number | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [contentForm, setContentForm] = useState<FormState>(initialContentForm);
   const [userForm, setUserForm] = useState<UserFormState>(initialUserForm);
   const [clubForm, setClubForm] = useState<ClubFormState>(initialClubForm);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editingClubId, setEditingClubId] = useState<number | null>(null);
+  const [selectedClubUserId, setSelectedClubUserId] = useState('');
   const [userFormError, setUserFormError] = useState('');
   const [clubFormError, setClubFormError] = useState('');
 
@@ -298,6 +303,16 @@ function AdminCultura() {
     () => clubs.filter((club) => club.is_active).length,
     [clubs]
   );
+  const clubMembers = useMemo(() => {
+    if (!editingClubId) return [];
+
+    return sortUsers(users.filter((user) => user.club_id === editingClubId));
+  }, [editingClubId, users]);
+  const usersWithoutClub = useMemo(
+    () =>
+      sortUsers(users.filter((user) => user.is_active && !user.club_id)),
+    [users]
+  );
 
   function clearAuth() {
     setToken('');
@@ -328,6 +343,7 @@ function AdminCultura() {
   function resetClubForm() {
     setClubForm(initialClubForm);
     setEditingClubId(null);
+    setSelectedClubUserId('');
     setClubFormError('');
   }
 
@@ -655,6 +671,19 @@ function AdminCultura() {
           ? sortClubs(prev.map((club) => (club.id === savedClub.id ? savedClub : club)))
           : sortClubs([savedClub, ...prev])
       );
+
+      if (editingClubId) {
+        setUsers((prev) =>
+          sortUsers(
+            prev.map((user) =>
+              user.club_id === savedClub.id
+                ? { ...user, club_name: savedClub.name }
+                : user
+            )
+          )
+        );
+      }
+
       resetClubForm();
     } catch (error) {
       const message =
@@ -667,6 +696,7 @@ function AdminCultura() {
 
   function handleEditClub(club: InfoCulturaClub) {
     setEditingClubId(club.id);
+    setSelectedClubUserId('');
     setClubForm({
       name: club.name,
       description: club.description || '',
@@ -695,6 +725,49 @@ function AdminCultura() {
       setClubFormError(message);
     } finally {
       setDeletingClubId(null);
+    }
+  }
+
+  async function handleAssignUserToClub() {
+    if (!token || !canManageUsers || !editingClubId || !selectedClubUserId) return;
+
+    setIsAssigningClubUser(true);
+    setClubFormError('');
+
+    try {
+      const updatedUser = await assignUserToClub(token, editingClubId, Number(selectedClubUserId));
+      setUsers((prev) =>
+        sortUsers(prev.map((user) => (user.id === updatedUser.id ? updatedUser : user)))
+      );
+      setSelectedClubUserId('');
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : 'Nao foi possivel associar o utilizador.';
+      setClubFormError(message);
+    } finally {
+      setIsAssigningClubUser(false);
+    }
+  }
+
+  async function handleRemoveUserFromClub(userId: number) {
+    if (!token || !canManageUsers || !editingClubId) return;
+
+    setRemovingClubUserId(userId);
+    setClubFormError('');
+
+    try {
+      const updatedUser = await removeUserFromClub(token, editingClubId, userId);
+      setUsers((prev) =>
+        sortUsers(prev.map((user) => (user.id === updatedUser.id ? updatedUser : user)))
+      );
+    } catch (error) {
+      const message =
+        error instanceof Error
+          ? error.message
+          : 'Nao foi possivel remover o utilizador do clube.';
+      setClubFormError(message);
+    } finally {
+      setRemovingClubUserId(null);
     }
   }
 

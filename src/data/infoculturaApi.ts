@@ -35,6 +35,8 @@ export type InfoCulturaUser = {
   email: string;
   role: string;
   is_active: boolean;
+  club_id?: number | null;
+  club_name?: string | null;
 };
 
 export type InfoCulturaRole = {
@@ -305,4 +307,37 @@ export async function deleteAdminClub(token: string, id: number): Promise<void> 
     },
     token
   );
+}
+
+export async function assignUserToClub(
+  token: string,
+  clubId: number,
+  userId: number
+): Promise<InfoCulturaUser> {
+  const data = await request<ApiUserResponse>(
+    `/clubs/admin/${clubId}/members/`,
+    {
+      method: 'POST',
+      body: JSON.stringify({ user_id: userId })
+    },
+    token
+  );
+
+  return data.user;
+}
+
+export async function removeUserFromClub(
+  token: string,
+  clubId: number,
+  userId: number
+): Promise<InfoCulturaUser> {
+  const data = await request<ApiUserResponse>(
+    `/clubs/admin/${clubId}/members/${userId}/`,
+    {
+      method: 'DELETE'
+    },
+    token
+  );
+
+  return data.user;
 }
