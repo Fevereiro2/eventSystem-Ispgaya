@@ -131,7 +131,8 @@ def main() -> None:
     engine = create_engine(build_database_url())
     inspector = inspect(engine)
 
-    db_tables = set(inspector.get_table_names())
+    ignored_db_tables = {"alembic_version"}
+    db_tables = set(inspector.get_table_names()) - ignored_db_tables
     model_tables = set(metadata.tables.keys())
 
     print(f"Comparing live database against '{args.metadata}' metadata.")
