@@ -223,6 +223,14 @@ export async function fetchPublicContent(area: CulturalArea): Promise<CulturalIt
   return normalizeItemsResponse(data);
 }
 
+export async function fetchPublicClubs(): Promise<InfoCulturaClub[]> {
+  return request<InfoCulturaClub[]>('/clubs/');
+}
+
+export async function fetchPublicClub(id: number): Promise<InfoCulturaClub> {
+  return request<InfoCulturaClub>(`/clubs/${id}/`);
+}
+
 export async function createAdminContent(
   token: string,
   payload: ContentPayload
