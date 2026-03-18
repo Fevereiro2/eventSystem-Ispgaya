@@ -155,6 +155,22 @@ class PublicContentListView(generics.ListAPIView):
         return queryset
 
 
+class PublicClubListView(generics.ListAPIView):
+    serializer_class = ClubSerializer
+    permission_classes = [permissions.AllowAny]
+
+    def get_queryset(self):
+        return Club.objects.filter(is_active=True).order_by('name')
+
+
+class PublicClubDetailView(generics.RetrieveAPIView):
+    serializer_class = ClubSerializer
+    permission_classes = [permissions.AllowAny]
+
+    def get_queryset(self):
+        return Club.objects.filter(is_active=True)
+
+
 class AdminContentListCreateView(generics.ListCreateAPIView):
     serializer_class = CulturalContentSerializer
     permission_classes = [permissions.IsAuthenticated, IsClubAdmin]

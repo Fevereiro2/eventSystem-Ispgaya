@@ -12,6 +12,8 @@ from .views import (
     AdminUserListCreateView,
     LoginView,
     MeView,
+    PublicClubDetailView,
+    PublicClubListView,
     PublicContentListView,
 )
 
@@ -22,6 +24,8 @@ urlpatterns = [
     path('auth/users/', AdminUserListCreateView.as_view(), name='auth-users'),
     path('auth/users/<int:pk>/', AdminUserDetailView.as_view(), name='auth-user-detail'),
     path('auth/users/<int:pk>/deactivate/', AdminUserDeactivateView.as_view(), name='auth-user-deactivate'),
+    path('clubs/', PublicClubListView.as_view(), name='clubs-public-list'),
+    path('clubs/<int:pk>/', PublicClubDetailView.as_view(), name='clubs-public-detail'),
     path('content/', PublicContentListView.as_view(), name='content-public-list'),
     path('content/admin/', AdminContentListCreateView.as_view(), name='content-admin-list-create'),
     path('content/admin/<uuid:pk>/', AdminContentDetailView.as_view(), name='content-admin-detail'),
