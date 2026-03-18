@@ -102,6 +102,13 @@ export type NewsPayload = {
   club_id?: number;
 };
 
+export type ClubRegistrationPayload = {
+  name: string;
+  email: string;
+  phone?: string;
+  message?: string;
+};
+
 type ApiMeResponse = {
   user: InfoCulturaUser;
 };
@@ -262,6 +269,16 @@ export async function fetchPublicClubs(): Promise<InfoCulturaClub[]> {
 
 export async function fetchPublicClub(id: number): Promise<InfoCulturaClub> {
   return request<InfoCulturaClub>(`/clubs/${id}/`);
+}
+
+export async function createClubRegistration(
+  clubId: number,
+  payload: ClubRegistrationPayload
+): Promise<void> {
+  await request<void>(`/clubs/${clubId}/registrations/`, {
+    method: 'POST',
+    body: JSON.stringify(payload)
+  });
 }
 
 export async function fetchPublicNewsStatuses(): Promise<InfoCulturaNewsStatus[]> {

@@ -1,12 +1,21 @@
 import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import Breadcrumbs from '../components/Breadcrumbs';
+import ClubRegistrationModal, {
+  ClubRegistrationFormData
+} from '../components/ClubRegistrationModal';
 import Footer from '../components/Footer';
 import HeaderNav from '../components/HeaderNav';
 import TopBar from '../components/TopBar';
 import { CulturalArea, CulturalItem } from '../data/culturalContent';
-import { fetchPublicClub, fetchPublicContent, InfoCulturaClub } from '../data/infoculturaApi';
 import {
+  createClubRegistration,
+  fetchPublicClub,
+  fetchPublicContent,
+  InfoCulturaClub
+} from '../data/infoculturaApi';
+import {
+  adminBtnPrimary,
   blockText,
   blockTitle,
   container,
@@ -46,6 +55,10 @@ function ClubeCultural() {
   const [items, setItems] = useState<CulturalItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState('');
+  const [isRegistrationModalOpen, setIsRegistrationModalOpen] = useState(false);
+  const [isSubmittingRegistration, setIsSubmittingRegistration] = useState(false);
+  const [registrationError, setRegistrationError] = useState('');
+  const [registrationFeedback, setRegistrationFeedback] = useState('');
 
   useEffect(() => {
     let active = true;
@@ -92,6 +105,25 @@ function ClubeCultural() {
 
   const title = club?.name || 'Clube Cultural';
 
+  async function handleSubmitRegistration(data: ClubRegistrationFormData) {
+    if (!club) return;
+
+    setIsSubmittingRegistration(true);
+    setRegistrationError('');
+
+    try {
+      await createClubRegistration(club.id, data);
+      setRegistrationFeedback('Inscricao enviada com sucesso. Aguarda validacao pelo clube.');
+      setIsRegistrationModalOpen(false);
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : 'Nao foi possivel enviar a inscricao.';
+      setRegistrationError(message);
+    } finally {
+      setIsSubmittingRegistration(false);
+    }
+  }
+
   return (
     <>
       <TopBar />
@@ -113,6 +145,31 @@ function ClubeCultural() {
               <p className={blockText}>
                 {club?.mission || club?.description || 'Pagina publica do clube cultural.'}
               </p>
+
+              {!isLoading && !loadError && club?.enable_registrations ? (
+                <div className="mt-6 flex flex-wrap items-center gap-3">
+                  <button
+                    type="button"
+                    className={adminBtnPrimary}
+                    onClick={() => {
+                      setRegistrationFeedback('');
+                      setRegistrationError('');
+                      setIsRegistrationModalOpen(true);
+                    }}
+                  >
+                    Inscrever-me neste clube
+                  </button>
+                  <p className="text-sm text-slate-600">
+                    O pedido sera enviado para validacao da equipa do clube.
+                  </p>
+                </div>
+              ) : null}
+
+              {registrationFeedback ? (
+                <p className="mt-4 rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-700">
+                  {registrationFeedback}
+                </p>
+              ) : null}
 
               {isLoading ? (
                 <p className={contentEmpty}>A carregar clube...</p>
@@ -146,6 +203,20 @@ function ClubeCultural() {
           </div>
         </section>
       </main>
+
+      <ClubRegistrationModal
+        clubName={title}
+        isOpen={isRegistrationModalOpen}
+        isSubmitting={isSubmittingRegistration}
+        submitError={registrationError}
+        onClose={() => {
+          if (!isSubmittingRegistration) {
+            setIsRegistrationModalOpen(false);
+            setRegistrationError('');
+          }
+        }}
+        onSubmit={handleSubmitRegistration}
+      />
 
       <Footer />
     </>
