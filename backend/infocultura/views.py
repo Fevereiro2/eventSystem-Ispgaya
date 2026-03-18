@@ -28,7 +28,7 @@ class LoginView(APIView):
         password = serializer.validated_data['password']
 
         user = (
-            AppUser.objects.select_related('role')
+            AppUser.objects.select_related('role', 'club')
             .filter(Q(email__iexact=identifier) | Q(name__iexact=identifier))
             .first()
         )
