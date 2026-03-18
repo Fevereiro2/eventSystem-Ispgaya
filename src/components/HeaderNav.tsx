@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
   brandLogo,
@@ -15,6 +16,7 @@ import {
   navLink
 } from '../styles/ui';
 import logo from '../assets/ispgaya-logo.svg';
+import { fetchPublicClubs, InfoCulturaClub } from '../data/infoculturaApi';
 
 type LinkItem = {
   label: string;
@@ -25,6 +27,50 @@ type LinkItem = {
 type MenuItem = LinkItem & {
   dropdown?: LinkItem[];
 };
+
+const defaultLaboratorioDropdown: LinkItem[] = [
+  { label: 'Tuna Academica', href: '/laboratorio-cultural/tuna', internal: true },
+  {
+    label: 'Clube de Leitura',
+    href: '/laboratorio-cultural/clube-leitura',
+    internal: true
+  },
+  { label: 'Clube de Teatro', href: '/laboratorio-cultural/teatro', internal: true }
+];
+
+function normalizeLabel(value: string): string {
+  return value
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .trim();
+}
+
+function getClubHref(club: InfoCulturaClub): string {
+  const label = normalizeLabel(club.name);
+
+  if (label.includes('tuna')) {
+    return '/laboratorio-cultural/tuna';
+  }
+
+  if (label.includes('leitura')) {
+    return '/laboratorio-cultural/clube-leitura';
+  }
+
+  if (label.includes('teatro')) {
+    return '/laboratorio-cultural/teatro';
+  }
+
+  return `/laboratorio-cultural/clubes/${club.id}`;
+}
+
+function mapClubToLinkItem(club: InfoCulturaClub): LinkItem {
+  return {
+    label: club.name,
+    href: getClubHref(club),
+    internal: true
+  };
+}
 
 const menuItems: MenuItem[] = [
   {
@@ -102,15 +148,7 @@ const menuItems: MenuItem[] = [
     label: 'Laboratorio Cultural',
     href: '/laboratorio-cultural',
     internal: true,
-    dropdown: [
-      { label: 'Tuna Academica', href: '/laboratorio-cultural/tuna', internal: true },
-      {
-        label: 'Clube de Leitura',
-        href: '/laboratorio-cultural/clube-leitura',
-        internal: true
-      },
-      { label: 'Clube de Teatro', href: '/laboratorio-cultural/teatro', internal: true },
-    ]
+    dropdown: defaultLaboratorioDropdown
   },
   {
     label: 'Vida Academica',
@@ -144,6 +182,40 @@ function renderMenuLink(item: LinkItem, className: string) {
 }
 
 function HeaderNav() {
+  const [laboratorioDropdown, setLaboratorioDropdown] = useState<LinkItem[]>(
+    defaultLaboratorioDropdown
+  );
+
+  useEffect(() => {
+    let active = true;
+
+    async function loadClubDropdown() {
+      try {
+        const clubs = await fetchPublicClubs();
+        if (!active) return;
+
+        setLaboratorioDropdown(
+          clubs.length > 0 ? clubs.map(mapClubToLinkItem) : defaultLaboratorioDropdown
+        );
+      } catch {
+        if (!active) return;
+        setLaboratorioDropdown(defaultLaboratorioDropdown);
+      }
+    }
+
+    void loadClubDropdown();
+
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  const resolvedMenuItems = menuItems.map((item) =>
+    item.label === 'Laboratorio Cultural'
+      ? { ...item, dropdown: laboratorioDropdown }
+      : item
+  );
+
   return (
     <header className={headerNav}>
       <div className={`${container} ${headerNavInner}`}>
@@ -152,7 +224,7 @@ function HeaderNav() {
         </Link>
 
         <nav className={desktopMenu} aria-label="Principal">
-          {menuItems.map((item) =>
+          {resolvedMenuItems.map((item) =>
             item.dropdown ? (
               <div key={item.label} className={navItemGroup}>
                 {renderMenuLink(item, navLink)}
