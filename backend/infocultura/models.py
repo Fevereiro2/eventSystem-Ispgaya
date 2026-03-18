@@ -21,6 +21,14 @@ class AppUser(models.Model):
     email = models.EmailField(max_length=150, unique=True)
     password_hash = models.CharField(max_length=255)
     role = models.ForeignKey(Role, on_delete=models.DO_NOTHING, db_column='role_id')
+    club = models.ForeignKey(
+        'Club',
+        on_delete=models.DO_NOTHING,
+        db_column='id_clubs',
+        blank=True,
+        null=True,
+        related_name='members',
+    )
     is_active = models.BooleanField(default=True)
     created_at = models.DateTimeField(blank=True, null=True)
 

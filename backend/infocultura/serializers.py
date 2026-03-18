@@ -18,10 +18,18 @@ class LoginSerializer(serializers.Serializer):
 
 class UserSerializer(serializers.ModelSerializer):
     role = serializers.CharField(source='role.name', read_only=True)
+    club_id = serializers.SerializerMethodField()
+    club_name = serializers.SerializerMethodField()
 
     class Meta:
         model = AppUser
-        fields = ['id', 'name', 'email', 'role', 'is_active']
+        fields = ['id', 'name', 'email', 'role', 'is_active', 'club_id', 'club_name']
+
+    def get_club_id(self, obj):
+        return obj.club_id
+
+    def get_club_name(self, obj):
+        return obj.club.name if obj.club else None
 
 
 class RoleSerializer(serializers.ModelSerializer):
@@ -32,11 +40,17 @@ class RoleSerializer(serializers.ModelSerializer):
 
 class AdminUserWriteSerializer(serializers.ModelSerializer):
     role = serializers.SlugRelatedField(slug_field='name', queryset=Role.objects.all())
+    club_id = serializers.PrimaryKeyRelatedField(
+        source='club',
+        queryset=Club.objects.all(),
+        allow_null=True,
+        required=False,
+    )
     password = serializers.CharField(write_only=True, required=False, allow_blank=False)
 
     class Meta:
         model = AppUser
-        fields = ['id', 'name', 'email', 'role', 'is_active', 'password']
+        fields = ['id', 'name', 'email', 'role', 'club_id', 'is_active', 'password']
         read_only_fields = ['id']
         extra_kwargs = {
             'is_active': {'required': False},
@@ -92,3 +106,19 @@ class ClubSerializer(serializers.ModelSerializer):
             'is_active',
             'created_at',
         ]
+
+
+class ClubMemberAssignSerializer(serializers.Serializer):
+    user_id = serializers.PrimaryKeyRelatedField(
+        queryset=AppUser.objects.select_related('role', 'club').all(),
+        source='user',
+    )
+
+    def validate_user(self, user):
+        if not user.is_active:
+            raise serializers.ValidationError('O utilizador tem de estar ativo.')
+
+        if user.club_id:
+            raise serializers.ValidationError('O utilizador ja pertence a um clube.')
+
+        return user
