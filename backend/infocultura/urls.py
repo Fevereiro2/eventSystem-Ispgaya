@@ -2,6 +2,8 @@ from django.urls import path
 from .views import (
     AdminClubDetailView,
     AdminClubListCreateView,
+    AdminClubMemberAssignView,
+    AdminClubMemberRemoveView,
     AdminContentDetailView,
     AdminContentListCreateView,
     AdminRoleListView,
@@ -25,4 +27,6 @@ urlpatterns = [
     path('content/admin/<uuid:pk>/', AdminContentDetailView.as_view(), name='content-admin-detail'),
     path('clubs/admin/', AdminClubListCreateView.as_view(), name='clubs-admin-list-create'),
     path('clubs/admin/<int:pk>/', AdminClubDetailView.as_view(), name='clubs-admin-detail'),
+    path('clubs/admin/<int:pk>/members/', AdminClubMemberAssignView.as_view(), name='clubs-admin-member-assign'),
+    path('clubs/admin/<int:pk>/members/<int:user_pk>/', AdminClubMemberRemoveView.as_view(), name='clubs-admin-member-remove'),
 ]
