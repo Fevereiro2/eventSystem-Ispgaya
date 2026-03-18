@@ -682,6 +682,10 @@ function AdminCultura() {
             )
           )
         );
+
+        if (currentUser?.club_id === savedClub.id) {
+          setCurrentUser((prev) => (prev ? { ...prev, club_name: savedClub.name } : prev));
+        }
       }
 
       resetClubForm();
@@ -739,6 +743,9 @@ function AdminCultura() {
       setUsers((prev) =>
         sortUsers(prev.map((user) => (user.id === updatedUser.id ? updatedUser : user)))
       );
+      if (currentUser?.id === updatedUser.id) {
+        setCurrentUser(updatedUser);
+      }
       setSelectedClubUserId('');
     } catch (error) {
       const message =
@@ -760,6 +767,9 @@ function AdminCultura() {
       setUsers((prev) =>
         sortUsers(prev.map((user) => (user.id === updatedUser.id ? updatedUser : user)))
       );
+      if (currentUser?.id === updatedUser.id) {
+        setCurrentUser(updatedUser);
+      }
     } catch (error) {
       const message =
         error instanceof Error
@@ -1375,6 +1385,44 @@ function AdminCultura() {
                     Limpar
                   </button>
                 </div>
+
+                {editingClubId ? (
+                  <div className={adminFieldSpaced}>
+                    <label className={adminLabel} htmlFor="club-user-select">
+                      Associar utilizador sem clube
+                    </label>
+                    <div className={adminActions}>
+                      <select
+                        id="club-user-select"
+                        className={adminInput}
+                        value={selectedClubUserId}
+                        onChange={(event) => setSelectedClubUserId(event.target.value)}
+                      >
+                        <option value="">Seleciona um utilizador</option>
+                        {usersWithoutClub.map((user) => (
+                          <option key={user.id} value={user.id}>
+                            {user.name} · {user.email}
+                          </option>
+                        ))}
+                      </select>
+                      <button
+                        type="button"
+                        className={adminBtnPrimary}
+                        disabled={!selectedClubUserId || isAssigningClubUser}
+                        onClick={handleAssignUserToClub}
+                      >
+                        {isAssigningClubUser ? 'A associar...' : 'Associar ao clube'}
+                      </button>
+                    </div>
+                    {usersWithoutClub.length === 0 ? (
+                      <p className={adminInfo}>Nao existem utilizadores ativos sem clube.</p>
+                    ) : null}
+                  </div>
+                ) : (
+                  <p className={adminInfo}>
+                    Guarda o clube primeiro para poderes associar utilizadores.
+                  </p>
+                )}
               </form>
 
               <section className={adminPanelCard}>
@@ -1444,6 +1492,43 @@ function AdminCultura() {
                   ))}
                 </div>
               </section>
+
+              {editingClubId ? (
+                <section className={adminPanelCard}>
+                  <h2 className={blockTitle}>Utilizadores deste clube</h2>
+                  <p className={blockText}>
+                    Aqui podes ver quem pertence ao clube em edicao e remover a associacao se
+                    necessario.
+                  </p>
+
+                  <div className={adminUserList}>
+                    {clubMembers.length === 0 ? (
+                      <p className={adminInfo}>Ainda nao existem utilizadores associados.</p>
+                    ) : null}
+                    {clubMembers.map((user) => (
+                      <article key={user.id} className={adminUserItem}>
+                        <div>
+                          <h3 className={adminUserName}>{user.name}</h3>
+                          <p className={adminUserEmail}>{user.email}</p>
+                          <p className={adminUserMeta}>{user.role}</p>
+                        </div>
+                        <div className={adminListTools}>
+                          <button
+                            type="button"
+                            className={adminBtnDanger}
+                            disabled={removingClubUserId === user.id}
+                            onClick={() => handleRemoveUserFromClub(user.id)}
+                          >
+                            {removingClubUserId === user.id
+                              ? 'A remover...'
+                              : 'Remover do clube'}
+                          </button>
+                        </div>
+                      </article>
+                    ))}
+                  </div>
+                </section>
+              ) : null}
             </>
           ) : null}
 
