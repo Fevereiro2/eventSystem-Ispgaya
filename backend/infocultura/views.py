@@ -3,9 +3,11 @@ from rest_framework import generics, permissions
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from .models import AppUser, Club, CulturalContent, News, NewsStatus, Role
+from .models import AppUser, Club, CulturalContent, News, NewsStatus, RegistrationStatus, Role
 from .permissions import IsClubAdmin, IsSuperAdmin
 from .serializers import (
+    AdminClubRegistrationSerializer,
+    AdminRegistrationStatusUpdateSerializer,
     AdminUserWriteSerializer,
     AdminNewsWriteSerializer,
     ClubRegistrationCreateSerializer,
@@ -15,8 +17,14 @@ from .serializers import (
     LoginSerializer,
     NewsSerializer,
     NewsStatusSerializer,
+    RegistrationStatusSerializer,
     RoleSerializer,
     UserSerializer,
+)
+from .services import (
+    ClubRegistrationNotFoundError,
+    list_admin_club_registrations,
+    update_admin_club_registration_status,
 )
 from .security import check_password_hash, issue_access_token
 
@@ -185,7 +193,7 @@ class PublicClubRegistrationCreateView(APIView):
 
         serializer = ClubRegistrationCreateSerializer(
             data=request.data,
-            context={'club': club},
+            context={'club': club, 'request': request},
         )
         serializer.is_valid(raise_exception=True)
         serializer.save()
@@ -228,6 +236,66 @@ class PublicNewsDetailView(generics.RetrieveAPIView):
         return News.objects.select_related('news_status', 'club').filter(
             news_status__name__iexact='published'
         )
+
+
+def get_allowed_registration_club_id(user) -> int | None:
+    role_name = getattr(getattr(user, 'role', None), 'name', None)
+    if role_name == 'club_admin':
+        return user.club_id
+    return None
+
+
+class AdminRegistrationStatusListView(generics.ListAPIView):
+    serializer_class = RegistrationStatusSerializer
+    permission_classes = [permissions.IsAuthenticated, IsClubAdmin]
+
+    def get_queryset(self):
+        return RegistrationStatus.objects.all().order_by('name')
+
+
+class AdminRegistrationListView(APIView):
+    permission_classes = [permissions.IsAuthenticated, IsClubAdmin]
+
+    def get(self, request):
+        club_id_raw = request.query_params.get('club_id')
+        status = request.query_params.get('status')
+        role_name = getattr(getattr(request.user, 'role', None), 'name', None)
+
+        if role_name == 'club_admin' and not request.user.club_id:
+            return Response([], status=200)
+
+        if role_name == 'club_admin':
+            club_id = request.user.club_id
+        else:
+            club_id = int(club_id_raw) if club_id_raw and club_id_raw.isdigit() else None
+
+        records = list_admin_club_registrations(
+            club_id=club_id,
+            status=status if status and status != 'all' else None,
+            allowed_club_id=get_allowed_registration_club_id(request.user),
+        )
+        serializer = AdminClubRegistrationSerializer(records, many=True)
+        return Response(serializer.data)
+
+
+class AdminRegistrationStatusUpdateView(APIView):
+    permission_classes = [permissions.IsAuthenticated, IsClubAdmin]
+
+    def patch(self, request, pk):
+        serializer = AdminRegistrationStatusUpdateSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        try:
+            updated_record = update_admin_club_registration_status(
+                registration_id=pk,
+                registration_status=serializer.validated_data['registration_status'],
+                allowed_club_id=get_allowed_registration_club_id(request.user),
+            )
+        except ClubRegistrationNotFoundError:
+            return Response({'message': 'Inscricao nao encontrada.'}, status=404)
+
+        output = AdminClubRegistrationSerializer(updated_record)
+        return Response({'registration': output.data})
 
 
 class AdminContentListCreateView(generics.ListCreateAPIView):

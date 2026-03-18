@@ -139,6 +139,20 @@ class News(models.Model):
         return self.title
 
 
+class RegistrationStatus(models.Model):
+    id = models.AutoField(primary_key=True, db_column='id_rstatus')
+    name = models.CharField(max_length=100)
+    description = models.TextField()
+
+    class Meta:
+        db_table = 'rstatus'
+        managed = False
+        ordering = ['name']
+
+    def __str__(self):
+        return self.name
+
+
 class Registration(models.Model):
     id = models.AutoField(primary_key=True, db_column='id_registrations')
     name = models.CharField(max_length=100)
@@ -147,7 +161,14 @@ class Registration(models.Model):
     message = models.TextField(blank=True, null=True)
     status = models.CharField(max_length=50, default='pending')
     created_at = models.DateTimeField(blank=True, null=True)
-    registration_status_id = models.IntegerField(db_column='id_rstatus', blank=True, null=True)
+    registration_status = models.ForeignKey(
+        RegistrationStatus,
+        on_delete=models.DO_NOTHING,
+        db_column='id_rstatus',
+        blank=True,
+        null=True,
+        related_name='registrations',
+    )
 
     class Meta:
         db_table = 'registrations'

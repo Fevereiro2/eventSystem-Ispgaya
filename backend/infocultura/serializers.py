@@ -1,10 +1,20 @@
 from rest_framework import serializers
 from django.utils import timezone
 
-from .models import AppUser, Club, CulturalContent, News, NewsStatus, Role
+from .models import (
+    AppUser,
+    Club,
+    CulturalContent,
+    News,
+    NewsStatus,
+    RegistrationStatus,
+    Role,
+)
 from .services import (
+    AdminClubRegistrationRecord,
     ClubRegistrationInput,
     DuplicateClubRegistrationError,
+    ClubRegistrationRateLimitError,
     create_club_registration,
 )
 from .security import hash_password
@@ -138,6 +148,12 @@ class NewsStatusSerializer(serializers.ModelSerializer):
         fields = ['id', 'name', 'description']
 
 
+class RegistrationStatusSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = RegistrationStatus
+        fields = ['id', 'name', 'description']
+
+
 class NewsSerializer(serializers.ModelSerializer):
     news_status_id = serializers.IntegerField(source='news_status_id', read_only=True)
     news_status_name = serializers.CharField(source='news_status.name', read_only=True)
@@ -244,14 +260,44 @@ class ClubRegistrationCreateSerializer(serializers.Serializer):
 
     def create(self, validated_data):
         club = self.context['club']
+        request = self.context.get('request')
         payload = ClubRegistrationInput(
             name=validated_data['name'],
             email=validated_data['email'],
             phone=validated_data.get('phone'),
             message=validated_data.get('message'),
         )
+        forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR', '') if request else ''
+        client_ip = forwarded_for.split(',')[0].strip() if forwarded_for else None
+        if not client_ip and request:
+            client_ip = request.META.get('REMOTE_ADDR')
 
         try:
-            return create_club_registration(club=club, payload=payload)
+            return create_club_registration(club=club, payload=payload, client_ip=client_ip)
         except DuplicateClubRegistrationError as error:
             raise serializers.ValidationError({'email': str(error)}) from error
+        except ClubRegistrationRateLimitError as error:
+            raise serializers.ValidationError({'non_field_errors': [str(error)]}) from error
+
+
+class AdminClubRegistrationSerializer(serializers.Serializer):
+    id = serializers.IntegerField(source='registration_id')
+    club_id = serializers.IntegerField()
+    club_name = serializers.CharField()
+    name = serializers.CharField()
+    email = serializers.EmailField()
+    phone = serializers.CharField(allow_null=True, required=False)
+    message = serializers.CharField(allow_null=True, required=False)
+    status = serializers.CharField()
+    created_at = serializers.DateTimeField(allow_null=True)
+
+    def to_representation(self, instance: AdminClubRegistrationRecord):
+        return super().to_representation(instance)
+
+
+class AdminRegistrationStatusUpdateSerializer(serializers.Serializer):
+    status = serializers.SlugRelatedField(
+        slug_field='name',
+        queryset=RegistrationStatus.objects.all(),
+        source='registration_status',
+    )
