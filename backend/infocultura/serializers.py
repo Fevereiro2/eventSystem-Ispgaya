@@ -2,6 +2,11 @@ from rest_framework import serializers
 from django.utils import timezone
 
 from .models import AppUser, Club, CulturalContent, News, NewsStatus, Role
+from .services import (
+    ClubRegistrationInput,
+    DuplicateClubRegistrationError,
+    create_club_registration,
+)
 from .security import hash_password
 
 
@@ -106,6 +111,7 @@ class ClubSerializer(serializers.ModelSerializer):
             'description',
             'mission',
             'is_active',
+            'enable_registrations',
             'created_at',
         ]
 
@@ -218,5 +224,34 @@ class AdminNewsWriteSerializer(serializers.ModelSerializer):
         instance.save()
         return instance
 
-    def to_representation(self, instance):
-        return NewsSerializer(instance).data
+
+class ClubRegistrationCreateSerializer(serializers.Serializer):
+    name = serializers.CharField(max_length=100)
+    email = serializers.EmailField(max_length=150)
+    phone = serializers.CharField(max_length=20, required=False, allow_blank=True)
+    message = serializers.CharField(required=False, allow_blank=True)
+
+    def validate(self, attrs):
+        club = self.context['club']
+
+        if not club.is_active:
+            raise serializers.ValidationError('Este clube nao esta ativo.')
+
+        if not club.enable_registrations:
+            raise serializers.ValidationError('As inscricoes estao desativadas para este clube.')
+
+        return attrs
+
+    def create(self, validated_data):
+        club = self.context['club']
+        payload = ClubRegistrationInput(
+            name=validated_data['name'],
+            email=validated_data['email'],
+            phone=validated_data.get('phone'),
+            message=validated_data.get('message'),
+        )
+
+        try:
+            return create_club_registration(club=club, payload=payload)
+        except DuplicateClubRegistrationError as error:
+            raise serializers.ValidationError({'email': str(error)}) from error

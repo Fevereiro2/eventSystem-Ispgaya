@@ -82,6 +82,7 @@ class Club(models.Model):
     description = models.TextField(blank=True, null=True)
     mission = models.TextField(blank=True, null=True)
     is_active = models.BooleanField(default=True)
+    enable_registrations = models.BooleanField(blank=True, null=True, default=False)
     created_at = models.DateTimeField(blank=True, null=True)
 
     class Meta:
@@ -136,3 +137,22 @@ class News(models.Model):
 
     def __str__(self):
         return self.title
+
+
+class Registration(models.Model):
+    id = models.AutoField(primary_key=True, db_column='id_registrations')
+    name = models.CharField(max_length=100)
+    email = models.EmailField(max_length=150)
+    phone = models.CharField(max_length=20, blank=True, null=True)
+    message = models.TextField(blank=True, null=True)
+    status = models.CharField(max_length=50, default='pending')
+    created_at = models.DateTimeField(blank=True, null=True)
+    registration_status_id = models.IntegerField(db_column='id_rstatus', blank=True, null=True)
+
+    class Meta:
+        db_table = 'registrations'
+        managed = False
+        ordering = ['-created_at', '-id']
+
+    def __str__(self):
+        return f'{self.name} <{self.email}>'
