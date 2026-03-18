@@ -1,24 +1,34 @@
+from pathlib import Path
+from uuid import uuid4
+
+from django.core.files.storage import default_storage
 from django.db.models import Q
 from rest_framework import generics, permissions
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from .models import AppUser, Club, CulturalContent, News, NewsStatus, RegistrationStatus, Role
+from .models import AppUser, Book, Club, CulturalContent, Event, News, NewsStatus, RegistrationStatus, Role, Session
 from .permissions import IsClubAdmin, IsSuperAdmin
 from .serializers import (
+    AdminBookWriteSerializer,
     AdminClubRegistrationSerializer,
+    AdminEventWriteSerializer,
     AdminRegistrationStatusUpdateSerializer,
+    AdminSessionWriteSerializer,
     AdminUserWriteSerializer,
     AdminNewsWriteSerializer,
+    BookSerializer,
     ClubRegistrationCreateSerializer,
     ClubMemberAssignSerializer,
     ClubSerializer,
     CulturalContentSerializer,
+    EventSerializer,
     LoginSerializer,
     NewsSerializer,
     NewsStatusSerializer,
     RegistrationStatusSerializer,
     RoleSerializer,
+    SessionSerializer,
     UserSerializer,
 )
 from .services import (
@@ -238,7 +248,83 @@ class PublicNewsDetailView(generics.RetrieveAPIView):
         )
 
 
+class PublicBookListView(generics.ListAPIView):
+    serializer_class = BookSerializer
+    permission_classes = [permissions.AllowAny]
+
+    def get_queryset(self):
+        queryset = Book.objects.select_related('club').filter(club__is_active=True)
+        club_id = self.request.query_params.get('club_id')
+
+        if club_id:
+            queryset = queryset.filter(club_id=club_id)
+
+        return queryset.order_by('-is_featured', 'title', '-id')
+
+
+class PublicSessionListView(generics.ListAPIView):
+    serializer_class = SessionSerializer
+    permission_classes = [permissions.AllowAny]
+
+    def get_queryset(self):
+        queryset = Session.objects.select_related('club').filter(club__is_active=True)
+        club_id = self.request.query_params.get('club_id')
+
+        if club_id:
+            queryset = queryset.filter(club_id=club_id)
+
+        return queryset.order_by('session_date', 'start_date', '-id')
+
+
+class PublicEventListView(generics.ListAPIView):
+    serializer_class = EventSerializer
+    permission_classes = [permissions.AllowAny]
+
+    def get_queryset(self):
+        queryset = Event.objects.select_related('user__club').filter(
+            user__club__is_active=True
+        ).filter(Q(status__iexact='published') | Q(status__iexact='publicado'))
+        club_id = self.request.query_params.get('club_id')
+
+        if club_id:
+            queryset = queryset.filter(user__club_id=club_id)
+
+        return queryset.order_by('event_date', 'start_date', '-id')
+
+
+class AdminImageUploadView(APIView):
+    permission_classes = [permissions.IsAuthenticated, IsClubAdmin]
+
+    allowed_folders = {'news', 'events'}
+
+    def post(self, request):
+        uploaded_file = request.FILES.get('file')
+        folder = (request.data.get('folder') or 'news').strip().lower()
+
+        if folder not in self.allowed_folders:
+            return Response({'message': 'Pasta de upload invalida.'}, status=400)
+
+        if uploaded_file is None:
+            return Response({'message': 'Seleciona um ficheiro para upload.'}, status=400)
+
+        suffix = Path(uploaded_file.name).suffix.lower()
+        if suffix not in {'.jpg', '.jpeg', '.png', '.webp', '.gif'}:
+            return Response({'message': 'Formato de imagem nao suportado.'}, status=400)
+
+        relative_path = f'infocultura/{folder}/{uuid4().hex}{suffix}'
+        stored_path = default_storage.save(relative_path, uploaded_file)
+        public_path = default_storage.url(stored_path)
+        return Response({'path': public_path}, status=201)
+
+
 def get_allowed_registration_club_id(user) -> int | None:
+    role_name = getattr(getattr(user, 'role', None), 'name', None)
+    if role_name == 'club_admin':
+        return user.club_id
+    return None
+
+
+def get_allowed_club_id(user) -> int | None:
     role_name = getattr(getattr(user, 'role', None), 'name', None)
     if role_name == 'club_admin':
         return user.club_id
@@ -259,23 +345,48 @@ class AdminRegistrationListView(APIView):
     def get(self, request):
         club_id_raw = request.query_params.get('club_id')
         status = request.query_params.get('status')
+        search = request.query_params.get('search')
+        page_raw = request.query_params.get('page', '1')
+        page_size_raw = request.query_params.get('page_size', '10')
         role_name = getattr(getattr(request.user, 'role', None), 'name', None)
+        page = int(page_raw) if page_raw.isdigit() else 1
+        page_size = int(page_size_raw) if page_size_raw.isdigit() else 10
 
         if role_name == 'club_admin' and not request.user.club_id:
-            return Response([], status=200)
+            return Response(
+                {
+                    'items': [],
+                    'total': 0,
+                    'page': page,
+                    'page_size': page_size,
+                    'total_pages': 0,
+                },
+                status=200,
+            )
 
         if role_name == 'club_admin':
             club_id = request.user.club_id
         else:
             club_id = int(club_id_raw) if club_id_raw and club_id_raw.isdigit() else None
 
-        records = list_admin_club_registrations(
+        registration_page = list_admin_club_registrations(
             club_id=club_id,
             status=status if status and status != 'all' else None,
+            search=search,
             allowed_club_id=get_allowed_registration_club_id(request.user),
+            page=page,
+            page_size=page_size,
         )
-        serializer = AdminClubRegistrationSerializer(records, many=True)
-        return Response(serializer.data)
+        serializer = AdminClubRegistrationSerializer(registration_page.items, many=True)
+        return Response(
+            {
+                'items': serializer.data,
+                'total': registration_page.total,
+                'page': registration_page.page,
+                'page_size': registration_page.page_size,
+                'total_pages': registration_page.total_pages,
+            }
+        )
 
 
 class AdminRegistrationStatusUpdateView(APIView):
@@ -335,11 +446,15 @@ class AdminNewsListCreateView(generics.ListCreateAPIView):
     def get_queryset(self):
         queryset = News.objects.select_related('news_status', 'club')
         role_name = getattr(getattr(self.request.user, 'role', None), 'name', None)
+        club_id = self.request.query_params.get('club_id')
 
         if role_name == 'club_admin':
             return queryset.filter(club_id=self.request.user.club_id).order_by(
                 '-published_at', '-created_at', '-id'
             )
+
+        if club_id and club_id.isdigit():
+            queryset = queryset.filter(club_id=int(club_id))
 
         return queryset.order_by('-published_at', '-created_at', '-id')
 
@@ -365,6 +480,126 @@ class AdminNewsDetailView(generics.RetrieveUpdateDestroyAPIView):
         if self.request.method == 'GET':
             return NewsSerializer
         return AdminNewsWriteSerializer
+
+
+class AdminBookListCreateView(generics.ListCreateAPIView):
+    permission_classes = [permissions.IsAuthenticated, IsClubAdmin]
+
+    def get_queryset(self):
+        queryset = Book.objects.select_related('club')
+        allowed_club_id = get_allowed_club_id(self.request.user)
+        club_id = self.request.query_params.get('club_id')
+
+        if allowed_club_id is not None:
+            return queryset.filter(club_id=allowed_club_id).order_by('-is_featured', 'title', '-id')
+
+        if club_id and club_id.isdigit():
+            queryset = queryset.filter(club_id=int(club_id))
+
+        return queryset.order_by('-is_featured', 'title', '-id')
+
+    def get_serializer_class(self):
+        if self.request.method == 'GET':
+            return BookSerializer
+        return AdminBookWriteSerializer
+
+
+class AdminBookDetailView(generics.RetrieveUpdateDestroyAPIView):
+    permission_classes = [permissions.IsAuthenticated, IsClubAdmin]
+
+    def get_queryset(self):
+        queryset = Book.objects.select_related('club')
+        allowed_club_id = get_allowed_club_id(self.request.user)
+
+        if allowed_club_id is not None:
+            return queryset.filter(club_id=allowed_club_id)
+
+        return queryset
+
+    def get_serializer_class(self):
+        if self.request.method == 'GET':
+            return BookSerializer
+        return AdminBookWriteSerializer
+
+
+class AdminSessionListCreateView(generics.ListCreateAPIView):
+    permission_classes = [permissions.IsAuthenticated, IsClubAdmin]
+
+    def get_queryset(self):
+        queryset = Session.objects.select_related('club')
+        allowed_club_id = get_allowed_club_id(self.request.user)
+        club_id = self.request.query_params.get('club_id')
+
+        if allowed_club_id is not None:
+            return queryset.filter(club_id=allowed_club_id).order_by('session_date', 'start_date', '-id')
+
+        if club_id and club_id.isdigit():
+            queryset = queryset.filter(club_id=int(club_id))
+
+        return queryset.order_by('session_date', 'start_date', '-id')
+
+    def get_serializer_class(self):
+        if self.request.method == 'GET':
+            return SessionSerializer
+        return AdminSessionWriteSerializer
+
+
+class AdminSessionDetailView(generics.RetrieveUpdateDestroyAPIView):
+    permission_classes = [permissions.IsAuthenticated, IsClubAdmin]
+
+    def get_queryset(self):
+        queryset = Session.objects.select_related('club')
+        allowed_club_id = get_allowed_club_id(self.request.user)
+
+        if allowed_club_id is not None:
+            return queryset.filter(club_id=allowed_club_id)
+
+        return queryset
+
+    def get_serializer_class(self):
+        if self.request.method == 'GET':
+            return SessionSerializer
+        return AdminSessionWriteSerializer
+
+
+class AdminEventListCreateView(generics.ListCreateAPIView):
+    permission_classes = [permissions.IsAuthenticated, IsClubAdmin]
+
+    def get_queryset(self):
+        queryset = Event.objects.select_related('user__club')
+        allowed_club_id = get_allowed_club_id(self.request.user)
+        club_id = self.request.query_params.get('club_id')
+
+        if allowed_club_id is not None:
+            return queryset.filter(user__club_id=allowed_club_id).order_by('event_date', 'start_date', '-id')
+
+        if club_id and club_id.isdigit():
+            queryset = queryset.filter(user__club_id=int(club_id))
+
+        return queryset.order_by('event_date', 'start_date', '-id')
+
+    def get_serializer_class(self):
+        if self.request.method == 'GET':
+            return EventSerializer
+        return AdminEventWriteSerializer
+
+
+class AdminEventDetailView(generics.RetrieveUpdateDestroyAPIView):
+    permission_classes = [permissions.IsAuthenticated, IsClubAdmin]
+
+    def get_queryset(self):
+        queryset = Event.objects.select_related('user__club')
+        allowed_club_id = get_allowed_club_id(self.request.user)
+
+        if allowed_club_id is not None:
+            return queryset.filter(user__club_id=allowed_club_id)
+
+        return queryset
+
+    def get_serializer_class(self):
+        if self.request.method == 'GET':
+            return EventSerializer
+        return AdminEventWriteSerializer
 
 
 class AdminClubListCreateView(generics.ListCreateAPIView):

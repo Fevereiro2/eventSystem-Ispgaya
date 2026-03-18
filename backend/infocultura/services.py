@@ -3,7 +3,9 @@ from __future__ import annotations
 from dataclasses import dataclass
 from datetime import datetime
 
+from django.conf import settings
 from django.core.cache import cache
+from django.core.mail import send_mail
 from django.db import connection, transaction
 from django.utils import timezone
 
@@ -45,6 +47,15 @@ class AdminClubRegistrationRecord:
     message: str | None
     status: str
     created_at: datetime | None
+
+
+@dataclass(frozen=True, slots=True)
+class AdminClubRegistrationPage:
+    items: list[AdminClubRegistrationRecord]
+    total: int
+    page: int
+    page_size: int
+    total_pages: int
 
 
 def _normalized_email(value: str) -> str:
@@ -137,6 +148,7 @@ def _build_admin_registration_filters(
     *,
     club_id: int | None,
     status: str | None,
+    search: str | None,
     allowed_club_id: int | None,
 ) -> tuple[str, list[object]]:
     clauses: list[str] = []
@@ -153,6 +165,11 @@ def _build_admin_registration_filters(
     if status:
         clauses.append("LOWER(COALESCE(rs.name, r.status)) = %s")
         params.append(status.strip().lower())
+
+    if search:
+        search_term = f"%{search.strip().lower()}%"
+        clauses.append("(LOWER(r.name) LIKE %s OR LOWER(r.email) LIKE %s)")
+        params.extend([search_term, search_term])
 
     if not clauses:
         return "", params
@@ -178,15 +195,38 @@ def list_admin_club_registrations(
     *,
     club_id: int | None = None,
     status: str | None = None,
+    search: str | None = None,
     allowed_club_id: int | None = None,
-) -> list[AdminClubRegistrationRecord]:
+    page: int = 1,
+    page_size: int = 10,
+) -> AdminClubRegistrationPage:
+    normalized_page = max(1, page)
+    normalized_page_size = min(max(1, page_size), 100)
     where_clause, params = _build_admin_registration_filters(
         club_id=club_id,
         status=status,
+        search=search,
         allowed_club_id=allowed_club_id,
     )
 
     with connection.cursor() as cursor:
+        cursor.execute(
+            f"""
+            SELECT COUNT(*)
+            FROM registrations AS r
+            INNER JOIN clubs_registrations AS cr
+              ON cr.id_registrations = r.id_registrations
+            INNER JOIN clubs AS c
+              ON c.id_clubs = cr.id_clubs
+            LEFT JOIN rstatus AS rs
+              ON rs.id_rstatus = r.id_rstatus
+            {where_clause}
+            """,
+            params,
+        )
+        total = int(cursor.fetchone()[0])
+
+        offset = (normalized_page - 1) * normalized_page_size
         cursor.execute(
             f"""
             SELECT
@@ -208,12 +248,21 @@ def list_admin_club_registrations(
               ON rs.id_rstatus = r.id_rstatus
             {where_clause}
             ORDER BY r.created_at DESC, r.id_registrations DESC
+            LIMIT %s OFFSET %s
             """,
-            params,
+            [*params, normalized_page_size, offset],
         )
         rows = cursor.fetchall()
 
-    return [_row_to_admin_record(row) for row in rows]
+    total_pages = (total + normalized_page_size - 1) // normalized_page_size if total else 0
+
+    return AdminClubRegistrationPage(
+        items=[_row_to_admin_record(row) for row in rows],
+        total=total,
+        page=normalized_page,
+        page_size=normalized_page_size,
+        total_pages=total_pages,
+    )
 
 
 def get_admin_club_registration(
@@ -224,6 +273,7 @@ def get_admin_club_registration(
     where_clause, params = _build_admin_registration_filters(
         club_id=None,
         status=None,
+        search=None,
         allowed_club_id=allowed_club_id,
     )
     clauses = [where_clause.replace("WHERE ", "", 1)] if where_clause else []
@@ -262,6 +312,45 @@ def get_admin_club_registration(
     return _row_to_admin_record(row) if row else None
 
 
+def _build_registration_status_email_subject(status: str, club_name: str) -> str:
+    if status == "approved":
+        return f"Inscricao aprovada no clube {club_name}"
+    if status == "rejected":
+        return f"Inscricao rejeitada no clube {club_name}"
+    return f"Atualizacao da inscricao no clube {club_name}"
+
+
+def _build_registration_status_email_body(record: AdminClubRegistrationRecord) -> str:
+    if record.status == "approved":
+        decision_line = "A tua inscricao foi aprovada."
+    elif record.status == "rejected":
+        decision_line = "A tua inscricao foi rejeitada."
+    else:
+        decision_line = f"O estado da tua inscricao foi atualizado para {record.status}."
+
+    return (
+        f"Ola {record.name},\n\n"
+        f"{decision_line}\n"
+        f"Clube: {record.club_name}\n"
+        f"Estado atual: {record.status}\n\n"
+        "Obrigado pelo teu interesse.\n"
+        "InfoCultura"
+    )
+
+
+def send_registration_status_email(record: AdminClubRegistrationRecord) -> None:
+    if record.status not in {"approved", "rejected"}:
+        return
+
+    send_mail(
+        subject=_build_registration_status_email_subject(record.status, record.club_name),
+        message=_build_registration_status_email_body(record),
+        from_email=getattr(settings, "DEFAULT_FROM_EMAIL", "noreply@ispgaya.pt"),
+        recipient_list=[record.email],
+        fail_silently=True,
+    )
+
+
 def update_admin_club_registration_status(
     *,
     registration_id: int,
@@ -279,6 +368,7 @@ def update_admin_club_registration_status(
     if registration is None:
         raise ClubRegistrationNotFoundError("Inscricao nao encontrada.")
 
+    previous_status = current_record.status.strip().lower()
     registration.registration_status = registration_status
     registration.status = registration_status.name.strip().lower()
     registration.save(update_fields=["registration_status", "status"])
@@ -289,5 +379,8 @@ def update_admin_club_registration_status(
     )
     if updated_record is None:
         raise ClubRegistrationNotFoundError("Inscricao nao encontrada.")
+
+    if updated_record.status != previous_status:
+        send_registration_status_email(updated_record)
 
     return updated_record

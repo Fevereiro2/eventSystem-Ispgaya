@@ -3,12 +3,15 @@ from django.utils import timezone
 
 from .models import (
     AppUser,
+    Book,
     Club,
     CulturalContent,
+    Event,
     News,
     NewsStatus,
     RegistrationStatus,
     Role,
+    Session,
 )
 from .services import (
     AdminClubRegistrationRecord,
@@ -178,6 +181,112 @@ class NewsSerializer(serializers.ModelSerializer):
         ]
 
 
+class BookSerializer(serializers.ModelSerializer):
+    club_id = serializers.IntegerField(source='club_id', read_only=True)
+    club_name = serializers.CharField(source='club.name', read_only=True)
+
+    class Meta:
+        model = Book
+        fields = [
+            'id',
+            'title',
+            'author',
+            'publisher',
+            'publication_year',
+            'cover_image',
+            'summary',
+            'is_featured',
+            'created_at',
+            'club_id',
+            'club_name',
+        ]
+
+
+class SessionSerializer(serializers.ModelSerializer):
+    club_id = serializers.IntegerField(source='club_id', read_only=True)
+    club_name = serializers.CharField(source='club.name', read_only=True)
+
+    class Meta:
+        model = Session
+        fields = [
+            'id',
+            'name',
+            'title',
+            'description',
+            'session_date',
+            'start_date',
+            'end_date',
+            'created_at',
+            'updated_at',
+            'club_id',
+            'club_name',
+        ]
+
+
+class EventSerializer(serializers.ModelSerializer):
+    user_id = serializers.IntegerField(source='user_id', read_only=True)
+    club_id = serializers.SerializerMethodField()
+    club_name = serializers.SerializerMethodField()
+    owner_name = serializers.CharField(source='user.name', read_only=True)
+
+    class Meta:
+        model = Event
+        fields = [
+            'id',
+            'title',
+            'description',
+            'event_date',
+            'start_date',
+            'end_date',
+            'image',
+            'is_external',
+            'status',
+            'created_at',
+            'updated_at',
+            'city',
+            'location',
+            'user_id',
+            'club_id',
+            'club_name',
+            'owner_name',
+        ]
+
+    def get_club_id(self, obj):
+        return obj.user.club_id if obj.user_id and obj.user else None
+
+    def get_club_name(self, obj):
+        if not obj.user_id or not obj.user or not obj.user.club:
+            return None
+        return obj.user.club.name
+
+
+class ClubScopedWriteSerializer(serializers.ModelSerializer):
+    club_id = serializers.PrimaryKeyRelatedField(
+        source='club',
+        queryset=Club.objects.all(),
+        required=False,
+    )
+
+    def validate_club_scope(self, attrs):
+        request = self.context['request']
+        user = request.user
+        role_name = getattr(getattr(user, 'role', None), 'name', None)
+
+        if role_name == 'club_admin':
+            if not user.club_id:
+                raise serializers.ValidationError(
+                    {'club_id': 'O club_admin tem de ter um clube associado.'}
+                )
+
+            attrs['club'] = user.club
+
+        club = attrs.get('club') or getattr(self.instance, 'club', None)
+        if club is None:
+            raise serializers.ValidationError({'club_id': 'O clube e obrigatorio.'})
+
+        return club
+
+
 class AdminNewsWriteSerializer(serializers.ModelSerializer):
     news_status = serializers.SlugRelatedField(
         slug_field='name',
@@ -239,6 +348,179 @@ class AdminNewsWriteSerializer(serializers.ModelSerializer):
         instance.updated_at = timezone.now()
         instance.save()
         return instance
+
+    def to_representation(self, instance):
+        return NewsSerializer(instance).data
+
+
+class AdminBookWriteSerializer(ClubScopedWriteSerializer):
+    class Meta:
+        model = Book
+        fields = [
+            'id',
+            'title',
+            'author',
+            'publisher',
+            'publication_year',
+            'cover_image',
+            'summary',
+            'is_featured',
+            'club_id',
+        ]
+        read_only_fields = ['id']
+
+    def validate(self, attrs):
+        self.validate_club_scope(attrs)
+        return attrs
+
+    def create(self, validated_data):
+        validated_data.setdefault('created_at', timezone.now())
+        return Book.objects.create(**validated_data)
+
+    def update(self, instance, validated_data):
+        for field, value in validated_data.items():
+            setattr(instance, field, value)
+
+        instance.save()
+        return instance
+
+    def to_representation(self, instance):
+        return BookSerializer(instance).data
+
+
+class AdminSessionWriteSerializer(ClubScopedWriteSerializer):
+    class Meta:
+        model = Session
+        fields = [
+            'id',
+            'name',
+            'title',
+            'description',
+            'session_date',
+            'start_date',
+            'end_date',
+            'club_id',
+        ]
+        read_only_fields = ['id']
+
+    def validate(self, attrs):
+        self.validate_club_scope(attrs)
+        start_date = attrs.get('start_date') or getattr(self.instance, 'start_date', None)
+        end_date = attrs.get('end_date') or getattr(self.instance, 'end_date', None)
+
+        if start_date and end_date and start_date > end_date:
+            raise serializers.ValidationError({'end_date': 'A data final tem de ser posterior.'})
+
+        return attrs
+
+    def create(self, validated_data):
+        now = timezone.now()
+        validated_data.setdefault('created_at', now)
+        validated_data['updated_at'] = now
+        return Session.objects.create(**validated_data)
+
+    def update(self, instance, validated_data):
+        for field, value in validated_data.items():
+            setattr(instance, field, value)
+
+        instance.updated_at = timezone.now()
+        instance.save()
+        return instance
+
+    def to_representation(self, instance):
+        return SessionSerializer(instance).data
+
+
+class AdminEventWriteSerializer(serializers.ModelSerializer):
+    club_id = serializers.PrimaryKeyRelatedField(
+        source='club',
+        queryset=Club.objects.all(),
+        required=False,
+    )
+
+    class Meta:
+        model = Event
+        fields = [
+            'id',
+            'title',
+            'description',
+            'event_date',
+            'start_date',
+            'end_date',
+            'image',
+            'is_external',
+            'status',
+            'city',
+            'location',
+            'club_id',
+        ]
+        read_only_fields = ['id']
+
+    def _resolve_owner(self, club: Club):
+        request_user = self.context['request'].user
+        if request_user.club_id == club.id:
+            return request_user
+
+        owner = AppUser.objects.filter(club=club, is_active=True).order_by('id').first()
+        if owner is None:
+            raise serializers.ValidationError(
+                {'club_id': 'O clube precisa de pelo menos um utilizador ativo associado.'}
+            )
+
+        return owner
+
+    def validate(self, attrs):
+        request = self.context['request']
+        user = request.user
+        role_name = getattr(getattr(user, 'role', None), 'name', None)
+
+        if role_name == 'club_admin':
+            if not user.club_id:
+                raise serializers.ValidationError(
+                    {'club_id': 'O club_admin tem de ter um clube associado.'}
+                )
+            club = user.club
+        else:
+            club = attrs.get('club')
+            if club is None and self.instance and self.instance.user_id and self.instance.user:
+                club = self.instance.user.club
+
+        if club is None:
+            raise serializers.ValidationError({'club_id': 'O clube e obrigatorio.'})
+
+        start_date = attrs.get('start_date') or getattr(self.instance, 'start_date', None)
+        end_date = attrs.get('end_date') or getattr(self.instance, 'end_date', None)
+        if start_date and end_date and start_date > end_date:
+            raise serializers.ValidationError({'end_date': 'A data final tem de ser posterior.'})
+
+        attrs['resolved_club'] = club
+        return attrs
+
+    def create(self, validated_data):
+        club = validated_data.pop('resolved_club')
+        validated_data.pop('club', None)
+        owner = self._resolve_owner(club)
+        now = timezone.now()
+        validated_data['user'] = owner
+        validated_data.setdefault('created_at', now)
+        validated_data['updated_at'] = now
+        return Event.objects.create(**validated_data)
+
+    def update(self, instance, validated_data):
+        club = validated_data.pop('resolved_club')
+        validated_data.pop('club', None)
+        owner = self._resolve_owner(club)
+
+        for field, value in validated_data.items():
+            setattr(instance, field, value)
+
+        instance.user = owner
+        instance.updated_at = timezone.now()
+        instance.save()
+        return instance
+
+    def to_representation(self, instance):
+        return EventSerializer(instance).data
 
 
 class ClubRegistrationCreateSerializer(serializers.Serializer):
