@@ -21,6 +21,7 @@ if config.config_file_name is not None:
 
 
 target_metadata = Base.metadata
+managed_tables = set(target_metadata.tables.keys())
 
 
 def build_database_url() -> str:
@@ -39,6 +40,14 @@ def get_url() -> str:
     return configured_url or build_database_url()
 
 
+def include_object(object_, name, type_, reflected, compare_to) -> bool:
+    """Limit Alembic autogenerate to the live baseline tables we manage here."""
+
+    if type_ == "table" and reflected and name not in managed_tables:
+        return False
+    return True
+
+
 def run_migrations_offline() -> None:
     """Run migrations in 'offline' mode."""
 
@@ -48,6 +57,7 @@ def run_migrations_offline() -> None:
         literal_binds=True,
         compare_type=True,
         compare_server_default=True,
+        include_object=include_object,
         dialect_opts={"paramstyle": "named"},
     )
 
@@ -74,6 +84,7 @@ def run_migrations_online() -> None:
             target_metadata=target_metadata,
             compare_type=True,
             compare_server_default=True,
+            include_object=include_object,
         )
 
         with context.begin_transaction():
