@@ -76,6 +76,24 @@ export type InfoCulturaNews = {
   club_name: string;
 };
 
+export type InfoCulturaRegistrationStatus = {
+  id: number;
+  name: string;
+  description: string;
+};
+
+export type InfoCulturaRegistration = {
+  id: number;
+  club_id: number;
+  club_name: string;
+  name: string;
+  email: string;
+  phone?: string | null;
+  message?: string | null;
+  status: string;
+  created_at: string | null;
+};
+
 export type UserPayload = {
   name: string;
   email: string;
@@ -115,6 +133,10 @@ type ApiMeResponse = {
 
 type ApiUserResponse = {
   user: InfoCulturaUser;
+};
+
+type ApiRegistrationResponse = {
+  registration: InfoCulturaRegistration;
 };
 
 async function request<T>(
@@ -349,6 +371,55 @@ export async function fetchAdminNewsStatuses(
 
 export async function fetchAdminNews(token: string): Promise<InfoCulturaNews[]> {
   return request<InfoCulturaNews[]>('/news/admin/', {}, token);
+}
+
+export async function fetchAdminRegistrationStatuses(
+  token: string
+): Promise<InfoCulturaRegistrationStatus[]> {
+  return request<InfoCulturaRegistrationStatus[]>(
+    '/registrations/admin/statuses/',
+    {},
+    token
+  );
+}
+
+export async function fetchAdminRegistrations(
+  token: string,
+  filters?: { clubId?: number; status?: string }
+): Promise<InfoCulturaRegistration[]> {
+  const search = new URLSearchParams();
+
+  if (typeof filters?.clubId === 'number') {
+    search.set('club_id', String(filters.clubId));
+  }
+
+  if (filters?.status && filters.status !== 'all') {
+    search.set('status', filters.status);
+  }
+
+  const query = search.toString();
+  return request<InfoCulturaRegistration[]>(
+    `/registrations/admin/${query ? `?${query}` : ''}`,
+    {},
+    token
+  );
+}
+
+export async function updateAdminRegistrationStatus(
+  token: string,
+  registrationId: number,
+  status: string
+): Promise<InfoCulturaRegistration> {
+  const data = await request<ApiRegistrationResponse>(
+    `/registrations/admin/${registrationId}/status/`,
+    {
+      method: 'PATCH',
+      body: JSON.stringify({ status })
+    },
+    token
+  );
+
+  return data.registration;
 }
 
 export async function createAdminNews(
