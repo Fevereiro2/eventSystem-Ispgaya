@@ -91,3 +91,48 @@ class Club(models.Model):
 
     def __str__(self):
         return self.name
+
+
+class NewsStatus(models.Model):
+    id = models.AutoField(primary_key=True, db_column='id_nstatus')
+    name = models.CharField(max_length=100)
+    description = models.TextField()
+
+    class Meta:
+        db_table = 'nstatus'
+        managed = False
+        ordering = ['name']
+
+    def __str__(self):
+        return self.name
+
+
+class News(models.Model):
+    id = models.AutoField(primary_key=True, db_column='id_news')
+    title = models.CharField(max_length=255)
+    summary = models.TextField()
+    image = models.CharField(max_length=500)
+    news_status = models.ForeignKey(
+        NewsStatus,
+        on_delete=models.DO_NOTHING,
+        db_column='id_nstatus',
+        related_name='news_items',
+    )
+    published_at = models.DateTimeField(blank=True, null=True)
+    created_at = models.DateTimeField()
+    updated_at = models.DateTimeField()
+    club = models.ForeignKey(
+        Club,
+        on_delete=models.DO_NOTHING,
+        db_column='id_clubs',
+        related_name='news_items',
+    )
+    content = models.TextField()
+
+    class Meta:
+        db_table = 'news'
+        managed = False
+        ordering = ['-published_at', '-created_at', '-id']
+
+    def __str__(self):
+        return self.title
