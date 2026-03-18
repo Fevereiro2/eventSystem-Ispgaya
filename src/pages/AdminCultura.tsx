@@ -92,14 +92,19 @@ import {
   deleteAdminContent,
   fetchAdminClubs,
   fetchAdminContent,
+  fetchAdminRegistrations,
+  fetchAdminRegistrationStatuses,
   fetchAdminRoles,
   fetchAdminUsers,
   fetchInfoCulturaMe,
   InfoCulturaClub,
+  InfoCulturaRegistration,
+  InfoCulturaRegistrationStatus,
   InfoCulturaRole,
   InfoCulturaUser,
   loginInfoCultura,
   removeUserFromClub,
+  updateAdminRegistrationStatus,
   updateAdminClub,
   updateAdminContent,
   updateAdminUser,
@@ -130,7 +135,7 @@ type ClubFormState = {
   enable_registrations: boolean;
 };
 
-type AdminSection = 'resumo' | 'utilizadores' | 'conteudos' | 'clubes';
+type AdminSection = 'resumo' | 'utilizadores' | 'conteudos' | 'clubes' | 'inscricoes';
 
 type UserPage =
   | { mode: 'list' }
@@ -165,6 +170,7 @@ const adminSections: { id: AdminSection; label: string; href: string }[] = [
   { id: 'resumo', label: 'Resumo', href: '/infocultura/resumo' },
   { id: 'utilizadores', label: 'Utilizadores', href: '/infocultura/utilizadores' },
   { id: 'conteudos', label: 'Conteudos', href: '/infocultura/conteudos' },
+  { id: 'inscricoes', label: 'Inscricoes', href: '/infocultura/inscricoes' },
   { id: 'clubes', label: 'Clubes', href: '/infocultura/clubes' }
 ];
 
@@ -182,6 +188,10 @@ function getAdminSection(pathname: string): AdminSection | null {
 
   if (pathname === '/infocultura/conteudos') {
     return 'conteudos';
+  }
+
+  if (pathname === '/infocultura/inscricoes') {
+    return 'inscricoes';
   }
 
   if (pathname === '/infocultura/clubes') {
@@ -235,6 +245,34 @@ function sortClubs(list: InfoCulturaClub[]): InfoCulturaClub[] {
   });
 }
 
+function formatAdminDateTime(value?: string | null): string {
+  if (!value) return 'Sem data';
+
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    return value;
+  }
+
+  return new Intl.DateTimeFormat('pt-PT', {
+    dateStyle: 'short',
+    timeStyle: 'short'
+  }).format(date);
+}
+
+function getRegistrationStatusBadge(status: string): string {
+  const normalized = status.trim().toLowerCase();
+
+  if (normalized === 'approved') {
+    return `${adminUserStatus} ${adminUserStatusActive}`;
+  }
+
+  if (normalized === 'rejected' || normalized === 'cancelled') {
+    return `${adminUserStatus} ${adminUserStatusInactive}`;
+  }
+
+  return `${adminUserStatus} bg-amber-100 text-amber-700`;
+}
+
 function AdminCultura() {
   const location = useLocation();
   const navigate = useNavigate();
@@ -250,15 +288,23 @@ function AdminCultura() {
   const [users, setUsers] = useState<InfoCulturaUser[]>([]);
   const [clubs, setClubs] = useState<InfoCulturaClub[]>([]);
   const [roles, setRoles] = useState<InfoCulturaRole[]>([]);
+  const [registrations, setRegistrations] = useState<InfoCulturaRegistration[]>([]);
+  const [registrationStatuses, setRegistrationStatuses] = useState<
+    InfoCulturaRegistrationStatus[]
+  >([]);
   const [currentUser, setCurrentUser] = useState<InfoCulturaUser | null>(null);
   const [isLoadingItems, setIsLoadingItems] = useState(false);
   const [isLoadingUsers, setIsLoadingUsers] = useState(false);
   const [isLoadingClubs, setIsLoadingClubs] = useState(false);
   const [isLoadingRoles, setIsLoadingRoles] = useState(false);
+  const [isLoadingRegistrations, setIsLoadingRegistrations] = useState(false);
+  const [isLoadingRegistrationStatuses, setIsLoadingRegistrationStatuses] = useState(false);
   const [panelError, setPanelError] = useState('');
+  const [registrationError, setRegistrationError] = useState('');
   const [isSavingContent, setIsSavingContent] = useState(false);
   const [isSavingUser, setIsSavingUser] = useState(false);
   const [isSavingClub, setIsSavingClub] = useState(false);
+  const [updatingRegistrationId, setUpdatingRegistrationId] = useState<number | null>(null);
   const [isAssigningClubUser, setIsAssigningClubUser] = useState(false);
   const [isDeactivatingUser, setIsDeactivatingUser] = useState(false);
   const [deletingClubId, setDeletingClubId] = useState<number | null>(null);
@@ -270,6 +316,8 @@ function AdminCultura() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editingClubId, setEditingClubId] = useState<number | null>(null);
   const [selectedClubUserId, setSelectedClubUserId] = useState('');
+  const [registrationStatusFilter, setRegistrationStatusFilter] = useState('pending');
+  const [registrationClubFilter, setRegistrationClubFilter] = useState('all');
   const [userFormError, setUserFormError] = useState('');
   const [clubFormError, setClubFormError] = useState('');
 
@@ -305,6 +353,22 @@ function AdminCultura() {
     () => clubs.filter((club) => club.is_active).length,
     [clubs]
   );
+  const pendingRegistrations = useMemo(
+    () => registrations.filter((registration) => registration.status === 'pending').length,
+    [registrations]
+  );
+  const approvedRegistrations = useMemo(
+    () => registrations.filter((registration) => registration.status === 'approved').length,
+    [registrations]
+  );
+  const rejectedRegistrations = useMemo(
+    () =>
+      registrations.filter(
+        (registration) =>
+          registration.status === 'rejected' || registration.status === 'cancelled'
+      ).length,
+    [registrations]
+  );
   const clubMembers = useMemo(() => {
     if (!editingClubId) return [];
 
@@ -322,8 +386,11 @@ function AdminCultura() {
     setUsers([]);
     setClubs([]);
     setRoles([]);
+    setRegistrations([]);
+    setRegistrationStatuses([]);
     setCurrentUser(null);
     setPanelError('');
+    setRegistrationError('');
     setUserFormError('');
     setClubFormError('');
     sessionStorage.removeItem(TOKEN_KEY);
@@ -444,6 +511,51 @@ function AdminCultura() {
       isMounted = false;
     };
   }, [token, canManageUsers]);
+
+  useEffect(() => {
+    if (!token || !currentUser || activeSection !== 'inscricoes') {
+      return;
+    }
+
+    let isMounted = true;
+    setIsLoadingRegistrationStatuses(true);
+    setIsLoadingRegistrations(true);
+    setRegistrationError('');
+
+    const clubId =
+      canManageUsers && registrationClubFilter !== 'all'
+        ? Number(registrationClubFilter)
+        : undefined;
+    const status =
+      registrationStatusFilter && registrationStatusFilter !== 'all'
+        ? registrationStatusFilter
+        : undefined;
+
+    void Promise.all([
+      fetchAdminRegistrationStatuses(token),
+      fetchAdminRegistrations(token, { clubId, status })
+    ])
+      .then(([nextStatuses, nextRegistrations]) => {
+        if (!isMounted) return;
+        setRegistrationStatuses(nextStatuses);
+        setRegistrations(nextRegistrations);
+      })
+      .catch((error) => {
+        if (!isMounted) return;
+        const message =
+          error instanceof Error ? error.message : 'Nao foi possivel carregar as inscricoes.';
+        setRegistrationError(message);
+      })
+      .finally(() => {
+        if (!isMounted) return;
+        setIsLoadingRegistrationStatuses(false);
+        setIsLoadingRegistrations(false);
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [activeSection, token, currentUser, canManageUsers, registrationClubFilter, registrationStatusFilter]);
 
   useEffect(() => {
     if (activeSection !== 'utilizadores' || !userPage) return;
@@ -785,6 +897,41 @@ function AdminCultura() {
     }
   }
 
+  async function handleUpdateRegistrationStatus(
+    registrationId: number,
+    status: string
+  ) {
+    if (!token) return;
+
+    setUpdatingRegistrationId(registrationId);
+    setRegistrationError('');
+
+    try {
+      const updatedRegistration = await updateAdminRegistrationStatus(
+        token,
+        registrationId,
+        status
+      );
+      setRegistrations((prev) =>
+        prev
+          .map((registration) =>
+            registration.id === updatedRegistration.id ? updatedRegistration : registration
+          )
+          .filter((registration) =>
+            registrationStatusFilter === 'all'
+              ? true
+              : registration.status === registrationStatusFilter
+          )
+      );
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : 'Nao foi possivel atualizar a inscricao.';
+      setRegistrationError(message);
+    } finally {
+      setUpdatingRegistrationId(null);
+    }
+  }
+
   if (location.pathname === '/infocultura' || location.pathname === '/infocultura/') {
     return <Navigate to="/infocultura/resumo" replace />;
   }
@@ -931,6 +1078,8 @@ function AdminCultura() {
                 ? 'Gestao e consulta dos utilizadores do InfoCultura.'
                 : activeSection === 'clubes'
                   ? 'Criacao e manutencao dos clubes internos.'
+                : activeSection === 'inscricoes'
+                  ? 'Consulta e validacao das inscricoes submetidas pelos clubes.'
                 : activeSection === 'conteudos'
                   ? 'Gestao de Tuna, Clube de Leitura e Teatro.'
                   : 'Visao geral do painel administrativo.'}
@@ -1556,6 +1705,153 @@ function AdminCultura() {
                   </div>
                 </section>
               ) : null}
+            </>
+          ) : null}
+
+          {activeSection === 'inscricoes' ? (
+            <>
+              <section className={adminPanelCard}>
+                <h2 className={blockTitle}>Inscricoes</h2>
+                <p className={blockText}>
+                  Consulta os pedidos submetidos pelos clubes e atualiza o respetivo estado.
+                </p>
+
+                <div className={adminStatsGrid}>
+                  <div className={adminStatCard}>
+                    <p className={adminStatValue}>{registrations.length}</p>
+                    <p className={adminStatLabel}>Total</p>
+                  </div>
+                  <div className={adminStatCard}>
+                    <p className={adminStatValue}>{pendingRegistrations}</p>
+                    <p className={adminStatLabel}>Pendentes</p>
+                  </div>
+                  <div className={adminStatCard}>
+                    <p className={adminStatValue}>{approvedRegistrations}</p>
+                    <p className={adminStatLabel}>Aprovadas</p>
+                  </div>
+                  <div className={adminStatCard}>
+                    <p className={adminStatValue}>{rejectedRegistrations}</p>
+                    <p className={adminStatLabel}>Rejeitadas</p>
+                  </div>
+                </div>
+
+                <div className={adminFormGridSpaced}>
+                  {canManageUsers ? (
+                    <div className={adminField}>
+                      <label className={adminLabel} htmlFor="registration-club-filter">
+                        Clube
+                      </label>
+                      <select
+                        id="registration-club-filter"
+                        className={adminInput}
+                        value={registrationClubFilter}
+                        onChange={(event) => setRegistrationClubFilter(event.target.value)}
+                      >
+                        <option value="all">Todos os clubes</option>
+                        {clubs.map((club) => (
+                          <option key={club.id} value={club.id}>
+                            {club.name}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  ) : null}
+
+                  <div className={adminField}>
+                    <label className={adminLabel} htmlFor="registration-status-filter">
+                      Estado
+                    </label>
+                    <select
+                      id="registration-status-filter"
+                      className={adminInput}
+                      value={registrationStatusFilter}
+                      onChange={(event) => setRegistrationStatusFilter(event.target.value)}
+                    >
+                      <option value="all">Todos</option>
+                      {isLoadingRegistrationStatuses ? (
+                        <option value="">A carregar estados...</option>
+                      ) : null}
+                      {registrationStatuses.map((status) => (
+                        <option key={status.id} value={status.name}>
+                          {status.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+
+                {registrationError ? <p className={adminError}>{registrationError}</p> : null}
+
+                <div className={adminUserList}>
+                  {isLoadingRegistrations ? (
+                    <p className={adminInfo}>A carregar inscricoes...</p>
+                  ) : null}
+                  {!isLoadingRegistrations && registrations.length === 0 ? (
+                    <p className={adminInfo}>Nao existem inscricoes para os filtros atuais.</p>
+                  ) : null}
+                  {registrations.map((registration) => (
+                    <article key={registration.id} className={adminUserItem}>
+                      <div>
+                        <h3 className={adminUserName}>{registration.name}</h3>
+                        <p className={adminUserEmail}>{registration.email}</p>
+                        <p className={adminUserMeta}>
+                          {registration.club_name} · {formatAdminDateTime(registration.created_at)}
+                        </p>
+                        {registration.phone ? (
+                          <p className={adminUserMeta}>Telefone: {registration.phone}</p>
+                        ) : null}
+                        <p className={adminUserMeta}>
+                          {registration.message || 'Sem mensagem adicional.'}
+                        </p>
+                      </div>
+                      <div className={adminListTools}>
+                        <span className={getRegistrationStatusBadge(registration.status)}>
+                          {registration.status}
+                        </span>
+                        <button
+                          type="button"
+                          className={adminBtnEdit}
+                          disabled={
+                            updatingRegistrationId === registration.id ||
+                            registration.status === 'approved'
+                          }
+                          onClick={() =>
+                            handleUpdateRegistrationStatus(registration.id, 'approved')
+                          }
+                        >
+                          {updatingRegistrationId === registration.id ? 'A atualizar...' : 'Aprovar'}
+                        </button>
+                        <button
+                          type="button"
+                          className={adminBtnDanger}
+                          disabled={
+                            updatingRegistrationId === registration.id ||
+                            registration.status === 'rejected'
+                          }
+                          onClick={() =>
+                            handleUpdateRegistrationStatus(registration.id, 'rejected')
+                          }
+                        >
+                          {updatingRegistrationId === registration.id ? 'A atualizar...' : 'Rejeitar'}
+                        </button>
+                        <button
+                          type="button"
+                          className={adminBtnSecondary}
+                          disabled={
+                            updatingRegistrationId === registration.id ||
+                            registration.status === 'pending'
+                          }
+                          onClick={() =>
+                            handleUpdateRegistrationStatus(registration.id, 'pending')
+                          }
+                        >
+                          {updatingRegistrationId === registration.id ? 'A atualizar...' : 'Pendente'}
+                        </button>
+                      </div>
+                    </article>
+                  ))}
+                </div>
+              </section>
             </>
           ) : null}
 
