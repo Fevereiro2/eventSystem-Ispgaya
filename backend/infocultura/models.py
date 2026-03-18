@@ -66,3 +66,20 @@ class CulturalContent(models.Model):
 
     def __str__(self):
         return f'{self.title} ({self.area})'
+
+
+class Club(models.Model):
+    id = models.AutoField(primary_key=True, db_column='id_clubs')
+    name = models.CharField(max_length=100)
+    description = models.TextField(blank=True, null=True)
+    mission = models.TextField(blank=True, null=True)
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(blank=True, null=True)
+
+    class Meta:
+        db_table = 'clubs'
+        managed = False
+        ordering = ['name']
+
+    def __str__(self):
+        return self.name

@@ -3,10 +3,11 @@ from rest_framework import generics, permissions
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from .models import AppUser, CulturalContent, Role
+from .models import AppUser, Club, CulturalContent, Role
 from .permissions import IsClubAdmin, IsSuperAdmin
 from .serializers import (
     AdminUserWriteSerializer,
+    ClubSerializer,
     CulturalContentSerializer,
     LoginSerializer,
     RoleSerializer,
@@ -174,3 +175,17 @@ class AdminContentDetailView(generics.RetrieveUpdateDestroyAPIView):
     queryset = CulturalContent.objects.all()
     serializer_class = CulturalContentSerializer
     permission_classes = [permissions.IsAuthenticated, IsClubAdmin]
+
+
+class AdminClubListCreateView(generics.ListCreateAPIView):
+    serializer_class = ClubSerializer
+    permission_classes = [permissions.IsAuthenticated, IsSuperAdmin]
+
+    def get_queryset(self):
+        return Club.objects.all().order_by('name')
+
+
+class AdminClubDetailView(generics.RetrieveUpdateDestroyAPIView):
+    queryset = Club.objects.all()
+    serializer_class = ClubSerializer
+    permission_classes = [permissions.IsAuthenticated, IsSuperAdmin]

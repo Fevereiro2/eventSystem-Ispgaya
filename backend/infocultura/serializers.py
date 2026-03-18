@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import AppUser, CulturalContent, Role
+from .models import AppUser, Club, CulturalContent, Role
 from .security import hash_password
 
 
@@ -79,3 +79,16 @@ class AdminUserWriteSerializer(serializers.ModelSerializer):
 
     def to_representation(self, instance):
         return UserSerializer(instance).data
+
+
+class ClubSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Club
+        fields = [
+            'id',
+            'name',
+            'description',
+            'mission',
+            'is_active',
+            'created_at',
+        ]
