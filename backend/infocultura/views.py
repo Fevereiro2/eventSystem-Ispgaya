@@ -3,14 +3,17 @@ from rest_framework import generics, permissions
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from .models import AppUser, Club, CulturalContent, Role
+from .models import AppUser, Club, CulturalContent, News, NewsStatus, Role
 from .permissions import IsClubAdmin, IsSuperAdmin
 from .serializers import (
     AdminUserWriteSerializer,
+    AdminNewsWriteSerializer,
     ClubMemberAssignSerializer,
     ClubSerializer,
     CulturalContentSerializer,
     LoginSerializer,
+    NewsSerializer,
+    NewsStatusSerializer,
     RoleSerializer,
     UserSerializer,
 )
@@ -171,6 +174,40 @@ class PublicClubDetailView(generics.RetrieveAPIView):
         return Club.objects.filter(is_active=True)
 
 
+class PublicNewsStatusListView(generics.ListAPIView):
+    serializer_class = NewsStatusSerializer
+    permission_classes = [permissions.AllowAny]
+
+    def get_queryset(self):
+        return NewsStatus.objects.all().order_by('name')
+
+
+class PublicNewsListView(generics.ListAPIView):
+    serializer_class = NewsSerializer
+    permission_classes = [permissions.AllowAny]
+
+    def get_queryset(self):
+        queryset = News.objects.select_related('news_status', 'club').filter(
+            news_status__name__iexact='published'
+        )
+        club_id = self.request.query_params.get('club_id')
+
+        if club_id:
+            queryset = queryset.filter(club_id=club_id)
+
+        return queryset.order_by('-published_at', '-created_at', '-id')
+
+
+class PublicNewsDetailView(generics.RetrieveAPIView):
+    serializer_class = NewsSerializer
+    permission_classes = [permissions.AllowAny]
+
+    def get_queryset(self):
+        return News.objects.select_related('news_status', 'club').filter(
+            news_status__name__iexact='published'
+        )
+
+
 class AdminContentListCreateView(generics.ListCreateAPIView):
     serializer_class = CulturalContentSerializer
     permission_classes = [permissions.IsAuthenticated, IsClubAdmin]
@@ -192,6 +229,52 @@ class AdminContentDetailView(generics.RetrieveUpdateDestroyAPIView):
     queryset = CulturalContent.objects.all()
     serializer_class = CulturalContentSerializer
     permission_classes = [permissions.IsAuthenticated, IsClubAdmin]
+
+
+class AdminNewsStatusListView(generics.ListAPIView):
+    serializer_class = NewsStatusSerializer
+    permission_classes = [permissions.IsAuthenticated, IsClubAdmin]
+
+    def get_queryset(self):
+        return NewsStatus.objects.all().order_by('name')
+
+
+class AdminNewsListCreateView(generics.ListCreateAPIView):
+    permission_classes = [permissions.IsAuthenticated, IsClubAdmin]
+
+    def get_queryset(self):
+        queryset = News.objects.select_related('news_status', 'club')
+        role_name = getattr(getattr(self.request.user, 'role', None), 'name', None)
+
+        if role_name == 'club_admin':
+            return queryset.filter(club_id=self.request.user.club_id).order_by(
+                '-published_at', '-created_at', '-id'
+            )
+
+        return queryset.order_by('-published_at', '-created_at', '-id')
+
+    def get_serializer_class(self):
+        if self.request.method == 'GET':
+            return NewsSerializer
+        return AdminNewsWriteSerializer
+
+
+class AdminNewsDetailView(generics.RetrieveUpdateDestroyAPIView):
+    permission_classes = [permissions.IsAuthenticated, IsClubAdmin]
+
+    def get_queryset(self):
+        queryset = News.objects.select_related('news_status', 'club')
+        role_name = getattr(getattr(self.request.user, 'role', None), 'name', None)
+
+        if role_name == 'club_admin':
+            return queryset.filter(club_id=self.request.user.club_id)
+
+        return queryset
+
+    def get_serializer_class(self):
+        if self.request.method == 'GET':
+            return NewsSerializer
+        return AdminNewsWriteSerializer
 
 
 class AdminClubListCreateView(generics.ListCreateAPIView):
