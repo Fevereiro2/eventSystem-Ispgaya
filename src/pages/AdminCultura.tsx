@@ -127,6 +127,7 @@ type ClubFormState = {
   description: string;
   mission: string;
   is_active: boolean;
+  enable_registrations: boolean;
 };
 
 type AdminSection = 'resumo' | 'utilizadores' | 'conteudos' | 'clubes';
@@ -156,7 +157,8 @@ const initialClubForm: ClubFormState = {
   name: '',
   description: '',
   mission: '',
-  is_active: true
+  is_active: true,
+  enable_registrations: false
 };
 
 const adminSections: { id: AdminSection; label: string; href: string }[] = [
@@ -650,7 +652,8 @@ function AdminCultura() {
       name: clubForm.name.trim(),
       description: clubForm.description.trim(),
       mission: clubForm.mission.trim(),
-      is_active: clubForm.is_active
+      is_active: clubForm.is_active,
+      enable_registrations: clubForm.enable_registrations
     };
 
     if (!payload.name) {
@@ -705,7 +708,8 @@ function AdminCultura() {
       name: club.name,
       description: club.description || '',
       mission: club.mission || '',
-      is_active: club.is_active
+      is_active: club.is_active,
+      enable_registrations: Boolean(club.enable_registrations)
     });
     setClubFormError('');
   }
@@ -1343,6 +1347,26 @@ function AdminCultura() {
                       <option value="inativo">Inativo</option>
                     </select>
                   </div>
+
+                  <div className={adminField}>
+                    <label className={adminLabel} htmlFor="club-registrations">
+                      Permitir inscricoes
+                    </label>
+                    <select
+                      id="club-registrations"
+                      className={adminInput}
+                      value={clubForm.enable_registrations ? 'sim' : 'nao'}
+                      onChange={(event) =>
+                        setClubForm((prev) => ({
+                          ...prev,
+                          enable_registrations: event.target.value === 'sim'
+                        }))
+                      }
+                    >
+                      <option value="sim">Sim</option>
+                      <option value="nao">Nao</option>
+                    </select>
+                  </div>
                 </div>
 
                 <div className={adminFieldSpaced}>
@@ -1460,6 +1484,9 @@ function AdminCultura() {
                         </p>
                         <p className={adminUserMeta}>
                           {club.description || 'Sem descricao'}
+                        </p>
+                        <p className={adminUserMeta}>
+                          Inscricoes: {club.enable_registrations ? 'Permitidas' : 'Desativadas'}
                         </p>
                       </div>
                       <div className={adminListTools}>
