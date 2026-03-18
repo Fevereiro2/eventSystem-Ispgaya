@@ -51,6 +51,7 @@ export type InfoCulturaClub = {
   description: string;
   mission: string;
   is_active: boolean;
+  enable_registrations?: boolean | null;
   created_at: string;
 };
 
@@ -88,6 +89,7 @@ export type ClubPayload = {
   description: string;
   mission?: string;
   is_active?: boolean;
+  enable_registrations?: boolean;
 };
 
 export type NewsPayload = {
