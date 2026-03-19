@@ -83,6 +83,7 @@ export type InfoCulturaNews = {
   news_status_name: string;
   club_id: number;
   club_name: string;
+  editorial_history?: InfoCulturaEditorialHistory[];
 };
 
 export type InfoCulturaBook = {
@@ -113,6 +114,16 @@ export type InfoCulturaSession = {
   club_name: string;
 };
 
+export type InfoCulturaEditorialHistory = {
+  content_type: string;
+  object_id: number;
+  from_status?: string | null;
+  to_status: string;
+  actor_user_id?: number | null;
+  actor_name: string;
+  created_at?: string | null;
+};
+
 export type InfoCulturaEvent = {
   id: number;
   title: string;
@@ -133,6 +144,7 @@ export type InfoCulturaEvent = {
   owner_name?: string | null;
   categories: InfoCulturaCategory[];
   category_ids: number[];
+  editorial_history?: InfoCulturaEditorialHistory[];
 };
 
 export type InfoCulturaRegistrationStatus = {
@@ -191,6 +203,14 @@ export type InfoCulturaDashboardStats = {
 
 export type InfoCulturaRegistrationPage = {
   items: InfoCulturaRegistration[];
+  total: number;
+  page: number;
+  page_size: number;
+  total_pages: number;
+};
+
+export type InfoCulturaAdminCollectionPage<T> = {
+  items: T[];
   total: number;
   page: number;
   page_size: number;
@@ -340,6 +360,37 @@ async function request<T>(
   }
 
   return (await response.json()) as T;
+}
+
+async function requestBlob(
+  path: string,
+  options: RequestInit = {},
+  token?: string
+): Promise<Blob> {
+  const headers = new Headers(options.headers);
+  if (token) {
+    headers.set('Authorization', `Token ${token}`);
+  }
+
+  const response = await fetch(`${API_BASE}${path}`, {
+    ...options,
+    headers
+  });
+
+  if (!response.ok) {
+    let message = 'Erro ao comunicar com o servidor.';
+    try {
+      const body = (await response.json()) as { message?: string };
+      if (body.message) {
+        message = body.message;
+      }
+    } catch {
+      // ignore
+    }
+    throw new InfoCulturaApiError(message, response.status);
+  }
+
+  return response.blob();
 }
 
 function getApiOrigin(): string {
@@ -605,10 +656,33 @@ export async function fetchAdminNewsStatuses(
 
 export async function fetchAdminNews(
   token: string,
-  clubId?: number
-): Promise<InfoCulturaNews[]> {
-  const query = typeof clubId === 'number' ? `?club_id=${clubId}` : '';
-  return request<InfoCulturaNews[]>(`/news/admin/${query}`, {}, token);
+  filters?: { clubId?: number; status?: string; search?: string; page?: number; pageSize?: number; exportMode?: 'csv' }
+): Promise<InfoCulturaAdminCollectionPage<InfoCulturaNews>> {
+  const search = new URLSearchParams();
+  if (typeof filters?.clubId === 'number') {
+    search.set('club_id', String(filters.clubId));
+  }
+  if (filters?.status && filters.status !== 'all') {
+    search.set('status', filters.status);
+  }
+  if (filters?.search?.trim()) {
+    search.set('search', filters.search.trim());
+  }
+  if (typeof filters?.page === 'number' && filters.page > 0) {
+    search.set('page', String(filters.page));
+  }
+  if (typeof filters?.pageSize === 'number' && filters.pageSize > 0) {
+    search.set('page_size', String(filters.pageSize));
+  }
+  if (filters?.exportMode === 'csv') {
+    search.set('export', 'csv');
+  }
+  const query = search.toString();
+  return request<InfoCulturaAdminCollectionPage<InfoCulturaNews>>(
+    `/news/admin/${query ? `?${query}` : ''}`,
+    {},
+    token
+  );
 }
 
 export async function fetchAdminRegistrationStatuses(
@@ -711,6 +785,24 @@ export async function deleteAdminNews(token: string, id: number): Promise<void> 
   );
 }
 
+export async function exportAdminNewsCsv(
+  token: string,
+  filters?: { clubId?: number; status?: string; search?: string }
+): Promise<Blob> {
+  const search = new URLSearchParams();
+  if (typeof filters?.clubId === 'number') {
+    search.set('club_id', String(filters.clubId));
+  }
+  if (filters?.status && filters.status !== 'all') {
+    search.set('status', filters.status);
+  }
+  if (filters?.search?.trim()) {
+    search.set('search', filters.search.trim());
+  }
+  search.set('export', 'csv');
+  return requestBlob(`/news/admin/?${search.toString()}`, {}, token);
+}
+
 export async function uploadAdminImage(
   token: string,
   file: File,
@@ -734,10 +826,30 @@ export async function uploadAdminImage(
 
 export async function fetchAdminBooks(
   token: string,
-  clubId?: number
-): Promise<InfoCulturaBook[]> {
-  const query = typeof clubId === 'number' ? `?club_id=${clubId}` : '';
-  return request<InfoCulturaBook[]>(`/books/admin/${query}`, {}, token);
+  filters?: { clubId?: number; search?: string; page?: number; pageSize?: number; exportMode?: 'csv' }
+): Promise<InfoCulturaAdminCollectionPage<InfoCulturaBook>> {
+  const search = new URLSearchParams();
+  if (typeof filters?.clubId === 'number') {
+    search.set('club_id', String(filters.clubId));
+  }
+  if (filters?.search?.trim()) {
+    search.set('search', filters.search.trim());
+  }
+  if (typeof filters?.page === 'number' && filters.page > 0) {
+    search.set('page', String(filters.page));
+  }
+  if (typeof filters?.pageSize === 'number' && filters.pageSize > 0) {
+    search.set('page_size', String(filters.pageSize));
+  }
+  if (filters?.exportMode === 'csv') {
+    search.set('export', 'csv');
+  }
+  const query = search.toString();
+  return request<InfoCulturaAdminCollectionPage<InfoCulturaBook>>(
+    `/books/admin/${query ? `?${query}` : ''}`,
+    {},
+    token
+  );
 }
 
 export async function createAdminBook(
@@ -779,12 +891,47 @@ export async function deleteAdminBook(token: string, id: number): Promise<void> 
   );
 }
 
+export async function exportAdminBooksCsv(
+  token: string,
+  filters?: { clubId?: number; search?: string }
+): Promise<Blob> {
+  const search = new URLSearchParams();
+  if (typeof filters?.clubId === 'number') {
+    search.set('club_id', String(filters.clubId));
+  }
+  if (filters?.search?.trim()) {
+    search.set('search', filters.search.trim());
+  }
+  search.set('export', 'csv');
+  return requestBlob(`/books/admin/?${search.toString()}`, {}, token);
+}
+
 export async function fetchAdminSessions(
   token: string,
-  clubId?: number
-): Promise<InfoCulturaSession[]> {
-  const query = typeof clubId === 'number' ? `?club_id=${clubId}` : '';
-  return request<InfoCulturaSession[]>(`/sessions/admin/${query}`, {}, token);
+  filters?: { clubId?: number; search?: string; page?: number; pageSize?: number; exportMode?: 'csv' }
+): Promise<InfoCulturaAdminCollectionPage<InfoCulturaSession>> {
+  const search = new URLSearchParams();
+  if (typeof filters?.clubId === 'number') {
+    search.set('club_id', String(filters.clubId));
+  }
+  if (filters?.search?.trim()) {
+    search.set('search', filters.search.trim());
+  }
+  if (typeof filters?.page === 'number' && filters.page > 0) {
+    search.set('page', String(filters.page));
+  }
+  if (typeof filters?.pageSize === 'number' && filters.pageSize > 0) {
+    search.set('page_size', String(filters.pageSize));
+  }
+  if (filters?.exportMode === 'csv') {
+    search.set('export', 'csv');
+  }
+  const query = search.toString();
+  return request<InfoCulturaAdminCollectionPage<InfoCulturaSession>>(
+    `/sessions/admin/${query ? `?${query}` : ''}`,
+    {},
+    token
+  );
 }
 
 export async function createAdminSession(
@@ -826,10 +973,33 @@ export async function deleteAdminSession(token: string, id: number): Promise<voi
   );
 }
 
+export async function exportAdminSessionsCsv(
+  token: string,
+  filters?: { clubId?: number; search?: string }
+): Promise<Blob> {
+  const search = new URLSearchParams();
+  if (typeof filters?.clubId === 'number') {
+    search.set('club_id', String(filters.clubId));
+  }
+  if (filters?.search?.trim()) {
+    search.set('search', filters.search.trim());
+  }
+  search.set('export', 'csv');
+  return requestBlob(`/sessions/admin/?${search.toString()}`, {}, token);
+}
+
 export async function fetchAdminEvents(
   token: string,
-  filters?: { clubId?: number; categoryId?: number }
-): Promise<InfoCulturaEvent[]> {
+  filters?: {
+    clubId?: number;
+    categoryId?: number;
+    status?: string;
+    search?: string;
+    page?: number;
+    pageSize?: number;
+    exportMode?: 'csv';
+  }
+): Promise<InfoCulturaAdminCollectionPage<InfoCulturaEvent>> {
   const search = new URLSearchParams();
   if (typeof filters?.clubId === 'number') {
     search.set('club_id', String(filters.clubId));
@@ -837,8 +1007,27 @@ export async function fetchAdminEvents(
   if (typeof filters?.categoryId === 'number') {
     search.set('category_id', String(filters.categoryId));
   }
+  if (filters?.status && filters.status !== 'all') {
+    search.set('status', filters.status);
+  }
+  if (filters?.search?.trim()) {
+    search.set('search', filters.search.trim());
+  }
+  if (typeof filters?.page === 'number' && filters.page > 0) {
+    search.set('page', String(filters.page));
+  }
+  if (typeof filters?.pageSize === 'number' && filters.pageSize > 0) {
+    search.set('page_size', String(filters.pageSize));
+  }
+  if (filters?.exportMode === 'csv') {
+    search.set('export', 'csv');
+  }
   const query = search.toString();
-  return request<InfoCulturaEvent[]>(`/events/admin/${query ? `?${query}` : ''}`, {}, token);
+  return request<InfoCulturaAdminCollectionPage<InfoCulturaEvent>>(
+    `/events/admin/${query ? `?${query}` : ''}`,
+    {},
+    token
+  );
 }
 
 export async function createAdminEvent(
@@ -878,6 +1067,27 @@ export async function deleteAdminEvent(token: string, id: number): Promise<void>
     },
     token
   );
+}
+
+export async function exportAdminEventsCsv(
+  token: string,
+  filters?: { clubId?: number; categoryId?: number; status?: string; search?: string }
+): Promise<Blob> {
+  const search = new URLSearchParams();
+  if (typeof filters?.clubId === 'number') {
+    search.set('club_id', String(filters.clubId));
+  }
+  if (typeof filters?.categoryId === 'number') {
+    search.set('category_id', String(filters.categoryId));
+  }
+  if (filters?.status && filters.status !== 'all') {
+    search.set('status', filters.status);
+  }
+  if (filters?.search?.trim()) {
+    search.set('search', filters.search.trim());
+  }
+  search.set('export', 'csv');
+  return requestBlob(`/events/admin/?${search.toString()}`, {}, token);
 }
 
 export async function fetchAdminCategories(token: string): Promise<InfoCulturaCategory[]> {

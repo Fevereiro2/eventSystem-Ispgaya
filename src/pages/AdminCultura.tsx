@@ -100,6 +100,10 @@ import {
   deleteAdminEvent,
   deleteAdminNews,
   deleteAdminSession,
+  exportAdminBooksCsv,
+  exportAdminEventsCsv,
+  exportAdminNewsCsv,
+  exportAdminSessionsCsv,
   fetchAdminBooks,
   fetchAdminCategories,
   fetchAdminClubs,
@@ -149,6 +153,8 @@ import {
 
 const TOKEN_KEY = 'ispgaya_cultura_token';
 const REGISTRATION_PAGE_SIZE = 10;
+const NEWS_PAGE_SIZE = 8;
+const ACTIVITY_PAGE_SIZE = 8;
 const NEWS_WORKFLOW_ORDER = ['draft', 'review', 'published', 'archived'];
 const EVENT_WORKFLOW_ORDER = ['draft', 'review', 'published', 'archived'];
 const WORKFLOW_LABELS: Record<string, string> = {
@@ -180,6 +186,17 @@ function getWorkflowStatusOptions(order: string[], currentValue: string): string
   }
 
   return nextValues;
+}
+
+function downloadBlobFile(blob: Blob, filename: string) {
+  const url = window.URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  window.URL.revokeObjectURL(url);
 }
 
 type FormState = {
@@ -563,8 +580,20 @@ function AdminCultura() {
   const [editingEventId, setEditingEventId] = useState<number | null>(null);
   const [selectedClubUserId, setSelectedClubUserId] = useState('');
   const [newsClubFilter, setNewsClubFilter] = useState('all');
+  const [newsStatusFilter, setNewsStatusFilter] = useState('all');
+  const [newsSearchInput, setNewsSearchInput] = useState('');
+  const [newsSearch, setNewsSearch] = useState('');
+  const [newsPage, setNewsPage] = useState(1);
+  const [newsTotal, setNewsTotal] = useState(0);
+  const [newsTotalPages, setNewsTotalPages] = useState(0);
   const [activityClubFilter, setActivityClubFilter] = useState('all');
   const [activityCategoryFilter, setActivityCategoryFilter] = useState('all');
+  const [activityStatusFilter, setActivityStatusFilter] = useState('all');
+  const [activitySearchInput, setActivitySearchInput] = useState('');
+  const [activitySearch, setActivitySearch] = useState('');
+  const [activityPage, setActivityPage] = useState(1);
+  const [activityTotal, setActivityTotal] = useState(0);
+  const [activityTotalPages, setActivityTotalPages] = useState(0);
   const [activityTab, setActivityTab] = useState<ActivityTab>('books');
   const [registrationStatusFilter, setRegistrationStatusFilter] = useState('pending');
   const [registrationClubFilter, setRegistrationClubFilter] = useState('all');
@@ -573,6 +602,8 @@ function AdminCultura() {
   const [registrationPage, setRegistrationPage] = useState(1);
   const [registrationTotal, setRegistrationTotal] = useState(0);
   const [registrationTotalPages, setRegistrationTotalPages] = useState(0);
+  const [isExportingNews, setIsExportingNews] = useState(false);
+  const [isExportingActivities, setIsExportingActivities] = useState(false);
   const [userFormError, setUserFormError] = useState('');
   const [clubFormError, setClubFormError] = useState('');
   const [newsFormError, setNewsFormError] = useState('');
@@ -733,8 +764,20 @@ function AdminCultura() {
     setRegistrationTotal(0);
     setRegistrationTotalPages(0);
     setNewsClubFilter('all');
+    setNewsStatusFilter('all');
+    setNewsSearchInput('');
+    setNewsSearch('');
+    setNewsPage(1);
+    setNewsTotal(0);
+    setNewsTotalPages(0);
     setActivityClubFilter('all');
     setActivityCategoryFilter('all');
+    setActivityStatusFilter('all');
+    setActivitySearchInput('');
+    setActivitySearch('');
+    setActivityPage(1);
+    setActivityTotal(0);
+    setActivityTotalPages(0);
     setCurrentUser(null);
     setPanelError('');
     setDashboardError('');
@@ -815,6 +858,87 @@ function AdminCultura() {
     setCategoryForm(initialCategoryForm);
     setEditingCategoryId(null);
     setCategoryFormError('');
+  }
+
+  function handleApplyNewsSearch(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setNewsPage(1);
+    setNewsSearch(newsSearchInput.trim());
+  }
+
+  function handleApplyActivitySearch(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setActivityPage(1);
+    setActivitySearch(activitySearchInput.trim());
+  }
+
+  async function handleExportNewsCsv() {
+    if (!token) return;
+
+    setIsExportingNews(true);
+    setNewsError('');
+
+    try {
+      const blob = await exportAdminNewsCsv(token, {
+        clubId: canManageUsers && newsClubFilter !== 'all' ? Number(newsClubFilter) : undefined,
+        status: newsStatusFilter,
+        search: newsSearch
+      });
+      downloadBlobFile(blob, 'infocultura-news.csv');
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : 'Nao foi possivel exportar as noticias.';
+      setNewsError(message);
+    } finally {
+      setIsExportingNews(false);
+    }
+  }
+
+  async function handleExportActivitiesCsv() {
+    if (!token) return;
+
+    setIsExportingActivities(true);
+    setActivityError('');
+
+    const clubId =
+      canManageUsers && activityClubFilter !== 'all' ? Number(activityClubFilter) : undefined;
+
+    try {
+      const blob =
+        activityTab === 'books'
+          ? await exportAdminBooksCsv(token, {
+              clubId,
+              search: activitySearch
+            })
+          : activityTab === 'sessions'
+            ? await exportAdminSessionsCsv(token, {
+                clubId,
+                search: activitySearch
+              })
+            : await exportAdminEventsCsv(token, {
+                clubId,
+                categoryId:
+                  activityCategoryFilter !== 'all'
+                    ? Number(activityCategoryFilter)
+                    : undefined,
+                status: activityStatusFilter,
+                search: activitySearch
+              });
+
+      const filename =
+        activityTab === 'books'
+          ? 'infocultura-books.csv'
+          : activityTab === 'sessions'
+            ? 'infocultura-sessions.csv'
+            : 'infocultura-events.csv';
+      downloadBlobFile(blob, filename);
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : 'Nao foi possivel exportar a lista atual.';
+      setActivityError(message);
+    } finally {
+      setIsExportingActivities(false);
+    }
   }
 
   async function loadAdminData(authToken: string) {
@@ -926,6 +1050,14 @@ function AdminCultura() {
   }, [currentUser?.club_id, canManageUsers]);
 
   useEffect(() => {
+    setNewsPage(1);
+  }, [newsClubFilter, newsStatusFilter]);
+
+  useEffect(() => {
+    setActivityPage(1);
+  }, [activityTab, activityClubFilter, activityCategoryFilter, activityStatusFilter]);
+
+  useEffect(() => {
     if (!token || !currentUser || activeSection !== 'resumo') {
       return;
     }
@@ -968,15 +1100,25 @@ function AdminCultura() {
 
     const clubId =
       canManageUsers && newsClubFilter !== 'all' ? Number(newsClubFilter) : undefined;
+    const status =
+      newsStatusFilter && newsStatusFilter !== 'all' ? newsStatusFilter : undefined;
 
     void Promise.all([
       fetchAdminNewsStatuses(token),
-      fetchAdminNews(token, clubId)
+      fetchAdminNews(token, {
+        clubId,
+        status,
+        search: newsSearch,
+        page: newsPage,
+        pageSize: NEWS_PAGE_SIZE
+      })
     ])
-      .then(([nextStatuses, nextNews]) => {
+      .then(([nextStatuses, newsPageData]) => {
         if (!isMounted) return;
         setNewsStatuses(nextStatuses);
-        setNewsItems(nextNews);
+        setNewsItems(newsPageData.items);
+        setNewsTotal(newsPageData.total);
+        setNewsTotalPages(newsPageData.total_pages);
       })
       .catch((error) => {
         if (!isMounted) return;
@@ -994,7 +1136,16 @@ function AdminCultura() {
     return () => {
       isMounted = false;
     };
-  }, [activeSection, token, currentUser, canManageUsers, newsClubFilter]);
+  }, [
+    activeSection,
+    token,
+    currentUser,
+    canManageUsers,
+    newsClubFilter,
+    newsStatusFilter,
+    newsSearch,
+    newsPage
+  ]);
 
   useEffect(() => {
     if (!token || !currentUser || activeSection !== 'atividades') {
@@ -1012,19 +1163,48 @@ function AdminCultura() {
         : undefined;
     const categoryId =
       activityCategoryFilter !== 'all' ? Number(activityCategoryFilter) : undefined;
+    const status =
+      activityStatusFilter && activityStatusFilter !== 'all'
+        ? activityStatusFilter
+        : undefined;
 
-    void Promise.all([
-      fetchAdminCategories(token),
-      fetchAdminBooks(token, clubId),
-      fetchAdminSessions(token, clubId),
-      fetchAdminEvents(token, { clubId, categoryId })
-    ])
-      .then(([nextCategories, nextBooks, nextSessions, nextEvents]) => {
+    const activityRequest =
+      activityTab === 'books'
+        ? fetchAdminBooks(token, {
+            clubId,
+            search: activitySearch,
+            page: activityPage,
+            pageSize: ACTIVITY_PAGE_SIZE
+          })
+        : activityTab === 'sessions'
+          ? fetchAdminSessions(token, {
+              clubId,
+              search: activitySearch,
+              page: activityPage,
+              pageSize: ACTIVITY_PAGE_SIZE
+            })
+          : fetchAdminEvents(token, {
+              clubId,
+              categoryId,
+              status,
+              search: activitySearch,
+              page: activityPage,
+              pageSize: ACTIVITY_PAGE_SIZE
+            });
+
+    void Promise.all([fetchAdminCategories(token), activityRequest])
+      .then(([nextCategories, activityPageData]) => {
         if (!isMounted) return;
         setCategories(nextCategories);
-        setBooks(nextBooks);
-        setSessions(nextSessions);
-        setEvents(nextEvents);
+        setActivityTotal(activityPageData.total);
+        setActivityTotalPages(activityPageData.total_pages);
+        if (activityTab === 'books') {
+          setBooks(activityPageData.items as InfoCulturaBook[]);
+        } else if (activityTab === 'sessions') {
+          setSessions(activityPageData.items as InfoCulturaSession[]);
+        } else {
+          setEvents(activityPageData.items as InfoCulturaEvent[]);
+        }
       })
       .catch((error) => {
         if (!isMounted) return;
@@ -1042,7 +1222,18 @@ function AdminCultura() {
     return () => {
       isMounted = false;
     };
-  }, [activeSection, token, currentUser, canManageUsers, activityClubFilter, activityCategoryFilter]);
+  }, [
+    activeSection,
+    token,
+    currentUser,
+    canManageUsers,
+    activityClubFilter,
+    activityCategoryFilter,
+    activityStatusFilter,
+    activitySearch,
+    activityPage,
+    activityTab
+  ]);
 
   useEffect(() => {
     if (!token || !currentUser || activeSection !== 'inscricoes') {
@@ -3158,9 +3349,71 @@ function AdminCultura() {
                       </select>
                     </div>
                   ) : null}
+                  <div className={adminField}>
+                    <label className={adminLabel} htmlFor="news-status-filter">
+                      Estado editorial
+                    </label>
+                    <select
+                      id="news-status-filter"
+                      className={adminInput}
+                      value={newsStatusFilter}
+                      onChange={(event) => setNewsStatusFilter(event.target.value)}
+                    >
+                      <option value="all">Todos os estados</option>
+                      {newsStatuses.map((status) => (
+                        <option key={status.id} value={normalizeWorkflowStatus(status.name)}>
+                          {getWorkflowStatusLabel(status.name)}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
                 </div>
 
                 {newsError ? <p className={adminError}>{newsError}</p> : null}
+
+                <div className={`${adminFormGridSpaced} mt-6`}>
+                  <form onSubmit={handleApplyNewsSearch} className={adminPanelForm}>
+                    <div className={adminField}>
+                      <label className={adminLabel} htmlFor="news-search">
+                        Pesquisar noticias
+                      </label>
+                      <input
+                        id="news-search"
+                        className={adminInput}
+                        value={newsSearchInput}
+                        onChange={(event) => setNewsSearchInput(event.target.value)}
+                        placeholder="Titulo, resumo, conteudo ou clube"
+                      />
+                    </div>
+                    <div className={adminActions}>
+                      <button type="submit" className={adminBtnPrimary}>
+                        Pesquisar
+                      </button>
+                      <button
+                        type="button"
+                        className={adminBtnSecondary}
+                        onClick={() => {
+                          setNewsSearchInput('');
+                          setNewsSearch('');
+                          setNewsPage(1);
+                        }}
+                      >
+                        Limpar
+                      </button>
+                    </div>
+                  </form>
+
+                  <div className={adminActions}>
+                    <button
+                      type="button"
+                      className={adminBtnSecondary}
+                      disabled={isExportingNews}
+                      onClick={() => void handleExportNewsCsv()}
+                    >
+                      {isExportingNews ? 'A exportar...' : 'Exportar CSV'}
+                    </button>
+                  </div>
+                </div>
 
                 <div className={adminList}>
                   {isLoadingNews ? <p className={adminInfo}>A carregar noticias...</p> : null}
@@ -3179,6 +3432,20 @@ function AdminCultura() {
                         </div>
                       </div>
                       <p className={adminListDesc}>{item.summary}</p>
+                      {item.editorial_history && item.editorial_history.length > 0 ? (
+                        <div className="mt-3 space-y-1">
+                          {item.editorial_history.slice(0, 3).map((history, index) => (
+                            <p key={`${item.id}-${index}`} className={adminListMeta}>
+                              {history.actor_name} ·{' '}
+                              {history.from_status
+                                ? `${getWorkflowStatusLabel(history.from_status)} -> `
+                                : ''}
+                              {getWorkflowStatusLabel(history.to_status)} ·{' '}
+                              {formatAdminDateTime(history.created_at || '')}
+                            </p>
+                          ))}
+                        </div>
+                      ) : null}
                       <div className={adminListTools}>
                         <button
                           type="button"
@@ -3199,6 +3466,30 @@ function AdminCultura() {
                     </article>
                   ))}
                 </div>
+
+                {!isLoadingNews ? (
+                  <div className={`${adminActions} mt-6`}>
+                    <p className={adminInfo}>
+                      {newsTotal} noticia(s) · pagina {newsPage} de {newsTotalPages || 1}
+                    </p>
+                    <button
+                      type="button"
+                      className={adminBtnSecondary}
+                      disabled={newsPage <= 1}
+                      onClick={() => setNewsPage((prev) => Math.max(1, prev - 1))}
+                    >
+                      Anterior
+                    </button>
+                    <button
+                      type="button"
+                      className={adminBtnSecondary}
+                      disabled={newsTotalPages === 0 || newsPage >= newsTotalPages}
+                      onClick={() => setNewsPage((prev) => prev + 1)}
+                    >
+                      Seguinte
+                    </button>
+                  </div>
+                ) : null}
               </section>
             </>
           ) : null}
@@ -3254,6 +3545,26 @@ function AdminCultura() {
                         </select>
                       </div>
                     ) : null}
+                    {activityTab === 'events' ? (
+                      <div className={adminField}>
+                        <label className={adminLabel} htmlFor="activity-status-filter">
+                          Estado editorial
+                        </label>
+                        <select
+                          id="activity-status-filter"
+                          className={adminInput}
+                          value={activityStatusFilter}
+                          onChange={(event) => setActivityStatusFilter(event.target.value)}
+                        >
+                          <option value="all">Todos os estados</option>
+                          {EVENT_WORKFLOW_ORDER.map((status) => (
+                            <option key={status} value={status}>
+                              {getWorkflowStatusLabel(status)}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    ) : null}
                   </div>
                 </div>
 
@@ -3282,6 +3593,56 @@ function AdminCultura() {
                 </div>
 
                 {activityError ? <p className={adminError}>{activityError}</p> : null}
+
+                <div className={`${adminFormGridSpaced} mt-6`}>
+                  <form onSubmit={handleApplyActivitySearch} className={adminPanelForm}>
+                    <div className={adminField}>
+                      <label className={adminLabel} htmlFor="activity-search">
+                        Pesquisar {activityTab === 'books' ? 'livros' : activityTab === 'sessions' ? 'sessoes' : 'eventos'}
+                      </label>
+                      <input
+                        id="activity-search"
+                        className={adminInput}
+                        value={activitySearchInput}
+                        onChange={(event) => setActivitySearchInput(event.target.value)}
+                        placeholder={
+                          activityTab === 'books'
+                            ? 'Titulo, autor, editora ou clube'
+                            : activityTab === 'sessions'
+                              ? 'Nome, titulo, descricao ou clube'
+                              : 'Titulo, descricao, local ou clube'
+                        }
+                      />
+                    </div>
+                    <div className={adminActions}>
+                      <button type="submit" className={adminBtnPrimary}>
+                        Pesquisar
+                      </button>
+                      <button
+                        type="button"
+                        className={adminBtnSecondary}
+                        onClick={() => {
+                          setActivitySearchInput('');
+                          setActivitySearch('');
+                          setActivityPage(1);
+                        }}
+                      >
+                        Limpar
+                      </button>
+                    </div>
+                  </form>
+
+                  <div className={adminActions}>
+                    <button
+                      type="button"
+                      className={adminBtnSecondary}
+                      disabled={isExportingActivities}
+                      onClick={() => void handleExportActivitiesCsv()}
+                    >
+                      {isExportingActivities ? 'A exportar...' : 'Exportar CSV'}
+                    </button>
+                  </div>
+                </div>
               </section>
 
               {activityTab === 'books' ? (
@@ -3492,6 +3853,29 @@ function AdminCultura() {
                       </article>
                     ))}
                   </div>
+                  {!isLoadingActivities ? (
+                    <div className={`${adminActions} mt-6`}>
+                      <p className={adminInfo}>
+                        {activityTotal} livro(s) · pagina {activityPage} de {activityTotalPages || 1}
+                      </p>
+                      <button
+                        type="button"
+                        className={adminBtnSecondary}
+                        disabled={activityPage <= 1}
+                        onClick={() => setActivityPage((prev) => Math.max(1, prev - 1))}
+                      >
+                        Anterior
+                      </button>
+                      <button
+                        type="button"
+                        className={adminBtnSecondary}
+                        disabled={activityTotalPages === 0 || activityPage >= activityTotalPages}
+                        onClick={() => setActivityPage((prev) => prev + 1)}
+                      >
+                        Seguinte
+                      </button>
+                    </div>
+                  ) : null}
                 </>
               ) : null}
 
@@ -3682,6 +4066,29 @@ function AdminCultura() {
                       </article>
                     ))}
                   </div>
+                  {!isLoadingActivities ? (
+                    <div className={`${adminActions} mt-6`}>
+                      <p className={adminInfo}>
+                        {activityTotal} sessao(oes) · pagina {activityPage} de {activityTotalPages || 1}
+                      </p>
+                      <button
+                        type="button"
+                        className={adminBtnSecondary}
+                        disabled={activityPage <= 1}
+                        onClick={() => setActivityPage((prev) => Math.max(1, prev - 1))}
+                      >
+                        Anterior
+                      </button>
+                      <button
+                        type="button"
+                        className={adminBtnSecondary}
+                        disabled={activityTotalPages === 0 || activityPage >= activityTotalPages}
+                        onClick={() => setActivityPage((prev) => prev + 1)}
+                      >
+                        Seguinte
+                      </button>
+                    </div>
+                  ) : null}
                 </>
               ) : null}
 
@@ -3965,6 +4372,20 @@ function AdminCultura() {
                             Categorias: {item.categories.map((category) => category.name).join(', ')}
                           </p>
                         ) : null}
+                        {item.editorial_history && item.editorial_history.length > 0 ? (
+                          <div className="mt-3 space-y-1">
+                            {item.editorial_history.slice(0, 3).map((history, index) => (
+                              <p key={`${item.id}-${index}`} className={adminListMeta}>
+                                {history.actor_name} ·{' '}
+                                {history.from_status
+                                  ? `${getWorkflowStatusLabel(history.from_status)} -> `
+                                  : ''}
+                                {getWorkflowStatusLabel(history.to_status)} ·{' '}
+                                {formatAdminDateTime(history.created_at || '')}
+                              </p>
+                            ))}
+                          </div>
+                        ) : null}
                         <div className={adminListTools}>
                           <button
                             type="button"
@@ -3985,6 +4406,29 @@ function AdminCultura() {
                       </article>
                     ))}
                   </div>
+                  {!isLoadingActivities ? (
+                    <div className={`${adminActions} mt-6`}>
+                      <p className={adminInfo}>
+                        {activityTotal} evento(s) · pagina {activityPage} de {activityTotalPages || 1}
+                      </p>
+                      <button
+                        type="button"
+                        className={adminBtnSecondary}
+                        disabled={activityPage <= 1}
+                        onClick={() => setActivityPage((prev) => Math.max(1, prev - 1))}
+                      >
+                        Anterior
+                      </button>
+                      <button
+                        type="button"
+                        className={adminBtnSecondary}
+                        disabled={activityTotalPages === 0 || activityPage >= activityTotalPages}
+                        onClick={() => setActivityPage((prev) => prev + 1)}
+                      >
+                        Seguinte
+                      </button>
+                    </div>
+                  ) : null}
                 </>
               ) : null}
 
