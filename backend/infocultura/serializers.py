@@ -25,6 +25,34 @@ from .services import (
 from .security import hash_password
 
 
+NEWS_WORKFLOW_STATUS_ORDER = ("draft", "review", "published", "archived")
+EVENT_WORKFLOW_STATUS_ORDER = ("draft", "review", "published", "archived")
+EVENT_STATUS_ALIASES = {
+    "rascunho": "draft",
+    "publicado": "published",
+}
+
+
+def normalize_workflow_status(value: str | None) -> str:
+    normalized = (value or "").strip().lower()
+    return EVENT_STATUS_ALIASES.get(normalized, normalized)
+
+
+def get_role_allowed_workflow_statuses(
+    *,
+    role_name: str | None,
+    base_statuses: tuple[str, ...],
+    current_status: str | None = None,
+) -> set[str]:
+    if role_name == "club_admin":
+        allowed_statuses = {"draft", "review"}
+        if current_status in {"published", "archived"}:
+            allowed_statuses.add(current_status)
+        return allowed_statuses
+
+    return set(base_statuses)
+
+
 class CulturalContentSerializer(serializers.ModelSerializer):
     updatedAt = serializers.DateTimeField(source='updated_at', read_only=True)
 
@@ -346,8 +374,25 @@ class AdminNewsWriteSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError({'club_id': 'O clube e obrigatorio.'})
 
         news_status = attrs.get('news_status') or getattr(self.instance, 'news_status', None)
-        if news_status and news_status.name.lower() == 'published' and not attrs.get('published_at'):
+        next_status = normalize_workflow_status(getattr(news_status, 'name', None))
+        current_status = normalize_workflow_status(
+            getattr(getattr(self.instance, 'news_status', None), 'name', None)
+        )
+        allowed_statuses = get_role_allowed_workflow_statuses(
+            role_name=role_name,
+            base_statuses=NEWS_WORKFLOW_STATUS_ORDER,
+            current_status=current_status,
+        )
+
+        if next_status and next_status not in allowed_statuses:
+            raise serializers.ValidationError(
+                {'news_status': 'Nao tens permissao para colocar esta noticia nesse estado.'}
+            )
+
+        if news_status and next_status == 'published' and not attrs.get('published_at'):
             attrs['published_at'] = getattr(self.instance, 'published_at', None) or timezone.now()
+        elif next_status in {'draft', 'review'}:
+            attrs['published_at'] = None
 
         return attrs
 
@@ -516,6 +561,21 @@ class AdminEventWriteSerializer(serializers.ModelSerializer):
         if start_date and end_date and start_date > end_date:
             raise serializers.ValidationError({'end_date': 'A data final tem de ser posterior.'})
 
+        next_status = normalize_workflow_status(
+            attrs.get('status') or getattr(self.instance, 'status', None)
+        )
+        current_status = normalize_workflow_status(getattr(self.instance, 'status', None))
+        allowed_statuses = get_role_allowed_workflow_statuses(
+            role_name=role_name,
+            base_statuses=EVENT_WORKFLOW_STATUS_ORDER,
+            current_status=current_status,
+        )
+        if next_status not in allowed_statuses:
+            raise serializers.ValidationError(
+                {'status': 'Nao tens permissao para colocar este evento nesse estado.'}
+            )
+
+        attrs['status'] = next_status
         attrs['resolved_club'] = club
         return attrs
 

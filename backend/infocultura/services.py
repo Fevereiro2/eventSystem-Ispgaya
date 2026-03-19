@@ -7,9 +7,10 @@ from django.conf import settings
 from django.core.cache import cache
 from django.core.mail import send_mail
 from django.db import connection, transaction
+from django.db.models import Q
 from django.utils import timezone
 
-from .models import Club, Registration, RegistrationStatus
+from .models import AppUser, Book, Club, Event, News, Registration, RegistrationStatus, Session
 
 
 class ClubRegistrationError(Exception):
@@ -58,8 +59,24 @@ class AdminClubRegistrationPage:
     total_pages: int
 
 
+@dataclass(frozen=True, slots=True)
+class AdminDashboardRecord:
+    id: int
+    title: str
+    club_name: str | None
+    date: datetime | None
+    status: str | None = None
+
+
 def _normalized_email(value: str) -> str:
     return value.strip().lower()
+
+
+def _get_allowed_club_id(user) -> int | None:
+    role_name = getattr(getattr(user, "role", None), "name", None)
+    if role_name == "club_admin":
+        return user.club_id
+    return None
 
 
 def _registration_rate_limit_key(*, club_id: int, client_ip: str) -> str:
@@ -349,6 +366,148 @@ def send_registration_status_email(record: AdminClubRegistrationRecord) -> None:
         recipient_list=[record.email],
         fail_silently=True,
     )
+
+
+def _get_registration_status_counts(*, allowed_club_id: int | None) -> dict[str, int]:
+    params: list[object] = []
+    where_clause = ""
+
+    if allowed_club_id is not None:
+        where_clause = "WHERE c.id_clubs = %s"
+        params.append(allowed_club_id)
+
+    with connection.cursor() as cursor:
+        cursor.execute(
+            f"""
+            SELECT LOWER(COALESCE(rs.name, r.status)) AS resolved_status, COUNT(*)
+            FROM registrations AS r
+            INNER JOIN clubs_registrations AS cr
+              ON cr.id_registrations = r.id_registrations
+            INNER JOIN clubs AS c
+              ON c.id_clubs = cr.id_clubs
+            LEFT JOIN rstatus AS rs
+              ON rs.id_rstatus = r.id_rstatus
+            {where_clause}
+            GROUP BY LOWER(COALESCE(rs.name, r.status))
+            """,
+            params,
+        )
+        rows = cursor.fetchall()
+
+    return {str(status or "").strip().lower(): int(count) for status, count in rows}
+
+
+def _to_dashboard_record(instance, *, club_name: str | None, date, status: str | None = None) -> dict[str, object | None]:
+    return {
+        "id": instance.id,
+        "title": instance.title,
+        "club_name": club_name,
+        "date": date,
+        "status": status,
+    }
+
+
+def get_admin_dashboard_metrics(*, user) -> dict[str, object]:
+    allowed_club_id = _get_allowed_club_id(user)
+    now = timezone.now()
+
+    users_queryset = AppUser.objects.select_related("club")
+    if allowed_club_id is not None:
+        users_queryset = users_queryset.filter(club_id=allowed_club_id)
+
+    clubs_queryset = Club.objects.all()
+    if allowed_club_id is not None:
+        clubs_queryset = clubs_queryset.filter(id=allowed_club_id)
+
+    news_queryset = News.objects.select_related("news_status", "club")
+    if allowed_club_id is not None:
+        news_queryset = news_queryset.filter(club_id=allowed_club_id)
+
+    books_queryset = Book.objects.select_related("club")
+    if allowed_club_id is not None:
+        books_queryset = books_queryset.filter(club_id=allowed_club_id)
+
+    sessions_queryset = Session.objects.select_related("club")
+    if allowed_club_id is not None:
+        sessions_queryset = sessions_queryset.filter(club_id=allowed_club_id)
+
+    events_queryset = Event.objects.select_related("user__club").prefetch_related("categories")
+    if allowed_club_id is not None:
+        events_queryset = events_queryset.filter(user__club_id=allowed_club_id)
+
+    registration_status_counts = _get_registration_status_counts(allowed_club_id=allowed_club_id)
+    latest_news = news_queryset.order_by("-published_at", "-created_at", "-id").first()
+    next_session = sessions_queryset.filter(start_date__gte=now).order_by("start_date", "id").first()
+    next_event = (
+        events_queryset.filter(start_date__gte=now)
+        .order_by("start_date", "id")
+        .first()
+    )
+
+    scope_label = "Todos os clubes"
+    if allowed_club_id is not None:
+        scope_label = getattr(getattr(user, "club", None), "name", None) or "Clube associado"
+
+    return {
+        "scope_label": scope_label,
+        "users_total": users_queryset.count(),
+        "active_users": users_queryset.filter(is_active=True).count(),
+        "clubs_total": clubs_queryset.count(),
+        "active_clubs": clubs_queryset.filter(is_active=True).count(),
+        "clubs_with_registrations_open": clubs_queryset.filter(enable_registrations=True).count(),
+        "news_total": news_queryset.count(),
+        "news_draft": news_queryset.filter(news_status__name__iexact="draft").count(),
+        "news_review": news_queryset.filter(news_status__name__iexact="review").count(),
+        "news_published": news_queryset.filter(news_status__name__iexact="published").count(),
+        "books_total": books_queryset.count(),
+        "featured_books": books_queryset.filter(is_featured=True).count(),
+        "sessions_total": sessions_queryset.count(),
+        "upcoming_sessions": sessions_queryset.filter(start_date__gte=now).count(),
+        "events_total": events_queryset.count(),
+        "events_draft": events_queryset.filter(
+            Q(status__iexact="draft") | Q(status__iexact="rascunho")
+        ).count(),
+        "events_review": events_queryset.filter(status__iexact="review").count(),
+        "events_published": events_queryset.filter(
+            Q(status__iexact="published") | Q(status__iexact="publicado")
+        ).count(),
+        "registrations_total": sum(registration_status_counts.values()),
+        "registrations_pending": registration_status_counts.get("pending", 0),
+        "registrations_approved": registration_status_counts.get("approved", 0),
+        "registrations_rejected": registration_status_counts.get("rejected", 0)
+        + registration_status_counts.get("cancelled", 0),
+        "latest_news": (
+            _to_dashboard_record(
+                latest_news,
+                club_name=latest_news.club.name if latest_news and latest_news.club_id else None,
+                date=latest_news.published_at or latest_news.created_at if latest_news else None,
+                status=latest_news.news_status.name if latest_news else None,
+            )
+            if latest_news
+            else None
+        ),
+        "next_session": (
+            _to_dashboard_record(
+                next_session,
+                club_name=next_session.club.name if next_session and next_session.club_id else None,
+                date=next_session.start_date if next_session else None,
+            )
+            if next_session
+            else None
+        ),
+        "next_event": (
+            _to_dashboard_record(
+                next_event,
+                club_name=next_event.user.club.name
+                if next_event and next_event.user_id and next_event.user and next_event.user.club
+                else None,
+                date=next_event.start_date if next_event else None,
+                status=next_event.status if next_event else None,
+            )
+            if next_event
+            else None
+        ),
+    }
 
 
 def update_admin_club_registration_status(
