@@ -35,6 +35,7 @@ from .serializers import (
 )
 from .services import (
     ClubRegistrationNotFoundError,
+    get_admin_dashboard_metrics,
     list_admin_club_registrations,
     update_admin_club_registration_status,
 )
@@ -264,6 +265,14 @@ class PublicBookListView(generics.ListAPIView):
         return queryset.order_by('-is_featured', 'title', '-id')
 
 
+class PublicBookDetailView(generics.RetrieveAPIView):
+    serializer_class = BookSerializer
+    permission_classes = [permissions.AllowAny]
+
+    def get_queryset(self):
+        return Book.objects.select_related('club').filter(club__is_active=True)
+
+
 class PublicSessionListView(generics.ListAPIView):
     serializer_class = SessionSerializer
     permission_classes = [permissions.AllowAny]
@@ -368,6 +377,13 @@ class AdminRegistrationStatusListView(generics.ListAPIView):
 
     def get_queryset(self):
         return RegistrationStatus.objects.all().order_by('name')
+
+
+class AdminDashboardSummaryView(APIView):
+    permission_classes = [permissions.IsAuthenticated, IsClubAdmin]
+
+    def get(self, request):
+        return Response(get_admin_dashboard_metrics(user=request.user))
 
 
 class AdminRegistrationListView(APIView):
