@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { Link, useParams } from 'react-router-dom';
 import Breadcrumbs from '../components/Breadcrumbs';
 import ClubRegistrationModal, {
   ClubRegistrationFormData
@@ -12,10 +12,12 @@ import {
   fetchPublicBooks,
   fetchPublicClub,
   fetchPublicClubs,
+  fetchPublicCategories,
   fetchPublicEvents,
   fetchPublicNews,
   fetchPublicSessions,
   InfoCulturaBook,
+  InfoCulturaCategory,
   InfoCulturaClub,
   InfoCulturaEvent,
   InfoCulturaNews,
@@ -94,10 +96,12 @@ function ClubeCultural({
   const [club, setClub] = useState<InfoCulturaClub | null>(null);
   const [newsItems, setNewsItems] = useState<InfoCulturaNews[]>([]);
   const [books, setBooks] = useState<InfoCulturaBook[]>([]);
+  const [categories, setCategories] = useState<InfoCulturaCategory[]>([]);
   const [sessions, setSessions] = useState<InfoCulturaSession[]>([]);
   const [events, setEvents] = useState<InfoCulturaEvent[]>([]);
   const [fromDate, setFromDate] = useState('');
   const [featuredOnly, setFeaturedOnly] = useState(false);
+  const [eventCategoryFilter, setEventCategoryFilter] = useState('all');
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState('');
   const [isRegistrationModalOpen, setIsRegistrationModalOpen] = useState(false);
@@ -129,12 +133,13 @@ function ClubeCultural({
     async function loadClub() {
       try {
         const resolvedClubId = await resolveClubId();
-        const [nextClub, nextNews, nextBooks, nextSessions, nextEvents] = await Promise.all([
+        const [nextClub, nextNews, nextBooks, nextCategories, nextSessions, nextEvents] = await Promise.all([
           fetchPublicClub(resolvedClubId),
           fetchPublicNews(resolvedClubId),
           fetchPublicBooks(resolvedClubId),
+          fetchPublicCategories(),
           fetchPublicSessions(resolvedClubId),
-          fetchPublicEvents(resolvedClubId)
+          fetchPublicEvents({ clubId: resolvedClubId })
         ]);
 
         if (!active) return;
@@ -142,6 +147,7 @@ function ClubeCultural({
         setClub(nextClub);
         setNewsItems(nextNews);
         setBooks(nextBooks);
+        setCategories(nextCategories);
         setSessions(nextSessions);
         setEvents(nextEvents);
       } catch (error) {
@@ -172,8 +178,13 @@ function ClubeCultural({
     [sessions, fromDate]
   );
   const filteredEvents = useMemo(
-    () => events.filter((item) => isOnOrAfterDate(item.event_date, fromDate)),
-    [events, fromDate]
+    () =>
+      events.filter(
+        (item) =>
+          isOnOrAfterDate(item.event_date, fromDate) &&
+          (eventCategoryFilter === 'all' || item.category_ids.includes(Number(eventCategoryFilter)))
+      ),
+    [events, fromDate, eventCategoryFilter]
   );
   const filteredBooks = useMemo(
     () => books.filter((item) => (featuredOnly ? item.is_featured : true)),
@@ -225,6 +236,13 @@ function ClubeCultural({
         <section className={contentSection}>
           <div className={container}>
             <div className={contentCard}>
+              {club?.image ? (
+                <img
+                  src={resolveInfoCulturaAssetUrl(club.image)}
+                  alt={title}
+                  className="mb-6 h-64 w-full rounded-2xl object-cover"
+                />
+              ) : null}
               <h2 className={blockTitle}>{title}</h2>
               <p className={blockText}>{description}</p>
 
@@ -283,6 +301,25 @@ function ClubeCultural({
                     </select>
                   </div>
 
+                  <div className={adminField}>
+                    <label className={adminLabel} htmlFor="club-filter-category">
+                      Categoria de evento
+                    </label>
+                    <select
+                      id="club-filter-category"
+                      className={adminInput}
+                      value={eventCategoryFilter}
+                      onChange={(event) => setEventCategoryFilter(event.target.value)}
+                    >
+                      <option value="all">Todas</option>
+                      {categories.map((category) => (
+                        <option key={category.id} value={category.id}>
+                          {category.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
                   <div className="flex items-end">
                     <button
                       type="button"
@@ -290,6 +327,7 @@ function ClubeCultural({
                       onClick={() => {
                         setFromDate('');
                         setFeaturedOnly(false);
+                        setEventCategoryFilter('all');
                       }}
                     >
                       Limpar filtros
@@ -332,6 +370,12 @@ function ClubeCultural({
                             </div>
                             <p className={contentItemDate}>{formatDate(item.published_at)}</p>
                             <p className={contentItemDesc}>{item.summary}</p>
+                            <Link
+                              to={`/laboratorio-cultural/noticias/${item.id}`}
+                              className={adminBtnSecondary}
+                            >
+                              Ver detalhe
+                            </Link>
                           </article>
                         ))}
                       </div>
@@ -352,6 +396,12 @@ function ClubeCultural({
                               {formatDate(item.session_date)} · {formatDate(item.start_date)}
                             </p>
                             <p className={contentItemDesc}>{item.description}</p>
+                            <Link
+                              to={`/laboratorio-cultural/sessoes/${item.id}`}
+                              className={adminBtnSecondary}
+                            >
+                              Ver detalhe
+                            </Link>
                           </article>
                         ))}
                       </div>
@@ -380,6 +430,17 @@ function ClubeCultural({
                               {item.location || item.city || 'Local por definir'}
                             </p>
                             <p className={contentItemDesc}>{item.description}</p>
+                            {item.categories.length > 0 ? (
+                              <p className={contentItemDate}>
+                                {item.categories.map((category) => category.name).join(', ')}
+                              </p>
+                            ) : null}
+                            <Link
+                              to={`/laboratorio-cultural/eventos/${item.id}`}
+                              className={adminBtnSecondary}
+                            >
+                              Ver detalhe
+                            </Link>
                           </article>
                         ))}
                       </div>

@@ -85,6 +85,7 @@ import {
 import {
   assignUserToClub,
   createAdminBook,
+  createAdminCategory,
   createAdminClub,
   createAdminContent,
   createAdminEvent,
@@ -93,12 +94,14 @@ import {
   createAdminUser,
   deactivateAdminUser,
   deleteAdminBook,
+  deleteAdminCategory,
   deleteAdminClub,
   deleteAdminContent,
   deleteAdminEvent,
   deleteAdminNews,
   deleteAdminSession,
   fetchAdminBooks,
+  fetchAdminCategories,
   fetchAdminClubs,
   fetchAdminContent,
   fetchAdminEvents,
@@ -111,6 +114,7 @@ import {
   fetchAdminUsers,
   fetchInfoCulturaMe,
   InfoCulturaBook,
+  InfoCulturaCategory,
   InfoCulturaClub,
   InfoCulturaEvent,
   InfoCulturaNews,
@@ -122,6 +126,7 @@ import {
   InfoCulturaUser,
   isInfoCulturaAuthError,
   BookPayload,
+  CategoryPayload,
   EventPayload,
   loginInfoCultura,
   NewsPayload,
@@ -130,6 +135,7 @@ import {
   SessionPayload,
   uploadAdminImage,
   updateAdminBook,
+  updateAdminCategory,
   updateAdminRegistrationStatus,
   updateAdminClub,
   updateAdminContent,
@@ -161,6 +167,7 @@ type ClubFormState = {
   name: string;
   description: string;
   mission: string;
+  image: string;
   is_active: boolean;
   enable_registrations: boolean;
 };
@@ -208,6 +215,12 @@ type EventFormState = {
   city: string;
   location: string;
   club_id: string;
+  category_ids: string[];
+};
+
+type CategoryFormState = {
+  name: string;
+  description: string;
 };
 
 type ActivityTab = 'books' | 'sessions' | 'events';
@@ -246,6 +259,7 @@ const initialClubForm: ClubFormState = {
   name: '',
   description: '',
   mission: '',
+  image: '',
   is_active: true,
   enable_registrations: false
 };
@@ -292,7 +306,13 @@ const initialEventForm: EventFormState = {
   status: 'published',
   city: '',
   location: '',
-  club_id: ''
+  club_id: '',
+  category_ids: []
+};
+
+const initialCategoryForm: CategoryFormState = {
+  name: '',
+  description: ''
 };
 
 const adminSections: { id: AdminSection; label: string; href: string }[] = [
@@ -440,6 +460,7 @@ function AdminCultura() {
   const [newsItems, setNewsItems] = useState<InfoCulturaNews[]>([]);
   const [newsStatuses, setNewsStatuses] = useState<InfoCulturaNewsStatus[]>([]);
   const [books, setBooks] = useState<InfoCulturaBook[]>([]);
+  const [categories, setCategories] = useState<InfoCulturaCategory[]>([]);
   const [sessions, setSessions] = useState<InfoCulturaSession[]>([]);
   const [events, setEvents] = useState<InfoCulturaEvent[]>([]);
   const [registrations, setRegistrations] = useState<InfoCulturaRegistration[]>([]);
@@ -454,6 +475,7 @@ function AdminCultura() {
   const [isLoadingNews, setIsLoadingNews] = useState(false);
   const [isLoadingNewsStatuses, setIsLoadingNewsStatuses] = useState(false);
   const [isLoadingActivities, setIsLoadingActivities] = useState(false);
+  const [isLoadingCategories, setIsLoadingCategories] = useState(false);
   const [isLoadingRegistrations, setIsLoadingRegistrations] = useState(false);
   const [isLoadingRegistrationStatuses, setIsLoadingRegistrationStatuses] = useState(false);
   const [panelError, setPanelError] = useState('');
@@ -465,8 +487,10 @@ function AdminCultura() {
   const [isSavingClub, setIsSavingClub] = useState(false);
   const [isSavingNews, setIsSavingNews] = useState(false);
   const [isSavingBook, setIsSavingBook] = useState(false);
+  const [isSavingCategory, setIsSavingCategory] = useState(false);
   const [isSavingSession, setIsSavingSession] = useState(false);
   const [isSavingEvent, setIsSavingEvent] = useState(false);
+  const [isUploadingClubImage, setIsUploadingClubImage] = useState(false);
   const [isUploadingNewsImage, setIsUploadingNewsImage] = useState(false);
   const [isUploadingBookImage, setIsUploadingBookImage] = useState(false);
   const [isUploadingEventImage, setIsUploadingEventImage] = useState(false);
@@ -475,6 +499,7 @@ function AdminCultura() {
   const [isDeactivatingUser, setIsDeactivatingUser] = useState(false);
   const [deletingNewsId, setDeletingNewsId] = useState<number | null>(null);
   const [deletingBookId, setDeletingBookId] = useState<number | null>(null);
+  const [deletingCategoryId, setDeletingCategoryId] = useState<number | null>(null);
   const [deletingSessionId, setDeletingSessionId] = useState<number | null>(null);
   const [deletingEventId, setDeletingEventId] = useState<number | null>(null);
   const [deletingClubId, setDeletingClubId] = useState<number | null>(null);
@@ -485,8 +510,10 @@ function AdminCultura() {
   const [clubForm, setClubForm] = useState<ClubFormState>(initialClubForm);
   const [newsForm, setNewsForm] = useState<NewsFormState>(initialNewsForm);
   const [bookForm, setBookForm] = useState<BookFormState>(initialBookForm);
+  const [categoryForm, setCategoryForm] = useState<CategoryFormState>(initialCategoryForm);
   const [sessionForm, setSessionForm] = useState<SessionFormState>(initialSessionForm);
   const [eventForm, setEventForm] = useState<EventFormState>(initialEventForm);
+  const [clubImageFileKey, setClubImageFileKey] = useState(0);
   const [newsImageFileKey, setNewsImageFileKey] = useState(0);
   const [bookImageFileKey, setBookImageFileKey] = useState(0);
   const [eventImageFileKey, setEventImageFileKey] = useState(0);
@@ -494,11 +521,13 @@ function AdminCultura() {
   const [editingClubId, setEditingClubId] = useState<number | null>(null);
   const [editingNewsId, setEditingNewsId] = useState<number | null>(null);
   const [editingBookId, setEditingBookId] = useState<number | null>(null);
+  const [editingCategoryId, setEditingCategoryId] = useState<number | null>(null);
   const [editingSessionId, setEditingSessionId] = useState<number | null>(null);
   const [editingEventId, setEditingEventId] = useState<number | null>(null);
   const [selectedClubUserId, setSelectedClubUserId] = useState('');
   const [newsClubFilter, setNewsClubFilter] = useState('all');
   const [activityClubFilter, setActivityClubFilter] = useState('all');
+  const [activityCategoryFilter, setActivityCategoryFilter] = useState('all');
   const [activityTab, setActivityTab] = useState<ActivityTab>('books');
   const [registrationStatusFilter, setRegistrationStatusFilter] = useState('pending');
   const [registrationClubFilter, setRegistrationClubFilter] = useState('all');
@@ -511,6 +540,7 @@ function AdminCultura() {
   const [clubFormError, setClubFormError] = useState('');
   const [newsFormError, setNewsFormError] = useState('');
   const [bookFormError, setBookFormError] = useState('');
+  const [categoryFormError, setCategoryFormError] = useState('');
   const [sessionFormError, setSessionFormError] = useState('');
   const [eventFormError, setEventFormError] = useState('');
 
@@ -537,6 +567,10 @@ function AdminCultura() {
   const sortedBooks = useMemo(
     () => [...books].sort((a, b) => Number(b.is_featured) - Number(a.is_featured) || a.title.localeCompare(b.title)),
     [books]
+  );
+  const sortedCategories = useMemo(
+    () => [...categories].sort((a, b) => a.name.localeCompare(b.name)),
+    [categories]
   );
   const sortedSessions = useMemo(
     () => [...sessions].sort((a, b) => a.start_date.localeCompare(b.start_date)),
@@ -610,6 +644,7 @@ function AdminCultura() {
     setNewsItems([]);
     setNewsStatuses([]);
     setBooks([]);
+    setCategories([]);
     setSessions([]);
     setEvents([]);
     setRegistrations([]);
@@ -621,6 +656,7 @@ function AdminCultura() {
     setRegistrationTotalPages(0);
     setNewsClubFilter('all');
     setActivityClubFilter('all');
+    setActivityCategoryFilter('all');
     setCurrentUser(null);
     setPanelError('');
     setNewsError('');
@@ -630,6 +666,7 @@ function AdminCultura() {
     setClubFormError('');
     setNewsFormError('');
     setBookFormError('');
+    setCategoryFormError('');
     setSessionFormError('');
     setEventFormError('');
     sessionStorage.removeItem(TOKEN_KEY);
@@ -650,6 +687,7 @@ function AdminCultura() {
 
   function resetClubForm() {
     setClubForm(initialClubForm);
+    setClubImageFileKey((prev) => prev + 1);
     setEditingClubId(null);
     setSelectedClubUserId('');
     setClubFormError('');
@@ -692,6 +730,12 @@ function AdminCultura() {
     setEventImageFileKey((prev) => prev + 1);
     setEditingEventId(null);
     setEventFormError('');
+  }
+
+  function resetCategoryForm() {
+    setCategoryForm(initialCategoryForm);
+    setEditingCategoryId(null);
+    setCategoryFormError('');
   }
 
   async function loadAdminData(authToken: string) {
@@ -797,6 +841,7 @@ function AdminCultura() {
 
     resetNewsForm();
     resetBookForm();
+    resetCategoryForm();
     resetSessionForm();
     resetEventForm();
   }, [currentUser?.club_id, canManageUsers]);
@@ -848,20 +893,25 @@ function AdminCultura() {
 
     let isMounted = true;
     setIsLoadingActivities(true);
+    setIsLoadingCategories(true);
     setActivityError('');
 
     const clubId =
       canManageUsers && activityClubFilter !== 'all'
         ? Number(activityClubFilter)
         : undefined;
+    const categoryId =
+      activityCategoryFilter !== 'all' ? Number(activityCategoryFilter) : undefined;
 
     void Promise.all([
+      fetchAdminCategories(token),
       fetchAdminBooks(token, clubId),
       fetchAdminSessions(token, clubId),
-      fetchAdminEvents(token, clubId)
+      fetchAdminEvents(token, { clubId, categoryId })
     ])
-      .then(([nextBooks, nextSessions, nextEvents]) => {
+      .then(([nextCategories, nextBooks, nextSessions, nextEvents]) => {
         if (!isMounted) return;
+        setCategories(nextCategories);
         setBooks(nextBooks);
         setSessions(nextSessions);
         setEvents(nextEvents);
@@ -876,12 +926,13 @@ function AdminCultura() {
       .finally(() => {
         if (!isMounted) return;
         setIsLoadingActivities(false);
+        setIsLoadingCategories(false);
       });
 
     return () => {
       isMounted = false;
     };
-  }, [activeSection, token, currentUser, canManageUsers, activityClubFilter]);
+  }, [activeSection, token, currentUser, canManageUsers, activityClubFilter, activityCategoryFilter]);
 
   useEffect(() => {
     if (!token || !currentUser || activeSection !== 'inscricoes') {
@@ -1153,6 +1204,7 @@ function AdminCultura() {
       name: clubForm.name.trim(),
       description: clubForm.description.trim(),
       mission: clubForm.mission.trim(),
+      image: clubForm.image.trim(),
       is_active: clubForm.is_active,
       enable_registrations: clubForm.enable_registrations
     };
@@ -1202,13 +1254,34 @@ function AdminCultura() {
     }
   }
 
+  async function handleUploadClubImage(file: File | null) {
+    if (!token || !file) return;
+
+    setIsUploadingClubImage(true);
+    setClubFormError('');
+
+    try {
+      const imagePath = await uploadAdminImage(token, file, 'clubs');
+      setClubForm((prev) => ({ ...prev, image: imagePath }));
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : 'Nao foi possivel carregar a imagem do clube.';
+      setClubFormError(message);
+    } finally {
+      setIsUploadingClubImage(false);
+      setClubImageFileKey((prev) => prev + 1);
+    }
+  }
+
   function handleEditClub(club: InfoCulturaClub) {
     setEditingClubId(club.id);
     setSelectedClubUserId('');
+    setClubImageFileKey((prev) => prev + 1);
     setClubForm({
       name: club.name,
       description: club.description || '',
       mission: club.mission || '',
+      image: club.image || '',
       is_active: club.is_active,
       enable_registrations: Boolean(club.enable_registrations)
     });
@@ -1497,6 +1570,86 @@ function AdminCultura() {
     }
   }
 
+  function handleEditCategory(item: InfoCulturaCategory) {
+    setEditingCategoryId(item.id);
+    setCategoryForm({
+      name: item.name,
+      description: item.description
+    });
+    setCategoryFormError('');
+    setActivityTab('events');
+  }
+
+  async function handleSaveCategory(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!token) return;
+
+    const payload: CategoryPayload = {
+      name: categoryForm.name.trim(),
+      description: categoryForm.description.trim()
+    };
+
+    if (!payload.name || !payload.description) {
+      setCategoryFormError('Preenche o nome e a descricao da categoria.');
+      return;
+    }
+
+    setIsSavingCategory(true);
+    setCategoryFormError('');
+    setActivityError('');
+
+    try {
+      const savedCategory =
+        editingCategoryId === null
+          ? await createAdminCategory(token, payload)
+          : await updateAdminCategory(token, editingCategoryId, payload);
+
+      setCategories((prev) =>
+        editingCategoryId === null
+          ? [...prev, savedCategory]
+          : prev.map((item) => (item.id === savedCategory.id ? savedCategory : item))
+      );
+      resetCategoryForm();
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : 'Nao foi possivel guardar a categoria.';
+      setCategoryFormError(message);
+    } finally {
+      setIsSavingCategory(false);
+    }
+  }
+
+  async function handleDeleteCategory(id: number) {
+    if (!token) return;
+
+    setDeletingCategoryId(id);
+    setActivityError('');
+
+    try {
+      await deleteAdminCategory(token, id);
+      setCategories((prev) => prev.filter((item) => item.id !== id));
+      if (editingCategoryId === id) {
+        resetCategoryForm();
+      }
+      setEvents((prev) =>
+        prev.map((item) => ({
+          ...item,
+          categories: item.categories.filter((category) => category.id !== id),
+          category_ids: item.category_ids.filter((categoryId) => categoryId !== id)
+        }))
+      );
+      if (activityCategoryFilter === String(id)) {
+        setActivityCategoryFilter('all');
+      }
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : 'Nao foi possivel apagar a categoria.';
+      setActivityError(message);
+    } finally {
+      setDeletingCategoryId(null);
+    }
+  }
+
   function handleEditSession(item: InfoCulturaSession) {
     setEditingSessionId(item.id);
     setSessionForm({
@@ -1603,7 +1756,8 @@ function AdminCultura() {
       status: item.status,
       city: item.city || '',
       location: item.location || '',
-      club_id: item.club_id ? String(item.club_id) : ''
+      club_id: item.club_id ? String(item.club_id) : '',
+      category_ids: item.category_ids.map(String)
     });
     setEventFormError('');
     setActivityTab('events');
@@ -1624,7 +1778,8 @@ function AdminCultura() {
       status: eventForm.status.trim(),
       city: eventForm.city.trim(),
       location: eventForm.location.trim(),
-      ...(eventForm.club_id ? { club_id: Number(eventForm.club_id) } : {})
+      ...(eventForm.club_id ? { club_id: Number(eventForm.club_id) } : {}),
+      category_ids: eventForm.category_ids.map(Number)
     };
 
     if (
@@ -2278,7 +2433,38 @@ function AdminCultura() {
                       onChange={(event) =>
                         setClubForm((prev) => ({ ...prev, name: event.target.value }))
                       }
+                      />
+                    </div>
+
+                  <div className={adminField}>
+                    <label className={adminLabel} htmlFor="club-image">
+                      Imagem do clube
+                    </label>
+                    <input
+                      id="club-image"
+                      key={clubImageFileKey}
+                      type="file"
+                      accept="image/*"
+                      className={adminInput}
+                      onChange={(event) => {
+                        const file = event.target.files?.[0] || null;
+                        void handleUploadClubImage(file);
+                      }}
                     />
+                    <p className={blockText}>
+                      {isUploadingClubImage
+                        ? 'A carregar imagem...'
+                        : clubForm.image
+                          ? 'Imagem carregada com sucesso.'
+                          : 'Seleciona uma imagem do computador ou telemovel.'}
+                    </p>
+                    {clubForm.image ? (
+                      <img
+                        src={resolveInfoCulturaAssetUrl(clubForm.image)}
+                        alt="Preview do clube"
+                        className="mt-3 h-40 w-full rounded-xl object-cover"
+                      />
+                    ) : null}
                   </div>
 
                   <div className={adminField}>
@@ -2449,6 +2635,13 @@ function AdminCultura() {
                   {sortedClubs.map((club) => (
                     <article key={club.id} className={adminUserItem}>
                       <div>
+                        {club.image ? (
+                          <img
+                            src={resolveInfoCulturaAssetUrl(club.image)}
+                            alt={club.name}
+                            className="mb-4 h-32 w-full rounded-xl object-cover"
+                          />
+                        ) : null}
                         <h3 className={adminUserName}>{club.name}</h3>
                         <p className={adminUserEmail}>
                           {club.mission || 'Sem missao definida'}
@@ -2777,26 +2970,48 @@ function AdminCultura() {
                       Gere livros, sessoes e eventos ligados aos clubes.
                     </p>
                   </div>
-                  {canManageUsers ? (
-                    <div className={adminField}>
-                      <label className={adminLabel} htmlFor="activity-club-filter">
-                        Filtrar por clube
-                      </label>
-                      <select
-                        id="activity-club-filter"
-                        className={adminInput}
-                        value={activityClubFilter}
-                        onChange={(event) => setActivityClubFilter(event.target.value)}
-                      >
-                        <option value="all">Todos os clubes</option>
-                        {clubs.map((club) => (
-                          <option key={club.id} value={club.id}>
-                            {club.name}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                  ) : null}
+                  <div className="flex flex-wrap gap-4">
+                    {canManageUsers ? (
+                      <div className={adminField}>
+                        <label className={adminLabel} htmlFor="activity-club-filter">
+                          Filtrar por clube
+                        </label>
+                        <select
+                          id="activity-club-filter"
+                          className={adminInput}
+                          value={activityClubFilter}
+                          onChange={(event) => setActivityClubFilter(event.target.value)}
+                        >
+                          <option value="all">Todos os clubes</option>
+                          {clubs.map((club) => (
+                            <option key={club.id} value={club.id}>
+                              {club.name}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    ) : null}
+                    {activityTab === 'events' ? (
+                      <div className={adminField}>
+                        <label className={adminLabel} htmlFor="activity-category-filter">
+                          Filtrar por categoria
+                        </label>
+                        <select
+                          id="activity-category-filter"
+                          className={adminInput}
+                          value={activityCategoryFilter}
+                          onChange={(event) => setActivityCategoryFilter(event.target.value)}
+                        >
+                          <option value="all">Todas as categorias</option>
+                          {sortedCategories.map((category) => (
+                            <option key={category.id} value={category.id}>
+                              {category.name}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    ) : null}
+                  </div>
                 </div>
 
                 <div className={adminSectionNav}>
@@ -3287,6 +3502,32 @@ function AdminCultura() {
                       </div>
 
                       <div className={adminField}>
+                        <label className={adminLabel} htmlFor="event-categories">
+                          Categorias
+                        </label>
+                        <select
+                          id="event-categories"
+                          multiple
+                          className={adminInput}
+                          value={eventForm.category_ids}
+                          onChange={(event) =>
+                            setEventForm((prev) => ({
+                              ...prev,
+                              category_ids: Array.from(event.target.selectedOptions).map(
+                                (option) => option.value
+                              )
+                            }))
+                          }
+                        >
+                          {sortedCategories.map((category) => (
+                            <option key={category.id} value={category.id}>
+                              {category.name}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+
+                      <div className={adminField}>
                         <label className={adminLabel} htmlFor="event-date">
                           Data
                         </label>
@@ -3462,6 +3703,11 @@ function AdminCultura() {
                           </div>
                         </div>
                         <p className={adminListDesc}>{item.description}</p>
+                        {item.categories.length > 0 ? (
+                          <p className={adminListMeta}>
+                            Categorias: {item.categories.map((category) => category.name).join(', ')}
+                          </p>
+                        ) : null}
                         <div className={adminListTools}>
                           <button
                             type="button"
@@ -3483,6 +3729,104 @@ function AdminCultura() {
                     ))}
                   </div>
                 </>
+              ) : null}
+
+              {activityTab === 'events' ? (
+                <section className={adminPanelCard}>
+                  <h2 className={blockTitle}>Categorias de eventos</h2>
+                  <p className={blockText}>
+                    Cria categorias para classificar eventos e usar filtros no painel e no publico.
+                  </p>
+
+                  <form onSubmit={handleSaveCategory} className={adminPanelForm}>
+                    <div className={adminFormGridSpaced}>
+                      <div className={adminField}>
+                        <label className={adminLabel} htmlFor="category-name">
+                          Nome
+                        </label>
+                        <input
+                          id="category-name"
+                          className={adminInput}
+                          value={categoryForm.name}
+                          onChange={(event) =>
+                            setCategoryForm((prev) => ({ ...prev, name: event.target.value }))
+                          }
+                        />
+                      </div>
+
+                      <div className={adminField}>
+                        <label className={adminLabel} htmlFor="category-description">
+                          Descricao
+                        </label>
+                        <textarea
+                          id="category-description"
+                          rows={3}
+                          className={adminTextarea}
+                          value={categoryForm.description}
+                          onChange={(event) =>
+                            setCategoryForm((prev) => ({
+                              ...prev,
+                              description: event.target.value
+                            }))
+                          }
+                        />
+                      </div>
+                    </div>
+
+                    {categoryFormError ? <p className={adminError}>{categoryFormError}</p> : null}
+
+                    <div className={adminActions}>
+                      <button type="submit" className={adminBtnPrimary} disabled={isSavingCategory}>
+                        {isSavingCategory
+                          ? 'A guardar...'
+                          : editingCategoryId
+                            ? 'Atualizar categoria'
+                            : 'Criar categoria'}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={resetCategoryForm}
+                        className={adminBtnSecondary}
+                      >
+                        Limpar
+                      </button>
+                    </div>
+                  </form>
+
+                  <div className={adminList}>
+                    {isLoadingCategories ? <p className={adminInfo}>A carregar categorias...</p> : null}
+                    {!isLoadingCategories && sortedCategories.length === 0 ? (
+                      <p className={adminInfo}>Nao existem categorias registadas.</p>
+                    ) : null}
+                    {sortedCategories.map((category) => (
+                      <article key={category.id} className={adminListItem}>
+                        <div className={adminListTop}>
+                          <div>
+                            <h3 className={adminListTitle}>{category.name}</h3>
+                            <p className={adminListMeta}>{category.description}</p>
+                          </div>
+                        </div>
+                        <div className={adminListTools}>
+                          <button
+                            type="button"
+                            className={adminBtnEdit}
+                            onClick={() => handleEditCategory(category)}
+                          >
+                            Editar
+                          </button>
+                          <button
+                            type="button"
+                            className={adminBtnDanger}
+                            disabled={deletingCategoryId === category.id}
+                            onClick={() => handleDeleteCategory(category.id)}
+                          >
+                            {deletingCategoryId === category.id ? 'A apagar...' : 'Apagar'}
+                          </button>
+                        </div>
+                      </article>
+                    ))}
+                  </div>
+                </section>
               ) : null}
             </>
           ) : null}
