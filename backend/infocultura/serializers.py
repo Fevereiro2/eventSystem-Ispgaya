@@ -4,9 +4,11 @@ from django.utils import timezone
 from .models import (
     AppUser,
     Book,
+    Category,
     Club,
     CulturalContent,
     Event,
+    EventCategory,
     News,
     NewsStatus,
     RegistrationStatus,
@@ -123,6 +125,7 @@ class ClubSerializer(serializers.ModelSerializer):
             'name',
             'description',
             'mission',
+            'image',
             'is_active',
             'enable_registrations',
             'created_at',
@@ -155,6 +158,12 @@ class RegistrationStatusSerializer(serializers.ModelSerializer):
     class Meta:
         model = RegistrationStatus
         fields = ['id', 'name', 'description']
+
+
+class CategorySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Category
+        fields = ['id', 'name', 'description', 'created_at', 'updated_at']
 
 
 class NewsSerializer(serializers.ModelSerializer):
@@ -228,6 +237,8 @@ class EventSerializer(serializers.ModelSerializer):
     club_id = serializers.SerializerMethodField()
     club_name = serializers.SerializerMethodField()
     owner_name = serializers.CharField(source='user.name', read_only=True)
+    categories = CategorySerializer(many=True, read_only=True)
+    category_ids = serializers.SerializerMethodField()
 
     class Meta:
         model = Event
@@ -249,6 +260,8 @@ class EventSerializer(serializers.ModelSerializer):
             'club_id',
             'club_name',
             'owner_name',
+            'categories',
+            'category_ids',
         ]
 
     def get_club_id(self, obj):
@@ -258,6 +271,9 @@ class EventSerializer(serializers.ModelSerializer):
         if not obj.user_id or not obj.user or not obj.user.club:
             return None
         return obj.user.club.name
+
+    def get_category_ids(self, obj):
+        return list(obj.categories.values_list('id', flat=True))
 
 
 class ClubScopedWriteSerializer(serializers.ModelSerializer):
@@ -437,6 +453,12 @@ class AdminEventWriteSerializer(serializers.ModelSerializer):
         queryset=Club.objects.all(),
         required=False,
     )
+    category_ids = serializers.PrimaryKeyRelatedField(
+        queryset=Category.objects.all(),
+        many=True,
+        required=False,
+        source='categories_payload',
+    )
 
     class Meta:
         model = Event
@@ -453,6 +475,7 @@ class AdminEventWriteSerializer(serializers.ModelSerializer):
             'city',
             'location',
             'club_id',
+            'category_ids',
         ]
         read_only_fields = ['id']
 
@@ -499,16 +522,23 @@ class AdminEventWriteSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         club = validated_data.pop('resolved_club')
         validated_data.pop('club', None)
+        categories = validated_data.pop('categories_payload', [])
         owner = self._resolve_owner(club)
         now = timezone.now()
         validated_data['user'] = owner
         validated_data.setdefault('created_at', now)
         validated_data['updated_at'] = now
-        return Event.objects.create(**validated_data)
+        event = Event.objects.create(**validated_data)
+        if categories:
+            EventCategory.objects.bulk_create(
+                [EventCategory(event=event, category=category) for category in categories]
+            )
+        return event
 
     def update(self, instance, validated_data):
         club = validated_data.pop('resolved_club')
         validated_data.pop('club', None)
+        categories = validated_data.pop('categories_payload', None)
         owner = self._resolve_owner(club)
 
         for field, value in validated_data.items():
@@ -517,10 +547,39 @@ class AdminEventWriteSerializer(serializers.ModelSerializer):
         instance.user = owner
         instance.updated_at = timezone.now()
         instance.save()
+        if categories is not None:
+            EventCategory.objects.filter(event=instance).delete()
+            EventCategory.objects.bulk_create(
+                [EventCategory(event=instance, category=category) for category in categories]
+            )
         return instance
 
     def to_representation(self, instance):
         return EventSerializer(instance).data
+
+
+class AdminCategoryWriteSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Category
+        fields = ['id', 'name', 'description']
+        read_only_fields = ['id']
+
+    def create(self, validated_data):
+        now = timezone.now()
+        validated_data.setdefault('created_at', now)
+        validated_data['updated_at'] = now
+        return Category.objects.create(**validated_data)
+
+    def update(self, instance, validated_data):
+        for field, value in validated_data.items():
+            setattr(instance, field, value)
+
+        instance.updated_at = timezone.now()
+        instance.save()
+        return instance
+
+    def to_representation(self, instance):
+        return CategorySerializer(instance).data
 
 
 class ClubRegistrationCreateSerializer(serializers.Serializer):

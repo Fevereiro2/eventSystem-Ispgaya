@@ -81,6 +81,7 @@ class Club(models.Model):
     name = models.CharField(max_length=100)
     description = models.TextField(blank=True, null=True)
     mission = models.TextField(blank=True, null=True)
+    image = models.CharField(max_length=500, blank=True, default='')
     is_active = models.BooleanField(default=True)
     enable_registrations = models.BooleanField(blank=True, null=True, default=False)
     created_at = models.DateTimeField(blank=True, null=True)
@@ -191,6 +192,22 @@ class Session(models.Model):
         return self.title
 
 
+class Category(models.Model):
+    id = models.AutoField(primary_key=True, db_column='id_category')
+    name = models.CharField(max_length=120)
+    description = models.TextField()
+    created_at = models.DateTimeField(blank=True, null=True)
+    updated_at = models.DateTimeField(blank=True, null=True)
+
+    class Meta:
+        db_table = 'category'
+        managed = False
+        ordering = ['name']
+
+    def __str__(self):
+        return self.name
+
+
 class Event(models.Model):
     id = models.AutoField(primary_key=True, db_column='id_event')
     title = models.CharField(max_length=255)
@@ -211,6 +228,11 @@ class Event(models.Model):
     updated_at = models.DateTimeField(blank=True, null=True)
     city = models.CharField(max_length=120, blank=True, default='')
     location = models.CharField(max_length=255, blank=True, default='')
+    categories = models.ManyToManyField(
+        Category,
+        through='EventCategory',
+        related_name='events',
+    )
 
     class Meta:
         db_table = 'event'
@@ -227,6 +249,26 @@ class Event(models.Model):
 
     def __str__(self):
         return self.title
+
+
+class EventCategory(models.Model):
+    event = models.ForeignKey(
+        Event,
+        on_delete=models.DO_NOTHING,
+        db_column='id_event',
+        related_name='event_category_links',
+    )
+    category = models.ForeignKey(
+        Category,
+        on_delete=models.DO_NOTHING,
+        db_column='id_category',
+        related_name='event_category_links',
+    )
+
+    class Meta:
+        db_table = 'event_category'
+        managed = False
+        unique_together = ('event', 'category')
 
 
 class RegistrationStatus(models.Model):
