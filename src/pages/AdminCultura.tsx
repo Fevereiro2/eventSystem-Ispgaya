@@ -104,6 +104,7 @@ import {
   fetchAdminCategories,
   fetchAdminClubs,
   fetchAdminContent,
+  fetchAdminDashboard,
   fetchAdminEvents,
   fetchAdminNews,
   fetchAdminNewsStatuses,
@@ -116,6 +117,7 @@ import {
   InfoCulturaBook,
   InfoCulturaCategory,
   InfoCulturaClub,
+  InfoCulturaDashboardStats,
   InfoCulturaEvent,
   InfoCulturaNews,
   InfoCulturaNewsStatus,
@@ -147,6 +149,38 @@ import {
 
 const TOKEN_KEY = 'ispgaya_cultura_token';
 const REGISTRATION_PAGE_SIZE = 10;
+const NEWS_WORKFLOW_ORDER = ['draft', 'review', 'published', 'archived'];
+const EVENT_WORKFLOW_ORDER = ['draft', 'review', 'published', 'archived'];
+const WORKFLOW_LABELS: Record<string, string> = {
+  draft: 'Rascunho',
+  review: 'Em revisao',
+  published: 'Publicado',
+  archived: 'Arquivado',
+  rascunho: 'Rascunho',
+  publicado: 'Publicado'
+};
+
+function normalizeWorkflowStatus(value: string): string {
+  const normalized = value.trim().toLowerCase();
+  if (normalized === 'rascunho') return 'draft';
+  if (normalized === 'publicado') return 'published';
+  return normalized;
+}
+
+function getWorkflowStatusLabel(value: string): string {
+  return WORKFLOW_LABELS[normalizeWorkflowStatus(value)] || value;
+}
+
+function getWorkflowStatusOptions(order: string[], currentValue: string): string[] {
+  const normalizedCurrent = normalizeWorkflowStatus(currentValue || '');
+  const nextValues = [...order];
+
+  if (normalizedCurrent && !nextValues.includes(normalizedCurrent)) {
+    nextValues.push(normalizedCurrent);
+  }
+
+  return nextValues;
+}
 
 type FormState = {
   area: CulturalArea;
@@ -303,7 +337,7 @@ const initialEventForm: EventFormState = {
   end_date: '',
   image: '',
   is_external: false,
-  status: 'published',
+  status: 'draft',
   city: '',
   location: '',
   club_id: '',
@@ -459,6 +493,7 @@ function AdminCultura() {
   const [roles, setRoles] = useState<InfoCulturaRole[]>([]);
   const [newsItems, setNewsItems] = useState<InfoCulturaNews[]>([]);
   const [newsStatuses, setNewsStatuses] = useState<InfoCulturaNewsStatus[]>([]);
+  const [dashboardStats, setDashboardStats] = useState<InfoCulturaDashboardStats | null>(null);
   const [books, setBooks] = useState<InfoCulturaBook[]>([]);
   const [categories, setCategories] = useState<InfoCulturaCategory[]>([]);
   const [sessions, setSessions] = useState<InfoCulturaSession[]>([]);
@@ -474,11 +509,13 @@ function AdminCultura() {
   const [isLoadingRoles, setIsLoadingRoles] = useState(false);
   const [isLoadingNews, setIsLoadingNews] = useState(false);
   const [isLoadingNewsStatuses, setIsLoadingNewsStatuses] = useState(false);
+  const [isLoadingDashboard, setIsLoadingDashboard] = useState(false);
   const [isLoadingActivities, setIsLoadingActivities] = useState(false);
   const [isLoadingCategories, setIsLoadingCategories] = useState(false);
   const [isLoadingRegistrations, setIsLoadingRegistrations] = useState(false);
   const [isLoadingRegistrationStatuses, setIsLoadingRegistrationStatuses] = useState(false);
   const [panelError, setPanelError] = useState('');
+  const [dashboardError, setDashboardError] = useState('');
   const [newsError, setNewsError] = useState('');
   const [activityError, setActivityError] = useState('');
   const [registrationError, setRegistrationError] = useState('');
@@ -580,6 +617,27 @@ function AdminCultura() {
     () => [...events].sort((a, b) => a.start_date.localeCompare(b.start_date)),
     [events]
   );
+  const availableNewsStatuses = useMemo(() => {
+    const allowedNames = getWorkflowStatusOptions(
+      canManageUsers ? NEWS_WORKFLOW_ORDER : NEWS_WORKFLOW_ORDER.slice(0, 2),
+      newsForm.news_status
+    );
+    const statusMap = new Map(
+      newsStatuses.map((status) => [normalizeWorkflowStatus(status.name), status])
+    );
+
+    return allowedNames
+      .map((name) => statusMap.get(name))
+      .filter((status): status is InfoCulturaNewsStatus => Boolean(status));
+  }, [canManageUsers, newsForm.news_status, newsStatuses]);
+  const availableEventStatuses = useMemo(
+    () =>
+      getWorkflowStatusOptions(
+        canManageUsers ? EVENT_WORKFLOW_ORDER : EVENT_WORKFLOW_ORDER.slice(0, 2),
+        eventForm.status
+      ),
+    [canManageUsers, eventForm.status]
+  );
   const selectedUser = useMemo(() => {
     if (!userPage || userPage.mode === 'list' || userPage.mode === 'create') {
       return null;
@@ -615,6 +673,25 @@ function AdminCultura() {
       ).length,
     [registrations]
   );
+  const dashboardCards = useMemo(
+    () =>
+      dashboardStats
+        ? [
+            { label: 'Utilizadores ativos', value: dashboardStats.active_users },
+            { label: 'Noticias publicadas', value: dashboardStats.news_published },
+            { label: 'Noticias em revisao', value: dashboardStats.news_review },
+            { label: 'Eventos em revisao', value: dashboardStats.events_review },
+            { label: 'Livros em destaque', value: dashboardStats.featured_books },
+            { label: 'Sessoes proximas', value: dashboardStats.upcoming_sessions },
+            { label: 'Inscricoes pendentes', value: dashboardStats.registrations_pending },
+            {
+              label: 'Clubes com inscricoes abertas',
+              value: dashboardStats.clubs_with_registrations_open
+            }
+          ]
+        : [],
+    [dashboardStats]
+  );
   const clubMembers = useMemo(() => {
     if (!editingClubId) return [];
 
@@ -643,6 +720,7 @@ function AdminCultura() {
     setRoles([]);
     setNewsItems([]);
     setNewsStatuses([]);
+    setDashboardStats(null);
     setBooks([]);
     setCategories([]);
     setSessions([]);
@@ -659,6 +737,7 @@ function AdminCultura() {
     setActivityCategoryFilter('all');
     setCurrentUser(null);
     setPanelError('');
+    setDashboardError('');
     setNewsError('');
     setActivityError('');
     setRegistrationError('');
@@ -845,6 +924,37 @@ function AdminCultura() {
     resetSessionForm();
     resetEventForm();
   }, [currentUser?.club_id, canManageUsers]);
+
+  useEffect(() => {
+    if (!token || !currentUser || activeSection !== 'resumo') {
+      return;
+    }
+
+    let isMounted = true;
+    setIsLoadingDashboard(true);
+    setDashboardError('');
+
+    void fetchAdminDashboard(token)
+      .then((nextDashboardStats) => {
+        if (!isMounted) return;
+        setDashboardStats(nextDashboardStats);
+      })
+      .catch((error) => {
+        if (!isMounted) return;
+        if (handleAuthError(error)) return;
+        const message =
+          error instanceof Error ? error.message : 'Nao foi possivel carregar o resumo.';
+        setDashboardError(message);
+      })
+      .finally(() => {
+        if (!isMounted) return;
+        setIsLoadingDashboard(false);
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [activeSection, token, currentUser]);
 
   useEffect(() => {
     if (!token || !currentUser || activeSection !== 'noticias') {
@@ -1367,7 +1477,7 @@ function AdminCultura() {
       summary: item.summary,
       image: item.image || '',
       content: item.content,
-      news_status: item.news_status_name,
+      news_status: normalizeWorkflowStatus(item.news_status_name),
       published_at: toDateTimeLocalValue(item.published_at),
       club_id: item.club_id ? String(item.club_id) : ''
     });
@@ -1753,7 +1863,7 @@ function AdminCultura() {
       end_date: toDateTimeLocalValue(item.end_date),
       image: item.image || '',
       is_external: item.is_external,
-      status: item.status,
+      status: normalizeWorkflowStatus(item.status),
       city: item.city || '',
       location: item.location || '',
       club_id: item.club_id ? String(item.club_id) : '',
@@ -2088,27 +2198,49 @@ function AdminCultura() {
                 <p className={blockText}>
                   Consulta a sessao atual e os principais indicadores do sistema.
                 </p>
+                {dashboardStats ? (
+                  <p className={adminInfo}>Ambito atual: {dashboardStats.scope_label}</p>
+                ) : null}
+                {isLoadingDashboard ? <p className={adminInfo}>A carregar metricas...</p> : null}
+                {dashboardError ? <p className={adminError}>{dashboardError}</p> : null}
 
                 <div className={adminStatsGrid}>
                   <div className={adminStatCard}>
-                    <p className={adminStatValue}>{users.length}</p>
+                    <p className={adminStatValue}>
+                      {dashboardStats?.users_total ?? users.length}
+                    </p>
                     <p className={adminStatLabel}>Utilizadores</p>
                   </div>
                   <div className={adminStatCard}>
-                    <p className={adminStatValue}>{activeUsers}</p>
+                    <p className={adminStatValue}>
+                      {dashboardStats?.active_users ?? activeUsers}
+                    </p>
                     <p className={adminStatLabel}>Ativos</p>
                   </div>
                   <div className={adminStatCard}>
-                    <p className={adminStatValue}>{publishedItems}</p>
-                    <p className={adminStatLabel}>Publicados</p>
+                    <p className={adminStatValue}>
+                      {dashboardStats?.news_published ?? publishedItems}
+                    </p>
+                    <p className={adminStatLabel}>Noticias publicadas</p>
                   </div>
-                  {canManageUsers ? (
-                    <div className={adminStatCard}>
-                      <p className={adminStatValue}>{clubs.length}</p>
-                      <p className={adminStatLabel}>Clubes</p>
-                    </div>
-                  ) : null}
+                  <div className={adminStatCard}>
+                    <p className={adminStatValue}>
+                      {dashboardStats?.clubs_total ?? (canManageUsers ? clubs.length : 1)}
+                    </p>
+                    <p className={adminStatLabel}>Clubes</p>
+                  </div>
                 </div>
+
+                {dashboardCards.length > 0 ? (
+                  <div className={`${adminStatsGrid} mt-6`}>
+                    {dashboardCards.map((card) => (
+                      <div key={card.label} className={adminStatCard}>
+                        <p className={adminStatValue}>{card.value}</p>
+                        <p className={adminStatLabel}>{card.label}</p>
+                      </div>
+                    ))}
+                  </div>
+                ) : null}
               </section>
 
               <section className={adminPanelCard}>
@@ -2140,6 +2272,105 @@ function AdminCultura() {
                       </span>
                     ) : null}
                   </div>
+                </div>
+              </section>
+
+              <section className={adminPanelCard}>
+                <h2 className={blockTitle}>Fluxo Editorial</h2>
+                <p className={blockText}>
+                  Acompanha o que ainda precisa de revisao e o que ja esta publicado.
+                </p>
+
+                <div className={adminStatsGrid}>
+                  <div className={adminStatCard}>
+                    <p className={adminStatValue}>{dashboardStats?.news_draft ?? 0}</p>
+                    <p className={adminStatLabel}>Noticias em rascunho</p>
+                  </div>
+                  <div className={adminStatCard}>
+                    <p className={adminStatValue}>{dashboardStats?.news_review ?? 0}</p>
+                    <p className={adminStatLabel}>Noticias em revisao</p>
+                  </div>
+                  <div className={adminStatCard}>
+                    <p className={adminStatValue}>{dashboardStats?.events_draft ?? 0}</p>
+                    <p className={adminStatLabel}>Eventos em rascunho</p>
+                  </div>
+                  <div className={adminStatCard}>
+                    <p className={adminStatValue}>{dashboardStats?.events_review ?? 0}</p>
+                    <p className={adminStatLabel}>Eventos em revisao</p>
+                  </div>
+                </div>
+              </section>
+
+              <section className={adminPanelCard}>
+                <h2 className={blockTitle}>Proxima Atividade</h2>
+                <p className={blockText}>
+                  Resumo rapido do que vai sair a seguir no panorama cultural.
+                </p>
+
+                <div className={adminList}>
+                  {dashboardStats?.latest_news ? (
+                    <article className={adminListItem}>
+                      <div className={adminListTop}>
+                        <div>
+                          <h3 className={adminListTitle}>{dashboardStats.latest_news.title}</h3>
+                          <p className={adminListMeta}>
+                            Ultima noticia · {dashboardStats.latest_news.club_name || 'Sem clube'}
+                          </p>
+                        </div>
+                        {dashboardStats.latest_news.status ? (
+                          <span className={adminBadge}>
+                            {getWorkflowStatusLabel(dashboardStats.latest_news.status)}
+                          </span>
+                        ) : null}
+                      </div>
+                      <p className={adminListDesc}>
+                        {formatAdminDateTime(dashboardStats.latest_news.date || '')}
+                      </p>
+                    </article>
+                  ) : null}
+
+                  {dashboardStats?.next_session ? (
+                    <article className={adminListItem}>
+                      <div className={adminListTop}>
+                        <div>
+                          <h3 className={adminListTitle}>{dashboardStats.next_session.title}</h3>
+                          <p className={adminListMeta}>
+                            Proxima sessao · {dashboardStats.next_session.club_name || 'Sem clube'}
+                          </p>
+                        </div>
+                      </div>
+                      <p className={adminListDesc}>
+                        {formatAdminDateTime(dashboardStats.next_session.date || '')}
+                      </p>
+                    </article>
+                  ) : null}
+
+                  {dashboardStats?.next_event ? (
+                    <article className={adminListItem}>
+                      <div className={adminListTop}>
+                        <div>
+                          <h3 className={adminListTitle}>{dashboardStats.next_event.title}</h3>
+                          <p className={adminListMeta}>
+                            Proximo evento · {dashboardStats.next_event.club_name || 'Sem clube'}
+                          </p>
+                        </div>
+                        {dashboardStats.next_event.status ? (
+                          <span className={adminBadge}>
+                            {getWorkflowStatusLabel(dashboardStats.next_event.status)}
+                          </span>
+                        ) : null}
+                      </div>
+                      <p className={adminListDesc}>
+                        {formatAdminDateTime(dashboardStats.next_event.date || '')}
+                      </p>
+                    </article>
+                  ) : null}
+
+                  {!dashboardStats?.latest_news &&
+                  !dashboardStats?.next_session &&
+                  !dashboardStats?.next_event ? (
+                    <p className={adminInfo}>Ainda nao existem registos suficientes para mostrar.</p>
+                  ) : null}
                 </div>
               </section>
             </div>
@@ -2780,18 +3011,26 @@ function AdminCultura() {
                       className={adminInput}
                       value={newsForm.news_status}
                       onChange={(event) =>
-                        setNewsForm((prev) => ({ ...prev, news_status: event.target.value }))
+                        setNewsForm((prev) => ({
+                          ...prev,
+                          news_status: normalizeWorkflowStatus(event.target.value)
+                        }))
                       }
                     >
                       {isLoadingNewsStatuses ? (
                         <option value="">A carregar estados...</option>
                       ) : null}
-                      {newsStatuses.map((status) => (
+                      {availableNewsStatuses.map((status) => (
                         <option key={status.id} value={status.name}>
-                          {status.name}
+                          {getWorkflowStatusLabel(status.name)}
                         </option>
                       ))}
                     </select>
+                    <p className={blockText}>
+                      {canManageUsers
+                        ? 'O superadmin pode publicar ou arquivar diretamente.'
+                        : 'O club_admin trabalha em rascunho ou envia para revisao.'}
+                    </p>
                   </div>
 
                   <div className={adminField}>
@@ -2803,6 +3042,10 @@ function AdminCultura() {
                       type="datetime-local"
                       className={adminInput}
                       value={newsForm.published_at}
+                      disabled={
+                        !canManageUsers &&
+                        !['published', 'archived'].includes(normalizeWorkflowStatus(newsForm.news_status))
+                      }
                       onChange={(event) =>
                         setNewsForm((prev) => ({ ...prev, published_at: event.target.value }))
                       }
@@ -2928,11 +3171,11 @@ function AdminCultura() {
                     <article key={item.id} className={adminListItem}>
                       <div className={adminListTop}>
                         <div>
-                          <h3 className={adminListTitle}>{item.title}</h3>
-                          <p className={adminListMeta}>
-                            {item.club_name} · {item.news_status_name} ·{' '}
-                            {formatAdminDateTime(item.published_at || item.created_at)}
-                          </p>
+                            <h3 className={adminListTitle}>{item.title}</h3>
+                            <p className={adminListMeta}>
+                              {item.club_name} · {getWorkflowStatusLabel(item.news_status_name)} ·{' '}
+                              {formatAdminDateTime(item.published_at || item.created_at)}
+                            </p>
                         </div>
                       </div>
                       <p className={adminListDesc}>{item.summary}</p>
@@ -3491,14 +3734,28 @@ function AdminCultura() {
                         <label className={adminLabel} htmlFor="event-status">
                           Estado
                         </label>
-                        <input
+                        <select
                           id="event-status"
                           className={adminInput}
                           value={eventForm.status}
                           onChange={(event) =>
-                            setEventForm((prev) => ({ ...prev, status: event.target.value }))
+                            setEventForm((prev) => ({
+                              ...prev,
+                              status: normalizeWorkflowStatus(event.target.value)
+                            }))
                           }
-                        />
+                        >
+                          {availableEventStatuses.map((status) => (
+                            <option key={status} value={status}>
+                              {getWorkflowStatusLabel(status)}
+                            </option>
+                          ))}
+                        </select>
+                        <p className={blockText}>
+                          {canManageUsers
+                            ? 'Podes rever, publicar ou arquivar o evento.'
+                            : 'O evento pode ficar em rascunho ou seguir para revisao.'}
+                        </p>
                       </div>
 
                       <div className={adminField}>
@@ -3697,7 +3954,7 @@ function AdminCultura() {
                           <div>
                             <h3 className={adminListTitle}>{item.title}</h3>
                             <p className={adminListMeta}>
-                              {item.club_name || 'Sem clube'} · {item.status} ·{' '}
+                              {item.club_name || 'Sem clube'} · {getWorkflowStatusLabel(item.status)} ·{' '}
                               {formatAdminDateTime(item.start_date)}
                             </p>
                           </div>

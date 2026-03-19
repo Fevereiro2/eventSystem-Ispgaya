@@ -470,6 +470,12 @@ function ClubeCultural({
                               {item.author} · {item.publication_year}
                             </p>
                             <p className={contentItemDesc}>{item.summary}</p>
+                            <Link
+                              to={`/laboratorio-cultural/livros/${item.id}`}
+                              className={adminBtnSecondary}
+                            >
+                              Ver detalhe
+                            </Link>
                           </article>
                         ))}
                       </div>

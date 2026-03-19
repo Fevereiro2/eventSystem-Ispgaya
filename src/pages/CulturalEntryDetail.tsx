@@ -5,9 +5,11 @@ import Footer from '../components/Footer';
 import HeaderNav from '../components/HeaderNav';
 import TopBar from '../components/TopBar';
 import {
+  fetchPublicBookItem,
   fetchPublicEventItem,
   fetchPublicNewsItem,
   fetchPublicSessionItem,
+  InfoCulturaBook,
   InfoCulturaEvent,
   InfoCulturaNews,
   InfoCulturaSession,
@@ -24,7 +26,7 @@ import {
   mainContent
 } from '../styles/ui';
 
-type EntryKind = 'news' | 'session' | 'event';
+type EntryKind = 'news' | 'session' | 'event' | 'book';
 
 type CulturalEntryDetailProps = {
   kind: EntryKind;
@@ -47,10 +49,16 @@ function formatDate(value?: string | null): string {
 function CulturalEntryDetail({ kind }: CulturalEntryDetailProps) {
   const params = useParams();
   const itemId =
-    kind === 'news' ? params.newsId : kind === 'session' ? params.sessionId : params.eventId;
-  const [entry, setEntry] = useState<InfoCulturaNews | InfoCulturaSession | InfoCulturaEvent | null>(
-    null
-  );
+    kind === 'news'
+      ? params.newsId
+      : kind === 'session'
+        ? params.sessionId
+        : kind === 'event'
+          ? params.eventId
+          : params.bookId;
+  const [entry, setEntry] = useState<
+    InfoCulturaNews | InfoCulturaSession | InfoCulturaEvent | InfoCulturaBook | null
+  >(null);
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState('');
 
@@ -71,7 +79,9 @@ function CulturalEntryDetail({ kind }: CulturalEntryDetailProps) {
             ? await fetchPublicNewsItem(parsedId)
             : kind === 'session'
               ? await fetchPublicSessionItem(parsedId)
-              : await fetchPublicEventItem(parsedId);
+              : kind === 'event'
+                ? await fetchPublicEventItem(parsedId)
+                : await fetchPublicBookItem(parsedId);
 
         if (!active) return;
         setEntry(nextEntry);
@@ -135,12 +145,17 @@ function CulturalEntryDetail({ kind }: CulturalEntryDetailProps) {
                   <h2 className={blockTitle}>{title}</h2>
                   <p className={blockText}>
                     {clubName ? `${clubName} · ` : ''}
-                    {'published_at' in entry
+                    {'author' in entry
+                      ? `${entry.author} · ${entry.publication_year}`
+                      : 'published_at' in entry
                       ? formatDate(entry.published_at || entry.created_at)
                       : 'session_date' in entry
                         ? formatDate(entry.start_date)
                         : formatDate(entry.start_date)}
                   </p>
+                  {'author' in entry && entry.publisher ? (
+                    <p className={blockText}>Editora: {entry.publisher}</p>
+                  ) : null}
                   {'summary' in entry ? (
                     <p className={blockText}>{entry.summary}</p>
                   ) : null}
