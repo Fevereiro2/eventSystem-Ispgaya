@@ -4,7 +4,7 @@ import Breadcrumbs from '../components/Breadcrumbs';
 import Footer from '../components/Footer';
 import HeaderNav from '../components/HeaderNav';
 import TopBar from '../components/TopBar';
-import { fetchPublicClubs, InfoCulturaClub } from '../data/infoculturaApi';
+import { fetchPublicClubs, InfoCulturaClub, resolveInfoCulturaAssetUrl } from '../data/infoculturaApi';
 import {
   container,
   contentEmpty,
@@ -115,6 +115,13 @@ function LaboratorioCultural() {
               {!isLoading && !loadError
                 ? clubs.map((club) => (
                     <article key={club.id} className={labResearchSubcard}>
+                      {club.image ? (
+                        <img
+                          src={resolveInfoCulturaAssetUrl(club.image)}
+                          alt={club.name}
+                          className="mb-4 h-40 w-full rounded-xl object-cover"
+                        />
+                      ) : null}
                       <h3 className={labResearchSubtitle}>{club.name}</h3>
                       <p className={labResearchSubtext}>
                         {club.mission || club.description || 'Clube cultural disponivel no laboratorio.'}
