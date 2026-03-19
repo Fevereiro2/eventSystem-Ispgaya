@@ -628,7 +628,7 @@ export async function deleteAdminNews(token: string, id: number): Promise<void> 
 export async function uploadAdminImage(
   token: string,
   file: File,
-  folder: 'news' | 'events'
+  folder: 'news' | 'events' | 'books'
 ): Promise<string> {
   const body = new FormData();
   body.append('file', file);
