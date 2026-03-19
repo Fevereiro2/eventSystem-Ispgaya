@@ -158,9 +158,9 @@ class RegistrationStatusSerializer(serializers.ModelSerializer):
 
 
 class NewsSerializer(serializers.ModelSerializer):
-    news_status_id = serializers.IntegerField(source='news_status_id', read_only=True)
+    news_status_id = serializers.IntegerField(read_only=True)
     news_status_name = serializers.CharField(source='news_status.name', read_only=True)
-    club_id = serializers.IntegerField(source='club_id', read_only=True)
+    club_id = serializers.IntegerField(read_only=True)
     club_name = serializers.CharField(source='club.name', read_only=True)
 
     class Meta:
@@ -182,7 +182,7 @@ class NewsSerializer(serializers.ModelSerializer):
 
 
 class BookSerializer(serializers.ModelSerializer):
-    club_id = serializers.IntegerField(source='club_id', read_only=True)
+    club_id = serializers.IntegerField(read_only=True)
     club_name = serializers.CharField(source='club.name', read_only=True)
 
     class Meta:
@@ -203,7 +203,7 @@ class BookSerializer(serializers.ModelSerializer):
 
 
 class SessionSerializer(serializers.ModelSerializer):
-    club_id = serializers.IntegerField(source='club_id', read_only=True)
+    club_id = serializers.IntegerField(read_only=True)
     club_name = serializers.CharField(source='club.name', read_only=True)
 
     class Meta:
@@ -224,7 +224,7 @@ class SessionSerializer(serializers.ModelSerializer):
 
 
 class EventSerializer(serializers.ModelSerializer):
-    user_id = serializers.IntegerField(source='user_id', read_only=True)
+    user_id = serializers.IntegerField(read_only=True)
     club_id = serializers.SerializerMethodField()
     club_name = serializers.SerializerMethodField()
     owner_name = serializers.CharField(source='user.name', read_only=True)
