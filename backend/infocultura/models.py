@@ -1,5 +1,17 @@
 import uuid
+from functools import lru_cache
 from django.db import models
+from django.db import connection
+
+
+@lru_cache(maxsize=32)
+def _has_table_column(table_name: str, column_name: str) -> bool:
+    with connection.cursor() as cursor:
+        columns = {
+            info.name
+            for info in connection.introspection.get_table_description(cursor, table_name)
+        }
+    return column_name in columns
 
 
 class Role(models.Model):
@@ -81,7 +93,6 @@ class Club(models.Model):
     name = models.CharField(max_length=100)
     description = models.TextField(blank=True, null=True)
     mission = models.TextField(blank=True, null=True)
-    image = models.CharField(max_length=500, blank=True, default='')
     is_active = models.BooleanField(default=True)
     enable_registrations = models.BooleanField(blank=True, null=True, default=False)
     created_at = models.DateTimeField(blank=True, null=True)
@@ -93,6 +104,30 @@ class Club(models.Model):
 
     def __str__(self):
         return self.name
+
+    @property
+    def image(self) -> str:
+        cached_value = getattr(self, '_club_image_cache', None)
+        if cached_value is not None:
+            return cached_value
+
+        if not _has_table_column('clubs', 'image'):
+            self._club_image_cache = ''
+            return ''
+
+        with connection.cursor() as cursor:
+            cursor.execute(
+                'SELECT image FROM clubs WHERE id_clubs = %s LIMIT 1',
+                [self.id],
+            )
+            row = cursor.fetchone()
+
+        self._club_image_cache = str(row[0]) if row and row[0] is not None else ''
+        return self._club_image_cache
+
+    @image.setter
+    def image(self, value: str) -> None:
+        self._club_image_cache = value or ''
 
 
 class NewsStatus(models.Model):
