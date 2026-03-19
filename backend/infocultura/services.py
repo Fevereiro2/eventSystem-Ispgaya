@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from datetime import datetime
+from functools import lru_cache
 
 from django.conf import settings
 from django.core.cache import cache
@@ -68,6 +69,17 @@ class AdminDashboardRecord:
     status: str | None = None
 
 
+@dataclass(frozen=True, slots=True)
+class EditorialHistoryRecord:
+    content_type: str
+    object_id: int
+    from_status: str | None
+    to_status: str
+    actor_user_id: int | None
+    actor_name: str
+    created_at: datetime | None
+
+
 def _normalized_email(value: str) -> str:
     return value.strip().lower()
 
@@ -77,6 +89,12 @@ def _get_allowed_club_id(user) -> int | None:
     if role_name == "club_admin":
         return user.club_id
     return None
+
+
+@lru_cache(maxsize=32)
+def _table_exists(table_name: str) -> bool:
+    with connection.cursor() as cursor:
+        return table_name in connection.introspection.table_names(cursor)
 
 
 def _registration_rate_limit_key(*, club_id: int, client_ip: str) -> str:
@@ -366,6 +384,90 @@ def send_registration_status_email(record: AdminClubRegistrationRecord) -> None:
         recipient_list=[record.email],
         fail_silently=True,
     )
+
+
+def list_editorial_history(*, content_type: str, object_id: int, limit: int = 10) -> list[EditorialHistoryRecord]:
+    if not _table_exists("editorial_actions"):
+        return []
+
+    normalized_limit = min(max(1, limit), 50)
+    with connection.cursor() as cursor:
+        cursor.execute(
+            """
+            SELECT
+                content_type,
+                object_id,
+                from_status,
+                to_status,
+                actor_user_id,
+                actor_name,
+                created_at
+            FROM editorial_actions
+            WHERE content_type = %s
+              AND object_id = %s
+            ORDER BY created_at DESC, id DESC
+            LIMIT %s
+            """,
+            [content_type.strip().lower(), object_id, normalized_limit],
+        )
+        rows = cursor.fetchall()
+
+    return [
+        EditorialHistoryRecord(
+            content_type=str(row[0]),
+            object_id=int(row[1]),
+            from_status=str(row[2]) if row[2] is not None else None,
+            to_status=str(row[3]),
+            actor_user_id=int(row[4]) if row[4] is not None else None,
+            actor_name=str(row[5]) if row[5] is not None else "Sistema",
+            created_at=row[6],
+        )
+        for row in rows
+    ]
+
+
+def record_editorial_action(
+    *,
+    content_type: str,
+    object_id: int,
+    from_status: str | None,
+    to_status: str,
+    actor_user,
+    club_id: int | None = None,
+) -> None:
+    if not _table_exists("editorial_actions"):
+        return
+
+    actor_name = getattr(actor_user, "name", None) or getattr(actor_user, "email", None) or "Sistema"
+    actor_user_id = getattr(actor_user, "id", None)
+    resolved_club_id = club_id if club_id is not None else getattr(actor_user, "club_id", None)
+
+    with connection.cursor() as cursor:
+        cursor.execute(
+            """
+            INSERT INTO editorial_actions (
+                content_type,
+                object_id,
+                from_status,
+                to_status,
+                actor_user_id,
+                actor_name,
+                club_id,
+                created_at
+            )
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+            """,
+            [
+                content_type.strip().lower(),
+                object_id,
+                from_status,
+                to_status,
+                actor_user_id,
+                actor_name,
+                resolved_club_id,
+                timezone.now(),
+            ],
+        )
 
 
 def _get_registration_status_counts(*, allowed_club_id: int | None) -> dict[str, int]:

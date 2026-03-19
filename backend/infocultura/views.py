@@ -1,8 +1,11 @@
 from pathlib import Path
 from uuid import uuid4
+import csv
 
 from django.core.files.storage import default_storage
 from django.db.models import Q
+from django.http import HttpResponse
+from django.core.paginator import Paginator
 from rest_framework import generics, permissions
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -14,10 +17,12 @@ from .serializers import (
     AdminCategoryWriteSerializer,
     AdminClubRegistrationSerializer,
     AdminEventWriteSerializer,
+    AdminEventReadSerializer,
     AdminRegistrationStatusUpdateSerializer,
     AdminSessionWriteSerializer,
     AdminUserWriteSerializer,
     AdminNewsWriteSerializer,
+    AdminNewsReadSerializer,
     BookSerializer,
     CategorySerializer,
     ClubRegistrationCreateSerializer,
@@ -371,6 +376,47 @@ def get_allowed_club_id(user) -> int | None:
     return None
 
 
+def get_query_page(request) -> int:
+    try:
+        return max(1, int(request.query_params.get('page', '1')))
+    except (TypeError, ValueError):
+        return 1
+
+
+def get_query_page_size(request, *, default: int = 10, maximum: int = 100) -> int:
+    try:
+        value = int(request.query_params.get('page_size', str(default)))
+    except (TypeError, ValueError):
+        return default
+    return min(max(1, value), maximum)
+
+
+def paginate_queryset(queryset, *, request, serializer_class, context=None):
+    page = get_query_page(request)
+    page_size = get_query_page_size(request)
+    paginator = Paginator(queryset, page_size)
+    page_obj = paginator.get_page(page)
+    serializer = serializer_class(page_obj.object_list, many=True, context=context or {})
+    return Response(
+        {
+            'items': serializer.data,
+            'total': paginator.count,
+            'page': page_obj.number,
+            'page_size': page_size,
+            'total_pages': paginator.num_pages,
+        }
+    )
+
+
+def build_csv_response(*, rows: list[list[str]], headers: list[str], filename: str) -> HttpResponse:
+    response = HttpResponse(content_type='text/csv; charset=utf-8')
+    response['Content-Disposition'] = f'attachment; filename="{filename}"'
+    writer = csv.writer(response)
+    writer.writerow(headers)
+    writer.writerows(rows)
+    return response
+
+
 class AdminRegistrationStatusListView(generics.ListAPIView):
     serializer_class = RegistrationStatusSerializer
     permission_classes = [permissions.IsAuthenticated, IsClubAdmin]
@@ -494,21 +540,58 @@ class AdminNewsListCreateView(generics.ListCreateAPIView):
         queryset = News.objects.select_related('news_status', 'club')
         role_name = getattr(getattr(self.request.user, 'role', None), 'name', None)
         club_id = self.request.query_params.get('club_id')
+        status = (self.request.query_params.get('status') or '').strip().lower()
+        search = (self.request.query_params.get('search') or '').strip()
 
         if role_name == 'club_admin':
-            return queryset.filter(club_id=self.request.user.club_id).order_by(
-                '-published_at', '-created_at', '-id'
-            )
-
-        if club_id and club_id.isdigit():
+            queryset = queryset.filter(club_id=self.request.user.club_id)
+        elif club_id and club_id.isdigit():
             queryset = queryset.filter(club_id=int(club_id))
+
+        if status and status != 'all':
+            queryset = queryset.filter(news_status__name__iexact=status)
+        if search:
+            queryset = queryset.filter(
+                Q(title__icontains=search)
+                | Q(summary__icontains=search)
+                | Q(content__icontains=search)
+                | Q(club__name__icontains=search)
+            )
 
         return queryset.order_by('-published_at', '-created_at', '-id')
 
     def get_serializer_class(self):
         if self.request.method == 'GET':
-            return NewsSerializer
+            return AdminNewsReadSerializer
         return AdminNewsWriteSerializer
+
+    def list(self, request, *args, **kwargs):
+        queryset = self.filter_queryset(self.get_queryset())
+
+        if request.query_params.get('export') == 'csv':
+            rows = [
+                [
+                    item.id,
+                    item.title,
+                    item.club.name if item.club_id else '',
+                    item.news_status.name if item.news_status_id else '',
+                    item.published_at.isoformat() if item.published_at else '',
+                    item.created_at.isoformat() if item.created_at else '',
+                ]
+                for item in queryset
+            ]
+            return build_csv_response(
+                rows=rows,
+                headers=['id', 'title', 'club', 'status', 'published_at', 'created_at'],
+                filename='infocultura_news.csv',
+            )
+
+        return paginate_queryset(
+            queryset,
+            request=request,
+            serializer_class=self.get_serializer_class(),
+            context=self.get_serializer_context(),
+        )
 
 
 class AdminNewsDetailView(generics.RetrieveUpdateDestroyAPIView):
@@ -525,7 +608,7 @@ class AdminNewsDetailView(generics.RetrieveUpdateDestroyAPIView):
 
     def get_serializer_class(self):
         if self.request.method == 'GET':
-            return NewsSerializer
+            return AdminNewsReadSerializer
         return AdminNewsWriteSerializer
 
 
@@ -536,12 +619,20 @@ class AdminBookListCreateView(generics.ListCreateAPIView):
         queryset = Book.objects.select_related('club')
         allowed_club_id = get_allowed_club_id(self.request.user)
         club_id = self.request.query_params.get('club_id')
+        search = (self.request.query_params.get('search') or '').strip()
 
         if allowed_club_id is not None:
-            return queryset.filter(club_id=allowed_club_id).order_by('-is_featured', 'title', '-id')
-
-        if club_id and club_id.isdigit():
+            queryset = queryset.filter(club_id=allowed_club_id)
+        elif club_id and club_id.isdigit():
             queryset = queryset.filter(club_id=int(club_id))
+        if search:
+            queryset = queryset.filter(
+                Q(title__icontains=search)
+                | Q(author__icontains=search)
+                | Q(summary__icontains=search)
+                | Q(publisher__icontains=search)
+                | Q(club__name__icontains=search)
+            )
 
         return queryset.order_by('-is_featured', 'title', '-id')
 
@@ -549,6 +640,34 @@ class AdminBookListCreateView(generics.ListCreateAPIView):
         if self.request.method == 'GET':
             return BookSerializer
         return AdminBookWriteSerializer
+
+    def list(self, request, *args, **kwargs):
+        queryset = self.filter_queryset(self.get_queryset())
+
+        if request.query_params.get('export') == 'csv':
+            rows = [
+                [
+                    item.id,
+                    item.title,
+                    item.author,
+                    item.club.name if item.club_id else '',
+                    item.publication_year,
+                    'sim' if item.is_featured else 'nao',
+                ]
+                for item in queryset
+            ]
+            return build_csv_response(
+                rows=rows,
+                headers=['id', 'title', 'author', 'club', 'publication_year', 'is_featured'],
+                filename='infocultura_books.csv',
+            )
+
+        return paginate_queryset(
+            queryset,
+            request=request,
+            serializer_class=self.get_serializer_class(),
+            context=self.get_serializer_context(),
+        )
 
 
 class AdminBookDetailView(generics.RetrieveUpdateDestroyAPIView):
@@ -576,12 +695,19 @@ class AdminSessionListCreateView(generics.ListCreateAPIView):
         queryset = Session.objects.select_related('club')
         allowed_club_id = get_allowed_club_id(self.request.user)
         club_id = self.request.query_params.get('club_id')
+        search = (self.request.query_params.get('search') or '').strip()
 
         if allowed_club_id is not None:
-            return queryset.filter(club_id=allowed_club_id).order_by('session_date', 'start_date', '-id')
-
-        if club_id and club_id.isdigit():
+            queryset = queryset.filter(club_id=allowed_club_id)
+        elif club_id and club_id.isdigit():
             queryset = queryset.filter(club_id=int(club_id))
+        if search:
+            queryset = queryset.filter(
+                Q(name__icontains=search)
+                | Q(title__icontains=search)
+                | Q(description__icontains=search)
+                | Q(club__name__icontains=search)
+            )
 
         return queryset.order_by('session_date', 'start_date', '-id')
 
@@ -589,6 +715,35 @@ class AdminSessionListCreateView(generics.ListCreateAPIView):
         if self.request.method == 'GET':
             return SessionSerializer
         return AdminSessionWriteSerializer
+
+    def list(self, request, *args, **kwargs):
+        queryset = self.filter_queryset(self.get_queryset())
+
+        if request.query_params.get('export') == 'csv':
+            rows = [
+                [
+                    item.id,
+                    item.title,
+                    item.name,
+                    item.club.name if item.club_id else '',
+                    item.session_date.isoformat() if item.session_date else '',
+                    item.start_date.isoformat() if item.start_date else '',
+                    item.end_date.isoformat() if item.end_date else '',
+                ]
+                for item in queryset
+            ]
+            return build_csv_response(
+                rows=rows,
+                headers=['id', 'title', 'name', 'club', 'session_date', 'start_date', 'end_date'],
+                filename='infocultura_sessions.csv',
+            )
+
+        return paginate_queryset(
+            queryset,
+            request=request,
+            serializer_class=self.get_serializer_class(),
+            context=self.get_serializer_context(),
+        )
 
 
 class AdminSessionDetailView(generics.RetrieveUpdateDestroyAPIView):
@@ -617,6 +772,8 @@ class AdminEventListCreateView(generics.ListCreateAPIView):
         allowed_club_id = get_allowed_club_id(self.request.user)
         club_id = self.request.query_params.get('club_id')
         category_id = self.request.query_params.get('category_id')
+        status = (self.request.query_params.get('status') or '').strip().lower()
+        search = (self.request.query_params.get('search') or '').strip()
 
         if allowed_club_id is not None:
             queryset = queryset.filter(user__club_id=allowed_club_id)
@@ -625,13 +782,53 @@ class AdminEventListCreateView(generics.ListCreateAPIView):
 
         if category_id and category_id.isdigit():
             queryset = queryset.filter(categories__id=int(category_id))
+        if status and status != 'all':
+            queryset = queryset.filter(status__iexact=status)
+        if search:
+            queryset = queryset.filter(
+                Q(title__icontains=search)
+                | Q(description__icontains=search)
+                | Q(city__icontains=search)
+                | Q(location__icontains=search)
+                | Q(user__club__name__icontains=search)
+            )
 
-        return queryset.order_by('event_date', 'start_date', '-id')
+        return queryset.order_by('event_date', 'start_date', '-id').distinct()
 
     def get_serializer_class(self):
         if self.request.method == 'GET':
-            return EventSerializer
+            return AdminEventReadSerializer
         return AdminEventWriteSerializer
+
+    def list(self, request, *args, **kwargs):
+        queryset = self.filter_queryset(self.get_queryset())
+
+        if request.query_params.get('export') == 'csv':
+            rows = [
+                [
+                    item.id,
+                    item.title,
+                    item.user.club.name if item.user_id and item.user and item.user.club else '',
+                    item.status,
+                    item.event_date.isoformat() if item.event_date else '',
+                    item.start_date.isoformat() if item.start_date else '',
+                    item.location,
+                    ', '.join(item.categories.values_list('name', flat=True)),
+                ]
+                for item in queryset
+            ]
+            return build_csv_response(
+                rows=rows,
+                headers=['id', 'title', 'club', 'status', 'event_date', 'start_date', 'location', 'categories'],
+                filename='infocultura_events.csv',
+            )
+
+        return paginate_queryset(
+            queryset,
+            request=request,
+            serializer_class=self.get_serializer_class(),
+            context=self.get_serializer_context(),
+        )
 
 
 class AdminEventDetailView(generics.RetrieveUpdateDestroyAPIView):
@@ -648,7 +845,7 @@ class AdminEventDetailView(generics.RetrieveUpdateDestroyAPIView):
 
     def get_serializer_class(self):
         if self.request.method == 'GET':
-            return EventSerializer
+            return AdminEventReadSerializer
         return AdminEventWriteSerializer
 
 

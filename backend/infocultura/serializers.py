@@ -1,5 +1,6 @@
 from rest_framework import serializers
 from django.utils import timezone
+from django.db import connection
 
 from .models import (
     AppUser,
@@ -21,6 +22,8 @@ from .services import (
     DuplicateClubRegistrationError,
     ClubRegistrationRateLimitError,
     create_club_registration,
+    list_editorial_history,
+    record_editorial_action,
 )
 from .security import hash_password
 
@@ -146,6 +149,8 @@ class AdminUserWriteSerializer(serializers.ModelSerializer):
 
 
 class ClubSerializer(serializers.ModelSerializer):
+    image = serializers.CharField(required=False, allow_blank=True)
+
     class Meta:
         model = Club
         fields = [
@@ -158,6 +163,42 @@ class ClubSerializer(serializers.ModelSerializer):
             'enable_registrations',
             'created_at',
         ]
+
+    def _can_persist_image(self) -> bool:
+        return hasattr(Club, 'image') and 'image' not in getattr(Club._meta, 'fields_map', {})
+
+    def _save_image_if_supported(self, club: Club, image_value: str | None) -> None:
+        club.image = image_value or ''
+
+        with connection.cursor() as cursor:
+            table_columns = {
+                info.name
+                for info in connection.introspection.get_table_description(cursor, 'clubs')
+            }
+            if 'image' not in table_columns:
+                return
+
+            cursor.execute(
+                'UPDATE clubs SET image = %s WHERE id_clubs = %s',
+                [club.image, club.id],
+            )
+
+    def create(self, validated_data):
+        image_value = validated_data.pop('image', '')
+        club = Club.objects.create(**validated_data)
+        self._save_image_if_supported(club, image_value)
+        return club
+
+    def update(self, instance, validated_data):
+        image_value = validated_data.pop('image', None)
+
+        for field, value in validated_data.items():
+            setattr(instance, field, value)
+
+        instance.save()
+        if image_value is not None:
+            self._save_image_if_supported(instance, image_value)
+        return instance
 
 
 class ClubMemberAssignSerializer(serializers.Serializer):
@@ -216,6 +257,16 @@ class NewsSerializer(serializers.ModelSerializer):
             'club_id',
             'club_name',
         ]
+
+
+class EditorialHistorySerializer(serializers.Serializer):
+    content_type = serializers.CharField()
+    object_id = serializers.IntegerField()
+    from_status = serializers.CharField(allow_null=True)
+    to_status = serializers.CharField()
+    actor_user_id = serializers.IntegerField(allow_null=True)
+    actor_name = serializers.CharField()
+    created_at = serializers.DateTimeField(allow_null=True)
 
 
 class BookSerializer(serializers.ModelSerializer):
@@ -302,6 +353,28 @@ class EventSerializer(serializers.ModelSerializer):
 
     def get_category_ids(self, obj):
         return list(obj.categories.values_list('id', flat=True))
+
+
+class AdminNewsReadSerializer(NewsSerializer):
+    editorial_history = serializers.SerializerMethodField()
+
+    class Meta(NewsSerializer.Meta):
+        fields = NewsSerializer.Meta.fields + ['editorial_history']
+
+    def get_editorial_history(self, obj):
+        history = list_editorial_history(content_type='news', object_id=obj.id)
+        return EditorialHistorySerializer(history, many=True).data
+
+
+class AdminEventReadSerializer(EventSerializer):
+    editorial_history = serializers.SerializerMethodField()
+
+    class Meta(EventSerializer.Meta):
+        fields = EventSerializer.Meta.fields + ['editorial_history']
+
+    def get_editorial_history(self, obj):
+        history = list_editorial_history(content_type='event', object_id=obj.id)
+        return EditorialHistorySerializer(history, many=True).data
 
 
 class ClubScopedWriteSerializer(serializers.ModelSerializer):
@@ -400,14 +473,36 @@ class AdminNewsWriteSerializer(serializers.ModelSerializer):
         now = timezone.now()
         validated_data.setdefault('created_at', now)
         validated_data['updated_at'] = now
-        return News.objects.create(**validated_data)
+        request_user = self.context['request'].user
+        news = News.objects.create(**validated_data)
+        record_editorial_action(
+            content_type='news',
+            object_id=news.id,
+            from_status=None,
+            to_status=getattr(news.news_status, 'name', None) or 'draft',
+            actor_user=request_user,
+            club_id=news.club_id,
+        )
+        return news
 
     def update(self, instance, validated_data):
+        request_user = self.context['request'].user
+        previous_status = getattr(instance.news_status, 'name', None)
         for field, value in validated_data.items():
             setattr(instance, field, value)
 
         instance.updated_at = timezone.now()
         instance.save()
+        next_status = getattr(instance.news_status, 'name', None)
+        if normalize_workflow_status(previous_status) != normalize_workflow_status(next_status):
+            record_editorial_action(
+                content_type='news',
+                object_id=instance.id,
+                from_status=previous_status,
+                to_status=next_status or 'draft',
+                actor_user=request_user,
+                club_id=instance.club_id,
+            )
         return instance
 
     def to_representation(self, instance):
@@ -584,6 +679,7 @@ class AdminEventWriteSerializer(serializers.ModelSerializer):
         validated_data.pop('club', None)
         categories = validated_data.pop('categories_payload', [])
         owner = self._resolve_owner(club)
+        request_user = self.context['request'].user
         now = timezone.now()
         validated_data['user'] = owner
         validated_data.setdefault('created_at', now)
@@ -593,6 +689,14 @@ class AdminEventWriteSerializer(serializers.ModelSerializer):
             EventCategory.objects.bulk_create(
                 [EventCategory(event=event, category=category) for category in categories]
             )
+        record_editorial_action(
+            content_type='event',
+            object_id=event.id,
+            from_status=None,
+            to_status=event.status,
+            actor_user=request_user,
+            club_id=club.id,
+        )
         return event
 
     def update(self, instance, validated_data):
@@ -600,6 +704,8 @@ class AdminEventWriteSerializer(serializers.ModelSerializer):
         validated_data.pop('club', None)
         categories = validated_data.pop('categories_payload', None)
         owner = self._resolve_owner(club)
+        request_user = self.context['request'].user
+        previous_status = instance.status
 
         for field, value in validated_data.items():
             setattr(instance, field, value)
@@ -611,6 +717,15 @@ class AdminEventWriteSerializer(serializers.ModelSerializer):
             EventCategory.objects.filter(event=instance).delete()
             EventCategory.objects.bulk_create(
                 [EventCategory(event=instance, category=category) for category in categories]
+            )
+        if normalize_workflow_status(previous_status) != normalize_workflow_status(instance.status):
+            record_editorial_action(
+                content_type='event',
+                object_id=instance.id,
+                from_status=previous_status,
+                to_status=instance.status,
+                actor_user=request_user,
+                club_id=club.id,
             )
         return instance
 
