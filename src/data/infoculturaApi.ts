@@ -50,9 +50,18 @@ export type InfoCulturaClub = {
   name: string;
   description: string;
   mission: string;
+  image?: string;
   is_active: boolean;
   enable_registrations?: boolean | null;
   created_at: string;
+};
+
+export type InfoCulturaCategory = {
+  id: number;
+  name: string;
+  description: string;
+  created_at?: string | null;
+  updated_at?: string | null;
 };
 
 export type InfoCulturaNewsStatus = {
@@ -122,6 +131,8 @@ export type InfoCulturaEvent = {
   club_id?: number | null;
   club_name?: string | null;
   owner_name?: string | null;
+  categories: InfoCulturaCategory[];
+  category_ids: number[];
 };
 
 export type InfoCulturaRegistrationStatus = {
@@ -162,6 +173,7 @@ export type ClubPayload = {
   name: string;
   description: string;
   mission?: string;
+  image?: string;
   is_active?: boolean;
   enable_registrations?: boolean;
 };
@@ -209,6 +221,12 @@ export type EventPayload = {
   city: string;
   location: string;
   club_id?: number;
+  category_ids?: number[];
+};
+
+export type CategoryPayload = {
+  name: string;
+  description: string;
 };
 
 export type ClubRegistrationPayload = {
@@ -459,9 +477,31 @@ export async function fetchPublicSessions(clubId?: number): Promise<InfoCulturaS
   return request<InfoCulturaSession[]>(`/sessions/${query}`);
 }
 
-export async function fetchPublicEvents(clubId?: number): Promise<InfoCulturaEvent[]> {
-  const query = typeof clubId === 'number' ? `?club_id=${clubId}` : '';
-  return request<InfoCulturaEvent[]>(`/events/${query}`);
+export async function fetchPublicSessionItem(id: number): Promise<InfoCulturaSession> {
+  return request<InfoCulturaSession>(`/sessions/${id}/`);
+}
+
+export async function fetchPublicCategories(): Promise<InfoCulturaCategory[]> {
+  return request<InfoCulturaCategory[]>('/categories/');
+}
+
+export async function fetchPublicEvents(filters?: {
+  clubId?: number;
+  categoryId?: number;
+}): Promise<InfoCulturaEvent[]> {
+  const search = new URLSearchParams();
+  if (typeof filters?.clubId === 'number') {
+    search.set('club_id', String(filters.clubId));
+  }
+  if (typeof filters?.categoryId === 'number') {
+    search.set('category_id', String(filters.categoryId));
+  }
+  const query = search.toString();
+  return request<InfoCulturaEvent[]>(`/events/${query ? `?${query}` : ''}`);
+}
+
+export async function fetchPublicEventItem(id: number): Promise<InfoCulturaEvent> {
+  return request<InfoCulturaEvent>(`/events/${id}/`);
 }
 
 export async function createAdminContent(
@@ -628,7 +668,7 @@ export async function deleteAdminNews(token: string, id: number): Promise<void> 
 export async function uploadAdminImage(
   token: string,
   file: File,
-  folder: 'news' | 'events' | 'books'
+  folder: 'news' | 'events' | 'books' | 'clubs'
 ): Promise<string> {
   const body = new FormData();
   body.append('file', file);
@@ -742,9 +782,16 @@ export async function deleteAdminSession(token: string, id: number): Promise<voi
 
 export async function fetchAdminEvents(
   token: string,
-  clubId?: number
+  filters?: { clubId?: number; categoryId?: number }
 ): Promise<InfoCulturaEvent[]> {
-  const query = typeof clubId === 'number' ? `?club_id=${clubId}` : '';
+  const search = new URLSearchParams();
+  if (typeof filters?.clubId === 'number') {
+    search.set('club_id', String(filters.clubId));
+  }
+  if (typeof filters?.categoryId === 'number') {
+    search.set('category_id', String(filters.categoryId));
+  }
+  const query = search.toString();
   return request<InfoCulturaEvent[]>(`/events/admin/${query}`, {}, token);
 }
 
@@ -780,6 +827,49 @@ export async function updateAdminEvent(
 export async function deleteAdminEvent(token: string, id: number): Promise<void> {
   await request<void>(
     `/events/admin/${id}/`,
+    {
+      method: 'DELETE'
+    },
+    token
+  );
+}
+
+export async function fetchAdminCategories(token: string): Promise<InfoCulturaCategory[]> {
+  return request<InfoCulturaCategory[]>('/categories/admin/', {}, token);
+}
+
+export async function createAdminCategory(
+  token: string,
+  payload: CategoryPayload
+): Promise<InfoCulturaCategory> {
+  return request<InfoCulturaCategory>(
+    '/categories/admin/',
+    {
+      method: 'POST',
+      body: JSON.stringify(payload)
+    },
+    token
+  );
+}
+
+export async function updateAdminCategory(
+  token: string,
+  id: number,
+  payload: CategoryPayload
+): Promise<InfoCulturaCategory> {
+  return request<InfoCulturaCategory>(
+    `/categories/admin/${id}/`,
+    {
+      method: 'PUT',
+      body: JSON.stringify(payload)
+    },
+    token
+  );
+}
+
+export async function deleteAdminCategory(token: string, id: number): Promise<void> {
+  await request<void>(
+    `/categories/admin/${id}/`,
     {
       method: 'DELETE'
     },

@@ -2,8 +2,11 @@ import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
 import AdminCultura from './pages/AdminCultura';
 import ClubeCultural from './pages/ClubeCultural';
 import ClubeLeitura from './pages/ClubeLeitura';
+import EventoCultural from './pages/EventoCultural';
 import LaboratorioCultural from './pages/LaboratorioCultural';
+import NoticiaCultural from './pages/NoticiaCultural';
 import PublicacoesCientificas from './pages/PublicacoesCientificas';
+import SessaoCultural from './pages/SessaoCultural';
 import Teatro from './pages/Teatro';
 import TunaAcademica from './pages/TunaAcademica';
 import { appRoot } from './styles/ui';
@@ -32,6 +35,9 @@ function App() {
             path="/laboratorio-cultural/clubes/:clubId"
             element={<ClubeCultural />}
           />
+          <Route path="/laboratorio-cultural/noticias/:newsId" element={<NoticiaCultural />} />
+          <Route path="/laboratorio-cultural/sessoes/:sessionId" element={<SessaoCultural />} />
+          <Route path="/laboratorio-cultural/eventos/:eventId" element={<EventoCultural />} />
           <Route path="/laboratorio-cultural/teatro" element={<Teatro />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
