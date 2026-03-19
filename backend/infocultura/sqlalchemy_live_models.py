@@ -78,6 +78,7 @@ class Club(Base, ReprMixin):
     name: Mapped[str] = mapped_column(String(100), nullable=False)
     description: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     mission: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    image: Mapped[str] = mapped_column(String(500), nullable=False, server_default=text("''"))
     is_active: Mapped[bool] = mapped_column(
         Boolean,
         nullable=False,
