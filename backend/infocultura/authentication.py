@@ -6,6 +6,9 @@ from .security import decode_access_token
 
 
 class InfoCulturaJWTAuthentication(authentication.BaseAuthentication):
+    def authenticate_header(self, request):
+        return 'Token'
+
     def authenticate(self, request):
         auth = authentication.get_authorization_header(request).split()
         if not auth:
