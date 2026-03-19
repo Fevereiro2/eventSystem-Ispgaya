@@ -468,6 +468,7 @@ function AdminCultura() {
   const [isSavingSession, setIsSavingSession] = useState(false);
   const [isSavingEvent, setIsSavingEvent] = useState(false);
   const [isUploadingNewsImage, setIsUploadingNewsImage] = useState(false);
+  const [isUploadingBookImage, setIsUploadingBookImage] = useState(false);
   const [isUploadingEventImage, setIsUploadingEventImage] = useState(false);
   const [updatingRegistrationId, setUpdatingRegistrationId] = useState<number | null>(null);
   const [isAssigningClubUser, setIsAssigningClubUser] = useState(false);
@@ -487,6 +488,7 @@ function AdminCultura() {
   const [sessionForm, setSessionForm] = useState<SessionFormState>(initialSessionForm);
   const [eventForm, setEventForm] = useState<EventFormState>(initialEventForm);
   const [newsImageFileKey, setNewsImageFileKey] = useState(0);
+  const [bookImageFileKey, setBookImageFileKey] = useState(0);
   const [eventImageFileKey, setEventImageFileKey] = useState(0);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editingClubId, setEditingClubId] = useState<number | null>(null);
@@ -668,6 +670,7 @@ function AdminCultura() {
       ...initialBookForm,
       club_id: canManageUsers ? '' : currentUser?.club_id ? String(currentUser.club_id) : ''
     });
+    setBookImageFileKey((prev) => prev + 1);
     setEditingBookId(null);
     setBookFormError('');
   }
@@ -1389,6 +1392,7 @@ function AdminCultura() {
 
   function handleEditBook(item: InfoCulturaBook) {
     setEditingBookId(item.id);
+    setBookImageFileKey((prev) => prev + 1);
     setBookForm({
       title: item.title,
       author: item.author,
@@ -1401,6 +1405,25 @@ function AdminCultura() {
     });
     setBookFormError('');
     setActivityTab('books');
+  }
+
+  async function handleUploadBookImage(file: File | null) {
+    if (!token || !file) return;
+
+    setIsUploadingBookImage(true);
+    setBookFormError('');
+
+    try {
+      const imagePath = await uploadAdminImage(token, file, 'books');
+      setBookForm((prev) => ({ ...prev, cover_image: imagePath }));
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : 'Nao foi possivel carregar a capa.';
+      setBookFormError(message);
+    } finally {
+      setIsUploadingBookImage(false);
+      setBookImageFileKey((prev) => prev + 1);
+    }
   }
 
   async function handleSaveBook(event: FormEvent<HTMLFormElement>) {
@@ -2898,16 +2921,33 @@ function AdminCultura() {
 
                       <div className={adminField}>
                         <label className={adminLabel} htmlFor="book-cover">
-                          Capa URL
+                          Capa
                         </label>
                         <input
                           id="book-cover"
+                          key={bookImageFileKey}
+                          type="file"
+                          accept="image/*"
                           className={adminInput}
-                          value={bookForm.cover_image}
-                          onChange={(event) =>
-                            setBookForm((prev) => ({ ...prev, cover_image: event.target.value }))
-                          }
+                          onChange={(event) => {
+                            const file = event.target.files?.[0] || null;
+                            void handleUploadBookImage(file);
+                          }}
                         />
+                        <p className={blockText}>
+                          {isUploadingBookImage
+                            ? 'A carregar capa...'
+                            : bookForm.cover_image
+                              ? 'Capa carregada com sucesso.'
+                              : 'Seleciona uma imagem do computador ou telemovel.'}
+                        </p>
+                        {bookForm.cover_image ? (
+                          <img
+                            src={resolveInfoCulturaAssetUrl(bookForm.cover_image)}
+                            alt="Preview da capa"
+                            className="mt-3 h-40 w-full rounded-xl object-cover"
+                          />
+                        ) : null}
                       </div>
 
                       <div className={adminField}>
