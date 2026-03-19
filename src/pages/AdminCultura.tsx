@@ -1,4 +1,4 @@
-import { FormEvent, useEffect, useMemo, useState } from 'react';
+import { Dispatch, FormEvent, SetStateAction, useEffect, useMemo, useState } from 'react';
 import { NavLink, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import infoCulturaBg from '../assets/19825874_uqliU.jpeg';
 import ispgayaLogo from '../assets/ispgaya-logo.svg';
@@ -84,6 +84,9 @@ import {
 } from '../data/culturalContent';
 import {
   assignUserToClub,
+  bulkUpdateAdminEventStatus,
+  bulkUpdateAdminNewsStatus,
+  bulkUpdateAdminRegistrationStatus,
   createAdminBook,
   createAdminCategory,
   createAdminClub,
@@ -197,6 +200,28 @@ function downloadBlobFile(blob: Blob, filename: string) {
   link.click();
   link.remove();
   window.URL.revokeObjectURL(url);
+}
+
+function escapeCsvValue(value: string | number | boolean | null | undefined): string {
+  const text = value === null || value === undefined ? '' : String(value);
+  if (/[",\n;]/.test(text)) {
+    return `"${text.replace(/"/g, '""')}"`;
+  }
+  return text;
+}
+
+function isWithinDateRange(value: string | null | undefined, fromDate: string, toDate: string): boolean {
+  const target = value ? value.slice(0, 10) : '';
+
+  if (fromDate && (!target || target < fromDate)) {
+    return false;
+  }
+
+  if (toDate && (!target || target > toDate)) {
+    return false;
+  }
+
+  return true;
 }
 
 type FormState = {
@@ -579,31 +604,52 @@ function AdminCultura() {
   const [editingSessionId, setEditingSessionId] = useState<number | null>(null);
   const [editingEventId, setEditingEventId] = useState<number | null>(null);
   const [selectedClubUserId, setSelectedClubUserId] = useState('');
+  const [userDateFrom, setUserDateFrom] = useState('');
+  const [userDateTo, setUserDateTo] = useState('');
+  const [clubDateFrom, setClubDateFrom] = useState('');
+  const [clubDateTo, setClubDateTo] = useState('');
   const [newsClubFilter, setNewsClubFilter] = useState('all');
   const [newsStatusFilter, setNewsStatusFilter] = useState('all');
   const [newsSearchInput, setNewsSearchInput] = useState('');
   const [newsSearch, setNewsSearch] = useState('');
+  const [newsDateFrom, setNewsDateFrom] = useState('');
+  const [newsDateTo, setNewsDateTo] = useState('');
   const [newsPage, setNewsPage] = useState(1);
   const [newsTotal, setNewsTotal] = useState(0);
   const [newsTotalPages, setNewsTotalPages] = useState(0);
+  const [selectedNewsIds, setSelectedNewsIds] = useState<number[]>([]);
+  const [bulkNewsStatus, setBulkNewsStatus] = useState('review');
   const [activityClubFilter, setActivityClubFilter] = useState('all');
   const [activityCategoryFilter, setActivityCategoryFilter] = useState('all');
   const [activityStatusFilter, setActivityStatusFilter] = useState('all');
   const [activitySearchInput, setActivitySearchInput] = useState('');
   const [activitySearch, setActivitySearch] = useState('');
+  const [activityDateFrom, setActivityDateFrom] = useState('');
+  const [activityDateTo, setActivityDateTo] = useState('');
   const [activityPage, setActivityPage] = useState(1);
   const [activityTotal, setActivityTotal] = useState(0);
   const [activityTotalPages, setActivityTotalPages] = useState(0);
   const [activityTab, setActivityTab] = useState<ActivityTab>('books');
+  const [selectedEventIds, setSelectedEventIds] = useState<number[]>([]);
+  const [bulkEventStatus, setBulkEventStatus] = useState('review');
   const [registrationStatusFilter, setRegistrationStatusFilter] = useState('pending');
   const [registrationClubFilter, setRegistrationClubFilter] = useState('all');
   const [registrationSearchInput, setRegistrationSearchInput] = useState('');
   const [registrationSearch, setRegistrationSearch] = useState('');
+  const [registrationDateFrom, setRegistrationDateFrom] = useState('');
+  const [registrationDateTo, setRegistrationDateTo] = useState('');
   const [registrationPage, setRegistrationPage] = useState(1);
   const [registrationTotal, setRegistrationTotal] = useState(0);
   const [registrationTotalPages, setRegistrationTotalPages] = useState(0);
+  const [selectedRegistrationIds, setSelectedRegistrationIds] = useState<number[]>([]);
+  const [bulkRegistrationStatus, setBulkRegistrationStatus] = useState('approved');
   const [isExportingNews, setIsExportingNews] = useState(false);
   const [isExportingActivities, setIsExportingActivities] = useState(false);
+  const [isExportingUsers, setIsExportingUsers] = useState(false);
+  const [isExportingClubs, setIsExportingClubs] = useState(false);
+  const [isApplyingBulkNews, setIsApplyingBulkNews] = useState(false);
+  const [isApplyingBulkEvents, setIsApplyingBulkEvents] = useState(false);
+  const [isApplyingBulkRegistrations, setIsApplyingBulkRegistrations] = useState(false);
   const [userFormError, setUserFormError] = useState('');
   const [clubFormError, setClubFormError] = useState('');
   const [newsFormError, setNewsFormError] = useState('');
@@ -625,6 +671,20 @@ function AdminCultura() {
   );
   const sortedUsers = useMemo(() => sortUsers(users), [users]);
   const sortedClubs = useMemo(() => sortClubs(clubs), [clubs]);
+  const filteredUsers = useMemo(
+    () =>
+      sortedUsers.filter((user) =>
+        isWithinDateRange(user.created_at, userDateFrom, userDateTo)
+      ),
+    [sortedUsers, userDateFrom, userDateTo]
+  );
+  const filteredClubs = useMemo(
+    () =>
+      sortedClubs.filter((club) =>
+        isWithinDateRange(club.created_at, clubDateFrom, clubDateTo)
+      ),
+    [sortedClubs, clubDateFrom, clubDateTo]
+  );
   const sortedNews = useMemo(
     () =>
       [...newsItems].sort((a, b) =>
@@ -683,10 +743,6 @@ function AdminCultura() {
   const activeUsers = useMemo(
     () => users.filter((user) => user.is_active).length,
     [users]
-  );
-  const activeClubs = useMemo(
-    () => clubs.filter((club) => club.is_active).length,
-    [clubs]
   );
   const pendingRegistrations = useMemo(
     () => registrations.filter((registration) => registration.status === 'pending').length,
@@ -758,26 +814,39 @@ function AdminCultura() {
     setEvents([]);
     setRegistrations([]);
     setRegistrationStatuses([]);
+    setUserDateFrom('');
+    setUserDateTo('');
+    setClubDateFrom('');
+    setClubDateTo('');
     setRegistrationSearchInput('');
     setRegistrationSearch('');
+    setRegistrationDateFrom('');
+    setRegistrationDateTo('');
     setRegistrationPage(1);
     setRegistrationTotal(0);
     setRegistrationTotalPages(0);
+    setSelectedRegistrationIds([]);
     setNewsClubFilter('all');
     setNewsStatusFilter('all');
     setNewsSearchInput('');
     setNewsSearch('');
+    setNewsDateFrom('');
+    setNewsDateTo('');
     setNewsPage(1);
     setNewsTotal(0);
     setNewsTotalPages(0);
+    setSelectedNewsIds([]);
     setActivityClubFilter('all');
     setActivityCategoryFilter('all');
     setActivityStatusFilter('all');
     setActivitySearchInput('');
     setActivitySearch('');
+    setActivityDateFrom('');
+    setActivityDateTo('');
     setActivityPage(1);
     setActivityTotal(0);
     setActivityTotalPages(0);
+    setSelectedEventIds([]);
     setCurrentUser(null);
     setPanelError('');
     setDashboardError('');
@@ -882,7 +951,9 @@ function AdminCultura() {
       const blob = await exportAdminNewsCsv(token, {
         clubId: canManageUsers && newsClubFilter !== 'all' ? Number(newsClubFilter) : undefined,
         status: newsStatusFilter,
-        search: newsSearch
+        search: newsSearch,
+        dateFrom: newsDateFrom,
+        dateTo: newsDateTo
       });
       downloadBlobFile(blob, 'infocultura-news.csv');
     } catch (error) {
@@ -908,12 +979,16 @@ function AdminCultura() {
         activityTab === 'books'
           ? await exportAdminBooksCsv(token, {
               clubId,
-              search: activitySearch
+              search: activitySearch,
+              dateFrom: activityDateFrom,
+              dateTo: activityDateTo
             })
           : activityTab === 'sessions'
             ? await exportAdminSessionsCsv(token, {
                 clubId,
-                search: activitySearch
+                search: activitySearch,
+                dateFrom: activityDateFrom,
+                dateTo: activityDateTo
               })
             : await exportAdminEventsCsv(token, {
                 clubId,
@@ -922,7 +997,9 @@ function AdminCultura() {
                     ? Number(activityCategoryFilter)
                     : undefined,
                 status: activityStatusFilter,
-                search: activitySearch
+                search: activitySearch,
+                dateFrom: activityDateFrom,
+                dateTo: activityDateTo
               });
 
       const filename =
@@ -938,6 +1015,154 @@ function AdminCultura() {
       setActivityError(message);
     } finally {
       setIsExportingActivities(false);
+    }
+  }
+
+  async function handleExportUsersCsv() {
+    setIsExportingUsers(true);
+    setPanelError('');
+
+    try {
+      const rows = [
+        ['id', 'name', 'email', 'role', 'club', 'is_active', 'created_at'],
+        ...filteredUsers.map((user) => [
+          user.id,
+          user.name,
+          user.email,
+          user.role,
+          user.club_name || '',
+          user.is_active ? 'sim' : 'nao',
+          user.created_at || ''
+        ])
+      ];
+      const csvText = rows.map((row) => row.map((value) => escapeCsvValue(value)).join(',')).join('\n');
+      downloadBlobFile(new Blob([csvText], { type: 'text/csv;charset=utf-8' }), 'infocultura-users.csv');
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : 'Nao foi possivel exportar os utilizadores.';
+      setPanelError(message);
+    } finally {
+      setIsExportingUsers(false);
+    }
+  }
+
+  async function handleExportClubsCsv() {
+    setIsExportingClubs(true);
+    setPanelError('');
+
+    try {
+      const rows = [
+        ['id', 'name', 'description', 'mission', 'is_active', 'enable_registrations', 'created_at'],
+        ...filteredClubs.map((club) => [
+          club.id,
+          club.name,
+          club.description,
+          club.mission,
+          club.is_active ? 'sim' : 'nao',
+          club.enable_registrations ? 'sim' : 'nao',
+          club.created_at || ''
+        ])
+      ];
+      const csvText = rows.map((row) => row.map((value) => escapeCsvValue(value)).join(',')).join('\n');
+      downloadBlobFile(new Blob([csvText], { type: 'text/csv;charset=utf-8' }), 'infocultura-clubs.csv');
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : 'Nao foi possivel exportar os clubes.';
+      setPanelError(message);
+    } finally {
+      setIsExportingClubs(false);
+    }
+  }
+
+  function toggleSelectedId(setter: Dispatch<SetStateAction<number[]>>, id: number) {
+    setter((prev) => (prev.includes(id) ? prev.filter((itemId) => itemId !== id) : [...prev, id]));
+  }
+
+  async function handleApplyBulkNewsStatus() {
+    if (!token || selectedNewsIds.length === 0) return;
+
+    setIsApplyingBulkNews(true);
+    setNewsError('');
+
+    try {
+      const updatedItems = await bulkUpdateAdminNewsStatus(token, selectedNewsIds, bulkNewsStatus);
+      const updatedMap = new Map(updatedItems.map((item) => [item.id, item]));
+      setNewsItems((prev) =>
+        prev
+          .map((item) => updatedMap.get(item.id) || item)
+          .filter((item) =>
+            newsStatusFilter === 'all'
+              ? true
+              : normalizeWorkflowStatus(item.news_status_name) === newsStatusFilter
+          )
+      );
+      setSelectedNewsIds([]);
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : 'Nao foi possivel aplicar a acao em lote.';
+      setNewsError(message);
+    } finally {
+      setIsApplyingBulkNews(false);
+    }
+  }
+
+  async function handleApplyBulkEventStatus() {
+    if (!token || selectedEventIds.length === 0) return;
+
+    setIsApplyingBulkEvents(true);
+    setActivityError('');
+
+    try {
+      const updatedItems = await bulkUpdateAdminEventStatus(token, selectedEventIds, bulkEventStatus);
+      const updatedMap = new Map(updatedItems.map((item) => [item.id, item]));
+      setEvents((prev) =>
+        prev
+          .map((item) => updatedMap.get(item.id) || item)
+          .filter((item) =>
+            activityStatusFilter === 'all'
+              ? true
+              : normalizeWorkflowStatus(item.status) === activityStatusFilter
+          )
+      );
+      setSelectedEventIds([]);
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : 'Nao foi possivel aplicar a acao em lote.';
+      setActivityError(message);
+    } finally {
+      setIsApplyingBulkEvents(false);
+    }
+  }
+
+  async function handleApplyBulkRegistrationStatus() {
+    if (!token || selectedRegistrationIds.length === 0) return;
+
+    setIsApplyingBulkRegistrations(true);
+    setRegistrationError('');
+
+    try {
+      const updatedItems = await bulkUpdateAdminRegistrationStatus(
+        token,
+        selectedRegistrationIds,
+        bulkRegistrationStatus
+      );
+      const updatedMap = new Map(updatedItems.map((item) => [item.id, item]));
+      setRegistrations((prev) =>
+        prev
+          .map((item) => updatedMap.get(item.id) || item)
+          .filter((item) =>
+            registrationStatusFilter === 'all'
+              ? true
+              : item.status === registrationStatusFilter
+          )
+      );
+      setSelectedRegistrationIds([]);
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : 'Nao foi possivel aplicar a acao em lote.';
+      setRegistrationError(message);
+    } finally {
+      setIsApplyingBulkRegistrations(false);
     }
   }
 
@@ -1051,11 +1276,27 @@ function AdminCultura() {
 
   useEffect(() => {
     setNewsPage(1);
-  }, [newsClubFilter, newsStatusFilter]);
+  }, [newsClubFilter, newsStatusFilter, newsDateFrom, newsDateTo]);
 
   useEffect(() => {
     setActivityPage(1);
-  }, [activityTab, activityClubFilter, activityCategoryFilter, activityStatusFilter]);
+  }, [activityTab, activityClubFilter, activityCategoryFilter, activityStatusFilter, activityDateFrom, activityDateTo]);
+
+  useEffect(() => {
+    setRegistrationPage(1);
+  }, [registrationClubFilter, registrationStatusFilter, registrationDateFrom, registrationDateTo]);
+
+  useEffect(() => {
+    setSelectedNewsIds([]);
+  }, [newsPage, newsClubFilter, newsStatusFilter, newsSearch, newsDateFrom, newsDateTo]);
+
+  useEffect(() => {
+    setSelectedEventIds([]);
+  }, [activityPage, activityTab, activityClubFilter, activityCategoryFilter, activityStatusFilter, activitySearch, activityDateFrom, activityDateTo]);
+
+  useEffect(() => {
+    setSelectedRegistrationIds([]);
+  }, [registrationPage, registrationClubFilter, registrationStatusFilter, registrationSearch, registrationDateFrom, registrationDateTo]);
 
   useEffect(() => {
     if (!token || !currentUser || activeSection !== 'resumo') {
@@ -1109,6 +1350,8 @@ function AdminCultura() {
         clubId,
         status,
         search: newsSearch,
+        dateFrom: newsDateFrom,
+        dateTo: newsDateTo,
         page: newsPage,
         pageSize: NEWS_PAGE_SIZE
       })
@@ -1144,6 +1387,8 @@ function AdminCultura() {
     newsClubFilter,
     newsStatusFilter,
     newsSearch,
+    newsDateFrom,
+    newsDateTo,
     newsPage
   ]);
 
@@ -1173,6 +1418,8 @@ function AdminCultura() {
         ? fetchAdminBooks(token, {
             clubId,
             search: activitySearch,
+            dateFrom: activityDateFrom,
+            dateTo: activityDateTo,
             page: activityPage,
             pageSize: ACTIVITY_PAGE_SIZE
           })
@@ -1180,6 +1427,8 @@ function AdminCultura() {
           ? fetchAdminSessions(token, {
               clubId,
               search: activitySearch,
+              dateFrom: activityDateFrom,
+              dateTo: activityDateTo,
               page: activityPage,
               pageSize: ACTIVITY_PAGE_SIZE
             })
@@ -1188,6 +1437,8 @@ function AdminCultura() {
               categoryId,
               status,
               search: activitySearch,
+              dateFrom: activityDateFrom,
+              dateTo: activityDateTo,
               page: activityPage,
               pageSize: ACTIVITY_PAGE_SIZE
             });
@@ -1231,6 +1482,8 @@ function AdminCultura() {
     activityCategoryFilter,
     activityStatusFilter,
     activitySearch,
+    activityDateFrom,
+    activityDateTo,
     activityPage,
     activityTab
   ]);
@@ -1260,6 +1513,8 @@ function AdminCultura() {
         clubId,
         status,
         search: registrationSearch,
+        dateFrom: registrationDateFrom,
+        dateTo: registrationDateTo,
         page: registrationPage,
         pageSize: REGISTRATION_PAGE_SIZE
       })
@@ -1295,6 +1550,8 @@ function AdminCultura() {
     registrationClubFilter,
     registrationStatusFilter,
     registrationSearch,
+    registrationDateFrom,
+    registrationDateTo,
     registrationPage
   ]);
 
@@ -2576,16 +2833,45 @@ function AdminCultura() {
 
               <div className={adminStatsGrid}>
                 <div className={adminStatCard}>
-                  <p className={adminStatValue}>{users.length}</p>
+                  <p className={adminStatValue}>{filteredUsers.length}</p>
                   <p className={adminStatLabel}>Total</p>
                 </div>
                 <div className={adminStatCard}>
-                  <p className={adminStatValue}>{activeUsers}</p>
+                  <p className={adminStatValue}>{filteredUsers.filter((user) => user.is_active).length}</p>
                   <p className={adminStatLabel}>Ativos</p>
                 </div>
                 <div className={adminStatCard}>
-                  <p className={adminStatValue}>{users.length - activeUsers}</p>
+                  <p className={adminStatValue}>
+                    {filteredUsers.filter((user) => !user.is_active).length}
+                  </p>
                   <p className={adminStatLabel}>Inativos</p>
+                </div>
+              </div>
+
+              <div className={adminFormGridSpaced}>
+                <div className={adminField}>
+                  <label className={adminLabel} htmlFor="user-date-from">
+                    Criados desde
+                  </label>
+                  <input
+                    id="user-date-from"
+                    type="date"
+                    className={adminInput}
+                    value={userDateFrom}
+                    onChange={(event) => setUserDateFrom(event.target.value)}
+                  />
+                </div>
+                <div className={adminField}>
+                  <label className={adminLabel} htmlFor="user-date-to">
+                    Criados ate
+                  </label>
+                  <input
+                    id="user-date-to"
+                    type="date"
+                    className={adminInput}
+                    value={userDateTo}
+                    onChange={(event) => setUserDateTo(event.target.value)}
+                  />
                 </div>
               </div>
 
@@ -2594,6 +2880,14 @@ function AdminCultura() {
                   <NavLink to="/infocultura/utilizadores/novo" className={adminBtnPrimary}>
                     Criar utilizador
                   </NavLink>
+                  <button
+                    type="button"
+                    className={adminBtnSecondary}
+                    disabled={isExportingUsers}
+                    onClick={() => void handleExportUsersCsv()}
+                  >
+                    {isExportingUsers ? 'A exportar...' : 'Exportar CSV'}
+                  </button>
                 </div>
               ) : (
                 <p className={adminInfo}>
@@ -2603,10 +2897,10 @@ function AdminCultura() {
 
               <div className={adminUserList}>
                 {isLoadingUsers ? <p className={adminInfo}>A carregar utilizadores...</p> : null}
-                {!isLoadingUsers && sortedUsers.length === 0 ? (
+                {!isLoadingUsers && filteredUsers.length === 0 ? (
                   <p className={adminInfo}>Nao existem utilizadores para mostrar.</p>
                 ) : null}
-                {sortedUsers.map((user) => (
+                {filteredUsers.map((user) => (
                   <article key={user.id} className={adminUserItem}>
                     <div>
                       <h3 className={adminUserName}>{user.name}</h3>
@@ -2614,6 +2908,9 @@ function AdminCultura() {
                       <p className={adminUserMeta}>
                         {user.role}
                         {currentUser?.id === user.id ? ' · sessao atual' : ''}
+                      </p>
+                      <p className={adminUserMeta}>
+                        Criado em: {formatAdminDateTime(user.created_at || '')}
                       </p>
                     </div>
                     <div className={adminListTools}>
@@ -3036,25 +3333,64 @@ function AdminCultura() {
 
                 <div className={adminStatsGrid}>
                   <div className={adminStatCard}>
-                    <p className={adminStatValue}>{clubs.length}</p>
+                    <p className={adminStatValue}>{filteredClubs.length}</p>
                     <p className={adminStatLabel}>Total</p>
                   </div>
                   <div className={adminStatCard}>
-                    <p className={adminStatValue}>{activeClubs}</p>
+                    <p className={adminStatValue}>{filteredClubs.filter((club) => club.is_active).length}</p>
                     <p className={adminStatLabel}>Ativos</p>
                   </div>
                   <div className={adminStatCard}>
-                    <p className={adminStatValue}>{clubs.length - activeClubs}</p>
+                    <p className={adminStatValue}>
+                      {filteredClubs.filter((club) => !club.is_active).length}
+                    </p>
                     <p className={adminStatLabel}>Inativos</p>
+                  </div>
+                </div>
+
+                <div className={adminFormGridSpaced}>
+                  <div className={adminField}>
+                    <label className={adminLabel} htmlFor="club-date-from">
+                      Criados desde
+                    </label>
+                    <input
+                      id="club-date-from"
+                      type="date"
+                      className={adminInput}
+                      value={clubDateFrom}
+                      onChange={(event) => setClubDateFrom(event.target.value)}
+                    />
+                  </div>
+                  <div className={adminField}>
+                    <label className={adminLabel} htmlFor="club-date-to">
+                      Criados ate
+                    </label>
+                    <input
+                      id="club-date-to"
+                      type="date"
+                      className={adminInput}
+                      value={clubDateTo}
+                      onChange={(event) => setClubDateTo(event.target.value)}
+                    />
+                  </div>
+                  <div className="flex items-end">
+                    <button
+                      type="button"
+                      className={adminBtnSecondary}
+                      disabled={isExportingClubs}
+                      onClick={() => void handleExportClubsCsv()}
+                    >
+                      {isExportingClubs ? 'A exportar...' : 'Exportar CSV'}
+                    </button>
                   </div>
                 </div>
 
                 <div className={adminUserList}>
                   {isLoadingClubs ? <p className={adminInfo}>A carregar clubes...</p> : null}
-                  {!isLoadingClubs && sortedClubs.length === 0 ? (
+                  {!isLoadingClubs && filteredClubs.length === 0 ? (
                     <p className={adminInfo}>Nao existem clubes registados.</p>
                   ) : null}
-                  {sortedClubs.map((club) => (
+                  {filteredClubs.map((club) => (
                     <article key={club.id} className={adminUserItem}>
                       <div>
                         {club.image ? (
@@ -3073,6 +3409,9 @@ function AdminCultura() {
                         </p>
                         <p className={adminUserMeta}>
                           Inscricoes: {club.enable_registrations ? 'Permitidas' : 'Desativadas'}
+                        </p>
+                        <p className={adminUserMeta}>
+                          Criado em: {formatAdminDateTime(club.created_at || '')}
                         </p>
                       </div>
                       <div className={adminListTools}>
@@ -3415,6 +3754,71 @@ function AdminCultura() {
                   </div>
                 </div>
 
+                <div className={adminFormGridSpaced}>
+                  <div className={adminField}>
+                    <label className={adminLabel} htmlFor="news-date-from">
+                      Criadas desde
+                    </label>
+                    <input
+                      id="news-date-from"
+                      type="date"
+                      className={adminInput}
+                      value={newsDateFrom}
+                      onChange={(event) => setNewsDateFrom(event.target.value)}
+                    />
+                  </div>
+                  <div className={adminField}>
+                    <label className={adminLabel} htmlFor="news-date-to">
+                      Criadas ate
+                    </label>
+                    <input
+                      id="news-date-to"
+                      type="date"
+                      className={adminInput}
+                      value={newsDateTo}
+                      onChange={(event) => setNewsDateTo(event.target.value)}
+                    />
+                  </div>
+                </div>
+
+                <div className={adminActions}>
+                  <button
+                    type="button"
+                    className={adminBtnSecondary}
+                    onClick={() =>
+                      setSelectedNewsIds(
+                        selectedNewsIds.length === sortedNews.length
+                          ? []
+                          : sortedNews.map((item) => item.id)
+                      )
+                    }
+                    disabled={sortedNews.length === 0}
+                  >
+                    {selectedNewsIds.length === sortedNews.length && sortedNews.length > 0
+                      ? 'Limpar selecao'
+                      : 'Selecionar pagina'}
+                  </button>
+                  <select
+                    className={adminInput}
+                    value={bulkNewsStatus}
+                    onChange={(event) => setBulkNewsStatus(event.target.value)}
+                  >
+                    {availableNewsStatuses.map((status) => (
+                      <option key={status.id} value={normalizeWorkflowStatus(status.name)}>
+                        {getWorkflowStatusLabel(status.name)}
+                      </option>
+                    ))}
+                  </select>
+                  <button
+                    type="button"
+                    className={adminBtnPrimary}
+                    disabled={selectedNewsIds.length === 0 || isApplyingBulkNews}
+                    onClick={() => void handleApplyBulkNewsStatus()}
+                  >
+                    {isApplyingBulkNews ? 'A aplicar...' : 'Aplicar em lote'}
+                  </button>
+                </div>
+
                 <div className={adminList}>
                   {isLoadingNews ? <p className={adminInfo}>A carregar noticias...</p> : null}
                   {!isLoadingNews && sortedNews.length === 0 ? (
@@ -3423,6 +3827,14 @@ function AdminCultura() {
                   {sortedNews.map((item) => (
                     <article key={item.id} className={adminListItem}>
                       <div className={adminListTop}>
+                        <label className="mr-4 flex items-center gap-2 text-sm text-slate-600">
+                          <input
+                            type="checkbox"
+                            checked={selectedNewsIds.includes(item.id)}
+                            onChange={() => toggleSelectedId(setSelectedNewsIds, item.id)}
+                          />
+                          Selecionar
+                        </label>
                         <div>
                             <h3 className={adminListTitle}>{item.title}</h3>
                             <p className={adminListMeta}>
@@ -3643,6 +4055,73 @@ function AdminCultura() {
                     </button>
                   </div>
                 </div>
+
+                <div className={adminFormGridSpaced}>
+                  <div className={adminField}>
+                    <label className={adminLabel} htmlFor="activity-date-from">
+                      Data desde
+                    </label>
+                    <input
+                      id="activity-date-from"
+                      type="date"
+                      className={adminInput}
+                      value={activityDateFrom}
+                      onChange={(event) => setActivityDateFrom(event.target.value)}
+                    />
+                  </div>
+                  <div className={adminField}>
+                    <label className={adminLabel} htmlFor="activity-date-to">
+                      Data ate
+                    </label>
+                    <input
+                      id="activity-date-to"
+                      type="date"
+                      className={adminInput}
+                      value={activityDateTo}
+                      onChange={(event) => setActivityDateTo(event.target.value)}
+                    />
+                  </div>
+                </div>
+
+                {activityTab === 'events' ? (
+                  <div className={adminActions}>
+                    <button
+                      type="button"
+                      className={adminBtnSecondary}
+                      onClick={() =>
+                        setSelectedEventIds(
+                          selectedEventIds.length === sortedEvents.length
+                            ? []
+                            : sortedEvents.map((item) => item.id)
+                        )
+                      }
+                      disabled={sortedEvents.length === 0}
+                    >
+                      {selectedEventIds.length === sortedEvents.length && sortedEvents.length > 0
+                        ? 'Limpar selecao'
+                        : 'Selecionar pagina'}
+                    </button>
+                    <select
+                      className={adminInput}
+                      value={bulkEventStatus}
+                      onChange={(event) => setBulkEventStatus(event.target.value)}
+                    >
+                      {availableEventStatuses.map((status) => (
+                        <option key={status} value={status}>
+                          {getWorkflowStatusLabel(status)}
+                        </option>
+                      ))}
+                    </select>
+                    <button
+                      type="button"
+                      className={adminBtnPrimary}
+                      disabled={selectedEventIds.length === 0 || isApplyingBulkEvents}
+                      onClick={() => void handleApplyBulkEventStatus()}
+                    >
+                      {isApplyingBulkEvents ? 'A aplicar...' : 'Aplicar em lote'}
+                    </button>
+                  </div>
+                ) : null}
               </section>
 
               {activityTab === 'books' ? (
@@ -4358,6 +4837,14 @@ function AdminCultura() {
                     {sortedEvents.map((item) => (
                       <article key={item.id} className={adminListItem}>
                         <div className={adminListTop}>
+                          <label className="mr-4 flex items-center gap-2 text-sm text-slate-600">
+                            <input
+                              type="checkbox"
+                              checked={selectedEventIds.includes(item.id)}
+                              onChange={() => toggleSelectedId(setSelectedEventIds, item.id)}
+                            />
+                            Selecionar
+                          </label>
                           <div>
                             <h3 className={adminListTitle}>{item.title}</h3>
                             <p className={adminListMeta}>
@@ -4608,6 +5095,30 @@ function AdminCultura() {
                       ))}
                     </select>
                   </div>
+                  <div className={adminField}>
+                    <label className={adminLabel} htmlFor="registration-date-from">
+                      Submetidas desde
+                    </label>
+                    <input
+                      id="registration-date-from"
+                      type="date"
+                      className={adminInput}
+                      value={registrationDateFrom}
+                      onChange={(event) => setRegistrationDateFrom(event.target.value)}
+                    />
+                  </div>
+                  <div className={adminField}>
+                    <label className={adminLabel} htmlFor="registration-date-to">
+                      Submetidas ate
+                    </label>
+                    <input
+                      id="registration-date-to"
+                      type="date"
+                      className={adminInput}
+                      value={registrationDateTo}
+                      onChange={(event) => setRegistrationDateTo(event.target.value)}
+                    />
+                  </div>
                 </div>
 
                 <form onSubmit={handleRegistrationSearchSubmit} className={adminFieldSpaced}>
@@ -4640,6 +5151,44 @@ function AdminCultura() {
                 </form>
 
                 {registrationError ? <p className={adminError}>{registrationError}</p> : null}
+
+                <div className={adminActions}>
+                  <button
+                    type="button"
+                    className={adminBtnSecondary}
+                    onClick={() =>
+                      setSelectedRegistrationIds(
+                        selectedRegistrationIds.length === registrations.length
+                          ? []
+                          : registrations.map((item) => item.id)
+                      )
+                    }
+                    disabled={registrations.length === 0}
+                  >
+                    {selectedRegistrationIds.length === registrations.length && registrations.length > 0
+                      ? 'Limpar selecao'
+                      : 'Selecionar pagina'}
+                  </button>
+                  <select
+                    className={adminInput}
+                    value={bulkRegistrationStatus}
+                    onChange={(event) => setBulkRegistrationStatus(event.target.value)}
+                  >
+                    {registrationStatuses.map((status) => (
+                      <option key={status.id} value={status.name}>
+                        {status.name}
+                      </option>
+                    ))}
+                  </select>
+                  <button
+                    type="button"
+                    className={adminBtnPrimary}
+                    disabled={selectedRegistrationIds.length === 0 || isApplyingBulkRegistrations}
+                    onClick={() => void handleApplyBulkRegistrationStatus()}
+                  >
+                    {isApplyingBulkRegistrations ? 'A aplicar...' : 'Aplicar em lote'}
+                  </button>
+                </div>
 
                 {!isLoadingRegistrations ? (
                   <div className={adminHeaderRow}>
@@ -4687,6 +5236,16 @@ function AdminCultura() {
                   {registrations.map((registration) => (
                     <article key={registration.id} className={adminUserItem}>
                       <div>
+                        <label className="mb-2 flex items-center gap-2 text-sm text-slate-600">
+                          <input
+                            type="checkbox"
+                            checked={selectedRegistrationIds.includes(registration.id)}
+                            onChange={() =>
+                              toggleSelectedId(setSelectedRegistrationIds, registration.id)
+                            }
+                          />
+                          Selecionar
+                        </label>
                         <h3 className={adminUserName}>{registration.name}</h3>
                         <p className={adminUserEmail}>{registration.email}</p>
                         <p className={adminUserMeta}>
