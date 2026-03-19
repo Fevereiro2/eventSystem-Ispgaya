@@ -295,7 +295,7 @@ class PublicEventListView(generics.ListAPIView):
 class AdminImageUploadView(APIView):
     permission_classes = [permissions.IsAuthenticated, IsClubAdmin]
 
-    allowed_folders = {'news', 'events'}
+    allowed_folders = {'news', 'events', 'books'}
 
     def post(self, request):
         uploaded_file = request.FILES.get('file')
