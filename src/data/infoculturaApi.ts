@@ -76,6 +76,54 @@ export type InfoCulturaNews = {
   club_name: string;
 };
 
+export type InfoCulturaBook = {
+  id: number;
+  title: string;
+  author: string;
+  publisher: string;
+  publication_year: number;
+  cover_image: string;
+  summary: string;
+  is_featured: boolean;
+  created_at: string | null;
+  club_id: number;
+  club_name: string;
+};
+
+export type InfoCulturaSession = {
+  id: number;
+  name: string;
+  title: string;
+  description: string;
+  session_date: string;
+  start_date: string;
+  end_date: string;
+  created_at: string | null;
+  updated_at: string | null;
+  club_id: number;
+  club_name: string;
+};
+
+export type InfoCulturaEvent = {
+  id: number;
+  title: string;
+  description: string;
+  event_date: string;
+  start_date: string;
+  end_date: string;
+  image: string;
+  is_external: boolean;
+  status: string;
+  created_at: string | null;
+  updated_at: string | null;
+  city: string;
+  location: string;
+  user_id: number;
+  club_id?: number | null;
+  club_name?: string | null;
+  owner_name?: string | null;
+};
+
 export type InfoCulturaRegistrationStatus = {
   id: number;
   name: string;
@@ -92,6 +140,14 @@ export type InfoCulturaRegistration = {
   message?: string | null;
   status: string;
   created_at: string | null;
+};
+
+export type InfoCulturaRegistrationPage = {
+  items: InfoCulturaRegistration[];
+  total: number;
+  page: number;
+  page_size: number;
+  total_pages: number;
 };
 
 export type UserPayload = {
@@ -120,6 +176,41 @@ export type NewsPayload = {
   club_id?: number;
 };
 
+export type BookPayload = {
+  title: string;
+  author: string;
+  publisher: string;
+  publication_year: number;
+  cover_image: string;
+  summary: string;
+  is_featured: boolean;
+  club_id?: number;
+};
+
+export type SessionPayload = {
+  name: string;
+  title: string;
+  description: string;
+  session_date: string;
+  start_date: string;
+  end_date: string;
+  club_id?: number;
+};
+
+export type EventPayload = {
+  title: string;
+  description: string;
+  event_date: string;
+  start_date: string;
+  end_date: string;
+  image: string;
+  is_external: boolean;
+  status: string;
+  city: string;
+  location: string;
+  club_id?: number;
+};
+
 export type ClubRegistrationPayload = {
   name: string;
   email: string;
@@ -139,14 +230,30 @@ type ApiRegistrationResponse = {
   registration: InfoCulturaRegistration;
 };
 
+type ApiImageUploadResponse = {
+  path: string;
+};
+
+export class InfoCulturaApiError extends Error {
+  status: number;
+
+  constructor(message: string, status: number) {
+    super(message);
+    this.name = 'InfoCulturaApiError';
+    this.status = status;
+  }
+}
+
 async function request<T>(
   path: string,
   options: RequestInit = {},
   token?: string
 ): Promise<T> {
   const headers = new Headers(options.headers);
+  const isFormDataBody =
+    typeof FormData !== 'undefined' && options.body instanceof FormData;
 
-  if (!headers.has('Content-Type') && options.body) {
+  if (!headers.has('Content-Type') && options.body && !isFormDataBody) {
     headers.set('Content-Type', 'application/json');
   }
 
@@ -171,7 +278,7 @@ async function request<T>(
       // ignore parse errors and use default message
     }
 
-    throw new Error(message);
+    throw new InfoCulturaApiError(message, response.status);
   }
 
   if (response.status === 204) {
@@ -179,6 +286,32 @@ async function request<T>(
   }
 
   return (await response.json()) as T;
+}
+
+function getApiOrigin(): string {
+  try {
+    return new URL(API_BASE).origin;
+  } catch {
+    if (typeof window !== 'undefined') {
+      return window.location.origin;
+    }
+
+    return '';
+  }
+}
+
+export function resolveInfoCulturaAssetUrl(value?: string | null): string {
+  if (!value) return '';
+  if (/^https?:\/\//i.test(value)) return value;
+  if (value.startsWith('/')) {
+    return `${getApiOrigin()}${value}`;
+  }
+
+  return `${getApiOrigin()}/${value.replace(/^\/+/, '')}`;
+}
+
+export function isInfoCulturaAuthError(error: unknown): error is InfoCulturaApiError {
+  return error instanceof InfoCulturaApiError && (error.status === 401 || error.status === 403);
 }
 
 function normalizeItemsResponse(data: ApiListResponse | CulturalItem[]): CulturalItem[] {
@@ -316,6 +449,21 @@ export async function fetchPublicNewsItem(id: number): Promise<InfoCulturaNews> 
   return request<InfoCulturaNews>(`/news/${id}/`);
 }
 
+export async function fetchPublicBooks(clubId?: number): Promise<InfoCulturaBook[]> {
+  const query = typeof clubId === 'number' ? `?club_id=${clubId}` : '';
+  return request<InfoCulturaBook[]>(`/books/${query}`);
+}
+
+export async function fetchPublicSessions(clubId?: number): Promise<InfoCulturaSession[]> {
+  const query = typeof clubId === 'number' ? `?club_id=${clubId}` : '';
+  return request<InfoCulturaSession[]>(`/sessions/${query}`);
+}
+
+export async function fetchPublicEvents(clubId?: number): Promise<InfoCulturaEvent[]> {
+  const query = typeof clubId === 'number' ? `?club_id=${clubId}` : '';
+  return request<InfoCulturaEvent[]>(`/events/${query}`);
+}
+
 export async function createAdminContent(
   token: string,
   payload: ContentPayload
@@ -369,8 +517,12 @@ export async function fetchAdminNewsStatuses(
   return request<InfoCulturaNewsStatus[]>('/news/admin/statuses/', {}, token);
 }
 
-export async function fetchAdminNews(token: string): Promise<InfoCulturaNews[]> {
-  return request<InfoCulturaNews[]>('/news/admin/', {}, token);
+export async function fetchAdminNews(
+  token: string,
+  clubId?: number
+): Promise<InfoCulturaNews[]> {
+  const query = typeof clubId === 'number' ? `?club_id=${clubId}` : '';
+  return request<InfoCulturaNews[]>(`/news/admin/${query}`, {}, token);
 }
 
 export async function fetchAdminRegistrationStatuses(
@@ -385,8 +537,8 @@ export async function fetchAdminRegistrationStatuses(
 
 export async function fetchAdminRegistrations(
   token: string,
-  filters?: { clubId?: number; status?: string }
-): Promise<InfoCulturaRegistration[]> {
+  filters?: { clubId?: number; status?: string; search?: string; page?: number; pageSize?: number }
+): Promise<InfoCulturaRegistrationPage> {
   const search = new URLSearchParams();
 
   if (typeof filters?.clubId === 'number') {
@@ -397,8 +549,20 @@ export async function fetchAdminRegistrations(
     search.set('status', filters.status);
   }
 
+  if (filters?.search?.trim()) {
+    search.set('search', filters.search.trim());
+  }
+
+  if (typeof filters?.page === 'number' && filters.page > 0) {
+    search.set('page', String(filters.page));
+  }
+
+  if (typeof filters?.pageSize === 'number' && filters.pageSize > 0) {
+    search.set('page_size', String(filters.pageSize));
+  }
+
   const query = search.toString();
-  return request<InfoCulturaRegistration[]>(
+  return request<InfoCulturaRegistrationPage>(
     `/registrations/admin/${query ? `?${query}` : ''}`,
     {},
     token
@@ -454,6 +618,168 @@ export async function updateAdminNews(
 export async function deleteAdminNews(token: string, id: number): Promise<void> {
   await request<void>(
     `/news/admin/${id}/`,
+    {
+      method: 'DELETE'
+    },
+    token
+  );
+}
+
+export async function uploadAdminImage(
+  token: string,
+  file: File,
+  folder: 'news' | 'events'
+): Promise<string> {
+  const body = new FormData();
+  body.append('file', file);
+  body.append('folder', folder);
+
+  const data = await request<ApiImageUploadResponse>(
+    '/uploads/images/',
+    {
+      method: 'POST',
+      body
+    },
+    token
+  );
+
+  return data.path;
+}
+
+export async function fetchAdminBooks(
+  token: string,
+  clubId?: number
+): Promise<InfoCulturaBook[]> {
+  const query = typeof clubId === 'number' ? `?club_id=${clubId}` : '';
+  return request<InfoCulturaBook[]>(`/books/admin/${query}`, {}, token);
+}
+
+export async function createAdminBook(
+  token: string,
+  payload: BookPayload
+): Promise<InfoCulturaBook> {
+  return request<InfoCulturaBook>(
+    '/books/admin/',
+    {
+      method: 'POST',
+      body: JSON.stringify(payload)
+    },
+    token
+  );
+}
+
+export async function updateAdminBook(
+  token: string,
+  id: number,
+  payload: BookPayload
+): Promise<InfoCulturaBook> {
+  return request<InfoCulturaBook>(
+    `/books/admin/${id}/`,
+    {
+      method: 'PUT',
+      body: JSON.stringify(payload)
+    },
+    token
+  );
+}
+
+export async function deleteAdminBook(token: string, id: number): Promise<void> {
+  await request<void>(
+    `/books/admin/${id}/`,
+    {
+      method: 'DELETE'
+    },
+    token
+  );
+}
+
+export async function fetchAdminSessions(
+  token: string,
+  clubId?: number
+): Promise<InfoCulturaSession[]> {
+  const query = typeof clubId === 'number' ? `?club_id=${clubId}` : '';
+  return request<InfoCulturaSession[]>(`/sessions/admin/${query}`, {}, token);
+}
+
+export async function createAdminSession(
+  token: string,
+  payload: SessionPayload
+): Promise<InfoCulturaSession> {
+  return request<InfoCulturaSession>(
+    '/sessions/admin/',
+    {
+      method: 'POST',
+      body: JSON.stringify(payload)
+    },
+    token
+  );
+}
+
+export async function updateAdminSession(
+  token: string,
+  id: number,
+  payload: SessionPayload
+): Promise<InfoCulturaSession> {
+  return request<InfoCulturaSession>(
+    `/sessions/admin/${id}/`,
+    {
+      method: 'PUT',
+      body: JSON.stringify(payload)
+    },
+    token
+  );
+}
+
+export async function deleteAdminSession(token: string, id: number): Promise<void> {
+  await request<void>(
+    `/sessions/admin/${id}/`,
+    {
+      method: 'DELETE'
+    },
+    token
+  );
+}
+
+export async function fetchAdminEvents(
+  token: string,
+  clubId?: number
+): Promise<InfoCulturaEvent[]> {
+  const query = typeof clubId === 'number' ? `?club_id=${clubId}` : '';
+  return request<InfoCulturaEvent[]>(`/events/admin/${query}`, {}, token);
+}
+
+export async function createAdminEvent(
+  token: string,
+  payload: EventPayload
+): Promise<InfoCulturaEvent> {
+  return request<InfoCulturaEvent>(
+    '/events/admin/',
+    {
+      method: 'POST',
+      body: JSON.stringify(payload)
+    },
+    token
+  );
+}
+
+export async function updateAdminEvent(
+  token: string,
+  id: number,
+  payload: EventPayload
+): Promise<InfoCulturaEvent> {
+  return request<InfoCulturaEvent>(
+    `/events/admin/${id}/`,
+    {
+      method: 'PUT',
+      body: JSON.stringify(payload)
+    },
+    token
+  );
+}
+
+export async function deleteAdminEvent(token: string, id: number): Promise<void> {
+  await request<void>(
+    `/events/admin/${id}/`,
     {
       method: 'DELETE'
     },
