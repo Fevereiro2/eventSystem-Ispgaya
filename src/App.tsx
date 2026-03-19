@@ -4,6 +4,7 @@ import ClubeCultural from './pages/ClubeCultural';
 import ClubeLeitura from './pages/ClubeLeitura';
 import EventoCultural from './pages/EventoCultural';
 import LaboratorioCultural from './pages/LaboratorioCultural';
+import LivroCultural from './pages/LivroCultural';
 import NoticiaCultural from './pages/NoticiaCultural';
 import PublicacoesCientificas from './pages/PublicacoesCientificas';
 import SessaoCultural from './pages/SessaoCultural';
@@ -35,6 +36,7 @@ function App() {
             path="/laboratorio-cultural/clubes/:clubId"
             element={<ClubeCultural />}
           />
+          <Route path="/laboratorio-cultural/livros/:bookId" element={<LivroCultural />} />
           <Route path="/laboratorio-cultural/noticias/:newsId" element={<NoticiaCultural />} />
           <Route path="/laboratorio-cultural/sessoes/:sessionId" element={<SessaoCultural />} />
           <Route path="/laboratorio-cultural/eventos/:eventId" element={<EventoCultural />} />

@@ -153,6 +153,42 @@ export type InfoCulturaRegistration = {
   created_at: string | null;
 };
 
+export type InfoCulturaDashboardRecord = {
+  id: number;
+  title: string;
+  club_name?: string | null;
+  date?: string | null;
+  status?: string | null;
+};
+
+export type InfoCulturaDashboardStats = {
+  scope_label: string;
+  users_total: number;
+  active_users: number;
+  clubs_total: number;
+  active_clubs: number;
+  clubs_with_registrations_open: number;
+  news_total: number;
+  news_draft: number;
+  news_review: number;
+  news_published: number;
+  books_total: number;
+  featured_books: number;
+  sessions_total: number;
+  upcoming_sessions: number;
+  events_total: number;
+  events_draft: number;
+  events_review: number;
+  events_published: number;
+  registrations_total: number;
+  registrations_pending: number;
+  registrations_approved: number;
+  registrations_rejected: number;
+  latest_news?: InfoCulturaDashboardRecord | null;
+  next_session?: InfoCulturaDashboardRecord | null;
+  next_event?: InfoCulturaDashboardRecord | null;
+};
+
 export type InfoCulturaRegistrationPage = {
   items: InfoCulturaRegistration[];
   total: number;
@@ -472,6 +508,10 @@ export async function fetchPublicBooks(clubId?: number): Promise<InfoCulturaBook
   return request<InfoCulturaBook[]>(`/books/${query}`);
 }
 
+export async function fetchPublicBookItem(id: number): Promise<InfoCulturaBook> {
+  return request<InfoCulturaBook>(`/books/${id}/`);
+}
+
 export async function fetchPublicSessions(clubId?: number): Promise<InfoCulturaSession[]> {
   const query = typeof clubId === 'number' ? `?club_id=${clubId}` : '';
   return request<InfoCulturaSession[]>(`/sessions/${query}`);
@@ -549,6 +589,12 @@ export async function deleteAdminContent(token: string, id: string): Promise<voi
 
 export async function fetchAdminClubs(token: string): Promise<InfoCulturaClub[]> {
   return request<InfoCulturaClub[]>('/clubs/admin/', {}, token);
+}
+
+export async function fetchAdminDashboard(
+  token: string
+): Promise<InfoCulturaDashboardStats> {
+  return request<InfoCulturaDashboardStats>('/dashboard/admin/', {}, token);
 }
 
 export async function fetchAdminNewsStatuses(
@@ -792,7 +838,7 @@ export async function fetchAdminEvents(
     search.set('category_id', String(filters.categoryId));
   }
   const query = search.toString();
-  return request<InfoCulturaEvent[]>(`/events/admin/${query}`, {}, token);
+  return request<InfoCulturaEvent[]>(`/events/admin/${query ? `?${query}` : ''}`, {}, token);
 }
 
 export async function createAdminEvent(
