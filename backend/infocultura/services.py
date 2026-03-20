@@ -184,6 +184,8 @@ def _build_admin_registration_filters(
     club_id: int | None,
     status: str | None,
     search: str | None,
+    date_from: str | None = None,
+    date_to: str | None = None,
     allowed_club_id: int | None,
 ) -> tuple[str, list[object]]:
     clauses: list[str] = []
@@ -206,6 +208,14 @@ def _build_admin_registration_filters(
         clauses.append("(LOWER(r.name) LIKE %s OR LOWER(r.email) LIKE %s)")
         params.extend([search_term, search_term])
 
+    if date_from:
+        clauses.append("DATE(r.created_at) >= %s")
+        params.append(date_from)
+
+    if date_to:
+        clauses.append("DATE(r.created_at) <= %s")
+        params.append(date_to)
+
     if not clauses:
         return "", params
 
@@ -226,23 +236,46 @@ def _row_to_admin_record(row: tuple[object, ...]) -> AdminClubRegistrationRecord
     )
 
 
+def _get_registration_ordering_clause(ordering: str | None) -> str:
+    ordering_map = {
+        "newest": "r.created_at DESC, r.id_registrations DESC",
+        "oldest": "r.created_at ASC, r.id_registrations ASC",
+        "name_asc": "r.name ASC, r.id_registrations DESC",
+        "name_desc": "r.name DESC, r.id_registrations DESC",
+        "email_asc": "r.email ASC, r.id_registrations DESC",
+        "email_desc": "r.email DESC, r.id_registrations DESC",
+        "club_asc": "c.name ASC, r.id_registrations DESC",
+        "club_desc": "c.name DESC, r.id_registrations DESC",
+        "status_asc": "resolved_status ASC, r.id_registrations DESC",
+        "status_desc": "resolved_status DESC, r.id_registrations DESC",
+    }
+    return ordering_map.get((ordering or "").strip().lower(), ordering_map["newest"])
+
+
 def list_admin_club_registrations(
     *,
     club_id: int | None = None,
     status: str | None = None,
     search: str | None = None,
+    date_from: str | None = None,
+    date_to: str | None = None,
     allowed_club_id: int | None = None,
     page: int = 1,
     page_size: int = 10,
+    ordering: str | None = None,
+    export_all: bool = False,
 ) -> AdminClubRegistrationPage:
     normalized_page = max(1, page)
-    normalized_page_size = min(max(1, page_size), 100)
+    normalized_page_size = None if export_all else min(max(1, page_size), 100)
     where_clause, params = _build_admin_registration_filters(
         club_id=club_id,
         status=status,
         search=search,
+        date_from=date_from,
+        date_to=date_to,
         allowed_club_id=allowed_club_id,
     )
+    ordering_clause = _get_registration_ordering_clause(ordering)
 
     with connection.cursor() as cursor:
         cursor.execute(
@@ -261,9 +294,7 @@ def list_admin_club_registrations(
         )
         total = int(cursor.fetchone()[0])
 
-        offset = (normalized_page - 1) * normalized_page_size
-        cursor.execute(
-            f"""
+        base_query = f"""
             SELECT
                 r.id_registrations,
                 c.id_clubs,
@@ -282,20 +313,31 @@ def list_admin_club_registrations(
             LEFT JOIN rstatus AS rs
               ON rs.id_rstatus = r.id_rstatus
             {where_clause}
-            ORDER BY r.created_at DESC, r.id_registrations DESC
-            LIMIT %s OFFSET %s
-            """,
-            [*params, normalized_page_size, offset],
-        )
+            ORDER BY {ordering_clause}
+        """
+
+        if export_all:
+            cursor.execute(base_query, params)
+        else:
+            offset = (normalized_page - 1) * normalized_page_size
+            cursor.execute(
+                f"{base_query}\nLIMIT %s OFFSET %s",
+                [*params, normalized_page_size, offset],
+            )
         rows = cursor.fetchall()
 
-    total_pages = (total + normalized_page_size - 1) // normalized_page_size if total else 0
+    if export_all:
+        total_pages = 1 if total else 0
+        resolved_page_size = total
+    else:
+        total_pages = (total + normalized_page_size - 1) // normalized_page_size if total else 0
+        resolved_page_size = normalized_page_size
 
     return AdminClubRegistrationPage(
         items=[_row_to_admin_record(row) for row in rows],
         total=total,
         page=normalized_page,
-        page_size=normalized_page_size,
+        page_size=resolved_page_size,
         total_pages=total_pages,
     )
 
@@ -309,6 +351,8 @@ def get_admin_club_registration(
         club_id=None,
         status=None,
         search=None,
+        date_from=None,
+        date_to=None,
         allowed_club_id=allowed_club_id,
     )
     clauses = [where_clause.replace("WHERE ", "", 1)] if where_clause else []

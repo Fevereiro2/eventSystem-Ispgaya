@@ -6,6 +6,7 @@ from django.core.files.storage import default_storage
 from django.db.models import Q
 from django.http import HttpResponse
 from django.core.paginator import Paginator
+from django.utils import timezone
 from rest_framework import generics, permissions
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -13,6 +14,8 @@ from rest_framework.views import APIView
 from .models import AppUser, Book, Category, Club, CulturalContent, Event, News, NewsStatus, RegistrationStatus, Role, Session
 from .permissions import IsClubAdmin, IsSuperAdmin
 from .serializers import (
+    AdminBulkIdsSerializer,
+    AdminBulkStatusUpdateSerializer,
     AdminBookWriteSerializer,
     AdminCategoryWriteSerializer,
     AdminClubRegistrationSerializer,
@@ -37,11 +40,16 @@ from .serializers import (
     RoleSerializer,
     SessionSerializer,
     UserSerializer,
+    EVENT_WORKFLOW_STATUS_ORDER,
+    NEWS_WORKFLOW_STATUS_ORDER,
+    get_role_allowed_workflow_statuses,
+    normalize_workflow_status,
 )
 from .services import (
     ClubRegistrationNotFoundError,
     get_admin_dashboard_metrics,
     list_admin_club_registrations,
+    record_editorial_action,
     update_admin_club_registration_status,
 )
 from .security import check_password_hash, issue_access_token
@@ -117,7 +125,44 @@ class AdminUserListCreateView(generics.ListCreateAPIView):
         return AdminUserWriteSerializer
 
     def get_queryset(self):
-        return AppUser.objects.select_related('role', 'club').order_by('-is_active', 'name', 'email')
+        queryset = AppUser.objects.select_related('role', 'club')
+        search = (self.request.query_params.get('search') or '').strip()
+
+        if search:
+            queryset = queryset.filter(
+                Q(name__icontains=search)
+                | Q(email__icontains=search)
+                | Q(role__name__icontains=search)
+                | Q(club__name__icontains=search)
+            )
+
+        queryset = apply_date_range_filters(queryset, self.request, date_field='created_at__date')
+        return queryset.order_by('-is_active', 'name', 'email')
+
+    def list(self, request, *args, **kwargs):
+        queryset = self.filter_queryset(self.get_queryset())
+
+        if request.query_params.get('export') == 'csv':
+            rows = [
+                [
+                    item.id,
+                    item.name,
+                    item.email,
+                    item.role.name if item.role_id else '',
+                    item.club.name if item.club_id and item.club else '',
+                    'sim' if item.is_active else 'nao',
+                    item.created_at.isoformat() if item.created_at else '',
+                ]
+                for item in queryset
+            ]
+            return build_csv_response(
+                rows=rows,
+                headers=['id', 'name', 'email', 'role', 'club', 'is_active', 'created_at'],
+                filename='infocultura_users.csv',
+            )
+
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
 
 
 class AdminUserDetailView(generics.RetrieveUpdateAPIView):
@@ -408,6 +453,18 @@ def paginate_queryset(queryset, *, request, serializer_class, context=None):
     )
 
 
+def apply_date_range_filters(queryset, request, *, date_field: str):
+    date_from = (request.query_params.get('date_from') or '').strip()
+    date_to = (request.query_params.get('date_to') or '').strip()
+
+    if date_from:
+        queryset = queryset.filter(**{f'{date_field}__gte': date_from})
+    if date_to:
+        queryset = queryset.filter(**{f'{date_field}__lte': date_to})
+
+    return queryset
+
+
 def build_csv_response(*, rows: list[list[str]], headers: list[str], filename: str) -> HttpResponse:
     response = HttpResponse(content_type='text/csv; charset=utf-8')
     response['Content-Disposition'] = f'attachment; filename="{filename}"'
@@ -415,6 +472,12 @@ def build_csv_response(*, rows: list[list[str]], headers: list[str], filename: s
     writer.writerow(headers)
     writer.writerows(rows)
     return response
+
+
+def apply_admin_ordering(queryset, request, *, default_ordering: tuple[str, ...], ordering_map: dict[str, tuple[str, ...]]):
+    ordering_key = (request.query_params.get('ordering') or '').strip().lower()
+    ordering = ordering_map.get(ordering_key, default_ordering)
+    return queryset.order_by(*ordering)
 
 
 class AdminRegistrationStatusListView(generics.ListAPIView):
@@ -439,6 +502,9 @@ class AdminRegistrationListView(APIView):
         club_id_raw = request.query_params.get('club_id')
         status = request.query_params.get('status')
         search = request.query_params.get('search')
+        ordering = (request.query_params.get('ordering') or '').strip() or None
+        date_from = (request.query_params.get('date_from') or '').strip() or None
+        date_to = (request.query_params.get('date_to') or '').strip() or None
         page_raw = request.query_params.get('page', '1')
         page_size_raw = request.query_params.get('page_size', '10')
         role_name = getattr(getattr(request.user, 'role', None), 'name', None)
@@ -466,10 +532,44 @@ class AdminRegistrationListView(APIView):
             club_id=club_id,
             status=status if status and status != 'all' else None,
             search=search,
+            ordering=ordering,
+            date_from=date_from,
+            date_to=date_to,
             allowed_club_id=get_allowed_registration_club_id(request.user),
             page=page,
             page_size=page_size,
         )
+
+        if request.query_params.get('export') == 'csv':
+            export_page = list_admin_club_registrations(
+                club_id=club_id,
+                status=status if status and status != 'all' else None,
+                search=search,
+                ordering=ordering,
+                date_from=date_from,
+                date_to=date_to,
+                allowed_club_id=get_allowed_registration_club_id(request.user),
+                export_all=True,
+            )
+            rows = [
+                [
+                    item.registration_id,
+                    item.club_name,
+                    item.name,
+                    item.email,
+                    item.phone or '',
+                    item.message or '',
+                    item.status,
+                    item.created_at.isoformat() if item.created_at else '',
+                ]
+                for item in export_page.items
+            ]
+            return build_csv_response(
+                rows=rows,
+                headers=['id', 'club', 'name', 'email', 'phone', 'message', 'status', 'created_at'],
+                filename='infocultura_registrations.csv',
+            )
+
         serializer = AdminClubRegistrationSerializer(registration_page.items, many=True)
         return Response(
             {
@@ -500,6 +600,35 @@ class AdminRegistrationStatusUpdateView(APIView):
 
         output = AdminClubRegistrationSerializer(updated_record)
         return Response({'registration': output.data})
+
+
+class AdminRegistrationBulkStatusUpdateView(APIView):
+    permission_classes = [permissions.IsAuthenticated, IsClubAdmin]
+
+    def post(self, request):
+        serializer = AdminBulkStatusUpdateSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        status_serializer = AdminRegistrationStatusUpdateSerializer(
+            data={'status': serializer.validated_data['status']}
+        )
+        status_serializer.is_valid(raise_exception=True)
+
+        updated_items = []
+        for registration_id in serializer.validated_data['ids']:
+            try:
+                updated_record = update_admin_club_registration_status(
+                    registration_id=registration_id,
+                    registration_status=status_serializer.validated_data['registration_status'],
+                    allowed_club_id=get_allowed_registration_club_id(request.user),
+                )
+            except ClubRegistrationNotFoundError:
+                continue
+
+            updated_items.append(updated_record)
+
+        output = AdminClubRegistrationSerializer(updated_items, many=True)
+        return Response({'items': output.data, 'updated': len(updated_items)})
 
 
 class AdminContentListCreateView(generics.ListCreateAPIView):
@@ -536,6 +665,17 @@ class AdminNewsStatusListView(generics.ListAPIView):
 class AdminNewsListCreateView(generics.ListCreateAPIView):
     permission_classes = [permissions.IsAuthenticated, IsClubAdmin]
 
+    ordering_map = {
+        'newest': ('-published_at', '-created_at', '-id'),
+        'oldest': ('published_at', 'created_at', 'id'),
+        'title_asc': ('title', '-id'),
+        'title_desc': ('-title', '-id'),
+        'club_asc': ('club__name', '-id'),
+        'club_desc': ('-club__name', '-id'),
+        'status_asc': ('news_status__name', '-id'),
+        'status_desc': ('-news_status__name', '-id'),
+    }
+
     def get_queryset(self):
         queryset = News.objects.select_related('news_status', 'club')
         role_name = getattr(getattr(self.request.user, 'role', None), 'name', None)
@@ -558,7 +698,13 @@ class AdminNewsListCreateView(generics.ListCreateAPIView):
                 | Q(club__name__icontains=search)
             )
 
-        return queryset.order_by('-published_at', '-created_at', '-id')
+        queryset = apply_date_range_filters(queryset, self.request, date_field='created_at__date')
+        return apply_admin_ordering(
+            queryset,
+            self.request,
+            default_ordering=('-published_at', '-created_at', '-id'),
+            ordering_map=self.ordering_map,
+        )
 
     def get_serializer_class(self):
         if self.request.method == 'GET':
@@ -612,8 +758,94 @@ class AdminNewsDetailView(generics.RetrieveUpdateDestroyAPIView):
         return AdminNewsWriteSerializer
 
 
+class AdminNewsBulkStatusUpdateView(APIView):
+    permission_classes = [permissions.IsAuthenticated, IsClubAdmin]
+
+    def post(self, request):
+        serializer = AdminBulkStatusUpdateSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        target_status = normalize_workflow_status(serializer.validated_data['status'])
+        role_name = getattr(getattr(request.user, 'role', None), 'name', None)
+        queryset = News.objects.select_related('news_status', 'club').filter(
+            id__in=serializer.validated_data['ids']
+        )
+
+        if role_name == 'club_admin':
+            queryset = queryset.filter(club_id=request.user.club_id)
+
+        news_status = NewsStatus.objects.filter(name__iexact=target_status).first()
+        if news_status is None:
+            return Response({'message': 'Estado editorial invalido.'}, status=400)
+
+        items = list(queryset)
+        for item in items:
+            allowed_statuses = get_role_allowed_workflow_statuses(
+                role_name=role_name,
+                base_statuses=NEWS_WORKFLOW_STATUS_ORDER,
+                current_status=normalize_workflow_status(item.news_status.name),
+            )
+            if target_status not in allowed_statuses:
+                return Response(
+                    {'message': 'Um ou mais registos nao podem passar para esse estado.'},
+                    status=400,
+                )
+
+        updated_items = []
+        for item in items:
+            previous_status = item.news_status.name
+            item.news_status = news_status
+            item.updated_at = timezone.now()
+            if target_status == 'published' and not item.published_at:
+                item.published_at = timezone.now()
+            elif target_status in {'draft', 'review'}:
+                item.published_at = None
+            item.save(update_fields=['news_status', 'updated_at', 'published_at'])
+            record_editorial_action(
+                content_type='news',
+                object_id=item.id,
+                from_status=previous_status,
+                to_status=news_status.name,
+                actor_user=request.user,
+                club_id=item.club_id,
+            )
+            updated_items.append(item)
+
+        output = AdminNewsReadSerializer(updated_items, many=True)
+        return Response({'items': output.data, 'updated': len(updated_items)})
+
+
+class AdminNewsBulkDeleteView(APIView):
+    permission_classes = [permissions.IsAuthenticated, IsClubAdmin]
+
+    def post(self, request):
+        serializer = AdminBulkIdsSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        queryset = News.objects.filter(id__in=serializer.validated_data['ids'])
+        role_name = getattr(getattr(request.user, 'role', None), 'name', None)
+        if role_name == 'club_admin':
+            queryset = queryset.filter(club_id=request.user.club_id)
+
+        deleted_count = queryset.count()
+        queryset.delete()
+        return Response({'deleted': deleted_count})
+
+
 class AdminBookListCreateView(generics.ListCreateAPIView):
     permission_classes = [permissions.IsAuthenticated, IsClubAdmin]
+
+    ordering_map = {
+        'featured': ('-is_featured', 'title', '-id'),
+        'newest': ('-created_at', '-id'),
+        'oldest': ('created_at', 'id'),
+        'title_asc': ('title', '-id'),
+        'title_desc': ('-title', '-id'),
+        'year_desc': ('-publication_year', '-id'),
+        'year_asc': ('publication_year', '-id'),
+        'club_asc': ('club__name', '-id'),
+        'club_desc': ('-club__name', '-id'),
+    }
 
     def get_queryset(self):
         queryset = Book.objects.select_related('club')
@@ -634,7 +866,13 @@ class AdminBookListCreateView(generics.ListCreateAPIView):
                 | Q(club__name__icontains=search)
             )
 
-        return queryset.order_by('-is_featured', 'title', '-id')
+        queryset = apply_date_range_filters(queryset, self.request, date_field='created_at__date')
+        return apply_admin_ordering(
+            queryset,
+            self.request,
+            default_ordering=('-is_featured', 'title', '-id'),
+            ordering_map=self.ordering_map,
+        )
 
     def get_serializer_class(self):
         if self.request.method == 'GET':
@@ -688,8 +926,36 @@ class AdminBookDetailView(generics.RetrieveUpdateDestroyAPIView):
         return AdminBookWriteSerializer
 
 
+class AdminBookBulkDeleteView(APIView):
+    permission_classes = [permissions.IsAuthenticated, IsClubAdmin]
+
+    def post(self, request):
+        serializer = AdminBulkIdsSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        queryset = Book.objects.filter(id__in=serializer.validated_data['ids'])
+        allowed_club_id = get_allowed_club_id(request.user)
+        if allowed_club_id is not None:
+            queryset = queryset.filter(club_id=allowed_club_id)
+
+        deleted_count = queryset.count()
+        queryset.delete()
+        return Response({'deleted': deleted_count})
+
+
 class AdminSessionListCreateView(generics.ListCreateAPIView):
     permission_classes = [permissions.IsAuthenticated, IsClubAdmin]
+
+    ordering_map = {
+        'date_asc': ('session_date', 'start_date', '-id'),
+        'date_desc': ('-session_date', '-start_date', '-id'),
+        'newest': ('-created_at', '-id'),
+        'oldest': ('created_at', 'id'),
+        'title_asc': ('title', '-id'),
+        'title_desc': ('-title', '-id'),
+        'club_asc': ('club__name', '-id'),
+        'club_desc': ('-club__name', '-id'),
+    }
 
     def get_queryset(self):
         queryset = Session.objects.select_related('club')
@@ -709,7 +975,13 @@ class AdminSessionListCreateView(generics.ListCreateAPIView):
                 | Q(club__name__icontains=search)
             )
 
-        return queryset.order_by('session_date', 'start_date', '-id')
+        queryset = apply_date_range_filters(queryset, self.request, date_field='session_date')
+        return apply_admin_ordering(
+            queryset,
+            self.request,
+            default_ordering=('session_date', 'start_date', '-id'),
+            ordering_map=self.ordering_map,
+        )
 
     def get_serializer_class(self):
         if self.request.method == 'GET':
@@ -767,6 +1039,19 @@ class AdminSessionDetailView(generics.RetrieveUpdateDestroyAPIView):
 class AdminEventListCreateView(generics.ListCreateAPIView):
     permission_classes = [permissions.IsAuthenticated, IsClubAdmin]
 
+    ordering_map = {
+        'date_asc': ('event_date', 'start_date', '-id'),
+        'date_desc': ('-event_date', '-start_date', '-id'),
+        'newest': ('-created_at', '-id'),
+        'oldest': ('created_at', 'id'),
+        'title_asc': ('title', '-id'),
+        'title_desc': ('-title', '-id'),
+        'club_asc': ('user__club__name', '-id'),
+        'club_desc': ('-user__club__name', '-id'),
+        'status_asc': ('status', '-id'),
+        'status_desc': ('-status', '-id'),
+    }
+
     def get_queryset(self):
         queryset = Event.objects.select_related('user__club').prefetch_related('categories')
         allowed_club_id = get_allowed_club_id(self.request.user)
@@ -793,7 +1078,14 @@ class AdminEventListCreateView(generics.ListCreateAPIView):
                 | Q(user__club__name__icontains=search)
             )
 
-        return queryset.order_by('event_date', 'start_date', '-id').distinct()
+        queryset = apply_date_range_filters(queryset, self.request, date_field='event_date')
+        queryset = apply_admin_ordering(
+            queryset,
+            self.request,
+            default_ordering=('event_date', 'start_date', '-id'),
+            ordering_map=self.ordering_map,
+        )
+        return queryset.distinct()
 
     def get_serializer_class(self):
         if self.request.method == 'GET':
@@ -849,6 +1141,72 @@ class AdminEventDetailView(generics.RetrieveUpdateDestroyAPIView):
         return AdminEventWriteSerializer
 
 
+class AdminEventBulkStatusUpdateView(APIView):
+    permission_classes = [permissions.IsAuthenticated, IsClubAdmin]
+
+    def post(self, request):
+        serializer = AdminBulkStatusUpdateSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        target_status = normalize_workflow_status(serializer.validated_data['status'])
+        role_name = getattr(getattr(request.user, 'role', None), 'name', None)
+        queryset = Event.objects.select_related('user__club').prefetch_related('categories').filter(
+            id__in=serializer.validated_data['ids']
+        )
+
+        if role_name == 'club_admin':
+            queryset = queryset.filter(user__club_id=request.user.club_id)
+
+        items = list(queryset)
+        for item in items:
+            allowed_statuses = get_role_allowed_workflow_statuses(
+                role_name=role_name,
+                base_statuses=EVENT_WORKFLOW_STATUS_ORDER,
+                current_status=normalize_workflow_status(item.status),
+            )
+            if target_status not in allowed_statuses:
+                return Response(
+                    {'message': 'Um ou mais eventos nao podem passar para esse estado.'},
+                    status=400,
+                )
+
+        updated_items = []
+        for item in items:
+            previous_status = item.status
+            item.status = target_status
+            item.updated_at = timezone.now()
+            item.save(update_fields=['status', 'updated_at'])
+            record_editorial_action(
+                content_type='event',
+                object_id=item.id,
+                from_status=previous_status,
+                to_status=target_status,
+                actor_user=request.user,
+                club_id=item.user.club_id if item.user_id and item.user else None,
+            )
+            updated_items.append(item)
+
+        output = AdminEventReadSerializer(updated_items, many=True)
+        return Response({'items': output.data, 'updated': len(updated_items)})
+
+
+class AdminEventBulkDeleteView(APIView):
+    permission_classes = [permissions.IsAuthenticated, IsClubAdmin]
+
+    def post(self, request):
+        serializer = AdminBulkIdsSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        queryset = Event.objects.filter(id__in=serializer.validated_data['ids'])
+        role_name = getattr(getattr(request.user, 'role', None), 'name', None)
+        if role_name == 'club_admin':
+            queryset = queryset.filter(user__club_id=request.user.club_id)
+
+        deleted_count = queryset.count()
+        queryset.delete()
+        return Response({'deleted': deleted_count})
+
+
 class AdminCategoryListCreateView(generics.ListCreateAPIView):
     permission_classes = [permissions.IsAuthenticated, IsClubAdmin]
 
@@ -876,7 +1234,51 @@ class AdminClubListCreateView(generics.ListCreateAPIView):
     permission_classes = [permissions.IsAuthenticated, IsSuperAdmin]
 
     def get_queryset(self):
-        return Club.objects.all().order_by('name')
+        queryset = Club.objects.all()
+        search = (self.request.query_params.get('search') or '').strip()
+
+        if search:
+            queryset = queryset.filter(
+                Q(name__icontains=search)
+                | Q(description__icontains=search)
+                | Q(mission__icontains=search)
+            )
+
+        queryset = apply_date_range_filters(queryset, self.request, date_field='created_at__date')
+        return queryset.order_by('name')
+
+    def list(self, request, *args, **kwargs):
+        queryset = self.filter_queryset(self.get_queryset())
+
+        if request.query_params.get('export') == 'csv':
+            rows = [
+                [
+                    item.id,
+                    item.name,
+                    item.description or '',
+                    item.mission or '',
+                    'sim' if item.is_active else 'nao',
+                    'sim' if item.enable_registrations else 'nao',
+                    item.created_at.isoformat() if item.created_at else '',
+                ]
+                for item in queryset
+            ]
+            return build_csv_response(
+                rows=rows,
+                headers=[
+                    'id',
+                    'name',
+                    'description',
+                    'mission',
+                    'is_active',
+                    'enable_registrations',
+                    'created_at',
+                ],
+                filename='infocultura_clubs.csv',
+            )
+
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
 
 
 class AdminClubDetailView(generics.RetrieveUpdateDestroyAPIView):

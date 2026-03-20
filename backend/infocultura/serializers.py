@@ -76,7 +76,7 @@ class UserSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = AppUser
-        fields = ['id', 'name', 'email', 'role', 'is_active', 'club_id', 'club_name']
+        fields = ['id', 'name', 'email', 'role', 'is_active', 'club_id', 'club_name', 'created_at']
 
     def get_club_id(self, obj):
         return obj.club_id
@@ -267,6 +267,33 @@ class EditorialHistorySerializer(serializers.Serializer):
     actor_user_id = serializers.IntegerField(allow_null=True)
     actor_name = serializers.CharField()
     created_at = serializers.DateTimeField(allow_null=True)
+
+
+class AdminBulkStatusUpdateSerializer(serializers.Serializer):
+    ids = serializers.ListField(
+        child=serializers.IntegerField(min_value=1),
+        allow_empty=False,
+    )
+    status = serializers.CharField(max_length=50)
+
+    def validate_ids(self, value):
+        unique_ids = list(dict.fromkeys(value))
+        if not unique_ids:
+            raise serializers.ValidationError('Seleciona pelo menos um registo.')
+        return unique_ids
+
+
+class AdminBulkIdsSerializer(serializers.Serializer):
+    ids = serializers.ListField(
+        child=serializers.IntegerField(min_value=1),
+        allow_empty=False,
+    )
+
+    def validate_ids(self, value):
+        unique_ids = list(dict.fromkeys(value))
+        if not unique_ids:
+            raise serializers.ValidationError('Seleciona pelo menos um registo.')
+        return unique_ids
 
 
 class BookSerializer(serializers.ModelSerializer):
