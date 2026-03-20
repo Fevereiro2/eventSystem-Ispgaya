@@ -37,6 +37,7 @@ export type InfoCulturaUser = {
   is_active: boolean;
   club_id?: number | null;
   club_name?: string | null;
+  created_at?: string | null;
 };
 
 export type InfoCulturaRole = {
@@ -302,6 +303,25 @@ type ApiUserResponse = {
 
 type ApiRegistrationResponse = {
   registration: InfoCulturaRegistration;
+};
+
+type ApiBulkNewsResponse = {
+  items: InfoCulturaNews[];
+  updated: number;
+};
+
+type ApiBulkEventResponse = {
+  items: InfoCulturaEvent[];
+  updated: number;
+};
+
+type ApiBulkRegistrationResponse = {
+  items: InfoCulturaRegistration[];
+  updated: number;
+};
+
+type ApiBulkDeleteResponse = {
+  deleted: number;
 };
 
 type ApiImageUploadResponse = {
@@ -656,7 +676,17 @@ export async function fetchAdminNewsStatuses(
 
 export async function fetchAdminNews(
   token: string,
-  filters?: { clubId?: number; status?: string; search?: string; page?: number; pageSize?: number; exportMode?: 'csv' }
+  filters?: {
+    clubId?: number;
+    status?: string;
+    search?: string;
+    ordering?: string;
+    dateFrom?: string;
+    dateTo?: string;
+    page?: number;
+    pageSize?: number;
+    exportMode?: 'csv';
+  }
 ): Promise<InfoCulturaAdminCollectionPage<InfoCulturaNews>> {
   const search = new URLSearchParams();
   if (typeof filters?.clubId === 'number') {
@@ -667,6 +697,15 @@ export async function fetchAdminNews(
   }
   if (filters?.search?.trim()) {
     search.set('search', filters.search.trim());
+  }
+  if (filters?.ordering?.trim()) {
+    search.set('ordering', filters.ordering.trim());
+  }
+  if (filters?.dateFrom) {
+    search.set('date_from', filters.dateFrom);
+  }
+  if (filters?.dateTo) {
+    search.set('date_to', filters.dateTo);
   }
   if (typeof filters?.page === 'number' && filters.page > 0) {
     search.set('page', String(filters.page));
@@ -697,7 +736,17 @@ export async function fetchAdminRegistrationStatuses(
 
 export async function fetchAdminRegistrations(
   token: string,
-  filters?: { clubId?: number; status?: string; search?: string; page?: number; pageSize?: number }
+  filters?: {
+    clubId?: number;
+    status?: string;
+    search?: string;
+    ordering?: string;
+    dateFrom?: string;
+    dateTo?: string;
+    page?: number;
+    pageSize?: number;
+    exportMode?: 'csv';
+  }
 ): Promise<InfoCulturaRegistrationPage> {
   const search = new URLSearchParams();
 
@@ -712,6 +761,15 @@ export async function fetchAdminRegistrations(
   if (filters?.search?.trim()) {
     search.set('search', filters.search.trim());
   }
+  if (filters?.ordering?.trim()) {
+    search.set('ordering', filters.ordering.trim());
+  }
+  if (filters?.dateFrom) {
+    search.set('date_from', filters.dateFrom);
+  }
+  if (filters?.dateTo) {
+    search.set('date_to', filters.dateTo);
+  }
 
   if (typeof filters?.page === 'number' && filters.page > 0) {
     search.set('page', String(filters.page));
@@ -720,6 +778,9 @@ export async function fetchAdminRegistrations(
   if (typeof filters?.pageSize === 'number' && filters.pageSize > 0) {
     search.set('page_size', String(filters.pageSize));
   }
+  if (filters?.exportMode === 'csv') {
+    search.set('export', 'csv');
+  }
 
   const query = search.toString();
   return request<InfoCulturaRegistrationPage>(
@@ -727,6 +788,40 @@ export async function fetchAdminRegistrations(
     {},
     token
   );
+}
+
+export async function exportAdminRegistrationsCsv(
+  token: string,
+  filters?: {
+    clubId?: number;
+    status?: string;
+    search?: string;
+    ordering?: string;
+    dateFrom?: string;
+    dateTo?: string;
+  }
+): Promise<Blob> {
+  const search = new URLSearchParams();
+  if (typeof filters?.clubId === 'number') {
+    search.set('club_id', String(filters.clubId));
+  }
+  if (filters?.status && filters.status !== 'all') {
+    search.set('status', filters.status);
+  }
+  if (filters?.search?.trim()) {
+    search.set('search', filters.search.trim());
+  }
+  if (filters?.ordering?.trim()) {
+    search.set('ordering', filters.ordering.trim());
+  }
+  if (filters?.dateFrom) {
+    search.set('date_from', filters.dateFrom);
+  }
+  if (filters?.dateTo) {
+    search.set('date_to', filters.dateTo);
+  }
+  search.set('export', 'csv');
+  return requestBlob(`/registrations/admin/?${search.toString()}`, {}, token);
 }
 
 export async function updateAdminRegistrationStatus(
@@ -744,6 +839,23 @@ export async function updateAdminRegistrationStatus(
   );
 
   return data.registration;
+}
+
+export async function bulkUpdateAdminRegistrationStatus(
+  token: string,
+  ids: number[],
+  status: string
+): Promise<InfoCulturaRegistration[]> {
+  const data = await request<ApiBulkRegistrationResponse>(
+    '/registrations/admin/bulk-status/',
+    {
+      method: 'POST',
+      body: JSON.stringify({ ids, status })
+    },
+    token
+  );
+
+  return data.items;
 }
 
 export async function createAdminNews(
@@ -787,7 +899,14 @@ export async function deleteAdminNews(token: string, id: number): Promise<void> 
 
 export async function exportAdminNewsCsv(
   token: string,
-  filters?: { clubId?: number; status?: string; search?: string }
+  filters?: {
+    clubId?: number;
+    status?: string;
+    search?: string;
+    ordering?: string;
+    dateFrom?: string;
+    dateTo?: string;
+  }
 ): Promise<Blob> {
   const search = new URLSearchParams();
   if (typeof filters?.clubId === 'number') {
@@ -799,8 +918,47 @@ export async function exportAdminNewsCsv(
   if (filters?.search?.trim()) {
     search.set('search', filters.search.trim());
   }
+  if (filters?.ordering?.trim()) {
+    search.set('ordering', filters.ordering.trim());
+  }
+  if (filters?.dateFrom) {
+    search.set('date_from', filters.dateFrom);
+  }
+  if (filters?.dateTo) {
+    search.set('date_to', filters.dateTo);
+  }
   search.set('export', 'csv');
   return requestBlob(`/news/admin/?${search.toString()}`, {}, token);
+}
+
+export async function bulkUpdateAdminNewsStatus(
+  token: string,
+  ids: number[],
+  status: string
+): Promise<InfoCulturaNews[]> {
+  const data = await request<ApiBulkNewsResponse>(
+    '/news/admin/bulk-status/',
+    {
+      method: 'POST',
+      body: JSON.stringify({ ids, status })
+    },
+    token
+  );
+
+  return data.items;
+}
+
+export async function bulkDeleteAdminNews(token: string, ids: number[]): Promise<number> {
+  const data = await request<ApiBulkDeleteResponse>(
+    '/news/admin/bulk-delete/',
+    {
+      method: 'POST',
+      body: JSON.stringify({ ids })
+    },
+    token
+  );
+
+  return data.deleted;
 }
 
 export async function uploadAdminImage(
@@ -826,7 +984,16 @@ export async function uploadAdminImage(
 
 export async function fetchAdminBooks(
   token: string,
-  filters?: { clubId?: number; search?: string; page?: number; pageSize?: number; exportMode?: 'csv' }
+  filters?: {
+    clubId?: number;
+    search?: string;
+    ordering?: string;
+    dateFrom?: string;
+    dateTo?: string;
+    page?: number;
+    pageSize?: number;
+    exportMode?: 'csv';
+  }
 ): Promise<InfoCulturaAdminCollectionPage<InfoCulturaBook>> {
   const search = new URLSearchParams();
   if (typeof filters?.clubId === 'number') {
@@ -834,6 +1001,15 @@ export async function fetchAdminBooks(
   }
   if (filters?.search?.trim()) {
     search.set('search', filters.search.trim());
+  }
+  if (filters?.ordering?.trim()) {
+    search.set('ordering', filters.ordering.trim());
+  }
+  if (filters?.dateFrom) {
+    search.set('date_from', filters.dateFrom);
+  }
+  if (filters?.dateTo) {
+    search.set('date_to', filters.dateTo);
   }
   if (typeof filters?.page === 'number' && filters.page > 0) {
     search.set('page', String(filters.page));
@@ -893,7 +1069,13 @@ export async function deleteAdminBook(token: string, id: number): Promise<void> 
 
 export async function exportAdminBooksCsv(
   token: string,
-  filters?: { clubId?: number; search?: string }
+  filters?: {
+    clubId?: number;
+    search?: string;
+    ordering?: string;
+    dateFrom?: string;
+    dateTo?: string;
+  }
 ): Promise<Blob> {
   const search = new URLSearchParams();
   if (typeof filters?.clubId === 'number') {
@@ -902,13 +1084,44 @@ export async function exportAdminBooksCsv(
   if (filters?.search?.trim()) {
     search.set('search', filters.search.trim());
   }
+  if (filters?.ordering?.trim()) {
+    search.set('ordering', filters.ordering.trim());
+  }
+  if (filters?.dateFrom) {
+    search.set('date_from', filters.dateFrom);
+  }
+  if (filters?.dateTo) {
+    search.set('date_to', filters.dateTo);
+  }
   search.set('export', 'csv');
   return requestBlob(`/books/admin/?${search.toString()}`, {}, token);
 }
 
+export async function bulkDeleteAdminBooks(token: string, ids: number[]): Promise<number> {
+  const data = await request<ApiBulkDeleteResponse>(
+    '/books/admin/bulk-delete/',
+    {
+      method: 'POST',
+      body: JSON.stringify({ ids })
+    },
+    token
+  );
+
+  return data.deleted;
+}
+
 export async function fetchAdminSessions(
   token: string,
-  filters?: { clubId?: number; search?: string; page?: number; pageSize?: number; exportMode?: 'csv' }
+  filters?: {
+    clubId?: number;
+    search?: string;
+    ordering?: string;
+    dateFrom?: string;
+    dateTo?: string;
+    page?: number;
+    pageSize?: number;
+    exportMode?: 'csv';
+  }
 ): Promise<InfoCulturaAdminCollectionPage<InfoCulturaSession>> {
   const search = new URLSearchParams();
   if (typeof filters?.clubId === 'number') {
@@ -916,6 +1129,15 @@ export async function fetchAdminSessions(
   }
   if (filters?.search?.trim()) {
     search.set('search', filters.search.trim());
+  }
+  if (filters?.ordering?.trim()) {
+    search.set('ordering', filters.ordering.trim());
+  }
+  if (filters?.dateFrom) {
+    search.set('date_from', filters.dateFrom);
+  }
+  if (filters?.dateTo) {
+    search.set('date_to', filters.dateTo);
   }
   if (typeof filters?.page === 'number' && filters.page > 0) {
     search.set('page', String(filters.page));
@@ -975,7 +1197,13 @@ export async function deleteAdminSession(token: string, id: number): Promise<voi
 
 export async function exportAdminSessionsCsv(
   token: string,
-  filters?: { clubId?: number; search?: string }
+  filters?: {
+    clubId?: number;
+    search?: string;
+    ordering?: string;
+    dateFrom?: string;
+    dateTo?: string;
+  }
 ): Promise<Blob> {
   const search = new URLSearchParams();
   if (typeof filters?.clubId === 'number') {
@@ -983,6 +1211,15 @@ export async function exportAdminSessionsCsv(
   }
   if (filters?.search?.trim()) {
     search.set('search', filters.search.trim());
+  }
+  if (filters?.ordering?.trim()) {
+    search.set('ordering', filters.ordering.trim());
+  }
+  if (filters?.dateFrom) {
+    search.set('date_from', filters.dateFrom);
+  }
+  if (filters?.dateTo) {
+    search.set('date_to', filters.dateTo);
   }
   search.set('export', 'csv');
   return requestBlob(`/sessions/admin/?${search.toString()}`, {}, token);
@@ -995,6 +1232,9 @@ export async function fetchAdminEvents(
     categoryId?: number;
     status?: string;
     search?: string;
+    ordering?: string;
+    dateFrom?: string;
+    dateTo?: string;
     page?: number;
     pageSize?: number;
     exportMode?: 'csv';
@@ -1012,6 +1252,15 @@ export async function fetchAdminEvents(
   }
   if (filters?.search?.trim()) {
     search.set('search', filters.search.trim());
+  }
+  if (filters?.ordering?.trim()) {
+    search.set('ordering', filters.ordering.trim());
+  }
+  if (filters?.dateFrom) {
+    search.set('date_from', filters.dateFrom);
+  }
+  if (filters?.dateTo) {
+    search.set('date_to', filters.dateTo);
   }
   if (typeof filters?.page === 'number' && filters.page > 0) {
     search.set('page', String(filters.page));
@@ -1071,7 +1320,15 @@ export async function deleteAdminEvent(token: string, id: number): Promise<void>
 
 export async function exportAdminEventsCsv(
   token: string,
-  filters?: { clubId?: number; categoryId?: number; status?: string; search?: string }
+  filters?: {
+    clubId?: number;
+    categoryId?: number;
+    status?: string;
+    search?: string;
+    ordering?: string;
+    dateFrom?: string;
+    dateTo?: string;
+  }
 ): Promise<Blob> {
   const search = new URLSearchParams();
   if (typeof filters?.clubId === 'number') {
@@ -1086,8 +1343,47 @@ export async function exportAdminEventsCsv(
   if (filters?.search?.trim()) {
     search.set('search', filters.search.trim());
   }
+  if (filters?.ordering?.trim()) {
+    search.set('ordering', filters.ordering.trim());
+  }
+  if (filters?.dateFrom) {
+    search.set('date_from', filters.dateFrom);
+  }
+  if (filters?.dateTo) {
+    search.set('date_to', filters.dateTo);
+  }
   search.set('export', 'csv');
   return requestBlob(`/events/admin/?${search.toString()}`, {}, token);
+}
+
+export async function bulkUpdateAdminEventStatus(
+  token: string,
+  ids: number[],
+  status: string
+): Promise<InfoCulturaEvent[]> {
+  const data = await request<ApiBulkEventResponse>(
+    '/events/admin/bulk-status/',
+    {
+      method: 'POST',
+      body: JSON.stringify({ ids, status })
+    },
+    token
+  );
+
+  return data.items;
+}
+
+export async function bulkDeleteAdminEvents(token: string, ids: number[]): Promise<number> {
+  const data = await request<ApiBulkDeleteResponse>(
+    '/events/admin/bulk-delete/',
+    {
+      method: 'POST',
+      body: JSON.stringify({ ids })
+    },
+    token
+  );
+
+  return data.deleted;
 }
 
 export async function fetchAdminCategories(token: string): Promise<InfoCulturaCategory[]> {

@@ -83,6 +83,9 @@ import {
   getAreaLabel,
 } from '../data/culturalContent';
 import {
+  bulkDeleteAdminBooks,
+  bulkDeleteAdminEvents,
+  bulkDeleteAdminNews,
   assignUserToClub,
   bulkUpdateAdminEventStatus,
   bulkUpdateAdminNewsStatus,
@@ -106,6 +109,7 @@ import {
   exportAdminBooksCsv,
   exportAdminEventsCsv,
   exportAdminNewsCsv,
+  exportAdminRegistrationsCsv,
   exportAdminSessionsCsv,
   fetchAdminBooks,
   fetchAdminCategories,
@@ -168,6 +172,12 @@ const WORKFLOW_LABELS: Record<string, string> = {
   rascunho: 'Rascunho',
   publicado: 'Publicado'
 };
+
+function getDefaultActivityOrdering(tab: ActivityTab): string {
+  if (tab === 'books') return 'featured';
+  if (tab === 'sessions') return 'date_asc';
+  return 'date_asc';
+}
 
 function normalizeWorkflowStatus(value: string): string {
   const normalized = value.trim().toLowerCase();
@@ -470,6 +480,27 @@ function sortUsers(list: InfoCulturaUser[]): InfoCulturaUser[] {
   });
 }
 
+function sortUsersByOrder(list: InfoCulturaUser[], ordering: string): InfoCulturaUser[] {
+  const sorted = [...list];
+
+  switch (ordering) {
+    case 'newest':
+      return sorted.sort((a, b) => (b.created_at || '').localeCompare(a.created_at || ''));
+    case 'oldest':
+      return sorted.sort((a, b) => (a.created_at || '').localeCompare(b.created_at || ''));
+    case 'name_desc':
+      return sorted.sort((a, b) => b.name.localeCompare(a.name) || b.email.localeCompare(a.email));
+    case 'email_asc':
+      return sorted.sort((a, b) => a.email.localeCompare(b.email) || a.name.localeCompare(b.name));
+    case 'email_desc':
+      return sorted.sort((a, b) => b.email.localeCompare(a.email) || b.name.localeCompare(a.name));
+    case 'name_asc':
+      return sorted.sort((a, b) => a.name.localeCompare(b.name) || a.email.localeCompare(b.email));
+    default:
+      return sortUsers(sorted);
+  }
+}
+
 function sortClubs(list: InfoCulturaClub[]): InfoCulturaClub[] {
   return [...list].sort((a, b) => {
     if (a.is_active !== b.is_active) {
@@ -478,6 +509,29 @@ function sortClubs(list: InfoCulturaClub[]): InfoCulturaClub[] {
 
     return a.name.localeCompare(b.name);
   });
+}
+
+function sortClubsByOrder(list: InfoCulturaClub[], ordering: string): InfoCulturaClub[] {
+  const sorted = [...list];
+
+  switch (ordering) {
+    case 'newest':
+      return sorted.sort((a, b) => (b.created_at || '').localeCompare(a.created_at || ''));
+    case 'oldest':
+      return sorted.sort((a, b) => (a.created_at || '').localeCompare(b.created_at || ''));
+    case 'name_desc':
+      return sorted.sort((a, b) => b.name.localeCompare(a.name));
+    case 'registrations_open':
+      return sorted.sort(
+        (a, b) =>
+          Number(Boolean(b.enable_registrations)) - Number(Boolean(a.enable_registrations)) ||
+          a.name.localeCompare(b.name)
+      );
+    case 'name_asc':
+      return sorted.sort((a, b) => a.name.localeCompare(b.name));
+    default:
+      return sortClubs(sorted);
+  }
 }
 
 function formatAdminDateTime(value?: string | null): string {
@@ -606,12 +660,15 @@ function AdminCultura() {
   const [selectedClubUserId, setSelectedClubUserId] = useState('');
   const [userDateFrom, setUserDateFrom] = useState('');
   const [userDateTo, setUserDateTo] = useState('');
+  const [userOrder, setUserOrder] = useState('active_name');
   const [clubDateFrom, setClubDateFrom] = useState('');
   const [clubDateTo, setClubDateTo] = useState('');
+  const [clubOrder, setClubOrder] = useState('active_name');
   const [newsClubFilter, setNewsClubFilter] = useState('all');
   const [newsStatusFilter, setNewsStatusFilter] = useState('all');
   const [newsSearchInput, setNewsSearchInput] = useState('');
   const [newsSearch, setNewsSearch] = useState('');
+  const [newsOrder, setNewsOrder] = useState('newest');
   const [newsDateFrom, setNewsDateFrom] = useState('');
   const [newsDateTo, setNewsDateTo] = useState('');
   const [newsPage, setNewsPage] = useState(1);
@@ -619,11 +676,13 @@ function AdminCultura() {
   const [newsTotalPages, setNewsTotalPages] = useState(0);
   const [selectedNewsIds, setSelectedNewsIds] = useState<number[]>([]);
   const [bulkNewsStatus, setBulkNewsStatus] = useState('review');
+  const [selectedBookIds, setSelectedBookIds] = useState<number[]>([]);
   const [activityClubFilter, setActivityClubFilter] = useState('all');
   const [activityCategoryFilter, setActivityCategoryFilter] = useState('all');
   const [activityStatusFilter, setActivityStatusFilter] = useState('all');
   const [activitySearchInput, setActivitySearchInput] = useState('');
   const [activitySearch, setActivitySearch] = useState('');
+  const [activityOrder, setActivityOrder] = useState(getDefaultActivityOrdering('books'));
   const [activityDateFrom, setActivityDateFrom] = useState('');
   const [activityDateTo, setActivityDateTo] = useState('');
   const [activityPage, setActivityPage] = useState(1);
@@ -636,6 +695,7 @@ function AdminCultura() {
   const [registrationClubFilter, setRegistrationClubFilter] = useState('all');
   const [registrationSearchInput, setRegistrationSearchInput] = useState('');
   const [registrationSearch, setRegistrationSearch] = useState('');
+  const [registrationOrder, setRegistrationOrder] = useState('newest');
   const [registrationDateFrom, setRegistrationDateFrom] = useState('');
   const [registrationDateTo, setRegistrationDateTo] = useState('');
   const [registrationPage, setRegistrationPage] = useState(1);
@@ -647,9 +707,13 @@ function AdminCultura() {
   const [isExportingActivities, setIsExportingActivities] = useState(false);
   const [isExportingUsers, setIsExportingUsers] = useState(false);
   const [isExportingClubs, setIsExportingClubs] = useState(false);
+  const [isExportingRegistrations, setIsExportingRegistrations] = useState(false);
   const [isApplyingBulkNews, setIsApplyingBulkNews] = useState(false);
   const [isApplyingBulkEvents, setIsApplyingBulkEvents] = useState(false);
   const [isApplyingBulkRegistrations, setIsApplyingBulkRegistrations] = useState(false);
+  const [isDeletingBulkNews, setIsDeletingBulkNews] = useState(false);
+  const [isDeletingBulkBooks, setIsDeletingBulkBooks] = useState(false);
+  const [isDeletingBulkEvents, setIsDeletingBulkEvents] = useState(false);
   const [userFormError, setUserFormError] = useState('');
   const [clubFormError, setClubFormError] = useState('');
   const [newsFormError, setNewsFormError] = useState('');
@@ -669,8 +733,8 @@ function AdminCultura() {
     () => [...items].sort((a, b) => (a.updatedAt < b.updatedAt ? 1 : -1)),
     [items]
   );
-  const sortedUsers = useMemo(() => sortUsers(users), [users]);
-  const sortedClubs = useMemo(() => sortClubs(clubs), [clubs]);
+  const sortedUsers = useMemo(() => sortUsersByOrder(users, userOrder), [users, userOrder]);
+  const sortedClubs = useMemo(() => sortClubsByOrder(clubs, clubOrder), [clubs, clubOrder]);
   const filteredUsers = useMemo(
     () =>
       sortedUsers.filter((user) =>
@@ -685,29 +749,14 @@ function AdminCultura() {
       ),
     [sortedClubs, clubDateFrom, clubDateTo]
   );
-  const sortedNews = useMemo(
-    () =>
-      [...newsItems].sort((a, b) =>
-        (b.published_at || b.created_at).localeCompare(a.published_at || a.created_at)
-      ),
-    [newsItems]
-  );
-  const sortedBooks = useMemo(
-    () => [...books].sort((a, b) => Number(b.is_featured) - Number(a.is_featured) || a.title.localeCompare(b.title)),
-    [books]
-  );
+  const sortedNews = useMemo(() => [...newsItems], [newsItems]);
+  const sortedBooks = useMemo(() => [...books], [books]);
   const sortedCategories = useMemo(
     () => [...categories].sort((a, b) => a.name.localeCompare(b.name)),
     [categories]
   );
-  const sortedSessions = useMemo(
-    () => [...sessions].sort((a, b) => a.start_date.localeCompare(b.start_date)),
-    [sessions]
-  );
-  const sortedEvents = useMemo(
-    () => [...events].sort((a, b) => a.start_date.localeCompare(b.start_date)),
-    [events]
-  );
+  const sortedSessions = useMemo(() => [...sessions], [sessions]);
+  const sortedEvents = useMemo(() => [...events], [events]);
   const availableNewsStatuses = useMemo(() => {
     const allowedNames = getWorkflowStatusOptions(
       canManageUsers ? NEWS_WORKFLOW_ORDER : NEWS_WORKFLOW_ORDER.slice(0, 2),
@@ -816,10 +865,13 @@ function AdminCultura() {
     setRegistrationStatuses([]);
     setUserDateFrom('');
     setUserDateTo('');
+    setUserOrder('active_name');
     setClubDateFrom('');
     setClubDateTo('');
+    setClubOrder('active_name');
     setRegistrationSearchInput('');
     setRegistrationSearch('');
+    setRegistrationOrder('newest');
     setRegistrationDateFrom('');
     setRegistrationDateTo('');
     setRegistrationPage(1);
@@ -830,6 +882,7 @@ function AdminCultura() {
     setNewsStatusFilter('all');
     setNewsSearchInput('');
     setNewsSearch('');
+    setNewsOrder('newest');
     setNewsDateFrom('');
     setNewsDateTo('');
     setNewsPage(1);
@@ -841,11 +894,13 @@ function AdminCultura() {
     setActivityStatusFilter('all');
     setActivitySearchInput('');
     setActivitySearch('');
+    setActivityOrder(getDefaultActivityOrdering('books'));
     setActivityDateFrom('');
     setActivityDateTo('');
     setActivityPage(1);
     setActivityTotal(0);
     setActivityTotalPages(0);
+    setSelectedBookIds([]);
     setSelectedEventIds([]);
     setCurrentUser(null);
     setPanelError('');
@@ -952,6 +1007,7 @@ function AdminCultura() {
         clubId: canManageUsers && newsClubFilter !== 'all' ? Number(newsClubFilter) : undefined,
         status: newsStatusFilter,
         search: newsSearch,
+        ordering: newsOrder,
         dateFrom: newsDateFrom,
         dateTo: newsDateTo
       });
@@ -980,6 +1036,7 @@ function AdminCultura() {
           ? await exportAdminBooksCsv(token, {
               clubId,
               search: activitySearch,
+              ordering: activityOrder,
               dateFrom: activityDateFrom,
               dateTo: activityDateTo
             })
@@ -987,6 +1044,7 @@ function AdminCultura() {
             ? await exportAdminSessionsCsv(token, {
                 clubId,
                 search: activitySearch,
+                ordering: activityOrder,
                 dateFrom: activityDateFrom,
                 dateTo: activityDateTo
               })
@@ -998,6 +1056,7 @@ function AdminCultura() {
                     : undefined,
                 status: activityStatusFilter,
                 search: activitySearch,
+                ordering: activityOrder,
                 dateFrom: activityDateFrom,
                 dateTo: activityDateTo
               });
@@ -1074,6 +1133,34 @@ function AdminCultura() {
     }
   }
 
+  async function handleExportRegistrationsCsv() {
+    if (!token) return;
+
+    setIsExportingRegistrations(true);
+    setRegistrationError('');
+
+    try {
+      const blob = await exportAdminRegistrationsCsv(token, {
+        clubId:
+          canManageUsers && registrationClubFilter !== 'all'
+            ? Number(registrationClubFilter)
+            : undefined,
+        status: registrationStatusFilter,
+        search: registrationSearch,
+        ordering: registrationOrder,
+        dateFrom: registrationDateFrom,
+        dateTo: registrationDateTo
+      });
+      downloadBlobFile(blob, 'infocultura-registrations.csv');
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : 'Nao foi possivel exportar as inscricoes.';
+      setRegistrationError(message);
+    } finally {
+      setIsExportingRegistrations(false);
+    }
+  }
+
   function toggleSelectedId(setter: Dispatch<SetStateAction<number[]>>, id: number) {
     setter((prev) => (prev.includes(id) ? prev.filter((itemId) => itemId !== id) : [...prev, id]));
   }
@@ -1106,6 +1193,34 @@ function AdminCultura() {
     }
   }
 
+  async function handleBulkDeleteNews() {
+    if (!token || selectedNewsIds.length === 0) return;
+    if (!window.confirm('Apagar as noticias selecionadas?')) return;
+
+    setIsDeletingBulkNews(true);
+    setNewsError('');
+
+    try {
+      const deleted = await bulkDeleteAdminNews(token, selectedNewsIds);
+      const selectedSet = new Set(selectedNewsIds);
+      setNewsItems((prev) => prev.filter((item) => !selectedSet.has(item.id)));
+      setSelectedNewsIds([]);
+      setNewsTotal((prev) => Math.max(0, prev - deleted));
+      if (editingNewsId !== null && selectedSet.has(editingNewsId)) {
+        resetNewsForm();
+      }
+      if (deleted > 0 && selectedSet.size >= newsItems.length && newsPage > 1) {
+        setNewsPage((prev) => Math.max(1, prev - 1));
+      }
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : 'Nao foi possivel apagar as noticias selecionadas.';
+      setNewsError(message);
+    } finally {
+      setIsDeletingBulkNews(false);
+    }
+  }
+
   async function handleApplyBulkEventStatus() {
     if (!token || selectedEventIds.length === 0) return;
 
@@ -1131,6 +1246,62 @@ function AdminCultura() {
       setActivityError(message);
     } finally {
       setIsApplyingBulkEvents(false);
+    }
+  }
+
+  async function handleBulkDeleteBooks() {
+    if (!token || selectedBookIds.length === 0) return;
+    if (!window.confirm('Apagar os livros selecionados?')) return;
+
+    setIsDeletingBulkBooks(true);
+    setActivityError('');
+
+    try {
+      const deleted = await bulkDeleteAdminBooks(token, selectedBookIds);
+      const selectedSet = new Set(selectedBookIds);
+      setBooks((prev) => prev.filter((item) => !selectedSet.has(item.id)));
+      setSelectedBookIds([]);
+      setActivityTotal((prev) => Math.max(0, prev - deleted));
+      if (editingBookId !== null && selectedSet.has(editingBookId)) {
+        resetBookForm();
+      }
+      if (deleted > 0 && selectedSet.size >= books.length && activityPage > 1) {
+        setActivityPage((prev) => Math.max(1, prev - 1));
+      }
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : 'Nao foi possivel apagar os livros selecionados.';
+      setActivityError(message);
+    } finally {
+      setIsDeletingBulkBooks(false);
+    }
+  }
+
+  async function handleBulkDeleteEvents() {
+    if (!token || selectedEventIds.length === 0) return;
+    if (!window.confirm('Apagar os eventos selecionados?')) return;
+
+    setIsDeletingBulkEvents(true);
+    setActivityError('');
+
+    try {
+      const deleted = await bulkDeleteAdminEvents(token, selectedEventIds);
+      const selectedSet = new Set(selectedEventIds);
+      setEvents((prev) => prev.filter((item) => !selectedSet.has(item.id)));
+      setSelectedEventIds([]);
+      setActivityTotal((prev) => Math.max(0, prev - deleted));
+      if (editingEventId !== null && selectedSet.has(editingEventId)) {
+        resetEventForm();
+      }
+      if (deleted > 0 && selectedSet.size >= events.length && activityPage > 1) {
+        setActivityPage((prev) => Math.max(1, prev - 1));
+      }
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : 'Nao foi possivel apagar os eventos selecionados.';
+      setActivityError(message);
+    } finally {
+      setIsDeletingBulkEvents(false);
     }
   }
 
@@ -1276,15 +1447,15 @@ function AdminCultura() {
 
   useEffect(() => {
     setNewsPage(1);
-  }, [newsClubFilter, newsStatusFilter, newsDateFrom, newsDateTo]);
+  }, [newsClubFilter, newsStatusFilter, newsOrder, newsDateFrom, newsDateTo]);
 
   useEffect(() => {
     setActivityPage(1);
-  }, [activityTab, activityClubFilter, activityCategoryFilter, activityStatusFilter, activityDateFrom, activityDateTo]);
+  }, [activityTab, activityClubFilter, activityCategoryFilter, activityStatusFilter, activityOrder, activityDateFrom, activityDateTo]);
 
   useEffect(() => {
     setRegistrationPage(1);
-  }, [registrationClubFilter, registrationStatusFilter, registrationDateFrom, registrationDateTo]);
+  }, [registrationClubFilter, registrationStatusFilter, registrationOrder, registrationDateFrom, registrationDateTo]);
 
   useEffect(() => {
     setSelectedNewsIds([]);
@@ -1292,11 +1463,16 @@ function AdminCultura() {
 
   useEffect(() => {
     setSelectedEventIds([]);
-  }, [activityPage, activityTab, activityClubFilter, activityCategoryFilter, activityStatusFilter, activitySearch, activityDateFrom, activityDateTo]);
+    setSelectedBookIds([]);
+  }, [activityPage, activityTab, activityClubFilter, activityCategoryFilter, activityStatusFilter, activitySearch, activityOrder, activityDateFrom, activityDateTo]);
 
   useEffect(() => {
     setSelectedRegistrationIds([]);
-  }, [registrationPage, registrationClubFilter, registrationStatusFilter, registrationSearch, registrationDateFrom, registrationDateTo]);
+  }, [registrationPage, registrationClubFilter, registrationStatusFilter, registrationSearch, registrationOrder, registrationDateFrom, registrationDateTo]);
+
+  useEffect(() => {
+    setActivityOrder(getDefaultActivityOrdering(activityTab));
+  }, [activityTab]);
 
   useEffect(() => {
     if (!token || !currentUser || activeSection !== 'resumo') {
@@ -1350,6 +1526,7 @@ function AdminCultura() {
         clubId,
         status,
         search: newsSearch,
+        ordering: newsOrder,
         dateFrom: newsDateFrom,
         dateTo: newsDateTo,
         page: newsPage,
@@ -1387,6 +1564,7 @@ function AdminCultura() {
     newsClubFilter,
     newsStatusFilter,
     newsSearch,
+    newsOrder,
     newsDateFrom,
     newsDateTo,
     newsPage
@@ -1418,6 +1596,7 @@ function AdminCultura() {
         ? fetchAdminBooks(token, {
             clubId,
             search: activitySearch,
+            ordering: activityOrder,
             dateFrom: activityDateFrom,
             dateTo: activityDateTo,
             page: activityPage,
@@ -1427,6 +1606,7 @@ function AdminCultura() {
           ? fetchAdminSessions(token, {
               clubId,
               search: activitySearch,
+              ordering: activityOrder,
               dateFrom: activityDateFrom,
               dateTo: activityDateTo,
               page: activityPage,
@@ -1437,6 +1617,7 @@ function AdminCultura() {
               categoryId,
               status,
               search: activitySearch,
+              ordering: activityOrder,
               dateFrom: activityDateFrom,
               dateTo: activityDateTo,
               page: activityPage,
@@ -1482,6 +1663,7 @@ function AdminCultura() {
     activityCategoryFilter,
     activityStatusFilter,
     activitySearch,
+    activityOrder,
     activityDateFrom,
     activityDateTo,
     activityPage,
@@ -1513,6 +1695,7 @@ function AdminCultura() {
         clubId,
         status,
         search: registrationSearch,
+        ordering: registrationOrder,
         dateFrom: registrationDateFrom,
         dateTo: registrationDateTo,
         page: registrationPage,
@@ -1550,6 +1733,7 @@ function AdminCultura() {
     registrationClubFilter,
     registrationStatusFilter,
     registrationSearch,
+    registrationOrder,
     registrationDateFrom,
     registrationDateTo,
     registrationPage
@@ -2009,6 +2193,7 @@ function AdminCultura() {
     try {
       await deleteAdminNews(token, id);
       setNewsItems((prev) => prev.filter((item) => item.id !== id));
+      setSelectedNewsIds((prev) => prev.filter((itemId) => itemId !== id));
       if (editingNewsId === id) {
         resetNewsForm();
       }
@@ -2116,6 +2301,7 @@ function AdminCultura() {
     try {
       await deleteAdminBook(token, id);
       setBooks((prev) => prev.filter((item) => item.id !== id));
+      setSelectedBookIds((prev) => prev.filter((itemId) => itemId !== id));
       if (editingBookId === id) {
         resetBookForm();
       }
@@ -2410,6 +2596,7 @@ function AdminCultura() {
     try {
       await deleteAdminEvent(token, id);
       setEvents((prev) => prev.filter((item) => item.id !== id));
+      setSelectedEventIds((prev) => prev.filter((itemId) => itemId !== id));
       if (editingEventId === id) {
         resetEventForm();
       }
@@ -2872,6 +3059,25 @@ function AdminCultura() {
                     value={userDateTo}
                     onChange={(event) => setUserDateTo(event.target.value)}
                   />
+                </div>
+                <div className={adminField}>
+                  <label className={adminLabel} htmlFor="user-order">
+                    Ordenar por
+                  </label>
+                  <select
+                    id="user-order"
+                    className={adminInput}
+                    value={userOrder}
+                    onChange={(event) => setUserOrder(event.target.value)}
+                  >
+                    <option value="active_name">Ativos primeiro</option>
+                    <option value="newest">Mais recentes</option>
+                    <option value="oldest">Mais antigos</option>
+                    <option value="name_asc">Nome A-Z</option>
+                    <option value="name_desc">Nome Z-A</option>
+                    <option value="email_asc">Email A-Z</option>
+                    <option value="email_desc">Email Z-A</option>
+                  </select>
                 </div>
               </div>
 
@@ -3373,6 +3579,24 @@ function AdminCultura() {
                       onChange={(event) => setClubDateTo(event.target.value)}
                     />
                   </div>
+                  <div className={adminField}>
+                    <label className={adminLabel} htmlFor="club-order">
+                      Ordenar por
+                    </label>
+                    <select
+                      id="club-order"
+                      className={adminInput}
+                      value={clubOrder}
+                      onChange={(event) => setClubOrder(event.target.value)}
+                    >
+                      <option value="active_name">Ativos primeiro</option>
+                      <option value="newest">Mais recentes</option>
+                      <option value="oldest">Mais antigos</option>
+                      <option value="name_asc">Nome A-Z</option>
+                      <option value="name_desc">Nome Z-A</option>
+                      <option value="registrations_open">Inscricoes abertas primeiro</option>
+                    </select>
+                  </div>
                   <div className="flex items-end">
                     <button
                       type="button"
@@ -3779,6 +4003,26 @@ function AdminCultura() {
                       onChange={(event) => setNewsDateTo(event.target.value)}
                     />
                   </div>
+                  <div className={adminField}>
+                    <label className={adminLabel} htmlFor="news-order">
+                      Ordenar por
+                    </label>
+                    <select
+                      id="news-order"
+                      className={adminInput}
+                      value={newsOrder}
+                      onChange={(event) => setNewsOrder(event.target.value)}
+                    >
+                      <option value="newest">Mais recentes</option>
+                      <option value="oldest">Mais antigas</option>
+                      <option value="title_asc">Titulo A-Z</option>
+                      <option value="title_desc">Titulo Z-A</option>
+                      <option value="club_asc">Clube A-Z</option>
+                      <option value="club_desc">Clube Z-A</option>
+                      <option value="status_asc">Estado A-Z</option>
+                      <option value="status_desc">Estado Z-A</option>
+                    </select>
+                  </div>
                 </div>
 
                 <div className={adminActions}>
@@ -3816,6 +4060,14 @@ function AdminCultura() {
                     onClick={() => void handleApplyBulkNewsStatus()}
                   >
                     {isApplyingBulkNews ? 'A aplicar...' : 'Aplicar em lote'}
+                  </button>
+                  <button
+                    type="button"
+                    className={adminBtnDanger}
+                    disabled={selectedNewsIds.length === 0 || isDeletingBulkNews}
+                    onClick={() => void handleBulkDeleteNews()}
+                  >
+                    {isDeletingBulkNews ? 'A apagar...' : 'Apagar selecionadas'}
                   </button>
                 </div>
 
@@ -4081,7 +4333,85 @@ function AdminCultura() {
                       onChange={(event) => setActivityDateTo(event.target.value)}
                     />
                   </div>
+                  <div className={adminField}>
+                    <label className={adminLabel} htmlFor="activity-order">
+                      Ordenar por
+                    </label>
+                    <select
+                      id="activity-order"
+                      className={adminInput}
+                      value={activityOrder}
+                      onChange={(event) => setActivityOrder(event.target.value)}
+                    >
+                      {activityTab === 'books' ? (
+                        <>
+                          <option value="featured">Destaque primeiro</option>
+                          <option value="newest">Mais recentes</option>
+                          <option value="oldest">Mais antigos</option>
+                          <option value="title_asc">Titulo A-Z</option>
+                          <option value="title_desc">Titulo Z-A</option>
+                          <option value="year_desc">Ano mais recente</option>
+                          <option value="year_asc">Ano mais antigo</option>
+                          <option value="club_asc">Clube A-Z</option>
+                          <option value="club_desc">Clube Z-A</option>
+                        </>
+                      ) : activityTab === 'sessions' ? (
+                        <>
+                          <option value="date_asc">Data mais proxima</option>
+                          <option value="date_desc">Data mais distante</option>
+                          <option value="newest">Mais recentes</option>
+                          <option value="oldest">Mais antigas</option>
+                          <option value="title_asc">Titulo A-Z</option>
+                          <option value="title_desc">Titulo Z-A</option>
+                          <option value="club_asc">Clube A-Z</option>
+                          <option value="club_desc">Clube Z-A</option>
+                        </>
+                      ) : (
+                        <>
+                          <option value="date_asc">Data mais proxima</option>
+                          <option value="date_desc">Data mais distante</option>
+                          <option value="newest">Mais recentes</option>
+                          <option value="oldest">Mais antigos</option>
+                          <option value="title_asc">Titulo A-Z</option>
+                          <option value="title_desc">Titulo Z-A</option>
+                          <option value="club_asc">Clube A-Z</option>
+                          <option value="club_desc">Clube Z-A</option>
+                          <option value="status_asc">Estado A-Z</option>
+                          <option value="status_desc">Estado Z-A</option>
+                        </>
+                      )}
+                    </select>
+                  </div>
                 </div>
+
+                {activityTab === 'books' ? (
+                  <div className={adminActions}>
+                    <button
+                      type="button"
+                      className={adminBtnSecondary}
+                      onClick={() =>
+                        setSelectedBookIds(
+                          selectedBookIds.length === sortedBooks.length
+                            ? []
+                            : sortedBooks.map((item) => item.id)
+                        )
+                      }
+                      disabled={sortedBooks.length === 0}
+                    >
+                      {selectedBookIds.length === sortedBooks.length && sortedBooks.length > 0
+                        ? 'Limpar selecao'
+                        : 'Selecionar pagina'}
+                    </button>
+                    <button
+                      type="button"
+                      className={adminBtnDanger}
+                      disabled={selectedBookIds.length === 0 || isDeletingBulkBooks}
+                      onClick={() => void handleBulkDeleteBooks()}
+                    >
+                      {isDeletingBulkBooks ? 'A apagar...' : 'Apagar selecionados'}
+                    </button>
+                  </div>
+                ) : null}
 
                 {activityTab === 'events' ? (
                   <div className={adminActions}>
@@ -4119,6 +4449,14 @@ function AdminCultura() {
                       onClick={() => void handleApplyBulkEventStatus()}
                     >
                       {isApplyingBulkEvents ? 'A aplicar...' : 'Aplicar em lote'}
+                    </button>
+                    <button
+                      type="button"
+                      className={adminBtnDanger}
+                      disabled={selectedEventIds.length === 0 || isDeletingBulkEvents}
+                      onClick={() => void handleBulkDeleteEvents()}
+                    >
+                      {isDeletingBulkEvents ? 'A apagar...' : 'Apagar selecionados'}
                     </button>
                   </div>
                 ) : null}
@@ -4304,6 +4642,14 @@ function AdminCultura() {
                     {sortedBooks.map((item) => (
                       <article key={item.id} className={adminListItem}>
                         <div className={adminListTop}>
+                          <label className="mr-4 flex items-center gap-2 text-sm text-slate-600">
+                            <input
+                              type="checkbox"
+                              checked={selectedBookIds.includes(item.id)}
+                              onChange={() => toggleSelectedId(setSelectedBookIds, item.id)}
+                            />
+                            Selecionar
+                          </label>
                           <div>
                             <h3 className={adminListTitle}>{item.title}</h3>
                             <p className={adminListMeta}>
@@ -5147,12 +5493,36 @@ function AdminCultura() {
                     >
                       Limpar
                     </button>
+                    <button
+                      type="button"
+                      className={adminBtnSecondary}
+                      disabled={isExportingRegistrations}
+                      onClick={() => void handleExportRegistrationsCsv()}
+                    >
+                      {isExportingRegistrations ? 'A exportar...' : 'Exportar CSV'}
+                    </button>
                   </div>
                 </form>
 
                 {registrationError ? <p className={adminError}>{registrationError}</p> : null}
 
                 <div className={adminActions}>
+                  <select
+                    className={adminInput}
+                    value={registrationOrder}
+                    onChange={(event) => setRegistrationOrder(event.target.value)}
+                  >
+                    <option value="newest">Mais recentes</option>
+                    <option value="oldest">Mais antigas</option>
+                    <option value="name_asc">Nome A-Z</option>
+                    <option value="name_desc">Nome Z-A</option>
+                    <option value="email_asc">Email A-Z</option>
+                    <option value="email_desc">Email Z-A</option>
+                    <option value="club_asc">Clube A-Z</option>
+                    <option value="club_desc">Clube Z-A</option>
+                    <option value="status_asc">Estado A-Z</option>
+                    <option value="status_desc">Estado Z-A</option>
+                  </select>
                   <button
                     type="button"
                     className={adminBtnSecondary}
