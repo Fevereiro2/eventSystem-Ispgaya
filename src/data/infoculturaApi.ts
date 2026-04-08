@@ -3,6 +3,7 @@ import { CulturalArea, CulturalItem } from './culturalContent';
 const API_BASE = (
   import.meta.env.VITE_INFOCULTURA_API || 'http://127.0.0.1:8001/api'
 ).replace(/\/$/, '');
+const ACCESS_TOKEN_STORAGE_KEY = 'ispgaya_cultura_token';
 
 type ContentPayload = {
   area: CulturalArea;
@@ -22,11 +23,7 @@ type ApiItemResponse = {
 
 type ApiLoginResponse = {
   token: string;
-  user: {
-    id: number;
-    username: string;
-    is_staff: boolean;
-  };
+  user: InfoCulturaUser;
 };
 
 export type InfoCulturaUser = {
@@ -218,6 +215,16 @@ export type InfoCulturaDashboardStats = {
   next_event?: InfoCulturaDashboardRecord | null;
 };
 
+export type InfoCulturaAdminNotification = {
+  id: string;
+  kind: string;
+  level: 'warning' | 'info' | 'success' | string;
+  title: string;
+  message: string;
+  href: string;
+  created_at?: string | null;
+};
+
 export type InfoCulturaRegistrationPage = {
   items: InfoCulturaRegistration[];
   total: number;
@@ -364,12 +371,59 @@ export class InfoCulturaApiError extends Error {
   }
 }
 
+function getStoredAccessToken(): string {
+  if (typeof window === 'undefined') return '';
+  return sessionStorage.getItem(ACCESS_TOKEN_STORAGE_KEY) || '';
+}
+
+function setStoredAccessToken(token: string): void {
+  if (typeof window === 'undefined') return;
+  if (token) {
+    sessionStorage.setItem(ACCESS_TOKEN_STORAGE_KEY, token);
+  } else {
+    sessionStorage.removeItem(ACCESS_TOKEN_STORAGE_KEY);
+  }
+}
+
+let refreshTokenPromise: Promise<string | null> | null = null;
+
+async function refreshInfoCulturaToken(): Promise<string | null> {
+  if (refreshTokenPromise) {
+    return refreshTokenPromise;
+  }
+
+  refreshTokenPromise = (async () => {
+    const response = await fetch(`${API_BASE}/auth/refresh/`, {
+      method: 'POST',
+      credentials: 'include'
+    });
+
+    if (!response.ok) {
+      setStoredAccessToken('');
+      return null;
+    }
+
+    const body = (await response.json()) as { token?: string };
+    const nextToken = body.token || '';
+    setStoredAccessToken(nextToken);
+    return nextToken || null;
+  })();
+
+  try {
+    return await refreshTokenPromise;
+  } finally {
+    refreshTokenPromise = null;
+  }
+}
+
 async function request<T>(
   path: string,
   options: RequestInit = {},
-  token?: string
+  token?: string,
+  allowRefresh = true
 ): Promise<T> {
   const headers = new Headers(options.headers);
+  const resolvedToken = getStoredAccessToken() || token;
   const isFormDataBody =
     typeof FormData !== 'undefined' && options.body instanceof FormData;
 
@@ -377,14 +431,28 @@ async function request<T>(
     headers.set('Content-Type', 'application/json');
   }
 
-  if (token) {
-    headers.set('Authorization', `Token ${token}`);
+  if (resolvedToken) {
+    headers.set('Authorization', `Token ${resolvedToken}`);
   }
 
   const response = await fetch(`${API_BASE}${path}`, {
     ...options,
-    headers
+    headers,
+    credentials: 'include'
   });
+
+  if (
+    response.status === 401 &&
+    allowRefresh &&
+    path !== '/auth/login/' &&
+    path !== '/auth/refresh/' &&
+    path !== '/auth/logout/'
+  ) {
+    const refreshedToken = await refreshInfoCulturaToken();
+    if (refreshedToken) {
+      return request<T>(path, options, refreshedToken, false);
+    }
+  }
 
   if (!response.ok) {
     let message = 'Erro ao comunicar com o servidor.';
@@ -411,17 +479,32 @@ async function request<T>(
 async function requestBlob(
   path: string,
   options: RequestInit = {},
-  token?: string
+  token?: string,
+  allowRefresh = true
 ): Promise<Blob> {
   const headers = new Headers(options.headers);
-  if (token) {
-    headers.set('Authorization', `Token ${token}`);
+  const resolvedToken = getStoredAccessToken() || token;
+  if (resolvedToken) {
+    headers.set('Authorization', `Token ${resolvedToken}`);
   }
 
   const response = await fetch(`${API_BASE}${path}`, {
     ...options,
-    headers
+    headers,
+    credentials: 'include'
   });
+
+  if (
+    response.status === 401 &&
+    allowRefresh &&
+    path !== '/auth/refresh/' &&
+    path !== '/auth/logout/'
+  ) {
+    const refreshedToken = await refreshInfoCulturaToken();
+    if (refreshedToken) {
+      return requestBlob(path, options, refreshedToken, false);
+    }
+  }
 
   if (!response.ok) {
     let message = 'Erro ao comunicar com o servidor.';
@@ -495,7 +578,19 @@ export async function loginInfoCultura(username: string, password: string): Prom
     body: JSON.stringify({ username, password })
   });
 
+  setStoredAccessToken(data.token);
   return data.token;
+}
+
+export async function logoutInfoCultura(): Promise<void> {
+  try {
+    await fetch(`${API_BASE}/auth/logout/`, {
+      method: 'POST',
+      credentials: 'include'
+    });
+  } finally {
+    setStoredAccessToken('');
+  }
 }
 
 export async function fetchInfoCulturaMe(token: string): Promise<InfoCulturaUser> {
@@ -736,6 +831,16 @@ export async function fetchAdminDashboard(
   token: string
 ): Promise<InfoCulturaDashboardStats> {
   return request<InfoCulturaDashboardStats>('/dashboard/admin/', {}, token);
+}
+
+export async function fetchAdminNotifications(
+  token: string
+): Promise<InfoCulturaAdminNotification[]> {
+  return request<InfoCulturaAdminNotification[]>(
+    '/dashboard/admin/notifications/',
+    {},
+    token
+  );
 }
 
 export async function fetchAdminNewsStatuses(

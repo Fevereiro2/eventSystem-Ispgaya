@@ -1,9 +1,21 @@
-import { Dispatch, FormEvent, SetStateAction, useEffect, useMemo, useState } from 'react';
+import {
+  ComponentType,
+  Dispatch,
+  FormEvent,
+  ReactNode,
+  SetStateAction,
+  useEffect,
+  useMemo,
+  useState,
+} from 'react';
 import {
   Bell,
+  Building2,
   BookOpen,
   CalendarClock,
   FilePlus2,
+  FolderKanban,
+  Inbox,
   LayoutDashboard,
   Newspaper,
   Sparkles,
@@ -136,6 +148,7 @@ import {
   fetchAdminClubs,
   fetchAdminContent,
   fetchAdminDashboard,
+  fetchAdminNotifications,
   fetchAdminEvents,
   fetchAdminNews,
   fetchAdminNewsStatuses,
@@ -146,6 +159,7 @@ import {
   fetchAdminUsers,
   fetchInfoCulturaMe,
   InfoCulturaBook,
+  InfoCulturaAdminNotification,
   InfoCulturaCategory,
   InfoCulturaClub,
   InfoCulturaDashboardStats,
@@ -162,6 +176,7 @@ import {
   CategoryPayload,
   EventPayload,
   loginInfoCultura,
+  logoutInfoCultura,
   NewsPayload,
   removeUserFromClub,
   resolveInfoCulturaAssetUrl,
@@ -179,6 +194,7 @@ import {
 } from '../data/infoculturaApi';
 
 const TOKEN_KEY = 'ispgaya_cultura_token';
+const NOTIFICATION_READ_KEY = 'ispgaya_cultura_notifications_read';
 const REGISTRATION_PAGE_SIZE = 10;
 const NEWS_PAGE_SIZE = 8;
 const ACTIVITY_PAGE_SIZE = 8;
@@ -238,6 +254,20 @@ function escapeCsvValue(value: string | number | boolean | null | undefined): st
     return `"${text.replace(/"/g, '""')}"`;
   }
   return text;
+}
+
+function getStoredReadNotificationIds(): string[] {
+  if (typeof window === 'undefined') return [];
+
+  try {
+    const raw = window.localStorage.getItem(NOTIFICATION_READ_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return [];
+    return parsed.filter((value): value is string => typeof value === 'string');
+  } catch {
+    return [];
+  }
 }
 
 function isWithinDateRange(value: string | null | undefined, fromDate: string, toDate: string): boolean {
@@ -337,6 +367,7 @@ type ActivityTab = 'books' | 'sessions' | 'events';
 
 type AdminSection =
   | 'resumo'
+  | 'notificacoes'
   | 'utilizadores'
   | 'conteudos'
   | 'noticias'
@@ -431,6 +462,7 @@ const initialCategoryForm: CategoryFormState = {
 
 const adminSections: { id: AdminSection; label: string; href: string }[] = [
   { id: 'resumo', label: 'Resumo', href: '/infocultura/resumo' },
+  { id: 'notificacoes', label: 'Notificacoes', href: '/infocultura/notificacoes' },
   { id: 'utilizadores', label: 'Utilizadores', href: '/infocultura/utilizadores' },
   { id: 'noticias', label: 'Noticias', href: '/infocultura/noticias' },
   { id: 'atividades', label: 'Atividades', href: '/infocultura/atividades' },
@@ -443,7 +475,7 @@ const adminSectionGroups: {
   title: string;
   ids: AdminSection[];
 }[] = [
-  { title: 'Painel', ids: ['resumo'] },
+  { title: 'Painel', ids: ['resumo', 'notificacoes'] },
   { title: 'Gestao', ids: ['utilizadores', 'clubes', 'inscricoes'] },
   { title: 'Conteudos', ids: ['noticias', 'atividades', 'conteudos'] }
 ];
@@ -466,6 +498,10 @@ function getAdminSection(pathname: string): AdminSection | null {
 
   if (pathname === '/infocultura/noticias') {
     return 'noticias';
+  }
+
+  if (pathname === '/infocultura/notificacoes') {
+    return 'notificacoes';
   }
 
   if (pathname === '/infocultura/atividades') {
@@ -609,6 +645,79 @@ function getRegistrationStatusBadge(status: string): string {
   return `${adminUserStatus} bg-amber-100 text-amber-700`;
 }
 
+type AdminHeroTone = 'amber' | 'blue' | 'slate' | 'rose' | 'emerald';
+
+type AdminHeroStat = {
+  label: string;
+  value: string | number;
+};
+
+type AdminPageHeroProps = {
+  icon: ComponentType<{ className?: string }>;
+  title: string;
+  description: string;
+  tone?: AdminHeroTone;
+  stats?: AdminHeroStat[];
+  actions?: ReactNode;
+};
+
+function getAdminHeroToneClasses(tone: AdminHeroTone): string {
+  if (tone === 'blue') return 'bg-sky-100 text-sky-700';
+  if (tone === 'rose') return 'bg-rose-100 text-rose-700';
+  if (tone === 'emerald') return 'bg-emerald-100 text-emerald-700';
+  if (tone === 'slate') return 'bg-slate-100 text-slate-700';
+  return 'bg-amber-100 text-amber-700';
+}
+
+function AdminPageHero({
+  icon: Icon,
+  title,
+  description,
+  tone = 'amber',
+  stats = [],
+  actions,
+}: AdminPageHeroProps) {
+  return (
+    <section className="rounded-2xl border border-slate-200 bg-gradient-to-r from-white to-slate-50 p-6 shadow-sm">
+      <div className="flex flex-wrap items-start justify-between gap-4">
+        <div>
+          <div className="flex items-center gap-3">
+            <span
+              className={`flex h-11 w-11 items-center justify-center rounded-xl ${getAdminHeroToneClasses(
+                tone
+              )}`}
+            >
+              <Icon className="h-5 w-5" />
+            </span>
+            <div>
+              <h2 className="text-3xl font-semibold text-slate-900">{title}</h2>
+              <p className="mt-1 text-sm text-slate-600">{description}</p>
+            </div>
+          </div>
+        </div>
+
+        {actions ? <div className="flex flex-wrap gap-3">{actions}</div> : null}
+      </div>
+
+      {stats.length > 0 ? (
+        <div className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
+          {stats.map((stat) => (
+            <div
+              key={stat.label}
+              className="rounded-2xl border border-slate-200 bg-white px-4 py-4 shadow-sm"
+            >
+              <p className="text-2xl font-semibold text-slate-900">{stat.value}</p>
+              <p className="mt-1 text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">
+                {stat.label}
+              </p>
+            </div>
+          ))}
+        </div>
+      ) : null}
+    </section>
+  );
+}
+
 function AdminCultura() {
   const location = useLocation();
   const navigate = useNavigate();
@@ -627,6 +736,7 @@ function AdminCultura() {
   const [newsItems, setNewsItems] = useState<InfoCulturaNews[]>([]);
   const [newsStatuses, setNewsStatuses] = useState<InfoCulturaNewsStatus[]>([]);
   const [dashboardStats, setDashboardStats] = useState<InfoCulturaDashboardStats | null>(null);
+  const [notifications, setNotifications] = useState<InfoCulturaAdminNotification[]>([]);
   const [books, setBooks] = useState<InfoCulturaBook[]>([]);
   const [categories, setCategories] = useState<InfoCulturaCategory[]>([]);
   const [sessions, setSessions] = useState<InfoCulturaSession[]>([]);
@@ -643,12 +753,14 @@ function AdminCultura() {
   const [isLoadingNews, setIsLoadingNews] = useState(false);
   const [isLoadingNewsStatuses, setIsLoadingNewsStatuses] = useState(false);
   const [isLoadingDashboard, setIsLoadingDashboard] = useState(false);
+  const [isLoadingNotifications, setIsLoadingNotifications] = useState(false);
   const [isLoadingActivities, setIsLoadingActivities] = useState(false);
   const [isLoadingCategories, setIsLoadingCategories] = useState(false);
   const [isLoadingRegistrations, setIsLoadingRegistrations] = useState(false);
   const [isLoadingRegistrationStatuses, setIsLoadingRegistrationStatuses] = useState(false);
   const [panelError, setPanelError] = useState('');
   const [dashboardError, setDashboardError] = useState('');
+  const [notificationError, setNotificationError] = useState('');
   const [newsError, setNewsError] = useState('');
   const [activityError, setActivityError] = useState('');
   const [registrationError, setRegistrationError] = useState('');
@@ -751,6 +863,9 @@ function AdminCultura() {
   const [isDeletingBulkNews, setIsDeletingBulkNews] = useState(false);
   const [isDeletingBulkBooks, setIsDeletingBulkBooks] = useState(false);
   const [isDeletingBulkEvents, setIsDeletingBulkEvents] = useState(false);
+  const [readNotificationIds, setReadNotificationIds] = useState<string[]>(() =>
+    getStoredReadNotificationIds()
+  );
   const [userFormError, setUserFormError] = useState('');
   const [clubFormError, setClubFormError] = useState('');
   const [newsFormError, setNewsFormError] = useState('');
@@ -904,25 +1019,56 @@ function AdminCultura() {
     ],
     [activeUsers, dashboardStats, pendingRegistrations, publishedItems, sessions.length]
   );
+  const readNotificationIdSet = useMemo(
+    () => new Set(readNotificationIds),
+    [readNotificationIds]
+  );
+  const unreadNotifications = useMemo(
+    () => notifications.filter((notification) => !readNotificationIdSet.has(notification.id)),
+    [notifications, readNotificationIdSet]
+  );
   const dashboardAlerts = useMemo(
-    () => [
-      {
-        title: 'Revisao editorial',
-        detail: `${dashboardStats?.news_review ?? 0} noticias e ${dashboardStats?.events_review ?? 0} eventos aguardam revisao.`,
-        href: '/infocultura/noticias',
-      },
-      {
-        title: 'Inscricoes por validar',
-        detail: `${dashboardStats?.registrations_pending ?? pendingRegistrations} inscricoes pendentes de decisao.`,
-        href: '/infocultura/inscricoes',
-      },
-      {
-        title: 'Clubes com atividade aberta',
-        detail: `${dashboardStats?.clubs_with_registrations_open ?? 0} clubes com inscricoes atualmente ativas.`,
-        href: '/infocultura/clubes',
-      },
-    ],
-    [dashboardStats, pendingRegistrations]
+    () =>
+      notifications.length > 0
+        ? notifications.slice(0, 4).map((notification) => ({
+            id: notification.id,
+            title: notification.title,
+            detail: notification.message,
+            href: notification.href,
+            level: notification.level,
+            is_read: readNotificationIdSet.has(notification.id),
+            created_at: notification.created_at || null,
+          }))
+        : [
+            {
+              id: 'editorial-review',
+              title: 'Revisao editorial',
+              detail: `${dashboardStats?.news_review ?? 0} noticias e ${dashboardStats?.events_review ?? 0} eventos aguardam revisao.`,
+              href: '/infocultura/noticias',
+              level: 'warning',
+              is_read: false,
+              created_at: null,
+            },
+            {
+              id: 'registrations-pending',
+              title: 'Inscricoes por validar',
+              detail: `${dashboardStats?.registrations_pending ?? pendingRegistrations} inscricoes pendentes de decisao.`,
+              href: '/infocultura/inscricoes',
+              level: 'warning',
+              is_read: false,
+              created_at: null,
+            },
+            {
+              id: 'clubs-open',
+              title: 'Clubes com atividade aberta',
+              detail: `${dashboardStats?.clubs_with_registrations_open ?? 0} clubes com inscricoes atualmente ativas.`,
+              href: '/infocultura/clubes',
+              level: 'info',
+              is_read: false,
+              created_at: null,
+            },
+          ],
+    [dashboardStats, notifications, pendingRegistrations, readNotificationIdSet]
   );
   const dashboardAgenda = useMemo(
     () =>
@@ -1013,6 +1159,165 @@ function AdminCultura() {
     },
     [canManageUsers]
   );
+  const latestNotifications = useMemo(
+    () =>
+      notifications.map((notification) => ({
+        ...notification,
+        isRead: readNotificationIdSet.has(notification.id),
+      })),
+    [notifications, readNotificationIdSet]
+  );
+  const notificationOverviewStats = useMemo(
+    () => [
+      { label: 'Total', value: notifications.length },
+      { label: 'Por ler', value: unreadNotifications.length },
+      {
+        label: 'Editoriais',
+        value: notifications.filter((notification) => notification.kind === 'editorial').length,
+      },
+      {
+        label: 'Agenda',
+        value: notifications.filter((notification) => notification.kind === 'schedule').length,
+      },
+    ],
+    [notifications, unreadNotifications.length]
+  );
+  const userOverviewStats = useMemo(
+    () => [
+      { label: 'Total', value: filteredUsers.length },
+      {
+        label: 'Ativos',
+        value: filteredUsers.filter((user) => user.is_active).length,
+      },
+      {
+        label: 'Inativos',
+        value: filteredUsers.filter((user) => !user.is_active).length,
+      },
+      {
+        label: 'Club admins',
+        value: filteredUsers.filter((user) => user.role === 'club_admin').length,
+      },
+    ],
+    [filteredUsers]
+  );
+  const clubsOverviewStats = useMemo(
+    () => [
+      { label: 'Total', value: filteredClubs.length },
+      {
+        label: 'Ativos',
+        value: filteredClubs.filter((club) => club.is_active).length,
+      },
+      {
+        label: 'Inscricoes abertas',
+        value: filteredClubs.filter((club) => club.enable_registrations).length,
+      },
+      {
+        label: 'Com imagem',
+        value: filteredClubs.filter((club) => Boolean(club.image)).length,
+      },
+    ],
+    [filteredClubs]
+  );
+  const newsOverviewStats = useMemo(
+    () => [
+      { label: 'Total filtrado', value: newsTotal },
+      {
+        label: 'Em revisao',
+        value:
+          dashboardStats?.news_review ??
+          sortedNews.filter(
+            (item) => normalizeWorkflowStatus(item.news_status_name) === 'review'
+          ).length,
+      },
+      { label: 'Selecionadas', value: selectedNewsIds.length },
+      {
+        label: 'Publicadas',
+        value:
+          dashboardStats?.news_published ??
+          sortedNews.filter(
+            (item) => normalizeWorkflowStatus(item.news_status_name) === 'published'
+          ).length,
+      },
+    ],
+    [dashboardStats, newsTotal, selectedNewsIds.length, sortedNews]
+  );
+  const activityOverviewStats = useMemo(() => {
+    if (activityTab === 'books') {
+      return [
+        { label: 'Total filtrado', value: activityTotal },
+        {
+          label: 'Em destaque',
+          value: sortedBooks.filter((item) => item.is_featured).length,
+        },
+        { label: 'Selecionados', value: selectedBookIds.length },
+        {
+          label: 'Clubes na pagina',
+          value: new Set(sortedBooks.map((item) => item.club_id)).size,
+        },
+      ];
+    }
+
+    if (activityTab === 'sessions') {
+      return [
+        { label: 'Total filtrado', value: activityTotal },
+        {
+          label: 'Proximas',
+          value: sortedSessions.filter(
+            (item) => new Date(item.start_date).getTime() >= Date.now()
+          ).length,
+        },
+        {
+          label: 'Inscricoes abertas',
+          value: sortedSessions.filter((item) => item.enable_registrations).length,
+        },
+        {
+          label: 'Clubes na pagina',
+          value: new Set(sortedSessions.map((item) => item.club_id)).size,
+        },
+      ];
+    }
+
+    return [
+      { label: 'Total filtrado', value: activityTotal },
+      {
+        label: 'Em revisao',
+        value: sortedEvents.filter((item) => normalizeWorkflowStatus(item.status) === 'review')
+          .length,
+      },
+      { label: 'Selecionados', value: selectedEventIds.length },
+      { label: 'Categorias', value: sortedCategories.length },
+    ];
+  }, [
+    activityTab,
+    activityTotal,
+    selectedBookIds.length,
+    selectedEventIds.length,
+    sortedBooks,
+    sortedCategories.length,
+    sortedEvents,
+    sortedSessions,
+  ]);
+  const registrationOverviewStats = useMemo(
+    () => [
+      { label: 'Total filtrado', value: registrationTotal },
+      { label: 'Pendentes', value: pendingRegistrations },
+      { label: 'Aprovadas', value: approvedRegistrations },
+      { label: 'Rejeitadas', value: rejectedRegistrations },
+    ],
+    [approvedRegistrations, pendingRegistrations, registrationTotal, rejectedRegistrations]
+  );
+  const contentOverviewStats = useMemo(
+    () => [
+      { label: 'Total', value: sortedItems.length },
+      { label: 'Publicados', value: publishedItems },
+      { label: 'Rascunhos', value: Math.max(0, sortedItems.length - publishedItems) },
+      {
+        label: 'Areas',
+        value: new Set(sortedItems.map((item) => item.area)).size,
+      },
+    ],
+    [publishedItems, sortedItems]
+  );
   const clubMembers = useMemo(() => {
     if (!editingClubId) return [];
 
@@ -1042,6 +1347,7 @@ function AdminCultura() {
     setNewsItems([]);
     setNewsStatuses([]);
     setDashboardStats(null);
+    setNotifications([]);
     setBooks([]);
     setCategories([]);
     setSessions([]);
@@ -1090,6 +1396,7 @@ function AdminCultura() {
     setCurrentUser(null);
     setPanelError('');
     setDashboardError('');
+    setNotificationError('');
     setNewsError('');
     setActivityError('');
     setRegistrationError('');
@@ -1558,6 +1865,11 @@ function AdminCultura() {
   }, [token]);
 
   useEffect(() => {
+    if (typeof window === 'undefined') return;
+    window.localStorage.setItem(NOTIFICATION_READ_KEY, JSON.stringify(readNotificationIds));
+  }, [readNotificationIds]);
+
+  useEffect(() => {
     if (!token || !canManageUsers) {
       setRoles([]);
       setClubs([]);
@@ -1683,6 +1995,37 @@ function AdminCultura() {
       .finally(() => {
         if (!isMounted) return;
         setIsLoadingDashboard(false);
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [activeSection, token, currentUser]);
+
+  useEffect(() => {
+    if (!token || !currentUser || (activeSection !== 'resumo' && activeSection !== 'notificacoes')) {
+      return;
+    }
+
+    let isMounted = true;
+    setIsLoadingNotifications(true);
+    setNotificationError('');
+
+    void fetchAdminNotifications(token)
+      .then((nextNotifications) => {
+        if (!isMounted) return;
+        setNotifications(nextNotifications);
+      })
+      .catch((error) => {
+        if (!isMounted) return;
+        if (handleAuthError(error)) return;
+        const message =
+          error instanceof Error ? error.message : 'Nao foi possivel carregar as notificacoes.';
+        setNotificationError(message);
+      })
+      .finally(() => {
+        if (!isMounted) return;
+        setIsLoadingNotifications(false);
       });
 
     return () => {
@@ -1960,12 +2303,32 @@ function AdminCultura() {
   }
 
   function handleLogout() {
+    void logoutInfoCultura();
     clearAuth();
     setAuthUser('');
     setAuthPass('');
     resetContentForm();
     resetUserForm();
     resetClubForm();
+  }
+
+  function markNotificationAsRead(notificationId: string) {
+    setReadNotificationIds((prev) =>
+      prev.includes(notificationId) ? prev : [...prev, notificationId]
+    );
+  }
+
+  function markAllNotificationsAsRead() {
+    setReadNotificationIds((prev) => {
+      const merged = new Set(prev);
+      notifications.forEach((notification) => merged.add(notification.id));
+      return Array.from(merged);
+    });
+  }
+
+  function handleOpenNotification(notification: InfoCulturaAdminNotification) {
+    markNotificationAsRead(notification.id);
+    navigate(notification.href);
   }
 
   async function handleSaveContent(event: FormEvent<HTMLFormElement>) {
@@ -2997,6 +3360,8 @@ function AdminCultura() {
             <p className={adminInfo}>
               {activeSection === 'utilizadores'
                 ? 'Gestao e consulta dos utilizadores do InfoCultura.'
+                : activeSection === 'notificacoes'
+                  ? 'Centro de notificacoes operacionais e editoriais do painel.'
                 : activeSection === 'noticias'
                   ? 'Criacao, publicacao e arquivo de noticias por clube.'
                 : activeSection === 'atividades'
@@ -3034,7 +3399,9 @@ function AdminCultura() {
                           isActive ? adminPortalSidebarLinkActive : adminPortalSidebarLink
                         }
                       >
-                        {section.label}
+                        {section.id === 'notificacoes' && unreadNotifications.length > 0
+                          ? `${section.label} (${unreadNotifications.length})`
+                          : section.label}
                       </NavLink>
                     ))}
                   </nav>
@@ -3129,24 +3496,65 @@ function AdminCultura() {
                     <div>
                       <h3 className="text-2xl font-semibold text-slate-900">Alertas</h3>
                       <p className="mt-1 text-sm text-slate-600">
-                        Itens que merecem atencao imediata.
+                        {unreadNotifications.length > 0
+                          ? `${unreadNotifications.length} notificacoes por ler.`
+                          : 'Itens que merecem atencao imediata.'}
                       </p>
                     </div>
-                    <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-100 text-slate-700">
+                    <button
+                      type="button"
+                      className="flex h-10 min-w-10 items-center justify-center rounded-xl bg-slate-100 px-3 text-slate-700"
+                      onClick={() => navigate('/infocultura/notificacoes')}
+                    >
                       <Bell className="h-5 w-5" />
-                    </span>
+                    </button>
                   </div>
+
+                  {isLoadingNotifications ? (
+                    <p className="mt-4 text-sm text-slate-500">A carregar notificacoes...</p>
+                  ) : null}
+                  {notificationError ? (
+                    <p className="mt-4 text-sm text-red-600">{notificationError}</p>
+                  ) : null}
 
                   <div className="mt-6 space-y-3">
                     {dashboardAlerts.map((alert) => (
                       <button
-                        key={alert.title}
+                        key={alert.id}
                         type="button"
-                        className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4 text-left transition-colors hover:border-[#dd8609] hover:bg-white"
-                        onClick={() => navigate(alert.href)}
+                        className={`w-full rounded-2xl border px-4 py-4 text-left transition-colors hover:border-[#dd8609] hover:bg-white ${
+                          alert.is_read
+                            ? 'border-slate-200 bg-slate-50'
+                            : alert.level === 'warning'
+                              ? 'border-amber-200 bg-amber-50'
+                              : alert.level === 'success'
+                                ? 'border-emerald-200 bg-emerald-50'
+                                : 'border-sky-200 bg-sky-50'
+                        }`}
+                        onClick={() =>
+                          handleOpenNotification({
+                            id: alert.id,
+                            kind: 'dashboard',
+                            level: alert.level,
+                            title: alert.title,
+                            message: alert.detail,
+                            href: alert.href,
+                            created_at: alert.created_at,
+                          })
+                        }
                       >
-                        <p className="text-sm font-semibold text-slate-900">{alert.title}</p>
+                        <div className="flex items-start justify-between gap-3">
+                          <p className="text-sm font-semibold text-slate-900">{alert.title}</p>
+                          {!alert.is_read ? (
+                            <span className="mt-1 inline-flex h-2.5 w-2.5 rounded-full bg-[#dd8609]" />
+                          ) : null}
+                        </div>
                         <p className="mt-1 text-sm leading-6 text-slate-600">{alert.detail}</p>
+                        {alert.created_at ? (
+                          <p className="mt-3 text-xs font-medium uppercase tracking-[0.12em] text-slate-500">
+                            {formatAdminDateTime(alert.created_at)}
+                          </p>
+                        ) : null}
                       </button>
                     ))}
                   </div>
@@ -3277,30 +3685,125 @@ function AdminCultura() {
             </div>
           ) : null}
 
+          {activeSection === 'notificacoes' ? (
+            <div className="space-y-6">
+              <AdminPageHero
+                icon={Bell}
+                title="Centro de Notificacoes"
+                description="Alertas editoriais, operacionais e de agenda gerados a partir da atividade do sistema."
+                tone="amber"
+                stats={notificationOverviewStats}
+                actions={
+                  <button
+                    type="button"
+                    className={adminBtnSecondary}
+                    disabled={notifications.length === 0}
+                    onClick={markAllNotificationsAsRead}
+                  >
+                    Marcar todas como lidas
+                  </button>
+                }
+              />
+
+              <section className={adminPanelCard}>
+                {isLoadingNotifications ? (
+                  <p className={adminInfo}>A carregar notificacoes...</p>
+                ) : null}
+                {notificationError ? <p className={adminError}>{notificationError}</p> : null}
+
+                {!isLoadingNotifications && latestNotifications.length === 0 ? (
+                  <p className={adminInfo}>Nao existem notificacoes para mostrar.</p>
+                ) : null}
+
+                <div className="space-y-4">
+                  {latestNotifications.map((notification) => (
+                    <article
+                      key={notification.id}
+                      className={`rounded-2xl border p-5 shadow-sm ${
+                        notification.isRead
+                          ? 'border-slate-200 bg-white'
+                          : notification.level === 'warning'
+                            ? 'border-amber-200 bg-amber-50'
+                            : notification.level === 'success'
+                              ? 'border-emerald-200 bg-emerald-50'
+                              : 'border-sky-200 bg-sky-50'
+                      }`}
+                    >
+                      <div className="flex flex-wrap items-start justify-between gap-4">
+                        <div className="max-w-3xl">
+                          <div className="flex flex-wrap items-center gap-3">
+                            <h3 className="text-lg font-semibold text-slate-900">
+                              {notification.title}
+                            </h3>
+                            {!notification.isRead ? (
+                              <span className="inline-flex items-center rounded-full bg-[#dd8609] px-2.5 py-1 text-xs font-semibold text-white">
+                                Nova
+                              </span>
+                            ) : null}
+                            <span className="inline-flex items-center rounded-full bg-white/80 px-2.5 py-1 text-xs font-semibold uppercase tracking-[0.12em] text-slate-600">
+                              {notification.kind}
+                            </span>
+                          </div>
+                          <p className="mt-3 leading-7 text-slate-700">{notification.message}</p>
+                          <p className="mt-3 text-sm font-medium text-slate-500">
+                            {formatAdminDateTime(notification.created_at || '')}
+                          </p>
+                        </div>
+
+                        <div className="flex flex-wrap gap-3">
+                          <button
+                            type="button"
+                            className={adminBtnPrimary}
+                            onClick={() => handleOpenNotification(notification)}
+                          >
+                            Abrir
+                          </button>
+                          {!notification.isRead ? (
+                            <button
+                              type="button"
+                              className={adminBtnSecondary}
+                              onClick={() => markNotificationAsRead(notification.id)}
+                            >
+                              Marcar como lida
+                            </button>
+                          ) : null}
+                        </div>
+                      </div>
+                    </article>
+                  ))}
+                </div>
+              </section>
+            </div>
+          ) : null}
+
           {activeSection === 'utilizadores' && userPage?.mode === 'list' ? (
-            <section className={adminPanelCard}>
-              <h2 className={blockTitle}>Utilizadores</h2>
-              <p className={blockText}>
-                Nesta pagina aparecem todos os utilizadores do InfoCultura.
-              </p>
+            <div className="space-y-6">
+              <AdminPageHero
+                icon={Users}
+                title="Utilizadores"
+                description="Gestao e consulta dos acessos administrativos do InfoCultura."
+                tone="slate"
+                stats={userOverviewStats}
+                actions={
+                  canManageUsers ? (
+                    <>
+                      <NavLink to="/infocultura/utilizadores/novo" className={adminBtnPrimary}>
+                        Criar utilizador
+                      </NavLink>
+                      <button
+                        type="button"
+                        className={adminBtnSecondary}
+                        disabled={isExportingUsers}
+                        onClick={() => void handleExportUsersCsv()}
+                      >
+                        {isExportingUsers ? 'A exportar...' : 'Exportar CSV'}
+                      </button>
+                    </>
+                  ) : undefined
+                }
+              />
 
-              <div className={adminStatsGrid}>
-                <div className={adminStatCard}>
-                  <p className={adminStatValue}>{filteredUsers.length}</p>
-                  <p className={adminStatLabel}>Total</p>
-                </div>
-                <div className={adminStatCard}>
-                  <p className={adminStatValue}>{filteredUsers.filter((user) => user.is_active).length}</p>
-                  <p className={adminStatLabel}>Ativos</p>
-                </div>
-                <div className={adminStatCard}>
-                  <p className={adminStatValue}>
-                    {filteredUsers.filter((user) => !user.is_active).length}
-                  </p>
-                  <p className={adminStatLabel}>Inativos</p>
-                </div>
-              </div>
-
+              <section className={adminPanelCard}>
               <div className={adminFormGridSpaced}>
                 <div className={adminField}>
                   <label className={adminLabel} htmlFor="user-date-from">
@@ -3347,21 +3850,7 @@ function AdminCultura() {
                 </div>
               </div>
 
-              {canManageUsers ? (
-                <div className={adminActions}>
-                  <NavLink to="/infocultura/utilizadores/novo" className={adminBtnPrimary}>
-                    Criar utilizador
-                  </NavLink>
-                  <button
-                    type="button"
-                    className={adminBtnSecondary}
-                    disabled={isExportingUsers}
-                    onClick={() => void handleExportUsersCsv()}
-                  >
-                    {isExportingUsers ? 'A exportar...' : 'Exportar CSV'}
-                  </button>
-                </div>
-              ) : (
+              {canManageUsers ? null : (
                 <p className={adminInfo}>
                   Apenas o superadmin pode criar, editar e desativar utilizadores.
                 </p>
@@ -3416,25 +3905,29 @@ function AdminCultura() {
                 ))}
               </div>
             </section>
+            </div>
           ) : null}
 
           {activeSection === 'utilizadores' &&
           (userPage?.mode === 'create' || userPage?.mode === 'edit') ? (
-            <section className={adminPanelCard}>
-              <h2 className={blockTitle}>
-                {userPage.mode === 'create' ? 'Criar Utilizador' : 'Editar Utilizador'}
-              </h2>
-              <p className={blockText}>
-                {userPage.mode === 'create'
-                  ? 'Cria um novo utilizador para o InfoCultura.'
-                  : 'Atualiza os dados do utilizador selecionado.'}
-              </p>
+            <div className="space-y-6">
+              <AdminPageHero
+                icon={Users}
+                title={userPage.mode === 'create' ? 'Criar Utilizador' : 'Editar Utilizador'}
+                description={
+                  userPage.mode === 'create'
+                    ? 'Criacao de novos acessos administrativos no InfoCultura.'
+                    : 'Atualizacao dos dados e permissoes do utilizador selecionado.'
+                }
+                tone="slate"
+                actions={
+                  <NavLink to="/infocultura/utilizadores" className={adminBtnSecondary}>
+                    Voltar aos utilizadores
+                  </NavLink>
+                }
+              />
 
-              <div className={adminActions}>
-                <NavLink to="/infocultura/utilizadores" className={adminBtnSecondary}>
-                  Voltar aos utilizadores
-                </NavLink>
-              </div>
+              <section className={adminPanelCard}>
 
               {!canManageUsers ? (
                 <p className={adminError}>
@@ -3543,20 +4036,24 @@ function AdminCultura() {
                 </form>
               )}
             </section>
+            </div>
           ) : null}
 
           {activeSection === 'utilizadores' && userPage?.mode === 'deactivate' ? (
-            <section className={adminPanelCard}>
-              <h2 className={blockTitle}>Desativar Utilizador</h2>
-              <p className={blockText}>
-                Confirma a desativacao do utilizador selecionado.
-              </p>
+            <div className="space-y-6">
+              <AdminPageHero
+                icon={Users}
+                title="Desativar Utilizador"
+                description="Confirma a desativacao do utilizador selecionado antes de remover o acesso."
+                tone="rose"
+                actions={
+                  <NavLink to="/infocultura/utilizadores" className={adminBtnSecondary}>
+                    Voltar aos utilizadores
+                  </NavLink>
+                }
+              />
 
-              <div className={adminActions}>
-                <NavLink to="/infocultura/utilizadores" className={adminBtnSecondary}>
-                  Voltar aos utilizadores
-                </NavLink>
-              </div>
+              <section className={adminPanelCard}>
 
               {!canManageUsers ? (
                 <p className={adminError}>
@@ -3599,10 +4096,29 @@ function AdminCultura() {
                 </form>
               )}
             </section>
+            </div>
           ) : null}
 
           {activeSection === 'clubes' ? (
-            <>
+            <div className="space-y-6">
+              <AdminPageHero
+                icon={Building2}
+                title="Clubes"
+                description="Estrutura interna dos clubes, estados de atividade e configuracao de inscricoes."
+                tone="amber"
+                stats={clubsOverviewStats}
+                actions={
+                  <button
+                    type="button"
+                    className={adminBtnSecondary}
+                    disabled={isExportingClubs}
+                    onClick={() => void handleExportClubsCsv()}
+                  >
+                    {isExportingClubs ? 'A exportar...' : 'Exportar CSV'}
+                  </button>
+                }
+              />
+
               <form onSubmit={handleSaveClub} className={adminPanelForm}>
                 <h2 className={blockTitle}>
                   {editingClubId ? 'Editar Clube' : 'Novo Clube'}
@@ -3971,11 +4487,29 @@ function AdminCultura() {
                   </div>
                 </section>
               ) : null}
-            </>
+            </div>
           ) : null}
 
           {activeSection === 'noticias' ? (
-            <>
+            <div className="space-y-6">
+              <AdminPageHero
+                icon={Newspaper}
+                title="Noticias"
+                description="Workflow editorial, publicacao e acompanhamento das noticias por clube."
+                tone="blue"
+                stats={newsOverviewStats}
+                actions={
+                  <button
+                    type="button"
+                    className={adminBtnSecondary}
+                    disabled={isExportingNews}
+                    onClick={() => void handleExportNewsCsv()}
+                  >
+                    {isExportingNews ? 'A exportar...' : 'Exportar CSV'}
+                  </button>
+                }
+              />
+
               <form onSubmit={handleSaveNews} className={adminPanelForm}>
                 <h2 className={blockTitle}>
                   {editingNewsId ? 'Editar Noticia' : 'Nova Noticia'}
@@ -4421,11 +4955,29 @@ function AdminCultura() {
                   </div>
                 ) : null}
               </section>
-            </>
+            </div>
           ) : null}
 
           {activeSection === 'atividades' ? (
-            <>
+            <div className="space-y-6">
+              <AdminPageHero
+                icon={CalendarClock}
+                title="Atividades"
+                description="Gestao integrada de livros, sessoes e eventos com filtros, agenda e workflow."
+                tone="blue"
+                stats={activityOverviewStats}
+                actions={
+                  <button
+                    type="button"
+                    className={adminBtnSecondary}
+                    disabled={isExportingActivities}
+                    onClick={() => void handleExportActivitiesCsv()}
+                  >
+                    {isExportingActivities ? 'A exportar...' : 'Exportar CSV'}
+                  </button>
+                }
+              />
+
               <section className={adminPanelCard}>
                 <div className={adminHeaderRow}>
                   <div>
@@ -5730,11 +6282,29 @@ function AdminCultura() {
                   </div>
                 </section>
               ) : null}
-            </>
+            </div>
           ) : null}
 
           {activeSection === 'inscricoes' ? (
-            <>
+            <div className="space-y-6">
+              <AdminPageHero
+                icon={Inbox}
+                title="Inscricoes"
+                description="Consulta, triagem e validacao dos pedidos submetidos pelos clubes."
+                tone="rose"
+                stats={registrationOverviewStats}
+                actions={
+                  <button
+                    type="button"
+                    className={adminBtnSecondary}
+                    disabled={isExportingRegistrations}
+                    onClick={() => void handleExportRegistrationsCsv()}
+                  >
+                    {isExportingRegistrations ? 'A exportar...' : 'Exportar CSV'}
+                  </button>
+                }
+              />
+
               <section className={adminPanelCard}>
                 <h2 className={blockTitle}>Inscricoes</h2>
                 <p className={blockText}>
@@ -6044,11 +6614,19 @@ function AdminCultura() {
                   ))}
                 </div>
               </section>
-            </>
+            </div>
           ) : null}
 
           {activeSection === 'conteudos' ? (
-            <>
+            <div className="space-y-6">
+              <AdminPageHero
+                icon={FolderKanban}
+                title="Conteudos"
+                description="Gestao editorial das areas permanentes do Laboratorio Cultural."
+                tone="emerald"
+                stats={contentOverviewStats}
+              />
+
               <form onSubmit={handleSaveContent} className={adminPanelForm}>
                 <h2 className={blockTitle}>
                   {editingId ? 'Editar Conteudo' : 'Novo Conteudo'}
@@ -6199,7 +6777,7 @@ function AdminCultura() {
                   </article>
                 ))}
               </div>
-            </>
+            </div>
           ) : null}
             </div>
           </div>
