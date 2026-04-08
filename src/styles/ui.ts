@@ -142,6 +142,22 @@ export const adminSectionLink =
   'rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition-colors hover:border-[#dd8609] hover:text-[#dd8609]';
 export const adminSectionLinkActive =
   'rounded-md border border-[#dd8609] bg-orange-50 px-4 py-2 text-sm font-semibold text-[#dd8609]';
+export const adminPortalShell = 'grid grid-cols-1 gap-6 xl:grid-cols-[260px_minmax(0,1fr)]';
+export const adminPortalSidebar =
+  'rounded-2xl border border-[#d9dee3] bg-[#f5f6f7] p-0 shadow-sm overflow-hidden';
+export const adminPortalSidebarHead =
+  'border-b border-[#d9dee3] bg-white px-5 py-5';
+export const adminPortalSidebarBrand = 'text-[28px] font-bold tracking-tight text-[#dd8609]';
+export const adminPortalSidebarSub = 'mt-1 text-xs uppercase tracking-[0.14em] text-slate-500';
+export const adminPortalSidebarSection = 'border-t border-[#e1e5e8] px-0 py-4 first:border-t-0';
+export const adminPortalSidebarTitle =
+  'px-5 text-[11px] font-bold uppercase tracking-[0.12em] text-slate-500';
+export const adminPortalSidebarNav = 'mt-2 flex flex-col';
+export const adminPortalSidebarLink =
+  'border-l-[4px] border-transparent px-5 py-2.5 text-[15px] font-medium text-slate-700 transition-colors hover:bg-white hover:text-[#dd8609]';
+export const adminPortalSidebarLinkActive =
+  'border-l-[4px] border-[#dd8609] bg-[#f4a24d] text-white px-5 py-2.5 text-[15px] font-semibold shadow-[inset_0_1px_0_rgba(255,255,255,0.3)]';
+export const adminPortalContent = 'min-w-0';
 export const adminBadge =
   'inline-flex items-center rounded-full bg-slate-900 px-3 py-1 text-xs font-semibold text-white';
 export const adminInfo = 'text-sm text-slate-600';
