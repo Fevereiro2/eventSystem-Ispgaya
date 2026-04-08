@@ -1,6 +1,8 @@
 from rest_framework import serializers
 from django.utils import timezone
 from django.db import connection
+from django.core.validators import validate_email as django_validate_email
+from django.core.exceptions import ValidationError as DjangoValidationError
 
 from .models import (
     AppUser,
@@ -35,7 +37,13 @@ from .services import (
     notify_news_workflow_status,
     record_editorial_action,
 )
-from .security import hash_password
+from .security import (
+    hash_password,
+    normalize_email_address,
+    validate_login_identifier,
+    validate_person_name,
+    validate_plaintext_password,
+)
 
 
 NEWS_WORKFLOW_STATUS_ORDER = ("draft", "review", "published", "archived")
@@ -75,8 +83,21 @@ class CulturalContentSerializer(serializers.ModelSerializer):
 
 
 class LoginSerializer(serializers.Serializer):
-    username = serializers.CharField()
-    password = serializers.CharField()
+    username = serializers.CharField(trim_whitespace=True, max_length=150)
+    password = serializers.CharField(trim_whitespace=False, max_length=128)
+
+    def validate_username(self, value):
+        try:
+            return validate_login_identifier(value)
+        except ValueError as error:
+            raise serializers.ValidationError(str(error)) from error
+
+    def validate_password(self, value):
+        if not value:
+            raise serializers.ValidationError('A password e obrigatoria.')
+        if any(ord(char) < 32 or ord(char) == 127 for char in value):
+            raise serializers.ValidationError('A password contem caracteres invalidos.')
+        return value
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -103,6 +124,8 @@ class RoleSerializer(serializers.ModelSerializer):
 
 class AdminUserWriteSerializer(serializers.ModelSerializer):
     role = serializers.SlugRelatedField(slug_field='name', queryset=Role.objects.all())
+    name = serializers.CharField(max_length=150)
+    email = serializers.EmailField(max_length=150)
     club_id = serializers.PrimaryKeyRelatedField(
         source='club',
         queryset=Club.objects.all(),
@@ -120,14 +143,33 @@ class AdminUserWriteSerializer(serializers.ModelSerializer):
         }
 
     def validate_email(self, value):
-        queryset = AppUser.objects.filter(email__iexact=value)
+        normalized_email = normalize_email_address(value)
+
+        try:
+            django_validate_email(normalized_email)
+        except DjangoValidationError as error:
+            raise serializers.ValidationError('Indica um email valido.') from error
+
+        queryset = AppUser.objects.filter(email__iexact=normalized_email)
         if self.instance:
             queryset = queryset.exclude(pk=self.instance.pk)
 
         if queryset.exists():
             raise serializers.ValidationError('Ja existe um utilizador com este email.')
 
-        return value
+        return normalized_email
+
+    def validate_name(self, value):
+        try:
+            return validate_person_name(value)
+        except ValueError as error:
+            raise serializers.ValidationError(str(error)) from error
+
+    def validate_password(self, value):
+        try:
+            return validate_plaintext_password(value, min_length=8)
+        except ValueError as error:
+            raise serializers.ValidationError(str(error)) from error
 
     def validate(self, attrs):
         if self.instance is None and not attrs.get('password'):
@@ -276,6 +318,16 @@ class EditorialHistorySerializer(serializers.Serializer):
     to_status = serializers.CharField()
     actor_user_id = serializers.IntegerField(allow_null=True)
     actor_name = serializers.CharField()
+    created_at = serializers.DateTimeField(allow_null=True)
+
+
+class AdminNotificationSerializer(serializers.Serializer):
+    id = serializers.CharField()
+    kind = serializers.CharField()
+    level = serializers.CharField()
+    title = serializers.CharField()
+    message = serializers.CharField()
+    href = serializers.CharField()
     created_at = serializers.DateTimeField(allow_null=True)
 
 
@@ -757,27 +809,41 @@ class AdminSessionWriteSerializer(ClubScopedWriteSerializer):
                 info.name
                 for info in connection.introspection.get_table_description(cursor, 'sessions')
             }
-            updates: list[str] = []
             params: list[object] = []
 
             if 'enable_registrations' in table_columns and enable_registrations is not None:
-                updates.append('enable_registrations = %s')
                 params.append(bool(enable_registrations))
                 session.enable_registrations = bool(enable_registrations)
+                enable_registrations_supported = True
+            else:
+                enable_registrations_supported = False
 
             if 'registration_capacity' in table_columns:
-                updates.append('registration_capacity = %s')
                 params.append(registration_capacity)
                 session.registration_capacity = registration_capacity
+                registration_capacity_supported = True
+            else:
+                registration_capacity_supported = False
 
-            if not updates:
+            if not enable_registrations_supported and not registration_capacity_supported:
                 return
 
             params.append(session.id)
-            cursor.execute(
-                f"UPDATE sessions SET {', '.join(updates)} WHERE id_sessions = %s",
-                params,
-            )
+            if enable_registrations_supported and registration_capacity_supported:
+                cursor.execute(
+                    "UPDATE sessions SET enable_registrations = %s, registration_capacity = %s WHERE id_sessions = %s",
+                    params,
+                )
+            elif enable_registrations_supported:
+                cursor.execute(
+                    "UPDATE sessions SET enable_registrations = %s WHERE id_sessions = %s",
+                    params,
+                )
+            else:
+                cursor.execute(
+                    "UPDATE sessions SET registration_capacity = %s WHERE id_sessions = %s",
+                    params,
+                )
 
     def create(self, validated_data):
         now = timezone.now()
@@ -932,27 +998,41 @@ class AdminEventWriteSerializer(serializers.ModelSerializer):
                 info.name
                 for info in connection.introspection.get_table_description(cursor, 'event')
             }
-            updates: list[str] = []
             params: list[object] = []
 
             if 'enable_registrations' in table_columns and enable_registrations is not None:
-                updates.append('enable_registrations = %s')
                 params.append(bool(enable_registrations))
                 event.enable_registrations = bool(enable_registrations)
+                enable_registrations_supported = True
+            else:
+                enable_registrations_supported = False
 
             if 'registration_capacity' in table_columns:
-                updates.append('registration_capacity = %s')
                 params.append(registration_capacity)
                 event.registration_capacity = registration_capacity
+                registration_capacity_supported = True
+            else:
+                registration_capacity_supported = False
 
-            if not updates:
+            if not enable_registrations_supported and not registration_capacity_supported:
                 return
 
             params.append(event.id)
-            cursor.execute(
-                f"UPDATE event SET {', '.join(updates)} WHERE id_event = %s",
-                params,
-            )
+            if enable_registrations_supported and registration_capacity_supported:
+                cursor.execute(
+                    "UPDATE event SET enable_registrations = %s, registration_capacity = %s WHERE id_event = %s",
+                    params,
+                )
+            elif enable_registrations_supported:
+                cursor.execute(
+                    "UPDATE event SET enable_registrations = %s WHERE id_event = %s",
+                    params,
+                )
+            else:
+                cursor.execute(
+                    "UPDATE event SET registration_capacity = %s WHERE id_event = %s",
+                    params,
+                )
 
     def create(self, validated_data):
         club = validated_data.pop('resolved_club')

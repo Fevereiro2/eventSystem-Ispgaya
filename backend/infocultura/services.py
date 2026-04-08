@@ -123,6 +123,12 @@ class AdminNotificationRecord:
     created_at: datetime | None
 
 
+_ACTIVITY_SQL_TARGETS = {
+    "event": ("event_registrations", "id_event"),
+    "session": ("session_registrations", "id_sessions"),
+}
+
+
 def _normalized_email(value: str) -> str:
     return value.strip().lower()
 
@@ -311,7 +317,15 @@ def club_registration_exists(*, club_id: int, email: str) -> bool:
         return cursor.fetchone() is not None
 
 
-def _activity_registration_exists(*, table_name: str, foreign_key: str, activity_id: int, email: str) -> bool:
+def _get_activity_sql_target(activity_kind: str) -> tuple[str, str]:
+    try:
+        return _ACTIVITY_SQL_TARGETS[activity_kind]
+    except KeyError as error:
+        raise ValueError("Invalid activity kind for SQL target.") from error
+
+
+def _activity_registration_exists(*, activity_kind: str, activity_id: int, email: str) -> bool:
+    table_name, foreign_key = _get_activity_sql_target(activity_kind)
     if not _table_exists(table_name):
         return False
 
@@ -335,8 +349,7 @@ def _activity_registration_exists(*, table_name: str, foreign_key: str, activity
 
 def event_registration_exists(*, event_id: int, email: str) -> bool:
     return _activity_registration_exists(
-        table_name="event_registrations",
-        foreign_key="id_event",
+        activity_kind="event",
         activity_id=event_id,
         email=email,
     )
@@ -344,8 +357,7 @@ def event_registration_exists(*, event_id: int, email: str) -> bool:
 
 def session_registration_exists(*, session_id: int, email: str) -> bool:
     return _activity_registration_exists(
-        table_name="session_registrations",
-        foreign_key="id_sessions",
+        activity_kind="session",
         activity_id=session_id,
         email=email,
     )
@@ -359,13 +371,13 @@ def _normalize_capacity(value: int | None) -> int | None:
 
 def _build_activity_registration_summary(
     *,
-    table_name: str,
-    foreign_key: str,
+    activity_kind: str,
     activity_id: int,
     capacity: int | None,
     registrations_enabled: bool,
     is_open_by_date: bool,
 ) -> ActivityRegistrationSummary:
+    table_name, foreign_key = _get_activity_sql_target(activity_kind)
     confirmed_count = 0
     waitlist_count = 0
 
@@ -420,8 +432,7 @@ def _build_activity_registration_summary(
 
 def get_event_registration_summary(*, event: Event) -> ActivityRegistrationSummary:
     return _build_activity_registration_summary(
-        table_name="event_registrations",
-        foreign_key="id_event",
+        activity_kind="event",
         activity_id=event.id,
         capacity=event.registration_capacity,
         registrations_enabled=bool(event.enable_registrations),
@@ -431,8 +442,7 @@ def get_event_registration_summary(*, event: Event) -> ActivityRegistrationSumma
 
 def get_session_registration_summary(*, session: Session) -> ActivityRegistrationSummary:
     return _build_activity_registration_summary(
-        table_name="session_registrations",
-        foreign_key="id_sessions",
+        activity_kind="session",
         activity_id=session.id,
         capacity=session.registration_capacity,
         registrations_enabled=bool(session.enable_registrations),
@@ -1380,6 +1390,174 @@ def get_admin_dashboard_metrics(*, user) -> dict[str, object]:
             else None
         ),
     }
+
+
+def _notification_timestamp(value: datetime | None) -> float:
+    if value is None:
+        return 0.0
+
+    resolved = value
+    if timezone.is_naive(resolved):
+        resolved = timezone.make_aware(resolved, timezone.get_current_timezone())
+
+    return resolved.timestamp()
+
+
+def get_admin_notifications(*, user) -> list[AdminNotificationRecord]:
+    role_name = getattr(getattr(user, "role", None), "name", None)
+    if role_name == "club_admin" and not getattr(user, "club_id", None):
+        return []
+
+    allowed_club_id = _get_allowed_club_id(user)
+    now = timezone.now()
+    notifications: list[AdminNotificationRecord] = []
+
+    pending_registrations = list_admin_club_registrations(
+        status="pending",
+        allowed_club_id=allowed_club_id,
+        ordering="newest",
+        page=1,
+        page_size=4,
+    )
+    for registration in pending_registrations.items:
+        notifications.append(
+            AdminNotificationRecord(
+                id=f"registration-pending-{registration.registration_id}",
+                kind="registration",
+                level="warning",
+                title="Nova inscricao por validar",
+                message=(
+                    f"{registration.name} submeteu um pedido para "
+                    f"{registration.club_name}."
+                ),
+                href="/infocultura/inscricoes",
+                created_at=registration.created_at,
+            )
+        )
+
+    news_queryset = News.objects.select_related("news_status", "club")
+    if allowed_club_id is not None:
+        news_queryset = news_queryset.filter(club_id=allowed_club_id)
+
+    review_news = news_queryset.filter(news_status__name__iexact="review").order_by(
+        "-updated_at",
+        "-created_at",
+        "-id",
+    )[:4]
+    for item in review_news:
+        notifications.append(
+            AdminNotificationRecord(
+                id=f"news-review-{item.id}",
+                kind="editorial",
+                level="warning",
+                title="Noticia em revisao",
+                message=(
+                    f"{item.title} aguarda validacao editorial"
+                    f"{f' · {item.club.name}' if item.club_id else ''}."
+                ),
+                href="/infocultura/noticias",
+                created_at=item.updated_at or item.created_at,
+            )
+        )
+
+    recent_news = news_queryset.filter(news_status__name__iexact="published").order_by(
+        "-published_at",
+        "-created_at",
+        "-id",
+    )[:2]
+    for item in recent_news:
+        notifications.append(
+            AdminNotificationRecord(
+                id=f"news-published-{item.id}",
+                kind="publication",
+                level="success",
+                title="Noticia publicada",
+                message=(
+                    f"{item.title} esta publicada"
+                    f"{f' · {item.club.name}' if item.club_id else ''}."
+                ),
+                href="/infocultura/noticias",
+                created_at=item.published_at or item.created_at,
+            )
+        )
+
+    sessions_queryset = Session.objects.select_related("club").filter(start_date__gte=now)
+    if allowed_club_id is not None:
+        sessions_queryset = sessions_queryset.filter(club_id=allowed_club_id)
+
+    next_session = sessions_queryset.order_by("start_date", "id").first()
+    if next_session is not None:
+        notifications.append(
+            AdminNotificationRecord(
+                id=f"session-upcoming-{next_session.id}",
+                kind="schedule",
+                level="info",
+                title="Proxima sessao agendada",
+                message=(
+                    f"{next_session.title}"
+                    f"{f' · {next_session.club.name}' if next_session.club_id else ''}"
+                    f" em {_format_dt(next_session.start_date)}."
+                ),
+                href="/infocultura/atividades",
+                created_at=next_session.start_date,
+            )
+        )
+
+    events_queryset = Event.objects.select_related("user__club")
+    if allowed_club_id is not None:
+        events_queryset = events_queryset.filter(user__club_id=allowed_club_id)
+
+    review_events = events_queryset.filter(status__iexact="review").order_by(
+        "-updated_at",
+        "-created_at",
+        "-id",
+    )[:4]
+    for item in review_events:
+        notifications.append(
+            AdminNotificationRecord(
+                id=f"event-review-{item.id}",
+                kind="editorial",
+                level="warning",
+                title="Evento em revisao",
+                message=(
+                    f"{item.title} aguarda validacao"
+                    f"{f' · {item.user.club.name}' if item.user_id and item.user and item.user.club else ''}."
+                ),
+                href="/infocultura/atividades",
+                created_at=item.updated_at or item.created_at,
+            )
+        )
+
+    next_event = (
+        events_queryset.filter(start_date__gte=now)
+        .order_by("start_date", "id")
+        .first()
+    )
+    if next_event is not None:
+        notifications.append(
+            AdminNotificationRecord(
+                id=f"event-upcoming-{next_event.id}",
+                kind="schedule",
+                level="info",
+                title="Proximo evento agendado",
+                message=(
+                    f"{next_event.title}"
+                    f"{f' · {next_event.user.club.name}' if next_event.user_id and next_event.user and next_event.user.club else ''}"
+                    f" em {_format_dt(next_event.start_date)}."
+                ),
+                href="/infocultura/atividades",
+                created_at=next_event.start_date,
+            )
+        )
+
+    return sorted(
+        notifications,
+        key=lambda item: (
+            {"warning": 0, "info": 1, "success": 2}.get(item.level, 3),
+            -_notification_timestamp(item.created_at),
+            item.id,
+        ),
+    )
 
 
 def update_admin_club_registration_status(

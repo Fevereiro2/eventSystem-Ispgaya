@@ -1,7 +1,10 @@
 from pathlib import Path
 from uuid import uuid4
 import csv
+import hashlib
 
+from django.conf import settings
+from django.core.cache import cache
 from django.core.files.storage import default_storage
 from django.db.models import Q
 from django.http import HttpResponse
@@ -19,6 +22,7 @@ from .serializers import (
     AdminBookWriteSerializer,
     AdminCategoryWriteSerializer,
     AdminClubRegistrationSerializer,
+    AdminNotificationSerializer,
     AdminEventWriteSerializer,
     AdminEventReadSerializer,
     AdminRegistrationStatusUpdateSerializer,
@@ -51,6 +55,7 @@ from .services import (
     ClubRegistrationNotFoundError,
     build_activity_calendar_payload,
     get_admin_dashboard_metrics,
+    get_admin_notifications,
     notify_event_workflow_status,
     list_admin_club_registrations,
     record_editorial_action,
@@ -60,6 +65,68 @@ from .services import (
 from .security import check_password_hash, issue_access_token
 
 
+def _get_client_ip(request) -> str:
+    forwarded_for = (request.META.get('HTTP_X_FORWARDED_FOR') or '').strip()
+    if forwarded_for:
+        return forwarded_for.split(',')[0].strip() or 'unknown'
+
+    return (request.META.get('REMOTE_ADDR') or '').strip() or 'unknown'
+
+
+def _get_login_rate_limit_config() -> tuple[int, int, int]:
+    max_attempts = max(1, int(getattr(settings, 'INFOCULTURA_LOGIN_MAX_ATTEMPTS', 5)))
+    window_seconds = max(60, int(getattr(settings, 'INFOCULTURA_LOGIN_WINDOW_SECONDS', 900)))
+    lockout_seconds = max(60, int(getattr(settings, 'INFOCULTURA_LOGIN_LOCKOUT_SECONDS', 900)))
+    return max_attempts, window_seconds, lockout_seconds
+
+
+def _build_login_cache_key(*, prefix: str, client_ip: str, identifier: str) -> str:
+    identifier_hash = hashlib.sha256(identifier.lower().encode('utf-8')).hexdigest()
+    return f'infocultura:login:{prefix}:{client_ip}:{identifier_hash}'
+
+
+def _get_login_lockout_message(lockout_seconds: int) -> str:
+    minutes = max(1, lockout_seconds // 60)
+    if minutes == 1:
+        return 'Login temporariamente bloqueado. Tenta novamente dentro de 1 minuto.'
+    return f'Login temporariamente bloqueado. Tenta novamente dentro de {minutes} minutos.'
+
+
+def _is_login_locked(*, client_ip: str, identifier: str) -> bool:
+    lock_key = _build_login_cache_key(prefix='lock', client_ip=client_ip, identifier=identifier)
+    return bool(cache.get(lock_key))
+
+
+def _clear_login_failures(*, client_ip: str, identifier: str) -> None:
+    fail_key = _build_login_cache_key(prefix='fail', client_ip=client_ip, identifier=identifier)
+    lock_key = _build_login_cache_key(prefix='lock', client_ip=client_ip, identifier=identifier)
+    cache.delete_many([fail_key, lock_key])
+
+
+def _record_failed_login_attempt(*, client_ip: str, identifier: str) -> bool:
+    max_attempts, window_seconds, lockout_seconds = _get_login_rate_limit_config()
+    fail_key = _build_login_cache_key(prefix='fail', client_ip=client_ip, identifier=identifier)
+    lock_key = _build_login_cache_key(prefix='lock', client_ip=client_ip, identifier=identifier)
+
+    added = cache.add(fail_key, 1, timeout=window_seconds)
+    if added:
+        attempts = 1
+    else:
+        attempts = cache.get(fail_key, 0)
+        try:
+            attempts = cache.incr(fail_key)
+        except ValueError:
+            attempts = int(attempts) + 1
+            cache.set(fail_key, attempts, timeout=window_seconds)
+
+    if int(attempts) >= max_attempts:
+        cache.set(lock_key, True, timeout=lockout_seconds)
+        cache.delete(fail_key)
+        return True
+
+    return False
+
+
 class LoginView(APIView):
     permission_classes = [permissions.AllowAny]
 
@@ -67,8 +134,16 @@ class LoginView(APIView):
         serializer = LoginSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
-        identifier = serializer.validated_data['username'].strip()
+        identifier = serializer.validated_data['username']
         password = serializer.validated_data['password']
+        client_ip = _get_client_ip(request)
+        _, _, lockout_seconds = _get_login_rate_limit_config()
+
+        if _is_login_locked(client_ip=client_ip, identifier=identifier):
+            return Response(
+                {'message': _get_login_lockout_message(lockout_seconds)},
+                status=429,
+            )
 
         user = (
             AppUser.objects.select_related('role', 'club')
@@ -77,10 +152,24 @@ class LoginView(APIView):
         )
 
         if not user or not user.is_active:
+            locked = _record_failed_login_attempt(client_ip=client_ip, identifier=identifier)
+            if locked:
+                return Response(
+                    {'message': _get_login_lockout_message(lockout_seconds)},
+                    status=429,
+                )
             return Response({'message': 'Credenciais invalidas.'}, status=401)
 
         if not check_password_hash(password, user.password_hash):
+            locked = _record_failed_login_attempt(client_ip=client_ip, identifier=identifier)
+            if locked:
+                return Response(
+                    {'message': _get_login_lockout_message(lockout_seconds)},
+                    status=429,
+                )
             return Response({'message': 'Credenciais invalidas.'}, status=401)
+
+        _clear_login_failures(client_ip=client_ip, identifier=identifier)
 
         token = issue_access_token(
             user_id=user.id,
@@ -678,6 +767,15 @@ class AdminDashboardSummaryView(APIView):
 
     def get(self, request):
         return Response(get_admin_dashboard_metrics(user=request.user))
+
+
+class AdminDashboardNotificationsView(APIView):
+    permission_classes = [permissions.IsAuthenticated, IsClubAdmin]
+
+    def get(self, request):
+        notifications = get_admin_notifications(user=request.user)
+        serializer = AdminNotificationSerializer(notifications, many=True)
+        return Response(serializer.data)
 
 
 class AdminRegistrationListView(APIView):
