@@ -156,6 +156,8 @@ class Event(Base, AuditMixin, ReprMixin):
     end_date: Mapped[datetime] = mapped_column(DateTime, nullable=False)
     image: Mapped[str] = mapped_column(String(500), nullable=False, default="")
     is_external: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    enable_registrations: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    registration_capacity: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
     status: Mapped[str] = mapped_column(String(50), nullable=False)
     city: Mapped[str] = mapped_column(String(120), nullable=False, default="")
     location: Mapped[str] = mapped_column(String(255), nullable=False, default="")
@@ -168,6 +170,7 @@ class Event(Base, AuditMixin, ReprMixin):
 
     user: Mapped[User] = relationship(back_populates="events")
     event_categories: Mapped[list[EventCategory]] = relationship(back_populates="event")
+    registration_links: Mapped[list[EventRegistration]] = relationship(back_populates="event")
     categories: Mapped[list[Category]] = relationship(
         secondary="event_category",
         back_populates="events",
@@ -233,6 +236,8 @@ class Session(Base, AuditMixin, ReprMixin):
     session_date: Mapped[date] = mapped_column(Date, nullable=False)
     start_date: Mapped[datetime] = mapped_column(DateTime, nullable=False)
     end_date: Mapped[datetime] = mapped_column(DateTime, nullable=False)
+    enable_registrations: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    registration_capacity: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
 
     club_id: Mapped[int] = mapped_column(
         "id_club",
@@ -241,6 +246,7 @@ class Session(Base, AuditMixin, ReprMixin):
     )
 
     club: Mapped[Club] = relationship(back_populates="sessions")
+    registration_links: Mapped[list[SessionRegistration]] = relationship(back_populates="session")
 
 
 class Registration(Base, CreatedAtMixin, ReprMixin):
@@ -263,6 +269,8 @@ class Registration(Base, CreatedAtMixin, ReprMixin):
 
     registration_status: Mapped[RegistrationStatus] = relationship(back_populates="registrations")
     club_links: Mapped[list[ClubRegistration]] = relationship(back_populates="registration")
+    event_links: Mapped[list[EventRegistration]] = relationship(back_populates="registration")
+    session_links: Mapped[list[SessionRegistration]] = relationship(back_populates="registration")
     clubs: Mapped[list[Club]] = relationship(
         secondary="clubs_registrations",
         back_populates="registrations",
@@ -289,6 +297,50 @@ class ClubRegistration(Base, ReprMixin):
 
     club: Mapped[Club] = relationship(back_populates="registration_links")
     registration: Mapped[Registration] = relationship(back_populates="club_links")
+
+
+class EventRegistration(Base, CreatedAtMixin, ReprMixin):
+    """Table EVENT_REGISTRATIONS."""
+
+    __tablename__ = "event_registrations"
+    __repr_fields__ = ("event_id", "registration_id")
+
+    event_id: Mapped[int] = mapped_column(
+        "id_event",
+        ForeignKey("event.id_event"),
+        primary_key=True,
+    )
+    registration_id: Mapped[int] = mapped_column(
+        "id_registrations",
+        ForeignKey("registrations.id_registrations"),
+        primary_key=True,
+    )
+    reminder_sent_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+
+    event: Mapped[Event] = relationship(back_populates="registration_links")
+    registration: Mapped[Registration] = relationship(back_populates="event_links")
+
+
+class SessionRegistration(Base, CreatedAtMixin, ReprMixin):
+    """Table SESSION_REGISTRATIONS."""
+
+    __tablename__ = "session_registrations"
+    __repr_fields__ = ("session_id", "registration_id")
+
+    session_id: Mapped[int] = mapped_column(
+        "id_sessions",
+        ForeignKey("sessions.id_sessions"),
+        primary_key=True,
+    )
+    registration_id: Mapped[int] = mapped_column(
+        "id_registrations",
+        ForeignKey("registrations.id_registrations"),
+        primary_key=True,
+    )
+    reminder_sent_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+
+    session: Mapped[Session] = relationship(back_populates="registration_links")
+    registration: Mapped[Registration] = relationship(back_populates="session_links")
 
 
 class News(Base, AuditMixin, ReprMixin):

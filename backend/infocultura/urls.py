@@ -42,12 +42,16 @@ from .views import (
     PublicClubListView,
     PublicContentListView,
     PublicEventDetailView,
+    PublicEventCalendarView,
     PublicEventListView,
+    PublicEventRegistrationCreateView,
     PublicNewsDetailView,
     PublicNewsListView,
     PublicNewsStatusListView,
+    PublicSessionCalendarView,
     PublicSessionDetailView,
     PublicSessionListView,
+    PublicSessionRegistrationCreateView,
 )
 
 urlpatterns = [
@@ -72,8 +76,28 @@ urlpatterns = [
     path('categories/', PublicCategoryListView.as_view(), name='categories-public-list'),
     path('sessions/', PublicSessionListView.as_view(), name='sessions-public-list'),
     path('sessions/<int:pk>/', PublicSessionDetailView.as_view(), name='sessions-public-detail'),
+    path(
+        'sessions/<int:pk>/registrations/',
+        PublicSessionRegistrationCreateView.as_view(),
+        name='sessions-public-registration-create',
+    ),
+    path(
+        'sessions/<int:pk>/calendar/',
+        PublicSessionCalendarView.as_view(),
+        name='sessions-public-calendar',
+    ),
     path('events/', PublicEventListView.as_view(), name='events-public-list'),
     path('events/<int:pk>/', PublicEventDetailView.as_view(), name='events-public-detail'),
+    path(
+        'events/<int:pk>/registrations/',
+        PublicEventRegistrationCreateView.as_view(),
+        name='events-public-registration-create',
+    ),
+    path(
+        'events/<int:pk>/calendar/',
+        PublicEventCalendarView.as_view(),
+        name='events-public-calendar',
+    ),
     path('content/', PublicContentListView.as_view(), name='content-public-list'),
     path('content/admin/', AdminContentListCreateView.as_view(), name='content-admin-list-create'),
     path('content/admin/<uuid:pk>/', AdminContentDetailView.as_view(), name='content-admin-detail'),

@@ -29,6 +29,7 @@ from .serializers import (
     BookSerializer,
     CategorySerializer,
     ClubRegistrationCreateSerializer,
+    EventRegistrationCreateSerializer,
     ClubMemberAssignSerializer,
     ClubSerializer,
     CulturalContentSerializer,
@@ -38,6 +39,7 @@ from .serializers import (
     NewsStatusSerializer,
     RegistrationStatusSerializer,
     RoleSerializer,
+    SessionRegistrationCreateSerializer,
     SessionSerializer,
     UserSerializer,
     EVENT_WORKFLOW_STATUS_ORDER,
@@ -47,9 +49,12 @@ from .serializers import (
 )
 from .services import (
     ClubRegistrationNotFoundError,
+    build_activity_calendar_payload,
     get_admin_dashboard_metrics,
+    notify_event_workflow_status,
     list_admin_club_registrations,
     record_editorial_action,
+    notify_news_workflow_status,
     update_admin_club_registration_status,
 )
 from .security import check_password_hash, issue_access_token
@@ -330,9 +335,15 @@ class PublicSessionListView(generics.ListAPIView):
     def get_queryset(self):
         queryset = Session.objects.select_related('club').filter(club__is_active=True)
         club_id = self.request.query_params.get('club_id')
+        date_from = (self.request.query_params.get('date_from') or '').strip()
+        date_to = (self.request.query_params.get('date_to') or '').strip()
 
         if club_id:
             queryset = queryset.filter(club_id=club_id)
+        if date_from:
+            queryset = queryset.filter(session_date__gte=date_from)
+        if date_to:
+            queryset = queryset.filter(session_date__lte=date_to)
 
         return queryset.order_by('session_date', 'start_date', '-id')
 
@@ -343,6 +354,57 @@ class PublicSessionDetailView(generics.RetrieveAPIView):
 
     def get_queryset(self):
         return Session.objects.select_related('club').filter(club__is_active=True)
+
+
+class PublicSessionRegistrationCreateView(APIView):
+    permission_classes = [permissions.AllowAny]
+
+    def post(self, request, pk):
+        session = Session.objects.select_related('club').filter(pk=pk, club__is_active=True).first()
+        if not session:
+            return Response({'message': 'Sessao nao encontrada.'}, status=404)
+
+        serializer = SessionRegistrationCreateSerializer(
+            data=request.data,
+            context={'session': session, 'request': request},
+        )
+        serializer.is_valid(raise_exception=True)
+        registration = serializer.save()
+
+        return Response(
+            {
+                'message': 'Inscricao submetida com sucesso.',
+                'status': registration.status,
+                'registration_id': registration.id,
+            },
+            status=201,
+        )
+
+
+class PublicSessionCalendarView(APIView):
+    permission_classes = [permissions.AllowAny]
+
+    def get(self, request, pk):
+        session = Session.objects.select_related('club').filter(pk=pk, club__is_active=True).first()
+        if not session:
+            return Response({'message': 'Sessao nao encontrada.'}, status=404)
+
+        payload = build_activity_calendar_payload(
+            title=session.title,
+            description=session.description,
+            start_date=session.start_date,
+            end_date=session.end_date,
+            location=session.title,
+        )
+        return build_calendar_ics_response(
+            uid_prefix=f'session-{session.id}@infocultura',
+            title=payload['title'],
+            description=payload['description'],
+            start_date=session.start_date,
+            end_date=session.end_date,
+            location=payload['location'],
+            filename=f'sessao-{session.id}.ics',
+        )
 
 
 class PublicCategoryListView(generics.ListAPIView):
@@ -363,11 +425,28 @@ class PublicEventListView(generics.ListAPIView):
         ).filter(Q(status__iexact='published') | Q(status__iexact='publicado'))
         club_id = self.request.query_params.get('club_id')
         category_id = self.request.query_params.get('category_id')
+        city = (self.request.query_params.get('city') or '').strip()
+        date_from = (self.request.query_params.get('date_from') or '').strip()
+        date_to = (self.request.query_params.get('date_to') or '').strip()
+        state = (self.request.query_params.get('state') or '').strip().lower()
+        now = timezone.now()
 
         if club_id:
             queryset = queryset.filter(user__club_id=club_id)
         if category_id and category_id.isdigit():
             queryset = queryset.filter(categories__id=int(category_id))
+        if city:
+            queryset = queryset.filter(Q(city__icontains=city) | Q(location__icontains=city))
+        if date_from:
+            queryset = queryset.filter(event_date__gte=date_from)
+        if date_to:
+            queryset = queryset.filter(event_date__lte=date_to)
+        if state == 'upcoming':
+            queryset = queryset.filter(start_date__gt=now)
+        elif state == 'ongoing':
+            queryset = queryset.filter(start_date__lte=now, end_date__gte=now)
+        elif state == 'past':
+            queryset = queryset.filter(end_date__lt=now)
 
         return queryset.order_by('event_date', 'start_date', '-id')
 
@@ -380,6 +459,71 @@ class PublicEventDetailView(generics.RetrieveAPIView):
         return Event.objects.select_related('user__club').prefetch_related('categories').filter(
             user__club__is_active=True
         ).filter(Q(status__iexact='published') | Q(status__iexact='publicado'))
+
+
+class PublicEventRegistrationCreateView(APIView):
+    permission_classes = [permissions.AllowAny]
+
+    def post(self, request, pk):
+        event = (
+            Event.objects.select_related('user__club')
+            .prefetch_related('categories')
+            .filter(pk=pk)
+            .filter(user__club__is_active=True)
+            .filter(Q(status__iexact='published') | Q(status__iexact='publicado'))
+            .first()
+        )
+        if not event:
+            return Response({'message': 'Evento nao encontrado.'}, status=404)
+
+        serializer = EventRegistrationCreateSerializer(
+            data=request.data,
+            context={'event': event, 'request': request},
+        )
+        serializer.is_valid(raise_exception=True)
+        registration = serializer.save()
+
+        return Response(
+            {
+                'message': 'Inscricao submetida com sucesso.',
+                'status': registration.status,
+                'registration_id': registration.id,
+            },
+            status=201,
+        )
+
+
+class PublicEventCalendarView(APIView):
+    permission_classes = [permissions.AllowAny]
+
+    def get(self, request, pk):
+        event = (
+            Event.objects.select_related('user__club')
+            .prefetch_related('categories')
+            .filter(pk=pk)
+            .filter(user__club__is_active=True)
+            .filter(Q(status__iexact='published') | Q(status__iexact='publicado'))
+            .first()
+        )
+        if not event:
+            return Response({'message': 'Evento nao encontrado.'}, status=404)
+
+        payload = build_activity_calendar_payload(
+            title=event.title,
+            description=event.description,
+            start_date=event.start_date,
+            end_date=event.end_date,
+            location=event.location or event.city or 'Local por definir',
+        )
+        return build_calendar_ics_response(
+            uid_prefix=f'event-{event.id}@infocultura',
+            title=payload['title'],
+            description=payload['description'],
+            start_date=event.start_date,
+            end_date=event.end_date,
+            location=payload['location'],
+            filename=f'evento-{event.id}.ics',
+        )
 
 
 class AdminImageUploadView(APIView):
@@ -471,6 +615,47 @@ def build_csv_response(*, rows: list[list[str]], headers: list[str], filename: s
     writer = csv.writer(response)
     writer.writerow(headers)
     writer.writerows(rows)
+    return response
+
+
+def _format_ics_datetime(value):
+    if timezone.is_naive(value):
+        value = timezone.make_aware(value, timezone.get_current_timezone())
+    return timezone.localtime(value, timezone.utc).strftime('%Y%m%dT%H%M%SZ')
+
+
+def _escape_ics_text(value: str) -> str:
+    return (
+        (value or '')
+        .replace('\\', '\\\\')
+        .replace(';', r'\;')
+        .replace(',', r'\,')
+        .replace('\n', r'\n')
+    )
+
+
+def build_calendar_ics_response(*, uid_prefix: str, title: str, description: str, start_date, end_date, location: str, filename: str) -> HttpResponse:
+    content = '\r\n'.join(
+        [
+            'BEGIN:VCALENDAR',
+            'VERSION:2.0',
+            'PRODID:-//ISPGAYA//InfoCultura//PT',
+            'CALSCALE:GREGORIAN',
+            'BEGIN:VEVENT',
+            f'UID:{uid_prefix}',
+            f'DTSTAMP:{_format_ics_datetime(timezone.now())}',
+            f'DTSTART:{_format_ics_datetime(start_date)}',
+            f'DTEND:{_format_ics_datetime(end_date)}',
+            f'SUMMARY:{_escape_ics_text(title)}',
+            f'DESCRIPTION:{_escape_ics_text(description)}',
+            f'LOCATION:{_escape_ics_text(location)}',
+            'END:VEVENT',
+            'END:VCALENDAR',
+            '',
+        ]
+    )
+    response = HttpResponse(content, content_type='text/calendar; charset=utf-8')
+    response['Content-Disposition'] = f'attachment; filename="{filename}"'
     return response
 
 
@@ -808,6 +993,11 @@ class AdminNewsBulkStatusUpdateView(APIView):
                 to_status=news_status.name,
                 actor_user=request.user,
                 club_id=item.club_id,
+            )
+            notify_news_workflow_status(
+                news=item,
+                previous_status=previous_status,
+                next_status=news_status.name,
             )
             updated_items.append(item)
 
@@ -1183,6 +1373,11 @@ class AdminEventBulkStatusUpdateView(APIView):
                 to_status=target_status,
                 actor_user=request.user,
                 club_id=item.user.club_id if item.user_id and item.user else None,
+            )
+            notify_event_workflow_status(
+                event=item,
+                previous_status=previous_status,
+                next_status=target_status,
             )
             updated_items.append(item)
 

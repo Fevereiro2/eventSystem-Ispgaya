@@ -217,11 +217,64 @@ class Session(models.Model):
         db_column='id_club',
         related_name='sessions',
     )
+    registrations = models.ManyToManyField(
+        'Registration',
+        through='SessionRegistration',
+        related_name='sessions',
+    )
 
     class Meta:
         db_table = 'sessions'
         managed = False
         ordering = ['session_date', 'start_date', '-id']
+
+    @property
+    def enable_registrations(self) -> bool:
+        cached_value = getattr(self, '_session_enable_registrations_cache', None)
+        if cached_value is not None:
+            return bool(cached_value)
+
+        if not _has_table_column('sessions', 'enable_registrations'):
+            self._session_enable_registrations_cache = False
+            return False
+
+        with connection.cursor() as cursor:
+            cursor.execute(
+                'SELECT enable_registrations FROM sessions WHERE id_sessions = %s LIMIT 1',
+                [self.id],
+            )
+            row = cursor.fetchone()
+
+        self._session_enable_registrations_cache = bool(row[0]) if row and row[0] is not None else False
+        return self._session_enable_registrations_cache
+
+    @enable_registrations.setter
+    def enable_registrations(self, value: bool) -> None:
+        self._session_enable_registrations_cache = bool(value)
+
+    @property
+    def registration_capacity(self) -> int | None:
+        cached_value = getattr(self, '_session_registration_capacity_cache', None)
+        if cached_value is not None:
+            return cached_value
+
+        if not _has_table_column('sessions', 'registration_capacity'):
+            self._session_registration_capacity_cache = None
+            return None
+
+        with connection.cursor() as cursor:
+            cursor.execute(
+                'SELECT registration_capacity FROM sessions WHERE id_sessions = %s LIMIT 1',
+                [self.id],
+            )
+            row = cursor.fetchone()
+
+        self._session_registration_capacity_cache = int(row[0]) if row and row[0] is not None else None
+        return self._session_registration_capacity_cache
+
+    @registration_capacity.setter
+    def registration_capacity(self, value: int | None) -> None:
+        self._session_registration_capacity_cache = value if value is None else int(value)
 
     def __str__(self):
         return self.title
@@ -268,11 +321,64 @@ class Event(models.Model):
         through='EventCategory',
         related_name='events',
     )
+    registrations = models.ManyToManyField(
+        'Registration',
+        through='EventRegistration',
+        related_name='events',
+    )
 
     class Meta:
         db_table = 'event'
         managed = False
         ordering = ['event_date', 'start_date', '-id']
+
+    @property
+    def enable_registrations(self) -> bool:
+        cached_value = getattr(self, '_event_enable_registrations_cache', None)
+        if cached_value is not None:
+            return bool(cached_value)
+
+        if not _has_table_column('event', 'enable_registrations'):
+            self._event_enable_registrations_cache = False
+            return False
+
+        with connection.cursor() as cursor:
+            cursor.execute(
+                'SELECT enable_registrations FROM event WHERE id_event = %s LIMIT 1',
+                [self.id],
+            )
+            row = cursor.fetchone()
+
+        self._event_enable_registrations_cache = bool(row[0]) if row and row[0] is not None else False
+        return self._event_enable_registrations_cache
+
+    @enable_registrations.setter
+    def enable_registrations(self, value: bool) -> None:
+        self._event_enable_registrations_cache = bool(value)
+
+    @property
+    def registration_capacity(self) -> int | None:
+        cached_value = getattr(self, '_event_registration_capacity_cache', None)
+        if cached_value is not None:
+            return cached_value
+
+        if not _has_table_column('event', 'registration_capacity'):
+            self._event_registration_capacity_cache = None
+            return None
+
+        with connection.cursor() as cursor:
+            cursor.execute(
+                'SELECT registration_capacity FROM event WHERE id_event = %s LIMIT 1',
+                [self.id],
+            )
+            row = cursor.fetchone()
+
+        self._event_registration_capacity_cache = int(row[0]) if row and row[0] is not None else None
+        return self._event_registration_capacity_cache
+
+    @registration_capacity.setter
+    def registration_capacity(self, value: int | None) -> None:
+        self._event_registration_capacity_cache = value if value is None else int(value)
 
     @property
     def club_id(self):
@@ -304,6 +410,28 @@ class EventCategory(models.Model):
         db_table = 'event_category'
         managed = False
         unique_together = ('event', 'category')
+
+
+class EventRegistration(models.Model):
+    event = models.ForeignKey(
+        Event,
+        on_delete=models.DO_NOTHING,
+        db_column='id_event',
+        related_name='registration_links',
+    )
+    registration = models.ForeignKey(
+        'Registration',
+        on_delete=models.DO_NOTHING,
+        db_column='id_registrations',
+        related_name='event_links',
+    )
+    created_at = models.DateTimeField(blank=True, null=True)
+    reminder_sent_at = models.DateTimeField(blank=True, null=True)
+
+    class Meta:
+        db_table = 'event_registrations'
+        managed = False
+        unique_together = ('event', 'registration')
 
 
 class RegistrationStatus(models.Model):
@@ -344,3 +472,25 @@ class Registration(models.Model):
 
     def __str__(self):
         return f'{self.name} <{self.email}>'
+
+
+class SessionRegistration(models.Model):
+    session = models.ForeignKey(
+        Session,
+        on_delete=models.DO_NOTHING,
+        db_column='id_sessions',
+        related_name='registration_links',
+    )
+    registration = models.ForeignKey(
+        Registration,
+        on_delete=models.DO_NOTHING,
+        db_column='id_registrations',
+        related_name='session_links',
+    )
+    created_at = models.DateTimeField(blank=True, null=True)
+    reminder_sent_at = models.DateTimeField(blank=True, null=True)
+
+    class Meta:
+        db_table = 'session_registrations'
+        managed = False
+        unique_together = ('session', 'registration')

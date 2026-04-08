@@ -17,12 +17,22 @@ from .models import (
     Session,
 )
 from .services import (
+    ActivityRegistrationError,
+    ActivityRegistrationRateLimitError,
     AdminClubRegistrationRecord,
+    build_activity_calendar_payload,
     ClubRegistrationInput,
     DuplicateClubRegistrationError,
+    DuplicateActivityRegistrationError,
     ClubRegistrationRateLimitError,
     create_club_registration,
+    create_event_registration,
+    create_session_registration,
+    get_event_registration_summary,
+    get_session_registration_summary,
     list_editorial_history,
+    notify_event_workflow_status,
+    notify_news_workflow_status,
     record_editorial_action,
 )
 from .security import hash_password
@@ -320,6 +330,14 @@ class BookSerializer(serializers.ModelSerializer):
 class SessionSerializer(serializers.ModelSerializer):
     club_id = serializers.IntegerField(read_only=True)
     club_name = serializers.CharField(source='club.name', read_only=True)
+    enable_registrations = serializers.BooleanField(read_only=True)
+    registration_capacity = serializers.IntegerField(read_only=True, allow_null=True)
+    confirmed_registrations = serializers.SerializerMethodField()
+    waitlist_registrations = serializers.SerializerMethodField()
+    remaining_slots = serializers.SerializerMethodField()
+    registration_state = serializers.SerializerMethodField()
+    google_calendar_url = serializers.SerializerMethodField()
+    outlook_calendar_url = serializers.SerializerMethodField()
 
     class Meta:
         model = Session
@@ -331,11 +349,58 @@ class SessionSerializer(serializers.ModelSerializer):
             'session_date',
             'start_date',
             'end_date',
+            'enable_registrations',
+            'registration_capacity',
             'created_at',
             'updated_at',
             'club_id',
             'club_name',
+            'confirmed_registrations',
+            'waitlist_registrations',
+            'remaining_slots',
+            'registration_state',
+            'google_calendar_url',
+            'outlook_calendar_url',
         ]
+
+    def _get_summary(self, obj):
+        cached = getattr(obj, '_registration_summary_cache', None)
+        if cached is None:
+            cached = get_session_registration_summary(session=obj)
+            setattr(obj, '_registration_summary_cache', cached)
+        return cached
+
+    def get_confirmed_registrations(self, obj):
+        return self._get_summary(obj).confirmed_count
+
+    def get_waitlist_registrations(self, obj):
+        return self._get_summary(obj).waitlist_count
+
+    def get_remaining_slots(self, obj):
+        return self._get_summary(obj).remaining_slots
+
+    def get_registration_state(self, obj):
+        return self._get_summary(obj).registration_state
+
+    def get_google_calendar_url(self, obj):
+        payload = build_activity_calendar_payload(
+            title=obj.title,
+            description=obj.description,
+            start_date=obj.start_date,
+            end_date=obj.end_date,
+            location=obj.title,
+        )
+        return payload['google_url']
+
+    def get_outlook_calendar_url(self, obj):
+        payload = build_activity_calendar_payload(
+            title=obj.title,
+            description=obj.description,
+            start_date=obj.start_date,
+            end_date=obj.end_date,
+            location=obj.title,
+        )
+        return payload['outlook_url']
 
 
 class EventSerializer(serializers.ModelSerializer):
@@ -345,6 +410,14 @@ class EventSerializer(serializers.ModelSerializer):
     owner_name = serializers.CharField(source='user.name', read_only=True)
     categories = CategorySerializer(many=True, read_only=True)
     category_ids = serializers.SerializerMethodField()
+    enable_registrations = serializers.BooleanField(read_only=True)
+    registration_capacity = serializers.IntegerField(read_only=True, allow_null=True)
+    confirmed_registrations = serializers.SerializerMethodField()
+    waitlist_registrations = serializers.SerializerMethodField()
+    remaining_slots = serializers.SerializerMethodField()
+    registration_state = serializers.SerializerMethodField()
+    google_calendar_url = serializers.SerializerMethodField()
+    outlook_calendar_url = serializers.SerializerMethodField()
 
     class Meta:
         model = Event
@@ -357,6 +430,8 @@ class EventSerializer(serializers.ModelSerializer):
             'end_date',
             'image',
             'is_external',
+            'enable_registrations',
+            'registration_capacity',
             'status',
             'created_at',
             'updated_at',
@@ -368,6 +443,12 @@ class EventSerializer(serializers.ModelSerializer):
             'owner_name',
             'categories',
             'category_ids',
+            'confirmed_registrations',
+            'waitlist_registrations',
+            'remaining_slots',
+            'registration_state',
+            'google_calendar_url',
+            'outlook_calendar_url',
         ]
 
     def get_club_id(self, obj):
@@ -380,6 +461,45 @@ class EventSerializer(serializers.ModelSerializer):
 
     def get_category_ids(self, obj):
         return list(obj.categories.values_list('id', flat=True))
+
+    def _get_summary(self, obj):
+        cached = getattr(obj, '_registration_summary_cache', None)
+        if cached is None:
+            cached = get_event_registration_summary(event=obj)
+            setattr(obj, '_registration_summary_cache', cached)
+        return cached
+
+    def get_confirmed_registrations(self, obj):
+        return self._get_summary(obj).confirmed_count
+
+    def get_waitlist_registrations(self, obj):
+        return self._get_summary(obj).waitlist_count
+
+    def get_remaining_slots(self, obj):
+        return self._get_summary(obj).remaining_slots
+
+    def get_registration_state(self, obj):
+        return self._get_summary(obj).registration_state
+
+    def get_google_calendar_url(self, obj):
+        payload = build_activity_calendar_payload(
+            title=obj.title,
+            description=obj.description,
+            start_date=obj.start_date,
+            end_date=obj.end_date,
+            location=obj.location or obj.city or 'Local por definir',
+        )
+        return payload['google_url']
+
+    def get_outlook_calendar_url(self, obj):
+        payload = build_activity_calendar_payload(
+            title=obj.title,
+            description=obj.description,
+            start_date=obj.start_date,
+            end_date=obj.end_date,
+            location=obj.location or obj.city or 'Local por definir',
+        )
+        return payload['outlook_url']
 
 
 class AdminNewsReadSerializer(NewsSerializer):
@@ -502,14 +622,16 @@ class AdminNewsWriteSerializer(serializers.ModelSerializer):
         validated_data['updated_at'] = now
         request_user = self.context['request'].user
         news = News.objects.create(**validated_data)
+        next_status = getattr(news.news_status, 'name', None) or 'draft'
         record_editorial_action(
             content_type='news',
             object_id=news.id,
             from_status=None,
-            to_status=getattr(news.news_status, 'name', None) or 'draft',
+            to_status=next_status,
             actor_user=request_user,
             club_id=news.club_id,
         )
+        notify_news_workflow_status(news=news, previous_status=None, next_status=next_status)
         return news
 
     def update(self, instance, validated_data):
@@ -529,6 +651,11 @@ class AdminNewsWriteSerializer(serializers.ModelSerializer):
                 to_status=next_status or 'draft',
                 actor_user=request_user,
                 club_id=instance.club_id,
+            )
+            notify_news_workflow_status(
+                news=instance,
+                previous_status=previous_status,
+                next_status=next_status,
             )
         return instance
 
@@ -572,6 +699,9 @@ class AdminBookWriteSerializer(ClubScopedWriteSerializer):
 
 
 class AdminSessionWriteSerializer(ClubScopedWriteSerializer):
+    enable_registrations = serializers.BooleanField(required=False)
+    registration_capacity = serializers.IntegerField(required=False, allow_null=True)
+
     class Meta:
         model = Session
         fields = [
@@ -582,6 +712,8 @@ class AdminSessionWriteSerializer(ClubScopedWriteSerializer):
             'session_date',
             'start_date',
             'end_date',
+            'enable_registrations',
+            'registration_capacity',
             'club_id',
         ]
         read_only_fields = ['id']
@@ -594,20 +726,86 @@ class AdminSessionWriteSerializer(ClubScopedWriteSerializer):
         if start_date and end_date and start_date > end_date:
             raise serializers.ValidationError({'end_date': 'A data final tem de ser posterior.'})
 
+        enable_registrations = attrs.get(
+            'enable_registrations',
+            getattr(self.instance, 'enable_registrations', False),
+        )
+        registration_capacity = attrs.get(
+            'registration_capacity',
+            getattr(self.instance, 'registration_capacity', None),
+        )
+        if registration_capacity is not None and registration_capacity <= 0:
+            raise serializers.ValidationError(
+                {'registration_capacity': 'A capacidade tem de ser superior a zero.'}
+            )
+        if enable_registrations and registration_capacity is None:
+            raise serializers.ValidationError(
+                {'registration_capacity': 'Define a lotacao para ativar inscricoes.'}
+            )
+
         return attrs
+
+    def _persist_registration_settings(
+        self,
+        *,
+        session: Session,
+        enable_registrations: bool | None,
+        registration_capacity: int | None,
+    ) -> None:
+        with connection.cursor() as cursor:
+            table_columns = {
+                info.name
+                for info in connection.introspection.get_table_description(cursor, 'sessions')
+            }
+            updates: list[str] = []
+            params: list[object] = []
+
+            if 'enable_registrations' in table_columns and enable_registrations is not None:
+                updates.append('enable_registrations = %s')
+                params.append(bool(enable_registrations))
+                session.enable_registrations = bool(enable_registrations)
+
+            if 'registration_capacity' in table_columns:
+                updates.append('registration_capacity = %s')
+                params.append(registration_capacity)
+                session.registration_capacity = registration_capacity
+
+            if not updates:
+                return
+
+            params.append(session.id)
+            cursor.execute(
+                f"UPDATE sessions SET {', '.join(updates)} WHERE id_sessions = %s",
+                params,
+            )
 
     def create(self, validated_data):
         now = timezone.now()
+        enable_registrations = validated_data.pop('enable_registrations', False)
+        registration_capacity = validated_data.pop('registration_capacity', None)
         validated_data.setdefault('created_at', now)
         validated_data['updated_at'] = now
-        return Session.objects.create(**validated_data)
+        session = Session.objects.create(**validated_data)
+        self._persist_registration_settings(
+            session=session,
+            enable_registrations=enable_registrations,
+            registration_capacity=registration_capacity,
+        )
+        return session
 
     def update(self, instance, validated_data):
+        enable_registrations = validated_data.pop('enable_registrations', None)
+        registration_capacity = validated_data.pop('registration_capacity', None)
         for field, value in validated_data.items():
             setattr(instance, field, value)
 
         instance.updated_at = timezone.now()
         instance.save()
+        self._persist_registration_settings(
+            session=instance,
+            enable_registrations=enable_registrations,
+            registration_capacity=registration_capacity,
+        )
         return instance
 
     def to_representation(self, instance):
@@ -620,6 +818,8 @@ class AdminEventWriteSerializer(serializers.ModelSerializer):
         queryset=Club.objects.all(),
         required=False,
     )
+    enable_registrations = serializers.BooleanField(required=False)
+    registration_capacity = serializers.IntegerField(required=False, allow_null=True)
     category_ids = serializers.PrimaryKeyRelatedField(
         queryset=Category.objects.all(),
         many=True,
@@ -638,6 +838,8 @@ class AdminEventWriteSerializer(serializers.ModelSerializer):
             'end_date',
             'image',
             'is_external',
+            'enable_registrations',
+            'registration_capacity',
             'status',
             'city',
             'location',
@@ -683,6 +885,23 @@ class AdminEventWriteSerializer(serializers.ModelSerializer):
         if start_date and end_date and start_date > end_date:
             raise serializers.ValidationError({'end_date': 'A data final tem de ser posterior.'})
 
+        enable_registrations = attrs.get(
+            'enable_registrations',
+            getattr(self.instance, 'enable_registrations', False),
+        )
+        registration_capacity = attrs.get(
+            'registration_capacity',
+            getattr(self.instance, 'registration_capacity', None),
+        )
+        if registration_capacity is not None and registration_capacity <= 0:
+            raise serializers.ValidationError(
+                {'registration_capacity': 'A capacidade tem de ser superior a zero.'}
+            )
+        if enable_registrations and registration_capacity is None:
+            raise serializers.ValidationError(
+                {'registration_capacity': 'Define a lotacao para ativar inscricoes.'}
+            )
+
         next_status = normalize_workflow_status(
             attrs.get('status') or getattr(self.instance, 'status', None)
         )
@@ -701,9 +920,45 @@ class AdminEventWriteSerializer(serializers.ModelSerializer):
         attrs['resolved_club'] = club
         return attrs
 
+    def _persist_registration_settings(
+        self,
+        *,
+        event: Event,
+        enable_registrations: bool | None,
+        registration_capacity: int | None,
+    ) -> None:
+        with connection.cursor() as cursor:
+            table_columns = {
+                info.name
+                for info in connection.introspection.get_table_description(cursor, 'event')
+            }
+            updates: list[str] = []
+            params: list[object] = []
+
+            if 'enable_registrations' in table_columns and enable_registrations is not None:
+                updates.append('enable_registrations = %s')
+                params.append(bool(enable_registrations))
+                event.enable_registrations = bool(enable_registrations)
+
+            if 'registration_capacity' in table_columns:
+                updates.append('registration_capacity = %s')
+                params.append(registration_capacity)
+                event.registration_capacity = registration_capacity
+
+            if not updates:
+                return
+
+            params.append(event.id)
+            cursor.execute(
+                f"UPDATE event SET {', '.join(updates)} WHERE id_event = %s",
+                params,
+            )
+
     def create(self, validated_data):
         club = validated_data.pop('resolved_club')
         validated_data.pop('club', None)
+        enable_registrations = validated_data.pop('enable_registrations', False)
+        registration_capacity = validated_data.pop('registration_capacity', None)
         categories = validated_data.pop('categories_payload', [])
         owner = self._resolve_owner(club)
         request_user = self.context['request'].user
@@ -712,23 +967,32 @@ class AdminEventWriteSerializer(serializers.ModelSerializer):
         validated_data.setdefault('created_at', now)
         validated_data['updated_at'] = now
         event = Event.objects.create(**validated_data)
+        self._persist_registration_settings(
+            event=event,
+            enable_registrations=enable_registrations,
+            registration_capacity=registration_capacity,
+        )
         if categories:
             EventCategory.objects.bulk_create(
                 [EventCategory(event=event, category=category) for category in categories]
             )
+        next_status = event.status
         record_editorial_action(
             content_type='event',
             object_id=event.id,
             from_status=None,
-            to_status=event.status,
+            to_status=next_status,
             actor_user=request_user,
             club_id=club.id,
         )
+        notify_event_workflow_status(event=event, previous_status=None, next_status=next_status)
         return event
 
     def update(self, instance, validated_data):
         club = validated_data.pop('resolved_club')
         validated_data.pop('club', None)
+        enable_registrations = validated_data.pop('enable_registrations', None)
+        registration_capacity = validated_data.pop('registration_capacity', None)
         categories = validated_data.pop('categories_payload', None)
         owner = self._resolve_owner(club)
         request_user = self.context['request'].user
@@ -740,6 +1004,11 @@ class AdminEventWriteSerializer(serializers.ModelSerializer):
         instance.user = owner
         instance.updated_at = timezone.now()
         instance.save()
+        self._persist_registration_settings(
+            event=instance,
+            enable_registrations=enable_registrations,
+            registration_capacity=registration_capacity,
+        )
         if categories is not None:
             EventCategory.objects.filter(event=instance).delete()
             EventCategory.objects.bulk_create(
@@ -753,6 +1022,11 @@ class AdminEventWriteSerializer(serializers.ModelSerializer):
                 to_status=instance.status,
                 actor_user=request_user,
                 club_id=club.id,
+            )
+            notify_event_workflow_status(
+                event=instance,
+                previous_status=previous_status,
+                next_status=instance.status,
             )
         return instance
 
@@ -820,6 +1094,84 @@ class ClubRegistrationCreateSerializer(serializers.Serializer):
         except DuplicateClubRegistrationError as error:
             raise serializers.ValidationError({'email': str(error)}) from error
         except ClubRegistrationRateLimitError as error:
+            raise serializers.ValidationError({'non_field_errors': [str(error)]}) from error
+
+
+class EventRegistrationCreateSerializer(serializers.Serializer):
+    name = serializers.CharField(max_length=100)
+    email = serializers.EmailField(max_length=150)
+    phone = serializers.CharField(max_length=20, required=False, allow_blank=True)
+    message = serializers.CharField(required=False, allow_blank=True)
+
+    def validate(self, attrs):
+        event = self.context['event']
+        summary = get_event_registration_summary(event=event)
+
+        if summary.registration_state == 'closed':
+            raise serializers.ValidationError('As inscricoes para este evento estao encerradas.')
+
+        return attrs
+
+    def create(self, validated_data):
+        event = self.context['event']
+        request = self.context.get('request')
+        payload = ClubRegistrationInput(
+            name=validated_data['name'],
+            email=validated_data['email'],
+            phone=validated_data.get('phone'),
+            message=validated_data.get('message'),
+        )
+        forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR', '') if request else ''
+        client_ip = forwarded_for.split(',')[0].strip() if forwarded_for else None
+        if not client_ip and request:
+            client_ip = request.META.get('REMOTE_ADDR')
+
+        try:
+            return create_event_registration(event=event, payload=payload, client_ip=client_ip)
+        except DuplicateActivityRegistrationError as error:
+            raise serializers.ValidationError({'email': str(error)}) from error
+        except ActivityRegistrationRateLimitError as error:
+            raise serializers.ValidationError({'non_field_errors': [str(error)]}) from error
+        except ActivityRegistrationError as error:
+            raise serializers.ValidationError({'non_field_errors': [str(error)]}) from error
+
+
+class SessionRegistrationCreateSerializer(serializers.Serializer):
+    name = serializers.CharField(max_length=100)
+    email = serializers.EmailField(max_length=150)
+    phone = serializers.CharField(max_length=20, required=False, allow_blank=True)
+    message = serializers.CharField(required=False, allow_blank=True)
+
+    def validate(self, attrs):
+        session = self.context['session']
+        summary = get_session_registration_summary(session=session)
+
+        if summary.registration_state == 'closed':
+            raise serializers.ValidationError('As inscricoes para esta sessao estao encerradas.')
+
+        return attrs
+
+    def create(self, validated_data):
+        session = self.context['session']
+        request = self.context.get('request')
+        payload = ClubRegistrationInput(
+            name=validated_data['name'],
+            email=validated_data['email'],
+            phone=validated_data.get('phone'),
+            message=validated_data.get('message'),
+        )
+        forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR', '') if request else ''
+        client_ip = forwarded_for.split(',')[0].strip() if forwarded_for else None
+        if not client_ip and request:
+            client_ip = request.META.get('REMOTE_ADDR')
+
+        try:
+            return create_session_registration(session=session, payload=payload, client_ip=client_ip)
+        except DuplicateActivityRegistrationError as error:
+            raise serializers.ValidationError({'email': str(error)}) from error
+        except ActivityRegistrationRateLimitError as error:
+            raise serializers.ValidationError({'non_field_errors': [str(error)]}) from error
+        except ActivityRegistrationError as error:
             raise serializers.ValidationError({'non_field_errors': [str(error)]}) from error
 
 

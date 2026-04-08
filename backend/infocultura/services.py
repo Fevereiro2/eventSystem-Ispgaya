@@ -1,8 +1,9 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import datetime, timedelta
 from functools import lru_cache
+from urllib.parse import quote
 
 from django.conf import settings
 from django.core.cache import cache
@@ -11,7 +12,18 @@ from django.db import connection, transaction
 from django.db.models import Q
 from django.utils import timezone
 
-from .models import AppUser, Book, Club, Event, News, Registration, RegistrationStatus, Session
+from .models import (
+    AppUser,
+    Book,
+    Club,
+    Event,
+    EventRegistration,
+    News,
+    Registration,
+    RegistrationStatus,
+    Session,
+    SessionRegistration,
+)
 
 
 class ClubRegistrationError(Exception):
@@ -28,6 +40,18 @@ class ClubRegistrationRateLimitError(ClubRegistrationError):
 
 class ClubRegistrationNotFoundError(ClubRegistrationError):
     """Raised when an admin-facing registration cannot be found in scope."""
+
+
+class ActivityRegistrationError(Exception):
+    """Base service error for event/session registrations."""
+
+
+class DuplicateActivityRegistrationError(ActivityRegistrationError):
+    """Raised when the same email is already registered for the same activity."""
+
+
+class ActivityRegistrationRateLimitError(ActivityRegistrationError):
+    """Raised when the registration endpoint is being hit too often."""
 
 
 @dataclass(frozen=True, slots=True)
@@ -80,8 +104,103 @@ class EditorialHistoryRecord:
     created_at: datetime | None
 
 
+@dataclass(frozen=True, slots=True)
+class ActivityRegistrationSummary:
+    confirmed_count: int
+    waitlist_count: int
+    remaining_slots: int | None
+    registration_state: str
+
+
 def _normalized_email(value: str) -> str:
     return value.strip().lower()
+
+
+def _clean_status(value: str | None) -> str:
+    return (value or "").strip().lower()
+
+
+def _format_dt(value: datetime | None) -> str:
+    if value is None:
+        return "Data por definir"
+
+    localized = timezone.localtime(value) if timezone.is_aware(value) else value
+    return localized.strftime("%d/%m/%Y %H:%M")
+
+
+def _build_google_calendar_url(*, title: str, description: str, start_date: datetime, end_date: datetime, location: str) -> str:
+    def normalize_calendar_dt(value: datetime) -> str:
+        aware_value = timezone.make_aware(value, timezone.get_current_timezone()) if timezone.is_naive(value) else value
+        return timezone.localtime(aware_value, timezone.utc).strftime("%Y%m%dT%H%M%SZ")
+
+    query = (
+        f"action=TEMPLATE&text={quote(title)}"
+        f"&dates={normalize_calendar_dt(start_date)}/{normalize_calendar_dt(end_date)}"
+        f"&details={quote(description)}"
+        f"&location={quote(location)}"
+    )
+    return f"https://calendar.google.com/calendar/render?{query}"
+
+
+def _build_outlook_calendar_url(*, title: str, description: str, start_date: datetime, end_date: datetime, location: str) -> str:
+    def normalize_outlook_dt(value: datetime) -> str:
+        aware_value = timezone.make_aware(value, timezone.get_current_timezone()) if timezone.is_naive(value) else value
+        return timezone.localtime(aware_value, timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+
+    query = (
+        f"path=/calendar/action/compose&rru=addevent"
+        f"&subject={quote(title)}"
+        f"&startdt={quote(normalize_outlook_dt(start_date))}"
+        f"&enddt={quote(normalize_outlook_dt(end_date))}"
+        f"&body={quote(description)}"
+        f"&location={quote(location)}"
+    )
+    return f"https://outlook.office.com/calendar/0/deeplink/compose?{query}"
+
+
+def _build_calendar_links(*, title: str, description: str, start_date: datetime, end_date: datetime, location: str) -> dict[str, str]:
+    return {
+        "google_url": _build_google_calendar_url(
+            title=title,
+            description=description,
+            start_date=start_date,
+            end_date=end_date,
+            location=location,
+        ),
+        "outlook_url": _build_outlook_calendar_url(
+            title=title,
+            description=description,
+            start_date=start_date,
+            end_date=end_date,
+            location=location,
+        ),
+    }
+
+
+def _get_club_recipient_emails(*, club_id: int | None) -> list[str]:
+    if club_id is None:
+        return []
+
+    return list(
+        AppUser.objects.filter(club_id=club_id, is_active=True)
+        .exclude(email__isnull=True)
+        .exclude(email__exact="")
+        .values_list("email", flat=True)
+        .distinct()
+    )
+
+
+def _send_mail_message(*, subject: str, body: str, recipient_list: list[str]) -> None:
+    if not recipient_list:
+        return
+
+    send_mail(
+        subject=subject,
+        message=body,
+        from_email=getattr(settings, "DEFAULT_FROM_EMAIL", "noreply@ispgaya.pt"),
+        recipient_list=recipient_list,
+        fail_silently=True,
+    )
 
 
 def _get_allowed_club_id(user) -> int | None:
@@ -125,6 +244,43 @@ def enforce_club_registration_rate_limit(*, club_id: int, client_ip: str | None)
         cache.set(key, current_attempts + 1, timeout=window_seconds)
 
 
+def _activity_registration_rate_limit_key(*, activity_type: str, activity_id: int, client_ip: str) -> str:
+    return f"infocultura:{activity_type}_registration:{activity_id}:{client_ip}"
+
+
+def enforce_activity_registration_rate_limit(
+    *,
+    activity_type: str,
+    activity_id: int,
+    client_ip: str | None,
+) -> None:
+    if not client_ip:
+        return
+
+    key = _activity_registration_rate_limit_key(
+        activity_type=activity_type,
+        activity_id=activity_id,
+        client_ip=client_ip,
+    )
+    max_attempts = 3
+    window_seconds = 15 * 60
+
+    added = cache.add(key, 1, timeout=window_seconds)
+    if added:
+        return
+
+    current_attempts = cache.get(key, 0)
+    if current_attempts >= max_attempts:
+        raise ActivityRegistrationRateLimitError(
+            "Demasiadas tentativas de inscricao. Tenta novamente dentro de alguns minutos."
+        )
+
+    try:
+        cache.incr(key)
+    except ValueError:
+        cache.set(key, current_attempts + 1, timeout=window_seconds)
+
+
 def club_registration_exists(*, club_id: int, email: str) -> bool:
     normalized_email = _normalized_email(email)
 
@@ -142,6 +298,135 @@ def club_registration_exists(*, club_id: int, email: str) -> bool:
             [club_id, normalized_email],
         )
         return cursor.fetchone() is not None
+
+
+def _activity_registration_exists(*, table_name: str, foreign_key: str, activity_id: int, email: str) -> bool:
+    if not _table_exists(table_name):
+        return False
+
+    normalized_email = _normalized_email(email)
+
+    with connection.cursor() as cursor:
+        cursor.execute(
+            f"""
+            SELECT 1
+            FROM {table_name} AS ar
+            INNER JOIN registrations AS r
+              ON r.id_registrations = ar.id_registrations
+            WHERE ar.{foreign_key} = %s
+              AND LOWER(TRIM(r.email)) = %s
+            LIMIT 1
+            """,
+            [activity_id, normalized_email],
+        )
+        return cursor.fetchone() is not None
+
+
+def event_registration_exists(*, event_id: int, email: str) -> bool:
+    return _activity_registration_exists(
+        table_name="event_registrations",
+        foreign_key="id_event",
+        activity_id=event_id,
+        email=email,
+    )
+
+
+def session_registration_exists(*, session_id: int, email: str) -> bool:
+    return _activity_registration_exists(
+        table_name="session_registrations",
+        foreign_key="id_sessions",
+        activity_id=session_id,
+        email=email,
+    )
+
+
+def _normalize_capacity(value: int | None) -> int | None:
+    if value is None:
+        return None
+    return max(0, int(value))
+
+
+def _build_activity_registration_summary(
+    *,
+    table_name: str,
+    foreign_key: str,
+    activity_id: int,
+    capacity: int | None,
+    registrations_enabled: bool,
+    is_open_by_date: bool,
+) -> ActivityRegistrationSummary:
+    confirmed_count = 0
+    waitlist_count = 0
+
+    if not _table_exists(table_name):
+        return ActivityRegistrationSummary(
+            confirmed_count=0,
+            waitlist_count=0,
+            remaining_slots=None if capacity is None else max(0, _normalize_capacity(capacity) or 0),
+            registration_state="closed" if not registrations_enabled or not is_open_by_date else "open",
+        )
+
+    with connection.cursor() as cursor:
+        cursor.execute(
+            f"""
+            SELECT LOWER(COALESCE(rs.name, r.status)) AS resolved_status, COUNT(*)
+            FROM {table_name} AS ar
+            INNER JOIN registrations AS r
+              ON r.id_registrations = ar.id_registrations
+            LEFT JOIN rstatus AS rs
+              ON rs.id_rstatus = r.id_rstatus
+            WHERE ar.{foreign_key} = %s
+            GROUP BY LOWER(COALESCE(rs.name, r.status))
+            """,
+            [activity_id],
+        )
+        rows = cursor.fetchall()
+
+    for status_name, count in rows:
+        normalized_status = _clean_status(status_name)
+        if normalized_status in {"confirmed", "approved"}:
+            confirmed_count += int(count)
+        elif normalized_status == "waitlist":
+            waitlist_count += int(count)
+
+    normalized_capacity = _normalize_capacity(capacity)
+    remaining_slots = None if normalized_capacity is None else max(0, normalized_capacity - confirmed_count)
+
+    if not registrations_enabled or not is_open_by_date:
+        registration_state = "closed"
+    elif normalized_capacity is not None and confirmed_count >= normalized_capacity:
+        registration_state = "waitlist"
+    else:
+        registration_state = "open"
+
+    return ActivityRegistrationSummary(
+        confirmed_count=confirmed_count,
+        waitlist_count=waitlist_count,
+        remaining_slots=remaining_slots,
+        registration_state=registration_state,
+    )
+
+
+def get_event_registration_summary(*, event: Event) -> ActivityRegistrationSummary:
+    return _build_activity_registration_summary(
+        table_name="event_registrations",
+        foreign_key="id_event",
+        activity_id=event.id,
+        capacity=event.registration_capacity,
+        registrations_enabled=bool(event.enable_registrations),
+        is_open_by_date=event.end_date >= timezone.now(),
+    )
+
+
+def get_session_registration_summary(*, session: Session) -> ActivityRegistrationSummary:
+    return _build_activity_registration_summary(
+        table_name="session_registrations",
+        foreign_key="id_sessions",
+        activity_id=session.id,
+        capacity=session.registration_capacity,
+        registrations_enabled=bool(session.enable_registrations),
+        is_open_by_date=session.end_date >= timezone.now(),
+    )
 
 
 def create_club_registration(
@@ -176,7 +461,269 @@ def create_club_registration(
                 [club.id, registration.id],
             )
 
+    notify_new_club_registration(club=club, registration=registration)
+
     return registration
+
+
+def _build_activity_registration_subject(*, label: str, activity_title: str, status: str) -> str:
+    if status == "waitlist":
+        return f"Lista de espera na {label} {activity_title}"
+    return f"Inscricao confirmada na {label} {activity_title}"
+
+
+def _build_activity_registration_body(
+    *,
+    attendee_name: str,
+    label: str,
+    activity_title: str,
+    club_name: str,
+    location: str,
+    start_date: datetime,
+    status: str,
+) -> str:
+    if status == "waitlist":
+        decision_line = "A tua inscricao ficou em lista de espera."
+    else:
+        decision_line = "A tua inscricao foi confirmada automaticamente."
+
+    lines = [
+        f"Ola {attendee_name},",
+        "",
+        decision_line,
+        f"{label}: {activity_title}",
+        f"Clube: {club_name}",
+        f"Data: {_format_dt(start_date)}",
+        f"Local: {location or 'Local por definir'}",
+        "",
+        "Obrigado pelo teu interesse.",
+        "InfoCultura",
+    ]
+    return "\n".join(lines)
+
+
+def _build_admin_registration_notification_body(
+    *,
+    attendee_name: str,
+    attendee_email: str,
+    phone: str | None,
+    message: str | None,
+    scope_label: str,
+) -> str:
+    lines = [
+        "Foi recebida uma nova inscricao.",
+        "",
+        f"Destino: {scope_label}",
+        f"Nome: {attendee_name}",
+        f"Email: {attendee_email}",
+        f"Telefone: {phone or 'Sem telefone'}",
+        f"Mensagem: {message or 'Sem mensagem adicional'}",
+        "",
+        "InfoCultura",
+    ]
+    return "\n".join(lines)
+
+
+def notify_new_club_registration(*, club: Club, registration: Registration) -> None:
+    recipients = _get_club_recipient_emails(club_id=club.id)
+    _send_mail_message(
+        subject=f"Nova inscricao no clube {club.name}",
+        body=_build_admin_registration_notification_body(
+            attendee_name=registration.name,
+            attendee_email=registration.email,
+            phone=registration.phone,
+            message=registration.message,
+            scope_label=club.name,
+        ),
+        recipient_list=recipients,
+    )
+
+
+def notify_new_activity_registration(
+    *,
+    club_id: int | None,
+    activity_label: str,
+    activity_title: str,
+    registration: Registration,
+) -> None:
+    recipients = _get_club_recipient_emails(club_id=club_id)
+    _send_mail_message(
+        subject=f"Nova inscricao em {activity_label.lower()}: {activity_title}",
+        body=_build_admin_registration_notification_body(
+            attendee_name=registration.name,
+            attendee_email=registration.email,
+            phone=registration.phone,
+            message=registration.message,
+            scope_label=f"{activity_label} {activity_title}",
+        ),
+        recipient_list=recipients,
+    )
+
+
+def send_activity_registration_email(
+    *,
+    recipient_email: str,
+    attendee_name: str,
+    label: str,
+    activity_title: str,
+    club_name: str,
+    location: str,
+    start_date: datetime,
+    status: str,
+) -> None:
+    _send_mail_message(
+        subject=_build_activity_registration_subject(
+            label=label,
+            activity_title=activity_title,
+            status=status,
+        ),
+        body=_build_activity_registration_body(
+            attendee_name=attendee_name,
+            label=label,
+            activity_title=activity_title,
+            club_name=club_name,
+            location=location,
+            start_date=start_date,
+            status=status,
+        ),
+        recipient_list=[recipient_email],
+    )
+
+
+def _create_activity_registration(
+    *,
+    activity_type: str,
+    activity_id: int,
+    activity_label: str,
+    activity_title: str,
+    club_id: int | None,
+    club_name: str,
+    location: str,
+    start_date: datetime,
+    registrations_enabled: bool,
+    registration_capacity: int | None,
+    is_open_by_date: bool,
+    payload: ClubRegistrationInput,
+    client_ip: str | None,
+    exists_fn,
+    summary_fn,
+    link_model,
+    link_field: str,
+) -> Registration:
+    if not _table_exists(link_model._meta.db_table):
+        raise ActivityRegistrationError(
+            "As inscricoes para esta atividade ainda nao estao disponiveis na base de dados."
+        )
+
+    if not registrations_enabled or not is_open_by_date:
+        raise ActivityRegistrationError("As inscricoes para esta atividade estao encerradas.")
+
+    enforce_activity_registration_rate_limit(
+        activity_type=activity_type,
+        activity_id=activity_id,
+        client_ip=client_ip,
+    )
+
+    if exists_fn(activity_id=activity_id, email=payload.email):
+        raise DuplicateActivityRegistrationError(
+            "Ja existe uma inscricao submetida com este email para esta atividade."
+        )
+
+    summary = summary_fn()
+    registration_status = "confirmed"
+    normalized_capacity = _normalize_capacity(registration_capacity)
+    if normalized_capacity is not None and summary.confirmed_count >= normalized_capacity:
+        registration_status = "waitlist"
+
+    with transaction.atomic():
+        registration = Registration.objects.create(
+            name=payload.name.strip(),
+            email=payload.email.strip(),
+            phone=(payload.phone or "").strip() or None,
+            message=(payload.message or "").strip() or None,
+            status=registration_status,
+            created_at=timezone.now(),
+        )
+
+        link_model.objects.create(
+            **{
+                link_field: activity_id,
+                "registration": registration,
+                "created_at": timezone.now(),
+            }
+        )
+
+    send_activity_registration_email(
+        recipient_email=registration.email,
+        attendee_name=registration.name,
+        label=activity_label,
+        activity_title=activity_title,
+        club_name=club_name,
+        location=location,
+        start_date=start_date,
+        status=registration_status,
+    )
+    notify_new_activity_registration(
+        club_id=club_id,
+        activity_label=activity_label,
+        activity_title=activity_title,
+        registration=registration,
+    )
+    return registration
+
+
+def create_event_registration(
+    *,
+    event: Event,
+    payload: ClubRegistrationInput,
+    client_ip: str | None = None,
+) -> Registration:
+    return _create_activity_registration(
+        activity_type="event",
+        activity_id=event.id,
+        activity_label="Evento",
+        activity_title=event.title,
+        club_id=event.club_id,
+        club_name=event.club_name or "Clube sem nome",
+        location=event.location or event.city or "Local por definir",
+        start_date=event.start_date,
+        registrations_enabled=bool(event.enable_registrations),
+        registration_capacity=event.registration_capacity,
+        is_open_by_date=event.end_date >= timezone.now(),
+        payload=payload,
+        client_ip=client_ip,
+        exists_fn=lambda activity_id, email: event_registration_exists(event_id=activity_id, email=email),
+        summary_fn=lambda: get_event_registration_summary(event=event),
+        link_model=EventRegistration,
+        link_field="event_id",
+    )
+
+
+def create_session_registration(
+    *,
+    session: Session,
+    payload: ClubRegistrationInput,
+    client_ip: str | None = None,
+) -> Registration:
+    return _create_activity_registration(
+        activity_type="session",
+        activity_id=session.id,
+        activity_label="Sessao",
+        activity_title=session.title,
+        club_id=session.club_id,
+        club_name=session.club.name if session.club_id and session.club else "Clube sem nome",
+        location=session.title,
+        start_date=session.start_date,
+        registrations_enabled=bool(session.enable_registrations),
+        registration_capacity=session.registration_capacity,
+        is_open_by_date=session.end_date >= timezone.now(),
+        payload=payload,
+        client_ip=client_ip,
+        exists_fn=lambda activity_id, email: session_registration_exists(session_id=activity_id, email=email),
+        summary_fn=lambda: get_session_registration_summary(session=session),
+        link_model=SessionRegistration,
+        link_field="session_id",
+    )
 
 
 def _build_admin_registration_filters(
@@ -421,13 +968,181 @@ def send_registration_status_email(record: AdminClubRegistrationRecord) -> None:
     if record.status not in {"approved", "rejected"}:
         return
 
-    send_mail(
+    _send_mail_message(
         subject=_build_registration_status_email_subject(record.status, record.club_name),
-        message=_build_registration_status_email_body(record),
-        from_email=getattr(settings, "DEFAULT_FROM_EMAIL", "noreply@ispgaya.pt"),
+        body=_build_registration_status_email_body(record),
         recipient_list=[record.email],
-        fail_silently=True,
     )
+
+
+def build_activity_calendar_payload(
+    *,
+    title: str,
+    description: str,
+    start_date: datetime,
+    end_date: datetime,
+    location: str,
+) -> dict[str, str]:
+    description_text = description.strip() or "Atividade InfoCultura"
+    location_text = location.strip() or "Local por definir"
+    links = _build_calendar_links(
+        title=title,
+        description=description_text,
+        start_date=start_date,
+        end_date=end_date,
+        location=location_text,
+    )
+    return {
+        "title": title,
+        "description": description_text,
+        "location": location_text,
+        "google_url": links["google_url"],
+        "outlook_url": links["outlook_url"],
+    }
+
+
+def notify_news_workflow_status(*, news: News, previous_status: str | None, next_status: str | None) -> None:
+    normalized_status = _clean_status(next_status)
+    if normalized_status not in {"published", "archived"}:
+        return
+
+    recipients = _get_club_recipient_emails(club_id=news.club_id)
+    if not recipients:
+        return
+
+    action_label = "aprovada e publicada" if normalized_status == "published" else "arquivada"
+    previous_label = previous_status or "sem estado anterior"
+    body = (
+        f'A noticia "{news.title}" foi {action_label}.\n\n'
+        f"Clube: {news.club.name if news.club_id and news.club else 'Sem clube'}\n"
+        f"Estado anterior: {previous_label}\n"
+        f"Estado atual: {next_status or normalized_status}\n\n"
+        "InfoCultura"
+    )
+    _send_mail_message(
+        subject=f"Atualizacao editorial da noticia: {news.title}",
+        body=body,
+        recipient_list=recipients,
+    )
+
+
+def notify_event_workflow_status(*, event: Event, previous_status: str | None, next_status: str | None) -> None:
+    normalized_status = _clean_status(next_status)
+    if normalized_status != "published":
+        return
+
+    recipients = _get_club_recipient_emails(club_id=event.club_id)
+    if not recipients:
+        return
+
+    body = (
+        f'O evento "{event.title}" foi publicado.\n\n'
+        f"Clube: {event.club_name or 'Sem clube'}\n"
+        f"Estado anterior: {previous_status or 'sem estado anterior'}\n"
+        f"Inicio: {_format_dt(event.start_date)}\n"
+        f"Local: {event.location or event.city or 'Local por definir'}\n\n"
+        "InfoCultura"
+    )
+    _send_mail_message(
+        subject=f"Evento publicado: {event.title}",
+        body=body,
+        recipient_list=recipients,
+    )
+
+
+def _build_upcoming_activity_reminder_body(
+    *,
+    attendee_name: str,
+    label: str,
+    title: str,
+    club_name: str,
+    start_date: datetime,
+    location: str,
+) -> str:
+    return (
+        f"Ola {attendee_name},\n\n"
+        f"Lembrete: a tua inscricao em {label.lower()} esta prestes a decorrer.\n"
+        f"{label}: {title}\n"
+        f"Clube: {club_name}\n"
+        f"Inicio: {_format_dt(start_date)}\n"
+        f"Local: {location or 'Local por definir'}\n\n"
+        "InfoCultura"
+    )
+
+
+def send_upcoming_activity_reminders(*, hours_ahead: int = 24, include_sessions: bool = True) -> dict[str, int]:
+    now = timezone.now()
+    window_end = now + timedelta(hours=max(1, hours_ahead))
+    sent_events = 0
+    sent_sessions = 0
+
+    if not _table_exists("event_registrations"):
+        return {
+            "events": 0,
+            "sessions": 0,
+        }
+
+    event_links = (
+        EventRegistration.objects.select_related("event__user__club", "registration")
+        .filter(
+            reminder_sent_at__isnull=True,
+            event__start_date__gte=now,
+            event__start_date__lte=window_end,
+            registration__status__iexact="confirmed",
+        )
+    )
+    for link in event_links:
+        event = link.event
+        registration = link.registration
+        _send_mail_message(
+            subject=f"Lembrete do evento {event.title}",
+            body=_build_upcoming_activity_reminder_body(
+                attendee_name=registration.name,
+                label="Evento",
+                title=event.title,
+                club_name=event.club_name or "Clube sem nome",
+                start_date=event.start_date,
+                location=event.location or event.city or "Local por definir",
+            ),
+            recipient_list=[registration.email],
+        )
+        link.reminder_sent_at = timezone.now()
+        link.save(update_fields=["reminder_sent_at"])
+        sent_events += 1
+
+    if include_sessions and _table_exists("session_registrations"):
+        session_links = (
+            SessionRegistration.objects.select_related("session__club", "registration")
+            .filter(
+                reminder_sent_at__isnull=True,
+                session__start_date__gte=now,
+                session__start_date__lte=window_end,
+                registration__status__iexact="confirmed",
+            )
+        )
+        for link in session_links:
+            session = link.session
+            registration = link.registration
+            _send_mail_message(
+                subject=f"Lembrete da sessao {session.title}",
+                body=_build_upcoming_activity_reminder_body(
+                    attendee_name=registration.name,
+                    label="Sessao",
+                    title=session.title,
+                    club_name=session.club.name if session.club_id and session.club else "Clube sem nome",
+                    start_date=session.start_date,
+                    location=session.title,
+                ),
+                recipient_list=[registration.email],
+            )
+            link.reminder_sent_at = timezone.now()
+            link.save(update_fields=["reminder_sent_at"])
+            sent_sessions += 1
+
+    return {
+        "events": sent_events,
+        "sessions": sent_sessions,
+    }
 
 
 def list_editorial_history(*, content_type: str, object_id: int, limit: int = 10) -> list[EditorialHistoryRecord]:
