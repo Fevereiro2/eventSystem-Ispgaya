@@ -112,6 +112,17 @@ class ActivityRegistrationSummary:
     registration_state: str
 
 
+@dataclass(frozen=True, slots=True)
+class AdminNotificationRecord:
+    id: str
+    kind: str
+    level: str
+    title: str
+    message: str
+    href: str
+    created_at: datetime | None
+
+
 def _normalized_email(value: str) -> str:
     return value.strip().lower()
 
