@@ -5,12 +5,14 @@ import Footer from '../components/Footer';
 import HeaderNav from '../components/HeaderNav';
 import TopBar from '../components/TopBar';
 import {
+  fetchPublicCategories,
   fetchPublicBooks,
   fetchPublicClubs,
   fetchPublicEvents,
   fetchPublicNews,
   fetchPublicSessions,
   InfoCulturaBook,
+  InfoCulturaCategory,
   InfoCulturaClub,
   InfoCulturaEvent,
   InfoCulturaNews,
@@ -18,6 +20,11 @@ import {
   resolveInfoCulturaAssetUrl
 } from '../data/infoculturaApi';
 import {
+  adminBtnSecondary,
+  adminField,
+  adminFormGridSpaced,
+  adminInput,
+  adminLabel,
   container,
   contentEmpty,
   labResearchGrid,
@@ -115,13 +122,32 @@ function ResultCard({
   );
 }
 
+function getEventTimeState(item: InfoCulturaEvent): 'upcoming' | 'ongoing' | 'past' {
+  const now = Date.now();
+  const start = new Date(item.start_date).getTime();
+  const end = new Date(item.end_date).getTime();
+
+  if (!Number.isNaN(end) && end < now) return 'past';
+  if (!Number.isNaN(start) && start > now) return 'upcoming';
+  return 'ongoing';
+}
+
 function LaboratorioCultural() {
   const [clubs, setClubs] = useState<InfoCulturaClub[]>([]);
+  const [categories, setCategories] = useState<InfoCulturaCategory[]>([]);
   const [newsItems, setNewsItems] = useState<InfoCulturaNews[]>([]);
   const [books, setBooks] = useState<InfoCulturaBook[]>([]);
   const [sessions, setSessions] = useState<InfoCulturaSession[]>([]);
   const [events, setEvents] = useState<InfoCulturaEvent[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
+  const [eventClubFilter, setEventClubFilter] = useState('all');
+  const [eventCategoryFilter, setEventCategoryFilter] = useState('all');
+  const [eventCityFilter, setEventCityFilter] = useState('all');
+  const [eventStateFilter, setEventStateFilter] = useState<'all' | 'upcoming' | 'ongoing' | 'past'>(
+    'all'
+  );
+  const [eventDateFrom, setEventDateFrom] = useState('');
+  const [eventDateTo, setEventDateTo] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState('');
 
@@ -130,16 +156,19 @@ function LaboratorioCultural() {
 
     async function loadData() {
       try {
-        const [nextClubs, nextNews, nextBooks, nextSessions, nextEvents] = await Promise.all([
+        const [nextClubs, nextCategories, nextNews, nextBooks, nextSessions, nextEvents] =
+          await Promise.all([
           fetchPublicClubs(),
+          fetchPublicCategories(),
           fetchPublicNews(),
           fetchPublicBooks(),
           fetchPublicSessions(),
           fetchPublicEvents()
-        ]);
+          ]);
 
         if (!active) return;
         setClubs(nextClubs);
+        setCategories(nextCategories);
         setNewsItems(nextNews);
         setBooks(nextBooks);
         setSessions(nextSessions);
@@ -222,9 +251,33 @@ function LaboratorioCultural() {
           item.location,
           describeEvent(item),
           getClubNameById(clubs, item.club_id)
-        )
+        ) &&
+        (eventClubFilter === 'all' || String(item.club_id || '') === eventClubFilter) &&
+        (eventCategoryFilter === 'all' || item.category_ids.includes(Number(eventCategoryFilter))) &&
+        (eventCityFilter === 'all' ||
+          normalizeLabel(item.city || item.location || '') === normalizeLabel(eventCityFilter)) &&
+        (eventStateFilter === 'all' || getEventTimeState(item) === eventStateFilter) &&
+        (!eventDateFrom || item.event_date.slice(0, 10) >= eventDateFrom) &&
+        (!eventDateTo || item.event_date.slice(0, 10) <= eventDateTo)
       ),
-    [events, clubs, normalizedQuery]
+    [
+      events,
+      clubs,
+      normalizedQuery,
+      eventClubFilter,
+      eventCategoryFilter,
+      eventCityFilter,
+      eventStateFilter,
+      eventDateFrom,
+      eventDateTo
+    ]
+  );
+  const eventCities = useMemo(
+    () =>
+      Array.from(
+        new Set(events.map((item) => (item.city || item.location || '').trim()).filter(Boolean))
+      ).sort((a, b) => a.localeCompare(b, 'pt')),
+    [events]
   );
 
   const hasSearch = normalizedQuery.length > 0;
@@ -370,6 +423,168 @@ function LaboratorioCultural() {
                     </div>
                   </section>
                 ) : null}
+              </div>
+            ) : null}
+
+            {!isLoading && !loadError ? (
+              <div className="mt-10 rounded-2xl border border-slate-200 bg-slate-50 p-6">
+                <div className="flex flex-wrap items-start justify-between gap-4">
+                  <div>
+                    <h2 className="text-2xl font-semibold text-slate-900">Explorar agenda</h2>
+                    <p className="mt-2 text-sm leading-6 text-slate-600">
+                      Filtra eventos por clube, categoria, cidade, estado e intervalo de datas.
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    className={adminBtnSecondary}
+                    onClick={() => {
+                      setEventClubFilter('all');
+                      setEventCategoryFilter('all');
+                      setEventCityFilter('all');
+                      setEventStateFilter('all');
+                      setEventDateFrom('');
+                      setEventDateTo('');
+                    }}
+                  >
+                    Limpar filtros
+                  </button>
+                </div>
+
+                <div className={adminFormGridSpaced}>
+                  <div className={adminField}>
+                    <label className={adminLabel} htmlFor="lab-event-club-filter">
+                      Clube
+                    </label>
+                    <select
+                      id="lab-event-club-filter"
+                      className={adminInput}
+                      value={eventClubFilter}
+                      onChange={(event) => setEventClubFilter(event.target.value)}
+                    >
+                      <option value="all">Todos</option>
+                      {clubs.map((club) => (
+                        <option key={club.id} value={club.id}>
+                          {club.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div className={adminField}>
+                    <label className={adminLabel} htmlFor="lab-event-category-filter">
+                      Categoria
+                    </label>
+                    <select
+                      id="lab-event-category-filter"
+                      className={adminInput}
+                      value={eventCategoryFilter}
+                      onChange={(event) => setEventCategoryFilter(event.target.value)}
+                    >
+                      <option value="all">Todas</option>
+                      {categories.map((category) => (
+                        <option key={category.id} value={category.id}>
+                          {category.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div className={adminField}>
+                    <label className={adminLabel} htmlFor="lab-event-city-filter">
+                      Cidade
+                    </label>
+                    <select
+                      id="lab-event-city-filter"
+                      className={adminInput}
+                      value={eventCityFilter}
+                      onChange={(event) => setEventCityFilter(event.target.value)}
+                    >
+                      <option value="all">Todas</option>
+                      {eventCities.map((city) => (
+                        <option key={city} value={city}>
+                          {city}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div className={adminField}>
+                    <label className={adminLabel} htmlFor="lab-event-state-filter">
+                      Estado
+                    </label>
+                    <select
+                      id="lab-event-state-filter"
+                      className={adminInput}
+                      value={eventStateFilter}
+                      onChange={(event) =>
+                        setEventStateFilter(
+                          event.target.value as 'all' | 'upcoming' | 'ongoing' | 'past'
+                        )
+                      }
+                    >
+                      <option value="all">Todos</option>
+                      <option value="upcoming">Proximos</option>
+                      <option value="ongoing">A decorrer</option>
+                      <option value="past">Concluidos</option>
+                    </select>
+                  </div>
+
+                  <div className={adminField}>
+                    <label className={adminLabel} htmlFor="lab-event-date-from">
+                      Data inicial
+                    </label>
+                    <input
+                      id="lab-event-date-from"
+                      type="date"
+                      className={adminInput}
+                      value={eventDateFrom}
+                      onChange={(event) => setEventDateFrom(event.target.value)}
+                    />
+                  </div>
+
+                  <div className={adminField}>
+                    <label className={adminLabel} htmlFor="lab-event-date-to">
+                      Data final
+                    </label>
+                    <input
+                      id="lab-event-date-to"
+                      type="date"
+                      className={adminInput}
+                      value={eventDateTo}
+                      onChange={(event) => setEventDateTo(event.target.value)}
+                    />
+                  </div>
+                </div>
+
+                <div className="mt-8">
+                  {filteredEvents.length === 0 ? (
+                    <p className={contentEmpty}>Nao existem eventos para os filtros atuais.</p>
+                  ) : (
+                    <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
+                      {filteredEvents.slice(0, hasSearch ? 6 : 9).map((item) => {
+                        const stateLabel =
+                          getEventTimeState(item) === 'upcoming'
+                            ? 'Proximo'
+                            : getEventTimeState(item) === 'ongoing'
+                              ? 'A decorrer'
+                              : 'Concluido';
+
+                        return (
+                          <ResultCard
+                            key={`agenda-event-${item.id}`}
+                            title={item.title}
+                            meta={`${getClubNameById(clubs, item.club_id)} · ${describeEvent(item)}`}
+                            description={item.description}
+                            href={`/laboratorio-cultural/eventos/${item.id}`}
+                            image={item.image}
+                            status={stateLabel}
+                          />
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
               </div>
             ) : null}
 

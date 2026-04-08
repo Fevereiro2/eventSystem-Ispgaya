@@ -27,6 +27,17 @@ import {
   adminListTop,
   adminPanelCard,
   adminPanelForm,
+  adminPortalContent,
+  adminPortalShell,
+  adminPortalSidebar,
+  adminPortalSidebarBrand,
+  adminPortalSidebarHead,
+  adminPortalSidebarLink,
+  adminPortalSidebarLinkActive,
+  adminPortalSidebarNav,
+  adminPortalSidebarSection,
+  adminPortalSidebarSub,
+  adminPortalSidebarTitle,
   adminSectionLink,
   adminSectionLinkActive,
   adminSectionNav,
@@ -286,6 +297,8 @@ type SessionFormState = {
   session_date: string;
   start_date: string;
   end_date: string;
+  enable_registrations: boolean;
+  registration_capacity: string;
   club_id: string;
 };
 
@@ -297,6 +310,8 @@ type EventFormState = {
   end_date: string;
   image: string;
   is_external: boolean;
+  enable_registrations: boolean;
+  registration_capacity: string;
   status: string;
   city: string;
   location: string;
@@ -378,6 +393,8 @@ const initialSessionForm: SessionFormState = {
   session_date: '',
   start_date: '',
   end_date: '',
+  enable_registrations: false,
+  registration_capacity: '',
   club_id: ''
 };
 
@@ -389,6 +406,8 @@ const initialEventForm: EventFormState = {
   end_date: '',
   image: '',
   is_external: false,
+  enable_registrations: false,
+  registration_capacity: '',
   status: 'draft',
   city: '',
   location: '',
@@ -409,6 +428,15 @@ const adminSections: { id: AdminSection; label: string; href: string }[] = [
   { id: 'conteudos', label: 'Conteudos', href: '/infocultura/conteudos' },
   { id: 'inscricoes', label: 'Inscricoes', href: '/infocultura/inscricoes' },
   { id: 'clubes', label: 'Clubes', href: '/infocultura/clubes' }
+];
+
+const adminSectionGroups: {
+  title: string;
+  ids: AdminSection[];
+}[] = [
+  { title: 'Painel', ids: ['resumo'] },
+  { title: 'Gestao', ids: ['utilizadores', 'clubes', 'inscricoes'] },
+  { title: 'Conteudos', ids: ['noticias', 'atividades', 'conteudos'] }
 ];
 
 function getAdminSection(pathname: string): AdminSection | null {
@@ -728,6 +756,16 @@ function AdminCultura() {
   const visibleSections = useMemo(
     () => adminSections.filter((section) => section.id !== 'clubes' || canManageUsers),
     [canManageUsers]
+  );
+  const visibleSectionGroups = useMemo(
+    () =>
+      adminSectionGroups
+        .map((group) => ({
+          ...group,
+          sections: visibleSections.filter((section) => group.ids.includes(section.id)),
+        }))
+        .filter((group) => group.sections.length > 0),
+    [visibleSections]
   );
   const sortedItems = useMemo(
     () => [...items].sort((a, b) => (a.updatedAt < b.updatedAt ? 1 : -1)),
@@ -2403,6 +2441,11 @@ function AdminCultura() {
       session_date: toDateInputValue(item.session_date),
       start_date: toDateTimeLocalValue(item.start_date),
       end_date: toDateTimeLocalValue(item.end_date),
+      enable_registrations: Boolean(item.enable_registrations),
+      registration_capacity:
+        item.registration_capacity === null || item.registration_capacity === undefined
+          ? ''
+          : String(item.registration_capacity),
       club_id: String(item.club_id)
     });
     setSessionFormError('');
@@ -2420,6 +2463,10 @@ function AdminCultura() {
       session_date: sessionForm.session_date,
       start_date: sessionForm.start_date,
       end_date: sessionForm.end_date,
+      enable_registrations: sessionForm.enable_registrations,
+      registration_capacity: sessionForm.registration_capacity
+        ? Number(sessionForm.registration_capacity)
+        : null,
       ...(sessionForm.club_id ? { club_id: Number(sessionForm.club_id) } : {})
     };
 
@@ -2497,6 +2544,11 @@ function AdminCultura() {
       end_date: toDateTimeLocalValue(item.end_date),
       image: item.image || '',
       is_external: item.is_external,
+      enable_registrations: Boolean(item.enable_registrations),
+      registration_capacity:
+        item.registration_capacity === null || item.registration_capacity === undefined
+          ? ''
+          : String(item.registration_capacity),
       status: normalizeWorkflowStatus(item.status),
       city: item.city || '',
       location: item.location || '',
@@ -2519,6 +2571,10 @@ function AdminCultura() {
       end_date: eventForm.end_date,
       image: eventForm.image.trim(),
       is_external: eventForm.is_external,
+      enable_registrations: eventForm.enable_registrations,
+      registration_capacity: eventForm.registration_capacity
+        ? Number(eventForm.registration_capacity)
+        : null,
       status: eventForm.status.trim(),
       city: eventForm.city.trim(),
       location: eventForm.location.trim(),
@@ -2812,20 +2868,34 @@ function AdminCultura() {
           </div>
           {panelError ? <p className={adminError}>{panelError}</p> : null}
 
-          <nav className={adminSectionNav} aria-label="Secoes do painel">
-            {visibleSections.map((section) => (
-              <NavLink
-                key={section.id}
-                to={section.href}
-                className={({ isActive }) =>
-                  isActive ? adminSectionLinkActive : adminSectionLink
-                }
-              >
-                {section.label}
-              </NavLink>
-            ))}
-          </nav>
+          <div className={adminPortalShell}>
+            <aside className={adminPortalSidebar} aria-label="Menu lateral do painel">
+              <div className={adminPortalSidebarHead}>
+                <p className={adminPortalSidebarBrand}>InfoCultura</p>
+                <p className={adminPortalSidebarSub}>Gestao cultural interna</p>
+              </div>
 
+              {visibleSectionGroups.map((group) => (
+                <div key={group.title} className={adminPortalSidebarSection}>
+                  <p className={adminPortalSidebarTitle}>{group.title}</p>
+                  <nav className={adminPortalSidebarNav} aria-label={group.title}>
+                    {group.sections.map((section) => (
+                      <NavLink
+                        key={section.id}
+                        to={section.href}
+                        className={({ isActive }) =>
+                          isActive ? adminPortalSidebarLinkActive : adminPortalSidebarLink
+                        }
+                      >
+                        {section.label}
+                      </NavLink>
+                    ))}
+                  </nav>
+                </div>
+              ))}
+            </aside>
+
+            <div className={adminPortalContent}>
           {activeSection === 'resumo' ? (
             <div className={adminDashboardGrid}>
               <section className={adminPanelCard}>
@@ -4815,6 +4885,48 @@ function AdminCultura() {
                           }
                         />
                       </div>
+
+                      <div className={adminField}>
+                        <label className={adminLabel} htmlFor="session-registrations-enabled">
+                          Inscricoes
+                        </label>
+                        <select
+                          id="session-registrations-enabled"
+                          className={adminInput}
+                          value={sessionForm.enable_registrations ? 'sim' : 'nao'}
+                          onChange={(event) =>
+                            setSessionForm((prev) => ({
+                              ...prev,
+                              enable_registrations: event.target.value === 'sim'
+                            }))
+                          }
+                        >
+                          <option value="nao">Fechadas</option>
+                          <option value="sim">Abertas</option>
+                        </select>
+                      </div>
+
+                      <div className={adminField}>
+                        <label className={adminLabel} htmlFor="session-registration-capacity">
+                          Lotacao
+                        </label>
+                        <input
+                          id="session-registration-capacity"
+                          type="number"
+                          min="1"
+                          className={adminInput}
+                          value={sessionForm.registration_capacity}
+                          onChange={(event) =>
+                            setSessionForm((prev) => ({
+                              ...prev,
+                              registration_capacity: event.target.value
+                            }))
+                          }
+                        />
+                        <p className={blockText}>
+                          Define o numero maximo de lugares antes de ativar lista de espera.
+                        </p>
+                      </div>
                     </div>
 
                     <div className={adminFieldSpaced}>
@@ -4871,6 +4983,15 @@ function AdminCultura() {
                           </div>
                         </div>
                         <p className={adminListDesc}>{item.description}</p>
+                        <p className={adminListMeta}>
+                          Inscricoes {item.enable_registrations ? 'abertas' : 'fechadas'} ·
+                          Confirmadas {item.confirmed_registrations} · Espera{' '}
+                          {item.waitlist_registrations}
+                          {item.registration_capacity !== null &&
+                          item.registration_capacity !== undefined
+                            ? ` · Lotacao ${item.registration_capacity}`
+                            : ''}
+                        </p>
                         <div className={adminListTools}>
                           <button
                             type="button"
@@ -5082,6 +5203,26 @@ function AdminCultura() {
                           <option value="sim">Sim</option>
                         </select>
                       </div>
+
+                      <div className={adminField}>
+                        <label className={adminLabel} htmlFor="event-registrations-enabled">
+                          Inscricoes
+                        </label>
+                        <select
+                          id="event-registrations-enabled"
+                          className={adminInput}
+                          value={eventForm.enable_registrations ? 'sim' : 'nao'}
+                          onChange={(event) =>
+                            setEventForm((prev) => ({
+                              ...prev,
+                              enable_registrations: event.target.value === 'sim'
+                            }))
+                          }
+                        >
+                          <option value="nao">Fechadas</option>
+                          <option value="sim">Abertas</option>
+                        </select>
+                      </div>
                     </div>
 
                     <div className={adminFormGridSpaced}>
@@ -5111,6 +5252,28 @@ function AdminCultura() {
                             setEventForm((prev) => ({ ...prev, location: event.target.value }))
                           }
                         />
+                      </div>
+
+                      <div className={adminField}>
+                        <label className={adminLabel} htmlFor="event-registration-capacity">
+                          Lotacao
+                        </label>
+                        <input
+                          id="event-registration-capacity"
+                          type="number"
+                          min="1"
+                          className={adminInput}
+                          value={eventForm.registration_capacity}
+                          onChange={(event) =>
+                            setEventForm((prev) => ({
+                              ...prev,
+                              registration_capacity: event.target.value
+                            }))
+                          }
+                        />
+                        <p className={blockText}>
+                          Quando a lotacao for atingida, novas inscricoes passam para espera.
+                        </p>
                       </div>
 
                       <div className={adminField}>
@@ -5200,6 +5363,15 @@ function AdminCultura() {
                           </div>
                         </div>
                         <p className={adminListDesc}>{item.description}</p>
+                        <p className={adminListMeta}>
+                          Inscricoes {item.enable_registrations ? 'abertas' : 'fechadas'} ·
+                          Confirmadas {item.confirmed_registrations} · Espera{' '}
+                          {item.waitlist_registrations}
+                          {item.registration_capacity !== null &&
+                          item.registration_capacity !== undefined
+                            ? ` · Lotacao ${item.registration_capacity}`
+                            : ''}
+                        </p>
                         {item.categories.length > 0 ? (
                           <p className={adminListMeta}>
                             Categorias: {item.categories.map((category) => category.name).join(', ')}
@@ -5833,6 +6005,8 @@ function AdminCultura() {
               </div>
             </>
           ) : null}
+            </div>
+          </div>
         </div>
       </main>
 
