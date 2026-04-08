@@ -1,4 +1,14 @@
 import { Dispatch, FormEvent, SetStateAction, useEffect, useMemo, useState } from 'react';
+import {
+  Bell,
+  BookOpen,
+  CalendarClock,
+  FilePlus2,
+  LayoutDashboard,
+  Newspaper,
+  Sparkles,
+  Users,
+} from 'lucide-react';
 import { NavLink, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import infoCulturaBg from '../assets/19825874_uqliU.jpeg';
 import ispgayaLogo from '../assets/ispgaya-logo.svg';
@@ -9,7 +19,6 @@ import {
   adminBtnEdit,
   adminBtnPrimary,
   adminBtnSecondary,
-  adminDashboardGrid,
   adminError,
   adminField,
   adminFieldSpaced,
@@ -865,6 +874,144 @@ function AdminCultura() {
           ]
         : [],
     [dashboardStats]
+  );
+  const dashboardHighlights = useMemo(
+    () => [
+      {
+        label: 'Utilizadores ativos',
+        value: dashboardStats?.active_users ?? activeUsers,
+        tone: 'slate',
+        icon: Users,
+      },
+      {
+        label: 'Noticias publicadas',
+        value: dashboardStats?.news_published ?? publishedItems,
+        tone: 'amber',
+        icon: Newspaper,
+      },
+      {
+        label: 'Sessoes proximas',
+        value: dashboardStats?.upcoming_sessions ?? sessions.length,
+        tone: 'blue',
+        icon: CalendarClock,
+      },
+      {
+        label: 'Inscricoes pendentes',
+        value: dashboardStats?.registrations_pending ?? pendingRegistrations,
+        tone: 'rose',
+        icon: Bell,
+      },
+    ],
+    [activeUsers, dashboardStats, pendingRegistrations, publishedItems, sessions.length]
+  );
+  const dashboardAlerts = useMemo(
+    () => [
+      {
+        title: 'Revisao editorial',
+        detail: `${dashboardStats?.news_review ?? 0} noticias e ${dashboardStats?.events_review ?? 0} eventos aguardam revisao.`,
+        href: '/infocultura/noticias',
+      },
+      {
+        title: 'Inscricoes por validar',
+        detail: `${dashboardStats?.registrations_pending ?? pendingRegistrations} inscricoes pendentes de decisao.`,
+        href: '/infocultura/inscricoes',
+      },
+      {
+        title: 'Clubes com atividade aberta',
+        detail: `${dashboardStats?.clubs_with_registrations_open ?? 0} clubes com inscricoes atualmente ativas.`,
+        href: '/infocultura/clubes',
+      },
+    ],
+    [dashboardStats, pendingRegistrations]
+  );
+  const dashboardAgenda = useMemo(
+    () =>
+      [
+        dashboardStats?.latest_news
+          ? {
+              label: 'Ultima noticia',
+              title: dashboardStats.latest_news.title,
+              meta: `${dashboardStats.latest_news.club_name || 'Sem clube'} · ${
+                dashboardStats.latest_news.status
+                  ? getWorkflowStatusLabel(dashboardStats.latest_news.status)
+                  : 'Sem estado'
+              }`,
+              date: formatAdminDateTime(dashboardStats.latest_news.date || ''),
+              href: '/infocultura/noticias',
+            }
+          : null,
+        dashboardStats?.next_session
+          ? {
+              label: 'Proxima sessao',
+              title: dashboardStats.next_session.title,
+              meta: dashboardStats.next_session.club_name || 'Sem clube',
+              date: formatAdminDateTime(dashboardStats.next_session.date || ''),
+              href: '/infocultura/atividades',
+            }
+          : null,
+        dashboardStats?.next_event
+          ? {
+              label: 'Proximo evento',
+              title: dashboardStats.next_event.title,
+              meta: `${dashboardStats.next_event.club_name || 'Sem clube'}${
+                dashboardStats.next_event.status
+                  ? ` · ${getWorkflowStatusLabel(dashboardStats.next_event.status)}`
+                  : ''
+              }`,
+              date: formatAdminDateTime(dashboardStats.next_event.date || ''),
+              href: '/infocultura/atividades',
+            }
+          : null,
+      ].filter(Boolean) as Array<{
+        label: string;
+        title: string;
+        meta: string;
+        date: string;
+        href: string;
+      }>,
+    [dashboardStats]
+  );
+  const dashboardQuickActions = useMemo(
+    () => {
+      const actions = [
+        {
+          label: 'Nova noticia',
+          hint: 'Abrir publicacao editorial',
+          href: '/infocultura/noticias',
+          icon: Newspaper,
+        },
+        {
+          label: 'Nova atividade',
+          hint: 'Gerir livros, sessoes e eventos',
+          href: '/infocultura/atividades',
+          icon: CalendarClock,
+        },
+        {
+          label: 'Conteudos culturais',
+          hint: 'Atualizar Tuna, Leitura e Teatro',
+          href: '/infocultura/conteudos',
+          icon: FilePlus2,
+        },
+        {
+          label: 'Inscricoes',
+          hint: 'Validar pedidos pendentes',
+          href: '/infocultura/inscricoes',
+          icon: Bell,
+        },
+      ];
+
+      if (canManageUsers) {
+        actions.unshift({
+          label: 'Utilizadores',
+          hint: 'Criar ou editar acessos',
+          href: '/infocultura/utilizadores',
+          icon: Users,
+        });
+      }
+
+      return actions;
+    },
+    [canManageUsers]
   );
   const clubMembers = useMemo(() => {
     if (!editingClubId) return [];
@@ -2897,80 +3044,42 @@ function AdminCultura() {
 
             <div className={adminPortalContent}>
           {activeSection === 'resumo' ? (
-            <div className={adminDashboardGrid}>
-              <section className={adminPanelCard}>
-                <h2 className={blockTitle}>Painel InfoCultura</h2>
-                <p className={blockText}>
-                  Consulta a sessao atual e os principais indicadores do sistema.
-                </p>
-                {dashboardStats ? (
-                  <p className={adminInfo}>Ambito atual: {dashboardStats.scope_label}</p>
-                ) : null}
-                {isLoadingDashboard ? <p className={adminInfo}>A carregar metricas...</p> : null}
-                {dashboardError ? <p className={adminError}>{dashboardError}</p> : null}
-
-                <div className={adminStatsGrid}>
-                  <div className={adminStatCard}>
-                    <p className={adminStatValue}>
-                      {dashboardStats?.users_total ?? users.length}
-                    </p>
-                    <p className={adminStatLabel}>Utilizadores</p>
-                  </div>
-                  <div className={adminStatCard}>
-                    <p className={adminStatValue}>
-                      {dashboardStats?.active_users ?? activeUsers}
-                    </p>
-                    <p className={adminStatLabel}>Ativos</p>
-                  </div>
-                  <div className={adminStatCard}>
-                    <p className={adminStatValue}>
-                      {dashboardStats?.news_published ?? publishedItems}
-                    </p>
-                    <p className={adminStatLabel}>Noticias publicadas</p>
-                  </div>
-                  <div className={adminStatCard}>
-                    <p className={adminStatValue}>
-                      {dashboardStats?.clubs_total ?? (canManageUsers ? clubs.length : 1)}
-                    </p>
-                    <p className={adminStatLabel}>Clubes</p>
-                  </div>
-                </div>
-
-                {dashboardCards.length > 0 ? (
-                  <div className={`${adminStatsGrid} mt-6`}>
-                    {dashboardCards.map((card) => (
-                      <div key={card.label} className={adminStatCard}>
-                        <p className={adminStatValue}>{card.value}</p>
-                        <p className={adminStatLabel}>{card.label}</p>
+            <div className="space-y-6">
+              <section className="rounded-2xl border border-slate-200 bg-gradient-to-r from-white to-slate-50 p-6 shadow-sm">
+                <div className="flex flex-wrap items-start justify-between gap-4">
+                  <div>
+                    <div className="flex items-center gap-3">
+                      <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-[#dd8609] text-white">
+                        <LayoutDashboard className="h-5 w-5" />
+                      </span>
+                      <div>
+                        <h2 className="text-3xl font-semibold text-slate-900">Dashboard</h2>
+                        <p className="mt-1 text-sm text-slate-600">
+                          Vista inicial com alertas, agenda e atalhos operacionais.
+                        </p>
                       </div>
-                    ))}
-                  </div>
-                ) : null}
-              </section>
-
-              <section className={adminPanelCard}>
-                <h2 className={blockTitle}>Sessao Atual</h2>
-                <p className={blockText}>Informacao do utilizador autenticado neste momento.</p>
-
-                <div className={adminUserList}>
-                  <div className={adminUserItem}>
-                    <div>
-                      <h3 className={adminUserName}>Administrador autenticado</h3>
-                      <p className={adminUserEmail}>
-                        {currentUser?.name || (isLoadingUsers ? 'A carregar...' : 'Sem dados')}
-                      </p>
-                      <p className={adminUserMeta}>
-                        {currentUser
-                          ? `${currentUser.email} · ${currentUser.role}`
-                          : 'InfoCultura'}
-                      </p>
                     </div>
+                    {dashboardStats ? (
+                      <p className="mt-4 text-sm font-medium text-slate-500">
+                        Ambito atual: {dashboardStats.scope_label}
+                      </p>
+                    ) : null}
+                  </div>
+
+                  <div className="rounded-2xl border border-slate-200 bg-white px-5 py-4 shadow-sm">
+                    <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">
+                      Sessao atual
+                    </p>
+                    <p className="mt-2 text-lg font-semibold text-slate-900">
+                      {currentUser?.name || (isLoadingUsers ? 'A carregar...' : 'Sem dados')}
+                    </p>
+                    <p className="mt-1 text-sm text-slate-600">
+                      {currentUser ? `${currentUser.email} · ${currentUser.role}` : 'InfoCultura'}
+                    </p>
                     {currentUser ? (
                       <span
-                        className={`${adminUserStatus} ${
-                          currentUser.is_active
-                            ? adminUserStatusActive
-                            : adminUserStatusInactive
+                        className={`mt-3 inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold ${
+                          currentUser.is_active ? adminUserStatusActive : adminUserStatusInactive
                         }`}
                       >
                         {currentUser.is_active ? 'Ativo' : 'Inativo'}
@@ -2978,106 +3087,193 @@ function AdminCultura() {
                     ) : null}
                   </div>
                 </div>
+
+                {isLoadingDashboard ? <p className="mt-4 text-sm text-slate-500">A carregar metricas...</p> : null}
+                {dashboardError ? <p className="mt-4 text-sm text-red-600">{dashboardError}</p> : null}
               </section>
 
-              <section className={adminPanelCard}>
-                <h2 className={blockTitle}>Fluxo Editorial</h2>
-                <p className={blockText}>
-                  Acompanha o que ainda precisa de revisao e o que ja esta publicado.
-                </p>
+              <section className="grid grid-cols-1 gap-4 xl:grid-cols-4">
+                {dashboardHighlights.map((item) => {
+                  const Icon = item.icon;
+                  const toneClass =
+                    item.tone === 'amber'
+                      ? 'bg-amber-100 text-amber-700'
+                      : item.tone === 'blue'
+                        ? 'bg-sky-100 text-sky-700'
+                        : item.tone === 'rose'
+                          ? 'bg-rose-100 text-rose-700'
+                          : 'bg-slate-100 text-slate-700';
 
-                <div className={adminStatsGrid}>
-                  <div className={adminStatCard}>
-                    <p className={adminStatValue}>{dashboardStats?.news_draft ?? 0}</p>
-                    <p className={adminStatLabel}>Noticias em rascunho</p>
-                  </div>
-                  <div className={adminStatCard}>
-                    <p className={adminStatValue}>{dashboardStats?.news_review ?? 0}</p>
-                    <p className={adminStatLabel}>Noticias em revisao</p>
-                  </div>
-                  <div className={adminStatCard}>
-                    <p className={adminStatValue}>{dashboardStats?.events_draft ?? 0}</p>
-                    <p className={adminStatLabel}>Eventos em rascunho</p>
-                  </div>
-                  <div className={adminStatCard}>
-                    <p className={adminStatValue}>{dashboardStats?.events_review ?? 0}</p>
-                    <p className={adminStatLabel}>Eventos em revisao</p>
-                  </div>
-                </div>
-              </section>
-
-              <section className={adminPanelCard}>
-                <h2 className={blockTitle}>Proxima Atividade</h2>
-                <p className={blockText}>
-                  Resumo rapido do que vai sair a seguir no panorama cultural.
-                </p>
-
-                <div className={adminList}>
-                  {dashboardStats?.latest_news ? (
-                    <article className={adminListItem}>
-                      <div className={adminListTop}>
+                  return (
+                    <article
+                      key={item.label}
+                      className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"
+                    >
+                      <div className="flex items-center justify-between gap-3">
                         <div>
-                          <h3 className={adminListTitle}>{dashboardStats.latest_news.title}</h3>
-                          <p className={adminListMeta}>
-                            Ultima noticia · {dashboardStats.latest_news.club_name || 'Sem clube'}
-                          </p>
+                          <p className="text-sm font-semibold text-slate-500">{item.label}</p>
+                          <p className="mt-3 text-3xl font-semibold text-slate-900">{item.value}</p>
                         </div>
-                        {dashboardStats.latest_news.status ? (
-                          <span className={adminBadge}>
-                            {getWorkflowStatusLabel(dashboardStats.latest_news.status)}
+                        <span className={`flex h-11 w-11 items-center justify-center rounded-xl ${toneClass}`}>
+                          <Icon className="h-5 w-5" />
+                        </span>
+                      </div>
+                    </article>
+                  );
+                })}
+              </section>
+
+              <div className="grid grid-cols-1 gap-6 xl:grid-cols-[1.2fr_0.8fr]">
+                <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+                  <div className="flex items-center justify-between gap-3">
+                    <div>
+                      <h3 className="text-2xl font-semibold text-slate-900">Alertas</h3>
+                      <p className="mt-1 text-sm text-slate-600">
+                        Itens que merecem atencao imediata.
+                      </p>
+                    </div>
+                    <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-100 text-slate-700">
+                      <Bell className="h-5 w-5" />
+                    </span>
+                  </div>
+
+                  <div className="mt-6 space-y-3">
+                    {dashboardAlerts.map((alert) => (
+                      <button
+                        key={alert.title}
+                        type="button"
+                        className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4 text-left transition-colors hover:border-[#dd8609] hover:bg-white"
+                        onClick={() => navigate(alert.href)}
+                      >
+                        <p className="text-sm font-semibold text-slate-900">{alert.title}</p>
+                        <p className="mt-1 text-sm leading-6 text-slate-600">{alert.detail}</p>
+                      </button>
+                    ))}
+                  </div>
+                </section>
+
+                <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+                  <div className="flex items-center justify-between gap-3">
+                    <div>
+                      <h3 className="text-2xl font-semibold text-slate-900">Acoes Rapidas</h3>
+                      <p className="mt-1 text-sm text-slate-600">
+                        Atalhos para as operacoes mais frequentes.
+                      </p>
+                    </div>
+                    <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-100 text-amber-700">
+                      <Sparkles className="h-5 w-5" />
+                    </span>
+                  </div>
+
+                  <div className="mt-6 grid grid-cols-1 gap-3">
+                    {dashboardQuickActions.map((action) => {
+                      const Icon = action.icon;
+                      return (
+                        <button
+                          key={action.label}
+                          type="button"
+                          onClick={() => navigate(action.href)}
+                          className="flex items-start gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4 text-left transition-colors hover:border-[#dd8609] hover:bg-white"
+                        >
+                          <span className="mt-0.5 flex h-9 w-9 items-center justify-center rounded-xl bg-white text-[#dd8609] shadow-sm">
+                            <Icon className="h-4 w-4" />
                           </span>
-                        ) : null}
-                      </div>
-                      <p className={adminListDesc}>
-                        {formatAdminDateTime(dashboardStats.latest_news.date || '')}
-                      </p>
-                    </article>
-                  ) : null}
-
-                  {dashboardStats?.next_session ? (
-                    <article className={adminListItem}>
-                      <div className={adminListTop}>
-                        <div>
-                          <h3 className={adminListTitle}>{dashboardStats.next_session.title}</h3>
-                          <p className={adminListMeta}>
-                            Proxima sessao · {dashboardStats.next_session.club_name || 'Sem clube'}
-                          </p>
-                        </div>
-                      </div>
-                      <p className={adminListDesc}>
-                        {formatAdminDateTime(dashboardStats.next_session.date || '')}
-                      </p>
-                    </article>
-                  ) : null}
-
-                  {dashboardStats?.next_event ? (
-                    <article className={adminListItem}>
-                      <div className={adminListTop}>
-                        <div>
-                          <h3 className={adminListTitle}>{dashboardStats.next_event.title}</h3>
-                          <p className={adminListMeta}>
-                            Proximo evento · {dashboardStats.next_event.club_name || 'Sem clube'}
-                          </p>
-                        </div>
-                        {dashboardStats.next_event.status ? (
-                          <span className={adminBadge}>
-                            {getWorkflowStatusLabel(dashboardStats.next_event.status)}
+                          <span>
+                            <span className="block text-sm font-semibold text-slate-900">
+                              {action.label}
+                            </span>
+                            <span className="mt-1 block text-sm text-slate-600">{action.hint}</span>
                           </span>
-                        ) : null}
-                      </div>
-                      <p className={adminListDesc}>
-                        {formatAdminDateTime(dashboardStats.next_event.date || '')}
-                      </p>
-                    </article>
-                  ) : null}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </section>
+              </div>
 
-                  {!dashboardStats?.latest_news &&
-                  !dashboardStats?.next_session &&
-                  !dashboardStats?.next_event ? (
-                    <p className={adminInfo}>Ainda nao existem registos suficientes para mostrar.</p>
+              <div className="grid grid-cols-1 gap-6 xl:grid-cols-[0.95fr_1.05fr]">
+                <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+                  <div className="flex items-center justify-between gap-3">
+                    <div>
+                      <h3 className="text-2xl font-semibold text-slate-900">Fluxo Editorial</h3>
+                      <p className="mt-1 text-sm text-slate-600">
+                        Estado atual das publicacoes e atividades.
+                      </p>
+                    </div>
+                    <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-100 text-slate-700">
+                      <BookOpen className="h-5 w-5" />
+                    </span>
+                  </div>
+
+                  <div className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-2">
+                    <div className={adminStatCard}>
+                      <p className={adminStatValue}>{dashboardStats?.news_draft ?? 0}</p>
+                      <p className={adminStatLabel}>Noticias em rascunho</p>
+                    </div>
+                    <div className={adminStatCard}>
+                      <p className={adminStatValue}>{dashboardStats?.news_review ?? 0}</p>
+                      <p className={adminStatLabel}>Noticias em revisao</p>
+                    </div>
+                    <div className={adminStatCard}>
+                      <p className={adminStatValue}>{dashboardStats?.events_draft ?? 0}</p>
+                      <p className={adminStatLabel}>Eventos em rascunho</p>
+                    </div>
+                    <div className={adminStatCard}>
+                      <p className={adminStatValue}>{dashboardStats?.events_review ?? 0}</p>
+                      <p className={adminStatLabel}>Eventos em revisao</p>
+                    </div>
+                  </div>
+
+                  {dashboardCards.length > 0 ? (
+                    <div className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-2">
+                      {dashboardCards.slice(0, 6).map((card) => (
+                        <div key={card.label} className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4">
+                          <p className="text-2xl font-semibold text-slate-900">{card.value}</p>
+                          <p className="mt-1 text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">
+                            {card.label}
+                          </p>
+                        </div>
+                      ))}
+                    </div>
                   ) : null}
-                </div>
-              </section>
+                </section>
+
+                <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+                  <div className="flex items-center justify-between gap-3">
+                    <div>
+                      <h3 className="text-2xl font-semibold text-slate-900">Agenda e Destaques</h3>
+                      <p className="mt-1 text-sm text-slate-600">
+                        Proximos pontos relevantes do panorama cultural.
+                      </p>
+                    </div>
+                    <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-sky-100 text-sky-700">
+                      <CalendarClock className="h-5 w-5" />
+                    </span>
+                  </div>
+
+                  <div className="mt-6 space-y-3">
+                    {dashboardAgenda.length > 0 ? (
+                      dashboardAgenda.map((entry) => (
+                        <button
+                          key={`${entry.label}-${entry.title}`}
+                          type="button"
+                          className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4 text-left transition-colors hover:border-[#dd8609] hover:bg-white"
+                          onClick={() => navigate(entry.href)}
+                        >
+                          <p className="text-xs font-semibold uppercase tracking-[0.12em] text-[#dd8609]">
+                            {entry.label}
+                          </p>
+                          <p className="mt-2 text-base font-semibold text-slate-900">{entry.title}</p>
+                          <p className="mt-1 text-sm text-slate-600">{entry.meta}</p>
+                          <p className="mt-3 text-sm font-medium text-slate-500">{entry.date}</p>
+                        </button>
+                      ))
+                    ) : (
+                      <p className={adminInfo}>Ainda nao existem registos suficientes para mostrar.</p>
+                    )}
+                  </div>
+                </section>
+              </div>
             </div>
           ) : null}
 
