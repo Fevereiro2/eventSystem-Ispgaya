@@ -20,6 +20,10 @@ type ClubRegistrationModalProps = {
   isOpen: boolean;
   isSubmitting?: boolean;
   submitError?: string;
+  entityLabel?: string;
+  kickerLabel?: string;
+  helperText?: string;
+  submitLabel?: string;
   onClose: () => void;
   onSubmit: (data: ClubRegistrationFormData) => Promise<void> | void;
 };
@@ -36,6 +40,10 @@ function ClubRegistrationModal({
   isOpen,
   isSubmitting = false,
   submitError = '',
+  entityLabel = 'clube',
+  kickerLabel = 'Inscricao',
+  helperText = 'Preenche os teus dados para enviar um pedido de inscricao ao clube.',
+  submitLabel = 'Enviar inscricao',
   onClose,
   onSubmit
 }: ClubRegistrationModalProps) {
@@ -112,13 +120,13 @@ function ClubRegistrationModal({
         <div className="flex items-start justify-between gap-4">
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[#dd8609]">
-              Inscricao
+              {kickerLabel}
             </p>
             <h2 id="club-registration-title" className="mt-2 text-2xl font-semibold text-slate-900">
               Inscrever em {clubName}
             </h2>
             <p className="mt-2 text-sm leading-6 text-slate-600">
-              Preenche os teus dados para enviar um pedido de inscricao ao clube.
+              {helperText.replace(/clube/gi, entityLabel)}
             </p>
           </div>
 
@@ -190,7 +198,7 @@ function ClubRegistrationModal({
 
           <div className="flex flex-wrap gap-2">
             <button type="submit" className={adminBtnPrimary} disabled={isSubmitting}>
-              {isSubmitting ? 'A enviar...' : 'Enviar inscricao'}
+              {isSubmitting ? 'A enviar...' : submitLabel}
             </button>
             <button
               type="button"
