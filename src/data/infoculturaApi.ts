@@ -109,10 +109,18 @@ export type InfoCulturaSession = {
   session_date: string;
   start_date: string;
   end_date: string;
+  enable_registrations: boolean;
+  registration_capacity?: number | null;
   created_at: string | null;
   updated_at: string | null;
   club_id: number;
   club_name: string;
+  confirmed_registrations: number;
+  waitlist_registrations: number;
+  remaining_slots?: number | null;
+  registration_state: 'open' | 'waitlist' | 'closed';
+  google_calendar_url: string;
+  outlook_calendar_url: string;
 };
 
 export type InfoCulturaEditorialHistory = {
@@ -134,6 +142,8 @@ export type InfoCulturaEvent = {
   end_date: string;
   image: string;
   is_external: boolean;
+  enable_registrations: boolean;
+  registration_capacity?: number | null;
   status: string;
   created_at: string | null;
   updated_at: string | null;
@@ -145,6 +155,12 @@ export type InfoCulturaEvent = {
   owner_name?: string | null;
   categories: InfoCulturaCategory[];
   category_ids: number[];
+  confirmed_registrations: number;
+  waitlist_registrations: number;
+  remaining_slots?: number | null;
+  registration_state: 'open' | 'waitlist' | 'closed';
+  google_calendar_url: string;
+  outlook_calendar_url: string;
   editorial_history?: InfoCulturaEditorialHistory[];
 };
 
@@ -263,6 +279,8 @@ export type SessionPayload = {
   session_date: string;
   start_date: string;
   end_date: string;
+  enable_registrations?: boolean;
+  registration_capacity?: number | null;
   club_id?: number;
 };
 
@@ -274,6 +292,8 @@ export type EventPayload = {
   end_date: string;
   image: string;
   is_external: boolean;
+  enable_registrations?: boolean;
+  registration_capacity?: number | null;
   status: string;
   city: string;
   location: string;
@@ -326,6 +346,12 @@ type ApiBulkDeleteResponse = {
 
 type ApiImageUploadResponse = {
   path: string;
+};
+
+type ApiPublicRegistrationResponse = {
+  message: string;
+  status: string;
+  registration_id: number;
 };
 
 export class InfoCulturaApiError extends Error {
@@ -599,6 +625,10 @@ export async function fetchPublicCategories(): Promise<InfoCulturaCategory[]> {
 export async function fetchPublicEvents(filters?: {
   clubId?: number;
   categoryId?: number;
+  city?: string;
+  state?: 'upcoming' | 'ongoing' | 'past';
+  dateFrom?: string;
+  dateTo?: string;
 }): Promise<InfoCulturaEvent[]> {
   const search = new URLSearchParams();
   if (typeof filters?.clubId === 'number') {
@@ -607,12 +637,52 @@ export async function fetchPublicEvents(filters?: {
   if (typeof filters?.categoryId === 'number') {
     search.set('category_id', String(filters.categoryId));
   }
+  if (filters?.city?.trim()) {
+    search.set('city', filters.city.trim());
+  }
+  if (filters?.state) {
+    search.set('state', filters.state);
+  }
+  if (filters?.dateFrom) {
+    search.set('date_from', filters.dateFrom);
+  }
+  if (filters?.dateTo) {
+    search.set('date_to', filters.dateTo);
+  }
   const query = search.toString();
   return request<InfoCulturaEvent[]>(`/events/${query ? `?${query}` : ''}`);
 }
 
 export async function fetchPublicEventItem(id: number): Promise<InfoCulturaEvent> {
   return request<InfoCulturaEvent>(`/events/${id}/`);
+}
+
+export async function createSessionRegistration(
+  sessionId: number,
+  payload: ClubRegistrationPayload
+): Promise<ApiPublicRegistrationResponse> {
+  return request<ApiPublicRegistrationResponse>(`/sessions/${sessionId}/registrations/`, {
+    method: 'POST',
+    body: JSON.stringify(payload)
+  });
+}
+
+export async function createEventRegistration(
+  eventId: number,
+  payload: ClubRegistrationPayload
+): Promise<ApiPublicRegistrationResponse> {
+  return request<ApiPublicRegistrationResponse>(`/events/${eventId}/registrations/`, {
+    method: 'POST',
+    body: JSON.stringify(payload)
+  });
+}
+
+export async function downloadSessionCalendar(sessionId: number): Promise<Blob> {
+  return requestBlob(`/sessions/${sessionId}/calendar/`);
+}
+
+export async function downloadEventCalendar(eventId: number): Promise<Blob> {
+  return requestBlob(`/events/${eventId}/calendar/`);
 }
 
 export async function createAdminContent(
