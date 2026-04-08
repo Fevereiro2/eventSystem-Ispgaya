@@ -3,6 +3,7 @@ from .views import (
     AdminBookDetailView,
     AdminBookBulkDeleteView,
     AdminBookListCreateView,
+    AdminAuditLogListView,
     AdminDashboardNotificationsView,
     AdminDashboardSummaryView,
     AdminCategoryDetailView,
@@ -34,6 +35,7 @@ from .views import (
     AdminUserDetailView,
     AdminUserListCreateView,
     LoginView,
+    LogoutView,
     PublicBookDetailView,
     PublicBookListView,
     PublicCategoryListView,
@@ -53,10 +55,13 @@ from .views import (
     PublicSessionDetailView,
     PublicSessionListView,
     PublicSessionRegistrationCreateView,
+    RefreshTokenView,
 )
 
 urlpatterns = [
     path('auth/login/', LoginView.as_view(), name='auth-login'),
+    path('auth/refresh/', RefreshTokenView.as_view(), name='auth-refresh'),
+    path('auth/logout/', LogoutView.as_view(), name='auth-logout'),
     path('auth/me/', MeView.as_view(), name='auth-me'),
     path('auth/roles/', AdminRoleListView.as_view(), name='auth-roles'),
     path('auth/users/', AdminUserListCreateView.as_view(), name='auth-users'),
@@ -104,6 +109,7 @@ urlpatterns = [
     path('content/admin/<uuid:pk>/', AdminContentDetailView.as_view(), name='content-admin-detail'),
     path('uploads/images/', AdminImageUploadView.as_view(), name='uploads-image-create'),
     path('dashboard/admin/', AdminDashboardSummaryView.as_view(), name='dashboard-admin-summary'),
+    path('dashboard/admin/audit/', AdminAuditLogListView.as_view(), name='dashboard-admin-audit'),
     path(
         'dashboard/admin/notifications/',
         AdminDashboardNotificationsView.as_view(),

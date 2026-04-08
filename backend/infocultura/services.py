@@ -3,6 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 from functools import lru_cache
+import json
 from urllib.parse import quote
 
 from django.conf import settings
@@ -120,6 +121,20 @@ class AdminNotificationRecord:
     title: str
     message: str
     href: str
+    created_at: datetime | None
+
+
+@dataclass(frozen=True, slots=True)
+class AdminAuditLogRecord:
+    id: int
+    action: str
+    content_type: str
+    object_id: int | None
+    summary: str
+    actor_user_id: int | None
+    actor_name: str
+    club_id: int | None
+    metadata_json: str | None
     created_at: datetime | None
 
 
@@ -1248,6 +1263,98 @@ def record_editorial_action(
                 timezone.now(),
             ],
         )
+
+
+def record_admin_audit_action(
+    *,
+    action: str,
+    content_type: str,
+    summary: str,
+    actor_user,
+    object_id: int | None = None,
+    club_id: int | None = None,
+    metadata: dict[str, object] | None = None,
+) -> None:
+    if not _table_exists("admin_audit_logs"):
+        return
+
+    actor_name = getattr(actor_user, "name", None) or getattr(actor_user, "email", None) or "Sistema"
+    actor_user_id = getattr(actor_user, "id", None)
+    resolved_club_id = club_id if club_id is not None else getattr(actor_user, "club_id", None)
+    serialized_metadata = json.dumps(metadata, ensure_ascii=True, sort_keys=True) if metadata else None
+
+    with connection.cursor() as cursor:
+        cursor.execute(
+            """
+            INSERT INTO admin_audit_logs (
+                action,
+                content_type,
+                object_id,
+                summary,
+                actor_user_id,
+                actor_name,
+                club_id,
+                metadata_json,
+                created_at
+            )
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+            """,
+            [
+                action.strip().lower(),
+                content_type.strip().lower(),
+                object_id,
+                summary.strip(),
+                actor_user_id,
+                actor_name,
+                resolved_club_id,
+                serialized_metadata,
+                timezone.now(),
+            ],
+        )
+
+
+def list_admin_audit_logs(*, limit: int = 50) -> list[AdminAuditLogRecord]:
+    if not _table_exists("admin_audit_logs"):
+        return []
+
+    normalized_limit = min(max(1, limit), 200)
+    with connection.cursor() as cursor:
+        cursor.execute(
+            """
+            SELECT
+                id,
+                action,
+                content_type,
+                object_id,
+                summary,
+                actor_user_id,
+                actor_name,
+                club_id,
+                metadata_json,
+                created_at
+            FROM admin_audit_logs
+            ORDER BY created_at DESC, id DESC
+            LIMIT %s
+            """,
+            [normalized_limit],
+        )
+        rows = cursor.fetchall()
+
+    return [
+        AdminAuditLogRecord(
+            id=int(row[0]),
+            action=str(row[1]),
+            content_type=str(row[2]),
+            object_id=int(row[3]) if row[3] is not None else None,
+            summary=str(row[4]),
+            actor_user_id=int(row[5]) if row[5] is not None else None,
+            actor_name=str(row[6]),
+            club_id=int(row[7]) if row[7] is not None else None,
+            metadata_json=str(row[8]) if row[8] is not None else None,
+            created_at=row[9],
+        )
+        for row in rows
+    ]
 
 
 def _get_registration_status_counts(*, allowed_club_id: int | None) -> dict[str, int]:

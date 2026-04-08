@@ -21,6 +21,7 @@ from .serializers import (
     AdminBulkStatusUpdateSerializer,
     AdminBookWriteSerializer,
     AdminCategoryWriteSerializer,
+    AdminAuditLogSerializer,
     AdminClubRegistrationSerializer,
     AdminNotificationSerializer,
     AdminEventWriteSerializer,
@@ -55,14 +56,22 @@ from .services import (
     ClubRegistrationNotFoundError,
     build_activity_calendar_payload,
     get_admin_dashboard_metrics,
+    list_admin_audit_logs,
     get_admin_notifications,
     notify_event_workflow_status,
     list_admin_club_registrations,
+    record_admin_audit_action,
     record_editorial_action,
     notify_news_workflow_status,
     update_admin_club_registration_status,
 )
-from .security import check_password_hash, issue_access_token
+from .security import (
+    check_password_hash,
+    decode_refresh_token,
+    is_refresh_token_revoked,
+    issue_token_pair,
+    revoke_refresh_token,
+)
 
 
 def _get_client_ip(request) -> str:
@@ -127,6 +136,94 @@ def _record_failed_login_attempt(*, client_ip: str, identifier: str) -> bool:
     return False
 
 
+def _get_auth_cookie_settings() -> dict[str, object]:
+    return {
+        'httponly': True,
+        'secure': bool(getattr(settings, 'INFOCULTURA_AUTH_COOKIE_SECURE', False)),
+        'samesite': getattr(settings, 'INFOCULTURA_AUTH_COOKIE_SAMESITE', 'Lax'),
+        'path': '/',
+    }
+
+
+def _attach_auth_cookies(response: Response, *, access_token: str, refresh_token: str) -> None:
+    cookie_settings = _get_auth_cookie_settings()
+    access_cookie_name = getattr(settings, 'INFOCULTURA_ACCESS_COOKIE_NAME', 'infocultura_access')
+    refresh_cookie_name = getattr(settings, 'INFOCULTURA_REFRESH_COOKIE_NAME', 'infocultura_refresh')
+    response.set_cookie(
+        access_cookie_name,
+        access_token,
+        max_age=max(60, int(getattr(settings, 'INFOCULTURA_ACCESS_TOKEN_MINUTES', 30)) * 60),
+        **cookie_settings,
+    )
+    response.set_cookie(
+        refresh_cookie_name,
+        refresh_token,
+        max_age=max(3600, int(getattr(settings, 'INFOCULTURA_REFRESH_TOKEN_DAYS', 7)) * 24 * 60 * 60),
+        **cookie_settings,
+    )
+
+
+def _clear_auth_cookies(response: Response) -> None:
+    cookie_settings = _get_auth_cookie_settings()
+    access_cookie_name = getattr(settings, 'INFOCULTURA_ACCESS_COOKIE_NAME', 'infocultura_access')
+    refresh_cookie_name = getattr(settings, 'INFOCULTURA_REFRESH_COOKIE_NAME', 'infocultura_refresh')
+    response.delete_cookie(access_cookie_name, path='/', samesite=cookie_settings['samesite'])
+    response.delete_cookie(refresh_cookie_name, path='/', samesite=cookie_settings['samesite'])
+
+
+def _describe_audit_target(instance) -> str:
+    for field_name in ('title', 'name', 'email'):
+        value = getattr(instance, field_name, None)
+        if isinstance(value, str) and value.strip():
+            return value.strip()
+    return f'id={getattr(instance, "pk", None)}'
+
+
+def _resolve_audit_club_id(instance) -> int | None:
+    direct_club_id = getattr(instance, 'club_id', None)
+    if direct_club_id is not None:
+        return direct_club_id
+
+    user = getattr(instance, 'user', None)
+    if user is not None:
+        return getattr(user, 'club_id', None)
+
+    return None
+
+
+class AdminAuditMixin:
+    audit_content_type = 'resource'
+
+    def write_audit_entry(self, request, *, action: str, instance=None, summary: str | None = None, object_id: int | None = None, metadata: dict[str, object] | None = None) -> None:
+        target_instance = instance
+        resolved_object_id = object_id if object_id is not None else getattr(target_instance, 'pk', None)
+        resolved_summary = summary or _describe_audit_target(target_instance)
+        record_admin_audit_action(
+            action=action,
+            content_type=self.audit_content_type,
+            object_id=resolved_object_id,
+            summary=resolved_summary,
+            actor_user=request.user,
+            club_id=_resolve_audit_club_id(target_instance) if target_instance is not None else None,
+            metadata=metadata,
+        )
+
+    def perform_create(self, serializer):
+        instance = serializer.save()
+        self.write_audit_entry(self.request, action='create', instance=instance)
+
+    def perform_update(self, serializer):
+        instance = serializer.save()
+        self.write_audit_entry(self.request, action='update', instance=instance)
+
+
+class AdminAuditDestroyMixin(AdminAuditMixin):
+    def destroy(self, request, *args, **kwargs):
+        instance = self.get_object()
+        self.write_audit_entry(request, action='delete', instance=instance)
+        return super().destroy(request, *args, **kwargs)
+
+
 class LoginView(APIView):
     permission_classes = [permissions.AllowAny]
 
@@ -171,20 +268,78 @@ class LoginView(APIView):
 
         _clear_login_failures(client_ip=client_ip, identifier=identifier)
 
-        token = issue_access_token(
+        access_token, refresh_token = issue_token_pair(
             user_id=user.id,
             role_name=user.role.name,
             email=user.email,
             name=user.name,
         )
 
-        return Response(
+        response = Response(
             {
-                'token': token,
+                'token': access_token,
                 'user': UserSerializer(user).data,
             }
         )
-        
+        _attach_auth_cookies(response, access_token=access_token, refresh_token=refresh_token)
+        return response
+
+
+class RefreshTokenView(APIView):
+    permission_classes = [permissions.AllowAny]
+
+    def post(self, request):
+        refresh_cookie_name = getattr(settings, 'INFOCULTURA_REFRESH_COOKIE_NAME', 'infocultura_refresh')
+        refresh_token = request.COOKIES.get(refresh_cookie_name)
+        if not refresh_token:
+            return Response({'message': 'Refresh token em falta.'}, status=401)
+
+        try:
+            payload = decode_refresh_token(refresh_token)
+        except Exception:
+            response = Response({'message': 'Refresh token invalido.'}, status=401)
+            _clear_auth_cookies(response)
+            return response
+
+        if is_refresh_token_revoked(payload):
+            response = Response({'message': 'Refresh token revogado.'}, status=401)
+            _clear_auth_cookies(response)
+            return response
+
+        user_id = payload.get('sub')
+        user = AppUser.objects.select_related('role', 'club').filter(id=user_id, is_active=True).first()
+        if not user:
+            response = Response({'message': 'Utilizador nao encontrado ou inativo.'}, status=401)
+            _clear_auth_cookies(response)
+            return response
+
+        revoke_refresh_token(payload)
+        access_token, next_refresh_token = issue_token_pair(
+            user_id=user.id,
+            role_name=user.role.name,
+            email=user.email,
+            name=user.name,
+        )
+        response = Response({'token': access_token, 'user': UserSerializer(user).data})
+        _attach_auth_cookies(response, access_token=access_token, refresh_token=next_refresh_token)
+        return response
+
+
+class LogoutView(APIView):
+    permission_classes = [permissions.AllowAny]
+
+    def post(self, request):
+        refresh_cookie_name = getattr(settings, 'INFOCULTURA_REFRESH_COOKIE_NAME', 'infocultura_refresh')
+        refresh_token = request.COOKIES.get(refresh_cookie_name)
+        if refresh_token:
+            try:
+                revoke_refresh_token(decode_refresh_token(refresh_token))
+            except Exception:
+                pass
+
+        response = Response({'message': 'Sessao terminada.'}, status=200)
+        _clear_auth_cookies(response)
+        return response
 
 
 class MeView(APIView):
@@ -202,8 +357,9 @@ class AdminRoleListView(generics.ListAPIView):
         return Role.objects.all().order_by('name')
 
 
-class AdminUserListCreateView(generics.ListCreateAPIView):
+class AdminUserListCreateView(AdminAuditMixin, generics.ListCreateAPIView):
     queryset = AppUser.objects.select_related('role', 'club').all()
+    audit_content_type = 'user'
 
     def get_permissions(self):
         if self.request.method == 'GET':
@@ -259,8 +415,9 @@ class AdminUserListCreateView(generics.ListCreateAPIView):
         return Response(serializer.data)
 
 
-class AdminUserDetailView(generics.RetrieveUpdateAPIView):
+class AdminUserDetailView(AdminAuditMixin, generics.RetrieveUpdateAPIView):
     queryset = AppUser.objects.select_related('role', 'club').all()
+    audit_content_type = 'user'
 
     def get_permissions(self):
         if self.request.method == 'GET':
@@ -304,6 +461,14 @@ class AdminUserDeactivateView(APIView):
 
         user.is_active = False
         user.save(update_fields=['is_active'])
+        record_admin_audit_action(
+            action='deactivate',
+            content_type='user',
+            object_id=user.id,
+            summary=user.email,
+            actor_user=request.user,
+            club_id=user.club_id,
+        )
         return Response({'user': UserSerializer(user).data})
 
 
@@ -637,6 +802,13 @@ class AdminImageUploadView(APIView):
         relative_path = f'infocultura/{folder}/{uuid4().hex}{suffix}'
         stored_path = default_storage.save(relative_path, uploaded_file)
         public_path = default_storage.url(stored_path)
+        record_admin_audit_action(
+            action='upload',
+            content_type='image',
+            summary=public_path,
+            actor_user=request.user,
+            metadata={'folder': folder, 'filename': uploaded_file.name},
+        )
         return Response({'path': public_path}, status=201)
 
 
@@ -769,6 +941,15 @@ class AdminDashboardSummaryView(APIView):
         return Response(get_admin_dashboard_metrics(user=request.user))
 
 
+class AdminAuditLogListView(APIView):
+    permission_classes = [permissions.IsAuthenticated, IsSuperAdmin]
+
+    def get(self, request):
+        logs = list_admin_audit_logs(limit=100)
+        serializer = AdminAuditLogSerializer(logs, many=True)
+        return Response(serializer.data)
+
+
 class AdminDashboardNotificationsView(APIView):
     permission_classes = [permissions.IsAuthenticated, IsClubAdmin]
 
@@ -881,6 +1062,15 @@ class AdminRegistrationStatusUpdateView(APIView):
         except ClubRegistrationNotFoundError:
             return Response({'message': 'Inscricao nao encontrada.'}, status=404)
 
+        record_admin_audit_action(
+            action='update_status',
+            content_type='registration',
+            object_id=updated_record.registration_id,
+            summary=updated_record.email,
+            actor_user=request.user,
+            club_id=updated_record.club_id,
+            metadata={'status': updated_record.status},
+        )
         output = AdminClubRegistrationSerializer(updated_record)
         return Response({'registration': output.data})
 
@@ -910,13 +1100,22 @@ class AdminRegistrationBulkStatusUpdateView(APIView):
 
             updated_items.append(updated_record)
 
+        if updated_items:
+            record_admin_audit_action(
+                action='bulk_update_status',
+                content_type='registration',
+                summary=f'{len(updated_items)} inscricoes atualizadas',
+                actor_user=request.user,
+                metadata={'ids': [item.registration_id for item in updated_items]},
+            )
         output = AdminClubRegistrationSerializer(updated_items, many=True)
         return Response({'items': output.data, 'updated': len(updated_items)})
 
 
-class AdminContentListCreateView(generics.ListCreateAPIView):
+class AdminContentListCreateView(AdminAuditMixin, generics.ListCreateAPIView):
     serializer_class = CulturalContentSerializer
     permission_classes = [permissions.IsAuthenticated, IsClubAdmin]
+    audit_content_type = 'content'
 
     def get_queryset(self):
         queryset = CulturalContent.objects.all()
@@ -931,10 +1130,11 @@ class AdminContentListCreateView(generics.ListCreateAPIView):
         return queryset
 
 
-class AdminContentDetailView(generics.RetrieveUpdateDestroyAPIView):
+class AdminContentDetailView(AdminAuditDestroyMixin, generics.RetrieveUpdateDestroyAPIView):
     queryset = CulturalContent.objects.all()
     serializer_class = CulturalContentSerializer
     permission_classes = [permissions.IsAuthenticated, IsClubAdmin]
+    audit_content_type = 'content'
 
 
 class AdminNewsStatusListView(generics.ListAPIView):
@@ -945,8 +1145,9 @@ class AdminNewsStatusListView(generics.ListAPIView):
         return NewsStatus.objects.all().order_by('name')
 
 
-class AdminNewsListCreateView(generics.ListCreateAPIView):
+class AdminNewsListCreateView(AdminAuditMixin, generics.ListCreateAPIView):
     permission_classes = [permissions.IsAuthenticated, IsClubAdmin]
+    audit_content_type = 'news'
 
     ordering_map = {
         'newest': ('-published_at', '-created_at', '-id'),
@@ -1023,8 +1224,9 @@ class AdminNewsListCreateView(generics.ListCreateAPIView):
         )
 
 
-class AdminNewsDetailView(generics.RetrieveUpdateDestroyAPIView):
+class AdminNewsDetailView(AdminAuditDestroyMixin, generics.RetrieveUpdateDestroyAPIView):
     permission_classes = [permissions.IsAuthenticated, IsClubAdmin]
+    audit_content_type = 'news'
 
     def get_queryset(self):
         queryset = News.objects.select_related('news_status', 'club')
@@ -1100,6 +1302,14 @@ class AdminNewsBulkStatusUpdateView(APIView):
             updated_items.append(item)
 
         output = AdminNewsReadSerializer(updated_items, many=True)
+        if updated_items:
+            record_admin_audit_action(
+                action='bulk_update_status',
+                content_type='news',
+                summary=f'{len(updated_items)} noticias atualizadas',
+                actor_user=request.user,
+                metadata={'ids': [item.id for item in updated_items], 'status': news_status.name},
+            )
         return Response({'items': output.data, 'updated': len(updated_items)})
 
 
@@ -1115,13 +1325,23 @@ class AdminNewsBulkDeleteView(APIView):
         if role_name == 'club_admin':
             queryset = queryset.filter(club_id=request.user.club_id)
 
-        deleted_count = queryset.count()
+        deleted_ids = list(queryset.values_list('id', flat=True))
+        deleted_count = len(deleted_ids)
         queryset.delete()
+        if deleted_count:
+            record_admin_audit_action(
+                action='bulk_delete',
+                content_type='news',
+                summary=f'{deleted_count} noticias removidas',
+                actor_user=request.user,
+                metadata={'ids': deleted_ids},
+            )
         return Response({'deleted': deleted_count})
 
 
-class AdminBookListCreateView(generics.ListCreateAPIView):
+class AdminBookListCreateView(AdminAuditMixin, generics.ListCreateAPIView):
     permission_classes = [permissions.IsAuthenticated, IsClubAdmin]
+    audit_content_type = 'book'
 
     ordering_map = {
         'featured': ('-is_featured', 'title', '-id'),
@@ -1196,8 +1416,9 @@ class AdminBookListCreateView(generics.ListCreateAPIView):
         )
 
 
-class AdminBookDetailView(generics.RetrieveUpdateDestroyAPIView):
+class AdminBookDetailView(AdminAuditDestroyMixin, generics.RetrieveUpdateDestroyAPIView):
     permission_classes = [permissions.IsAuthenticated, IsClubAdmin]
+    audit_content_type = 'book'
 
     def get_queryset(self):
         queryset = Book.objects.select_related('club')
@@ -1226,13 +1447,23 @@ class AdminBookBulkDeleteView(APIView):
         if allowed_club_id is not None:
             queryset = queryset.filter(club_id=allowed_club_id)
 
-        deleted_count = queryset.count()
+        deleted_ids = list(queryset.values_list('id', flat=True))
+        deleted_count = len(deleted_ids)
         queryset.delete()
+        if deleted_count:
+            record_admin_audit_action(
+                action='bulk_delete',
+                content_type='book',
+                summary=f'{deleted_count} livros removidos',
+                actor_user=request.user,
+                metadata={'ids': deleted_ids},
+            )
         return Response({'deleted': deleted_count})
 
 
-class AdminSessionListCreateView(generics.ListCreateAPIView):
+class AdminSessionListCreateView(AdminAuditMixin, generics.ListCreateAPIView):
     permission_classes = [permissions.IsAuthenticated, IsClubAdmin]
+    audit_content_type = 'session'
 
     ordering_map = {
         'date_asc': ('session_date', 'start_date', '-id'),
@@ -1306,8 +1537,9 @@ class AdminSessionListCreateView(generics.ListCreateAPIView):
         )
 
 
-class AdminSessionDetailView(generics.RetrieveUpdateDestroyAPIView):
+class AdminSessionDetailView(AdminAuditDestroyMixin, generics.RetrieveUpdateDestroyAPIView):
     permission_classes = [permissions.IsAuthenticated, IsClubAdmin]
+    audit_content_type = 'session'
 
     def get_queryset(self):
         queryset = Session.objects.select_related('club')
@@ -1324,8 +1556,9 @@ class AdminSessionDetailView(generics.RetrieveUpdateDestroyAPIView):
         return AdminSessionWriteSerializer
 
 
-class AdminEventListCreateView(generics.ListCreateAPIView):
+class AdminEventListCreateView(AdminAuditMixin, generics.ListCreateAPIView):
     permission_classes = [permissions.IsAuthenticated, IsClubAdmin]
+    audit_content_type = 'event'
 
     ordering_map = {
         'date_asc': ('event_date', 'start_date', '-id'),
@@ -1411,8 +1644,9 @@ class AdminEventListCreateView(generics.ListCreateAPIView):
         )
 
 
-class AdminEventDetailView(generics.RetrieveUpdateDestroyAPIView):
+class AdminEventDetailView(AdminAuditDestroyMixin, generics.RetrieveUpdateDestroyAPIView):
     permission_classes = [permissions.IsAuthenticated, IsClubAdmin]
+    audit_content_type = 'event'
 
     def get_queryset(self):
         queryset = Event.objects.select_related('user__club').prefetch_related('categories')
@@ -1480,6 +1714,14 @@ class AdminEventBulkStatusUpdateView(APIView):
             updated_items.append(item)
 
         output = AdminEventReadSerializer(updated_items, many=True)
+        if updated_items:
+            record_admin_audit_action(
+                action='bulk_update_status',
+                content_type='event',
+                summary=f'{len(updated_items)} eventos atualizados',
+                actor_user=request.user,
+                metadata={'ids': [item.id for item in updated_items], 'status': target_status},
+            )
         return Response({'items': output.data, 'updated': len(updated_items)})
 
 
@@ -1495,13 +1737,23 @@ class AdminEventBulkDeleteView(APIView):
         if role_name == 'club_admin':
             queryset = queryset.filter(user__club_id=request.user.club_id)
 
-        deleted_count = queryset.count()
+        deleted_ids = list(queryset.values_list('id', flat=True))
+        deleted_count = len(deleted_ids)
         queryset.delete()
+        if deleted_count:
+            record_admin_audit_action(
+                action='bulk_delete',
+                content_type='event',
+                summary=f'{deleted_count} eventos removidos',
+                actor_user=request.user,
+                metadata={'ids': deleted_ids},
+            )
         return Response({'deleted': deleted_count})
 
 
-class AdminCategoryListCreateView(generics.ListCreateAPIView):
+class AdminCategoryListCreateView(AdminAuditMixin, generics.ListCreateAPIView):
     permission_classes = [permissions.IsAuthenticated, IsClubAdmin]
+    audit_content_type = 'category'
 
     def get_queryset(self):
         return Category.objects.all().order_by('name')
@@ -1512,9 +1764,10 @@ class AdminCategoryListCreateView(generics.ListCreateAPIView):
         return AdminCategoryWriteSerializer
 
 
-class AdminCategoryDetailView(generics.RetrieveUpdateDestroyAPIView):
+class AdminCategoryDetailView(AdminAuditDestroyMixin, generics.RetrieveUpdateDestroyAPIView):
     permission_classes = [permissions.IsAuthenticated, IsClubAdmin]
     queryset = Category.objects.all().order_by('name')
+    audit_content_type = 'category'
 
     def get_serializer_class(self):
         if self.request.method == 'GET':
@@ -1522,9 +1775,10 @@ class AdminCategoryDetailView(generics.RetrieveUpdateDestroyAPIView):
         return AdminCategoryWriteSerializer
 
 
-class AdminClubListCreateView(generics.ListCreateAPIView):
+class AdminClubListCreateView(AdminAuditMixin, generics.ListCreateAPIView):
     serializer_class = ClubSerializer
     permission_classes = [permissions.IsAuthenticated, IsSuperAdmin]
+    audit_content_type = 'club'
 
     def get_queryset(self):
         queryset = Club.objects.all()
@@ -1574,10 +1828,11 @@ class AdminClubListCreateView(generics.ListCreateAPIView):
         return Response(serializer.data)
 
 
-class AdminClubDetailView(generics.RetrieveUpdateDestroyAPIView):
+class AdminClubDetailView(AdminAuditDestroyMixin, generics.RetrieveUpdateDestroyAPIView):
     queryset = Club.objects.all()
     serializer_class = ClubSerializer
     permission_classes = [permissions.IsAuthenticated, IsSuperAdmin]
+    audit_content_type = 'club'
 
     def destroy(self, request, *args, **kwargs):
         club = self.get_object()
@@ -1604,6 +1859,15 @@ class AdminClubMemberAssignView(APIView):
         user = serializer.validated_data['user']
         user.club = club
         user.save(update_fields=['club'])
+        record_admin_audit_action(
+            action='assign_member',
+            content_type='club',
+            object_id=club.id,
+            summary=club.name,
+            actor_user=request.user,
+            club_id=club.id,
+            metadata={'user_id': user.id, 'user_email': user.email},
+        )
 
         return Response({'user': UserSerializer(user).data, 'club': ClubSerializer(club).data})
 
@@ -1628,4 +1892,13 @@ class AdminClubMemberRemoveView(APIView):
 
         user.club = None
         user.save(update_fields=['club'])
+        record_admin_audit_action(
+            action='remove_member',
+            content_type='club',
+            object_id=club.id,
+            summary=club.name,
+            actor_user=request.user,
+            club_id=club.id,
+            metadata={'user_id': user.id, 'user_email': user.email},
+        )
         return Response({'user': UserSerializer(user).data})

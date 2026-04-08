@@ -1,6 +1,9 @@
 from datetime import datetime, timedelta, timezone
+from uuid import uuid4
+
 import jwt
 from django.conf import settings
+from django.core.cache import cache
 from django.contrib.auth.hashers import check_password, make_password
 
 
@@ -70,13 +73,15 @@ def check_password_hash(raw_password: str, stored_hash: str) -> bool:
 
 def issue_access_token(user_id: int, role_name: str, email: str, name: str) -> str:
     now = datetime.now(tz=timezone.utc)
-    exp = now + timedelta(hours=settings.INFOCULTURA_JWT_EXPIRES_HOURS)
+    exp = now + timedelta(minutes=getattr(settings, 'INFOCULTURA_ACCESS_TOKEN_MINUTES', 30))
 
     payload = {
         'sub': str(user_id),
+        'type': 'access',
         'role': role_name,
         'email': email,
         'name': name,
+        'jti': uuid4().hex,
         'iat': int(now.timestamp()),
         'exp': int(exp.timestamp()),
     }
@@ -84,5 +89,59 @@ def issue_access_token(user_id: int, role_name: str, email: str, name: str) -> s
     return jwt.encode(payload, settings.INFOCULTURA_JWT_SECRET, algorithm='HS256')
 
 
+def issue_refresh_token(user_id: int, role_name: str, email: str, name: str) -> str:
+    now = datetime.now(tz=timezone.utc)
+    exp = now + timedelta(days=getattr(settings, 'INFOCULTURA_REFRESH_TOKEN_DAYS', 7))
+
+    payload = {
+        'sub': str(user_id),
+        'type': 'refresh',
+        'role': role_name,
+        'email': email,
+        'name': name,
+        'jti': uuid4().hex,
+        'iat': int(now.timestamp()),
+        'exp': int(exp.timestamp()),
+    }
+
+    return jwt.encode(payload, settings.INFOCULTURA_JWT_SECRET, algorithm='HS256')
+
+
+def issue_token_pair(user_id: int, role_name: str, email: str, name: str) -> tuple[str, str]:
+    return (
+        issue_access_token(user_id=user_id, role_name=role_name, email=email, name=name),
+        issue_refresh_token(user_id=user_id, role_name=role_name, email=email, name=name),
+    )
+
+
 def decode_access_token(token: str) -> dict:
-    return jwt.decode(token, settings.INFOCULTURA_JWT_SECRET, algorithms=['HS256'])
+    payload = jwt.decode(token, settings.INFOCULTURA_JWT_SECRET, algorithms=['HS256'])
+    if payload.get('type') not in {None, 'access'}:
+        raise jwt.InvalidTokenError('Token type invalido.')
+    return payload
+
+
+def decode_refresh_token(token: str) -> dict:
+    payload = jwt.decode(token, settings.INFOCULTURA_JWT_SECRET, algorithms=['HS256'])
+    if payload.get('type') != 'refresh':
+        raise jwt.InvalidTokenError('Refresh token invalido.')
+    return payload
+
+
+def revoke_refresh_token(payload: dict) -> None:
+    jti = payload.get('jti')
+    exp = payload.get('exp')
+    if not jti or not exp:
+        return
+
+    now_ts = int(datetime.now(tz=timezone.utc).timestamp())
+    timeout = max(1, int(exp) - now_ts)
+    cache.set(f'infocultura:refresh:revoked:{jti}', True, timeout=timeout)
+
+
+def is_refresh_token_revoked(payload: dict) -> bool:
+    jti = payload.get('jti')
+    if not jti:
+        return True
+
+    return bool(cache.get(f'infocultura:refresh:revoked:{jti}'))
