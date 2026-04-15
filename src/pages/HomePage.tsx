@@ -383,9 +383,7 @@ function HomePage() {
                 </div>
 
                 <div className="mt-8 flex flex-wrap items-center gap-3">
-                  <a href="https://ispgaya.pt/pt" className={adminBtnPrimary}>
-                    Descobre Mais
-                  </a>
+
                   <button
                     type="button"
                     onClick={() =>
