@@ -229,7 +229,7 @@ function HeaderNav({ transparent = false }: HeaderNavProps) {
     ? 'flex items-center justify-between gap-6 py-4'
     : headerNavInner;
   const linkClassName = transparent
-    ? 'text-[14px] font-medium text-white transition-colors hover:text-[#f7c47a]'
+    ? 'text-[15px] font-medium text-white transition-colors hover:text-[#f7c47a]'
     : navLink;
   const dropdownWrapClassName = transparent
     ? 'right-0 z-[90] absolute hidden w-72 pt-2 opacity-0 transition-opacity group-hover:block group-hover:opacity-100 group-focus-within:block group-focus-within:opacity-100'
