@@ -26,7 +26,7 @@ const studyLinks = [
 
 const heroSlides = [
   {
-    title: 'Bem-vindo ao Instituto Superior Politecnico Gaya',
+    title: 'Bem-vindo? ao Instituto Superior Politecnico Gaya',
     text:
       'Uma homepage com header transparente, mensagem de entrada forte e uma estrutura visual alinhada com o portal institucional.',
     image: heroWelcomeImage
