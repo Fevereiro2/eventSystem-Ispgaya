@@ -5,12 +5,13 @@ export const sectionSpace = 'py-12 md:py-16';
 
 export const topBar = 'bg-white';
 export const topBarInner =
-  'relative container mx-auto px-4 sm:px-6 xl:px-8 z-10 flex items-center justify-between py-2.5';
-export const topBarGroup = 'text-sm font-medium tracking-tight space-x-6';
+  'relative z-10 flex items-center justify-between py-2.5';
+export const topBarGroup =
+  'hidden items-center gap-5 text-[13px] font-medium tracking-tight xl:flex';
 export const topBarRightGroup =
-  'flex items-center text-sm font-medium tracking-tight space-x-6';
-export const topBarRightLinks = 'space-x-6';
-export const topBarLocaleWrap = 'ml-14 space-x-1';
+  'hidden items-center gap-5 text-[13px] font-medium tracking-tight xl:flex';
+export const topBarRightLinks = 'flex items-center gap-5';
+export const topBarLocaleWrap = 'ml-3 flex items-center gap-2';
 export const topBarLink = 'text-black transition-opacity hover:opacity-80';
 export const topBarLocaleActive =
   'text-black transition-opacity hover:opacity-80 font-bold';

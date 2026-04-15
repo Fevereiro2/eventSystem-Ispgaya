@@ -3,6 +3,7 @@ import AdminCultura from './pages/AdminCultura';
 import ClubeCultural from './pages/ClubeCultural';
 import ClubeLeitura from './pages/ClubeLeitura';
 import EventoCultural from './pages/EventoCultural';
+import HomePage from './pages/HomePage';
 import LaboratorioCultural from './pages/LaboratorioCultural';
 import LivroCultural from './pages/LivroCultural';
 import NoticiaCultural from './pages/NoticiaCultural';
@@ -17,7 +18,8 @@ function App() {
     <BrowserRouter>
       <div className={appRoot}>
         <Routes>
-          <Route path="/" element={<PublicacoesCientificas />} />
+          <Route path="/" element={<HomePage />} />
+          <Route path="/investigacao/publicacoes-cientificas" element={<PublicacoesCientificas />} />
           <Route path="/laboratorio-cultural" element={<LaboratorioCultural />} />
           <Route
             path="/infocultura/*"

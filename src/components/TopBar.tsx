@@ -61,9 +61,26 @@ const rightLinks = [
   }
 ];
 
-function TopBar() {
+type TopBarProps = {
+  transparent?: boolean;
+};
+
+function TopBar({ transparent = false }: TopBarProps) {
+  const rootClassName = transparent
+    ? 'hidden xl:block border-b border-white/10 bg-transparent text-white'
+    : topBar;
+  const linkClassName = transparent
+    ? 'text-white/90 transition-colors hover:text-white'
+    : topBarLink;
+  const localeActiveClassName = transparent
+    ? 'font-bold text-white transition-colors hover:text-white'
+    : topBarLocaleActive;
+  const localeClassName = transparent
+    ? 'text-white/80 transition-colors hover:text-white'
+    : topBarLocale;
+
   return (
-    <div className={topBar}>
+    <div className={rootClassName}>
       <div className={`${container} ${topBarInner}`}>
         <div className={topBarGroup}>
           {leftLinks.map((item) => (
@@ -72,7 +89,7 @@ function TopBar() {
               href={item.href}
               target={item.target}
               rel={item.rel}
-              className={topBarLink}
+              className={linkClassName}
             >
               {item.label}
             </a>
@@ -87,7 +104,7 @@ function TopBar() {
                 href={item.href}
                 target={item.target}
                 rel={item.rel}
-                className={topBarLink}
+                className={linkClassName}
               >
                 {item.label}
               </a>
@@ -99,7 +116,7 @@ function TopBar() {
               title="pt"
               rel="alternate"
               hrefLang="pt"
-              className={topBarLocaleActive}
+              className={localeActiveClassName}
             >
               PT
             </a>
@@ -108,14 +125,14 @@ function TopBar() {
               title="en"
               rel="alternate"
               hrefLang="en"
-              className={topBarLocale}
+              className={localeClassName}
             >
               EN
             </a>
           </span>
         </div>
       </div>
-      <hr />
+      {transparent ? null : <hr />}
     </div>
   );
 }
