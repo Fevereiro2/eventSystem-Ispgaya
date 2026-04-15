@@ -1,3 +1,4 @@
+from datetime import timezone as dt_timezone
 from pathlib import Path
 from uuid import uuid4
 import csv
@@ -882,7 +883,7 @@ def build_csv_response(*, rows: list[list[str]], headers: list[str], filename: s
 def _format_ics_datetime(value):
     if timezone.is_naive(value):
         value = timezone.make_aware(value, timezone.get_current_timezone())
-    return timezone.localtime(value, timezone.utc).strftime('%Y%m%dT%H%M%SZ')
+    return timezone.localtime(value, dt_timezone.utc).strftime('%Y%m%dT%H%M%SZ')
 
 
 def _escape_ics_text(value: str) -> str:

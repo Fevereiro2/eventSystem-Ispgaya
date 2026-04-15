@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone as dt_timezone
 from functools import lru_cache
 import json
 from urllib.parse import quote
@@ -163,7 +163,7 @@ def _format_dt(value: datetime | None) -> str:
 def _build_google_calendar_url(*, title: str, description: str, start_date: datetime, end_date: datetime, location: str) -> str:
     def normalize_calendar_dt(value: datetime) -> str:
         aware_value = timezone.make_aware(value, timezone.get_current_timezone()) if timezone.is_naive(value) else value
-        return timezone.localtime(aware_value, timezone.utc).strftime("%Y%m%dT%H%M%SZ")
+        return timezone.localtime(aware_value, dt_timezone.utc).strftime("%Y%m%dT%H%M%SZ")
 
     query = (
         f"action=TEMPLATE&text={quote(title)}"
@@ -177,7 +177,7 @@ def _build_google_calendar_url(*, title: str, description: str, start_date: date
 def _build_outlook_calendar_url(*, title: str, description: str, start_date: datetime, end_date: datetime, location: str) -> str:
     def normalize_outlook_dt(value: datetime) -> str:
         aware_value = timezone.make_aware(value, timezone.get_current_timezone()) if timezone.is_naive(value) else value
-        return timezone.localtime(aware_value, timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+        return timezone.localtime(aware_value, dt_timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
 
     query = (
         f"path=/calendar/action/compose&rru=addevent"
