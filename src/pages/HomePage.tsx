@@ -47,9 +47,9 @@ const heroSlides = [
 
 const highlightCards = [
   {
-    title: 'Laboratorio Cultural',
+    title: 'Laboratório Cultural',
     text:
-      'Projeto cultural aberto a quem quer participar em atividades nas areas da musica, teatro e leitura.',
+      'Projeto cultural aberto a quem quer participar em atividades nas áreas da musica, teatro e leitura.',
     href: '/laboratorio-cultural',
     internal: true
   },
