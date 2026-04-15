@@ -61,10 +61,10 @@ ASGI_APPLICATION = 'config.asgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
-        'NAME': os.getenv('DB_NAME', 'EventSystem-ISPGAYA'),
-        'USER': os.getenv('DB_USER', 'fevereiro'),
-        'PASSWORD': os.getenv('DB_PASSWORD', 'z1x2c3v4b5n6m7'),
-        'HOST': os.getenv('DB_HOST', '89.155.166.108'),
+        'NAME': os.getenv('DB_NAME', 'infocultura'),
+        'USER': os.getenv('DB_USER', 'root'),
+        'PASSWORD': os.getenv('DB_PASSWORD', ''),
+        'HOST': os.getenv('DB_HOST', '127.0.0.1'),
         'PORT': os.getenv('DB_PORT', '3306'),
         'OPTIONS': {
             'charset': 'utf8mb4',
