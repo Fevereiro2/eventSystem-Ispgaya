@@ -1,6 +1,5 @@
 import { ChevronLeft, ChevronRight } from 'lucide-react';
-import { useEffect, useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { useEffect, useState } from 'react';
 import Footer from '../components/Footer';
 import HeaderNav from '../components/HeaderNav';
 import TopBar from '../components/TopBar';
@@ -11,13 +10,6 @@ import gaiaSkyline from '../assets/gaia-skyline.webp';
 import helix from '../assets/homepage/destaques/helix-ispgaya-site.webp';
 import internacionalStudents from '../assets/homepage/destaques/2.webp';
 import mais23 from '../assets/homepage/destaques/3.webp';
-import {
-  fetchPublicEvents,
-  fetchPublicNews,
-  InfoCulturaEvent,
-  InfoCulturaNews,
-  resolveInfoCulturaAssetUrl
-} from '../data/infoculturaApi';
 import { container, mainContent } from '../styles/ui';
 
 type HeroSlide = {
@@ -31,7 +23,6 @@ type HighlightCard = {
   text: string;
   href: string;
   image: string;
-  internal?: boolean;
 };
 
 type SupportSlide = {
@@ -62,19 +53,19 @@ const heroSlides: HeroSlide[] = [
   {
     title: 'Bem-vindo ao Instituto Superior Politécnico Gaya',
     text:
-      'Aqui, é onde o teu futuro começa. No ISPGAYA vais adquirir novos conhecimentos, desenvolver novas competências e experienciar um clima académico único.',
+      'Aqui, é onde o teu futuro começa!\nNo ISPGAYA vais adquirir novos conhecimentos, desenvolver novas competências e experienciar um clima académico único.',
     image: heroWelcomeImage
   },
   {
     title: 'Dinamiza as tuas capacidades connosco',
     text:
-      'Temos à tua disposição instalações modernas, proximidade entre docentes e estudantes e um ambiente académico diferenciador.',
+      'Temos à tua disposição instalações modernas, estreita proximidade entre o corpo docente e os estudantes, assim como, um excelente ambiente académico.',
     image: heroStudyImage
   },
   {
     title: 'O mercado de trabalho espera por ti',
     text:
-      'Temos como objetivo dar-te as ferramentas necessárias para construíres uma carreira com significado e tomares as melhores decisões para o teu futuro.',
+      'Temos como objetivo dar-te as ferramentas necessárias para criar uma carreira com significado e tomares as melhores decisões para a tua vida profissional e pessoal.',
     image: heroEmployabilityImage
   }
 ];
@@ -84,8 +75,7 @@ const highlightCards: HighlightCard[] = [
     title: 'O ISPGAYA integra a AMBA e BGA',
     text: 'ISPGAYA tem o orgulho de anunciar a sua filiação oficial na Association of MBAs (AMBA) e na Business Graduates Association (BGA).',
     href: 'https://ispgaya.pt/pt/vida-academica/noticias/o-ispgaya-integra-a-amba-e-bga',
-    image: internacionalStudents,
-    internal: true
+    image: internacionalStudents
   },
   {
     title: 'Regime M23 - Candidaturas Abertas!',
@@ -107,19 +97,19 @@ const metrics = [
     value: '36',
     title: 'Experiência',
     text:
-      'Desde 1990 a formar futuros empreendedores. Somos uma instituição de ensino de referência em Vila Nova de Gaia.'
+      'Desde 1990 a formar futuros empreendedores. Somos uma instituição de ensino de referência há mais de 30 anos em Vila Nova de Gaia. Quer pela qualidade dos seus cursos, quer pelo corpo docente qualificado, quer pelo clima académico estimulante e diferenciador.'
   },
   {
     value: '+3.5k',
     title: 'Profissionais Formados',
     text:
-      'Já formámos mais de 3500 profissionais. Aqui os estudantes têm oportunidade de construir o seu futuro pessoal e profissional.'
+      'A formação continua a ser um dos nossos principais pilares. Somos reconhecidos pela formação de excelência e já formamos mais de 3500 profissionais de sucesso. Aqui os estudantes têm oportunidade de construir o seu futuro pessoal e profissional.'
   },
   {
     value: '+200',
     title: 'Empresas',
     text:
-      'Temos protocolos com mais de 200 empresas que ajudam a garantir estágios de qualidade e aproximação ao mercado.'
+      'Trabalhamos em proximidade com as empresas, estando atentos às suas necessidades e a par das suas aspirações. Temos protocolos celebrados com mais de 200 empresas que garantem a qualidade dos estágios e permitem a integração de estudantes no mercado de trabalho.'
   }
 ];
 
@@ -161,44 +151,11 @@ const testimonialSlides: TestimonialSlide[] = [
   }
 ];
 
-function formatDate(value?: string | null): string {
-  if (!value) return 'Data por definir';
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return value;
-  return new Intl.DateTimeFormat('pt-PT', { day: '2-digit', month: 'long', year: 'numeric' }).format(date);
-}
-
-function truncateText(value: string, maxLength: number): string {
-  if (value.length <= maxLength) return value;
-  return `${value.slice(0, maxLength).trimEnd()}...`;
-}
-
-function getNewsHref(item: InfoCulturaNews): string {
-  return `/laboratorio-cultural/noticias/${item.id}`;
-}
-
-function getEventHref(item: InfoCulturaEvent): string {
-  return `/laboratorio-cultural/eventos/${item.id}`;
-}
-
-function getNewsTag(item: InfoCulturaNews): string {
-  return item.club_name ? `#${item.club_name.toLowerCase().replace(/\s+/g, '')}` : '#noticias';
-}
-
-function getEventTag(item: InfoCulturaEvent): string {
-  if (item.city) return `#${item.city.toLowerCase().replace(/\s+/g, '')}`;
-  if (item.club_name) return `#${item.club_name.toLowerCase().replace(/\s+/g, '')}`;
-  return '#eventos';
-}
-
 function HomePage() {
   const [activeHero, setActiveHero] = useState(0);
   const [activeSupport, setActiveSupport] = useState(0);
   const [activeTestimonial, setActiveTestimonial] = useState(0);
   const [isHeaderSolid, setIsHeaderSolid] = useState(false);
-  const [newsItems, setNewsItems] = useState<InfoCulturaNews[]>([]);
-  const [events, setEvents] = useState<InfoCulturaEvent[]>([]);
-  const [loadError, setLoadError] = useState('');
 
   useEffect(() => {
     const interval = window.setInterval(() => {
@@ -219,189 +176,29 @@ function HomePage() {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  useEffect(() => {
-    let active = true;
-
-    async function loadData() {
-      try {
-        const [nextNews, nextEvents] = await Promise.all([fetchPublicNews(), fetchPublicEvents()]);
-        if (!active) return;
-        setNewsItems(nextNews);
-        setEvents(nextEvents);
-      } catch (error) {
-        if (!active) return;
-        setLoadError(error instanceof Error ? error.message : 'Não foi possível carregar a homepage.');
-      }
-    }
-
-    void loadData();
-
-    return () => {
-      active = false;
-    };
-  }, []);
-
   const currentHero = heroSlides[activeHero];
-
-  const newsList = useMemo<InfoCulturaNews[]>(
-    () =>
-      newsItems.length > 0
-        ? newsItems.slice(0, 3)
-        : [
-            {
-              id: 0,
-              title: 'Espaço preparado para notícia institucional',
-              summary: 'Estrutura pronta para data, título, resumo e hashtag.',
-              image: '',
-              content: '',
-              published_at: null,
-              created_at: '',
-              updated_at: '',
-              news_status_id: 0,
-              news_status_name: 'published',
-              club_id: 0,
-              club_name: ''
-            },
-            {
-              id: 1,
-              title: 'Segundo destaque noticioso',
-              summary: 'Grelha editorial preparada para o bloco de notícias.',
-              image: '',
-              content: '',
-              published_at: null,
-              created_at: '',
-              updated_at: '',
-              news_status_id: 0,
-              news_status_name: 'published',
-              club_id: 0,
-              club_name: ''
-            },
-            {
-              id: 2,
-              title: 'Terceiro destaque da homepage',
-              summary: 'Área pronta para notícia real ou campanha institucional.',
-              image: '',
-              content: '',
-              published_at: null,
-              created_at: '',
-              updated_at: '',
-              news_status_id: 0,
-              news_status_name: 'published',
-              club_id: 0,
-              club_name: ''
-            }
-          ],
-    [newsItems]
-  );
-
-  const eventList = useMemo<InfoCulturaEvent[]>(
-    () =>
-      events.length > 0
-        ? events.slice(0, 3)
-        : [
-            {
-              id: 0,
-              title: 'Espaço preparado para evento institucional',
-              description: 'Área pronta para data, título, descrição e hashtag.',
-              event_date: '',
-              start_date: '',
-              end_date: '',
-              image: '',
-              is_external: false,
-              enable_registrations: false,
-              registration_capacity: null,
-              status: 'published',
-              created_at: null,
-              updated_at: null,
-              city: '',
-              location: '',
-              user_id: 0,
-              club_id: null,
-              club_name: null,
-              owner_name: null,
-              categories: [],
-              category_ids: [],
-              confirmed_registrations: 0,
-              waitlist_registrations: 0,
-              remaining_slots: null,
-              registration_state: 'closed',
-              google_calendar_url: '',
-              outlook_calendar_url: ''
-            },
-            {
-              id: 1,
-              title: 'Segundo evento em destaque',
-              description: 'Secção pronta para a agenda pública da homepage.',
-              event_date: '',
-              start_date: '',
-              end_date: '',
-              image: '',
-              is_external: false,
-              enable_registrations: false,
-              registration_capacity: null,
-              status: 'published',
-              created_at: null,
-              updated_at: null,
-              city: '',
-              location: '',
-              user_id: 0,
-              club_id: null,
-              club_name: null,
-              owner_name: null,
-              categories: [],
-              category_ids: [],
-              confirmed_registrations: 0,
-              waitlist_registrations: 0,
-              remaining_slots: null,
-              registration_state: 'closed',
-              google_calendar_url: '',
-              outlook_calendar_url: ''
-            },
-            {
-              id: 2,
-              title: 'Terceiro evento da agenda',
-              description: 'Bloco afinado para a estrutura editorial do portal principal.',
-              event_date: '',
-              start_date: '',
-              end_date: '',
-              image: '',
-              is_external: false,
-              enable_registrations: false,
-              registration_capacity: null,
-              status: 'published',
-              created_at: null,
-              updated_at: null,
-              city: '',
-              location: '',
-              user_id: 0,
-              club_id: null,
-              club_name: null,
-              owner_name: null,
-              categories: [],
-              category_ids: [],
-              confirmed_registrations: 0,
-              waitlist_registrations: 0,
-              remaining_slots: null,
-              registration_state: 'closed',
-              google_calendar_url: '',
-              outlook_calendar_url: ''
-            }
-          ],
-    [events]
-  );
+  const showStudyLinks = activeHero === 0;
 
   return (
     <>
       <main className={mainContent}>
         <section className="relative h-screen overflow-hidden bg-[#10263b]">
-          <div className="absolute inset-0">
-            <img
-              src={currentHero.image}
-              alt={currentHero.title}
-              className="absolute inset-0 h-full w-full object-cover"
-              loading="eager"
-              fetchPriority="high"
-            />
+          <div className="absolute inset-0 overflow-hidden">
+            <div
+              className="flex h-full w-full transition-transform duration-700 ease-in-out"
+              style={{ transform: `translateX(-${activeHero * 100}%)` }}
+            >
+              {heroSlides.map((slide, index) => (
+                <img
+                  key={slide.title}
+                  src={slide.image}
+                  alt={slide.title}
+                  className="h-full w-full shrink-0 object-cover"
+                  loading={index === 0 ? 'eager' : 'lazy'}
+                  fetchPriority={index === 0 ? 'high' : 'auto'}
+                />
+              ))}
+            </div>
             <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(0,0,0,0.15),rgba(0,0,0,0.15))]" />
             <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(18,30,44,0.78)_0%,rgba(18,30,44,0.55)_45%,rgba(18,30,44,0.25)_100%)]" />
           </div>
@@ -422,28 +219,40 @@ function HomePage() {
                   <h1 className="font-heading text-3xl font-bold leading-snug sm:text-5xl sm:leading-snug lg:text-4xl lg:leading-snug xl:pr-[8vw] xl:text-5xl xl:leading-snug 2xl:pr-[5vw] 2xl:text-6xl">
                     {currentHero.title}
                   </h1>
-                  <p className="mt-5 hidden max-w-2xl text-lg font-medium xl:block">{currentHero.text}</p>
+                  <p className="mt-5 hidden max-w-2xl whitespace-pre-line text-lg font-medium xl:block">
+                    {currentHero.text}
+                  </p>
                 </div>
 
                 <div className="col-span-12 lg:col-span-6 xl:col-span-5">
-                  <p className="font-medium">Fica a conhecer a nossa oferta formativa:</p>
-                  <ul className="mt-1 divide-y-2 divide-white">
-                    {studyLinks.map((item) => (
-                      <li key={item.label}>
-                        <a
-                          href={item.href}
-                          className="group flex items-center justify-between px-1.5 py-2 text-lg font-bold xl:px-4 xl:py-3 xl:text-xl 2xl:text-2xl"
-                        >
-                          <span className="transition-opacity group-hover:opacity-80">{item.label}</span>
-                          <span className="-translate-x-4 opacity-0 transition-all group-hover:translate-x-0 group-hover:opacity-100">
-                            &#10230;
-                          </span>
-                        </a>
-                      </li>
-                    ))}
-                  </ul>
+                  <div
+                    className={showStudyLinks ? '' : 'invisible pointer-events-none select-none'}
+                    aria-hidden={!showStudyLinks}
+                  >
+                    <p className="font-medium">Fica a conhecer a nossa oferta formativa:</p>
+                    <ul className="mt-1 divide-y-2 divide-white">
+                      {studyLinks.map((item) => (
+                        <li key={item.label}>
+                          <a
+                            href={item.href}
+                            className="group flex items-center justify-between px-1.5 py-2 text-lg font-bold xl:px-4 xl:py-3 xl:text-xl 2xl:text-2xl"
+                          >
+                            <span className="transition-opacity group-hover:opacity-80">{item.label}</span>
+                            <span className="-translate-x-4 opacity-0 transition-all group-hover:translate-x-0 group-hover:opacity-100">
+                              &#10230;
+                            </span>
+                          </a>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
 
-                  <div className="mt-5 lg:mt-6 xl:text-right">
+                  <div
+                    className={`mt-5 lg:mt-6 xl:text-right ${
+                      showStudyLinks ? '' : 'invisible pointer-events-none select-none'
+                    }`}
+                    aria-hidden={!showStudyLinks}
+                  >
                     <a
                       href="#content-start"
                       className="inline-flex items-center justify-end opacity-70 transition-opacity hover:opacity-100"
@@ -486,63 +295,34 @@ function HomePage() {
           </div>
 
           <div className={`${container} mt-10 flex snap-x gap-2 overflow-x-auto py-2 md:justify-center md:gap-6`}>
-            {highlightCards.map((item) =>
-              item.internal ? (
-                <Link
-                  key={item.title}
-                  to={item.href}
-                  className="group relative flex min-h-[500px] basis-[90vw] snap-center flex-col overflow-hidden rounded bg-gray-200 md:basis-6/12 lg:basis-4/12 2xl:basis-3/12"
-                >
-                  <div className="absolute inset-0">
-                    <img
-                      src={item.image}
-                      alt={item.title}
-                      className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-gray-900 via-gray-900/50 to-transparent" />
+            {highlightCards.map((item) => (
+              <a
+                key={item.title}
+                href={item.href}
+                className="group relative flex min-h-[500px] basis-[90vw] snap-center flex-col overflow-hidden rounded bg-gray-200 md:basis-6/12 lg:basis-4/12 2xl:basis-3/12"
+              >
+                <div className="absolute inset-0">
+                  <img
+                    src={item.image}
+                    alt={item.title}
+                    className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-gray-900 via-gray-900/50 to-transparent" />
+                </div>
+                <div className="relative z-10 mt-auto px-6 pb-6 pt-6 text-white">
+                  <p className="font-heading text-2xl underline-offset-2 group-hover:underline">
+                    {item.title}
+                  </p>
+                  <div className="overflow-hidden transition-[max-height] duration-500 ease-in-out max-h-0 group-hover:max-h-40">
+                    <p className="mt-4 font-medium">{item.text}</p>
                   </div>
-                  <div className="relative z-10 mt-auto px-6 pb-6 pt-6 text-white">
-                    <p className="font-heading text-2xl underline-offset-2 group-hover:underline">
-                      {item.title}
-                    </p>
-                    <div className="overflow-hidden transition-[max-height] duration-500 ease-in-out max-h-0 group-hover:max-h-40">
-                      <p className="mt-4 font-medium">{item.text}</p>
-                    </div>
-                  </div>
-                  <div className="relative z-10 flex items-center px-6 py-6 text-white">
-                    <ChevronRight className="h-7 w-7" />
-                    <p className="ml-3 font-medium">Fica a saber mais</p>
-                  </div>
-                </Link>
-              ) : (
-                <a
-                  key={item.title}
-                  href={item.href}
-                  className="group relative flex min-h-[500px] basis-[90vw] snap-center flex-col overflow-hidden rounded bg-gray-200 md:basis-6/12 lg:basis-4/12 2xl:basis-3/12"
-                >
-                  <div className="absolute inset-0">
-                    <img
-                      src={item.image}
-                      alt={item.title}
-                      className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-gray-900 via-gray-900/50 to-transparent" />
-                  </div>
-                  <div className="relative z-10 mt-auto px-6 pb-6 pt-6 text-white">
-                    <p className="font-heading text-2xl underline-offset-2 group-hover:underline">
-                      {item.title}
-                    </p>
-                    <div className="overflow-hidden transition-[max-height] duration-500 ease-in-out max-h-0 group-hover:max-h-40">
-                      <p className="mt-4 font-medium">{item.text}</p>
-                    </div>
-                  </div>
-                  <div className="relative z-10 flex items-center px-6 py-6 text-white">
-                    <ChevronRight className="h-7 w-7" />
-                    <p className="ml-3 font-medium">Fica a saber mais</p>
-                  </div>
-                </a>
-              )
-            )}
+                </div>
+                <div className="relative z-10 flex items-center px-6 py-6 text-white">
+                  <ChevronRight className="h-7 w-7" />
+                  <p className="ml-3 font-medium">Fica a saber mais</p>
+                </div>
+              </a>
+            ))}
           </div>
         </section>
 
@@ -687,114 +467,6 @@ function HomePage() {
                     </a>
                   ))}
                 </div>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        <section className="mt-14 bg-white lg:mt-16 xl:mt-20 2xl:mt-24">
-          <div className={`${container} grid grid-cols-2 gap-y-10 lg:gap-x-8 xl:gap-x-10`}>
-            <div className="col-span-2 lg:col-span-1">
-              <div className="pl-3">
-                <h2 className="font-heading text-3xl font-bold tracking-tight text-black xl:text-4xl 2xl:text-5xl">
-                  Notícias
-                </h2>
-                <a
-                  href="https://ispgaya.pt/pt/vida-academica/noticias"
-                  className="ml-1 mt-1 flex items-center text-sm text-gray-500 hover:underline"
-                >
-                  <span>Ver tudo</span>
-                  <ChevronRight className="ml-1 mt-1 h-4 w-4" />
-                </a>
-              </div>
-
-              {loadError ? (
-                <p className="mt-6 rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700">
-                  {loadError}
-                </p>
-              ) : null}
-
-              <div className="mt-2 sm:mt-4">
-                {newsList.map((item) => (
-                  <Link
-                    key={item.id}
-                    to={item.id > 0 ? getNewsHref(item) : '#'}
-                    className="group relative block overflow-hidden border-b-2 border-gray-200 p-3.5"
-                  >
-                    <div className="absolute inset-0 z-20 hidden group-hover:block">
-                      <img
-                        className="pointer-events-none z-10 aspect-[16/9] w-full object-cover"
-                        src={item.image ? resolveInfoCulturaAssetUrl(item.image) : heroWelcomeImage}
-                        alt={item.title}
-                      />
-                      <span className="absolute inset-0 z-10 h-full w-full bg-black/70" />
-                    </div>
-
-                    <div className="relative z-30">
-                      <time className="text-sm font-semibold uppercase text-orange-400">
-                        {formatDate(item.published_at || item.created_at)}
-                      </time>
-                      <p className="mt-2 text-lg font-bold transition group-hover:text-white group-hover:underline xl:text-xl 2xl:text-2xl">
-                        {item.title}
-                      </p>
-                      <p className="mt-1 line-clamp-2 transition group-hover:text-white">
-                        {truncateText(item.summary || item.content || 'Sem resumo.', 180)}
-                      </p>
-                      <div className="mt-2 flex items-center space-x-3 text-sm text-gray-600 transition group-hover:text-white">
-                        <span>{getNewsTag(item)}</span>
-                      </div>
-                    </div>
-                  </Link>
-                ))}
-              </div>
-            </div>
-
-            <div className="col-span-2 lg:col-span-1">
-              <div className="pl-3">
-                <h2 className="font-heading text-3xl font-bold tracking-tight text-black xl:text-4xl 2xl:text-5xl">
-                  Eventos
-                </h2>
-                <a
-                  href="https://ispgaya.pt/pt/vida-academica/eventos"
-                  className="ml-1 mt-1 flex items-center text-sm text-gray-500 hover:underline"
-                >
-                  <span>Ver tudo</span>
-                  <ChevronRight className="ml-1 mt-1 h-4 w-4" />
-                </a>
-              </div>
-
-              <div className="mt-2 sm:mt-4">
-                {eventList.map((item) => (
-                  <Link
-                    key={item.id}
-                    to={item.id > 0 ? getEventHref(item) : '#'}
-                    className="group relative block overflow-hidden border-b-2 border-gray-200 p-3.5"
-                  >
-                    <div className="absolute inset-0 z-20 hidden group-hover:block">
-                      <img
-                        className="pointer-events-none w-full object-cover"
-                        src={item.image ? resolveInfoCulturaAssetUrl(item.image) : heroEmployabilityImage}
-                        alt={item.title}
-                      />
-                      <span className="absolute inset-0 z-10 h-full w-full bg-black/60" />
-                    </div>
-
-                    <div className="relative z-30">
-                      <time className="text-sm font-semibold uppercase text-orange-400">
-                        {formatDate(item.event_date)}
-                      </time>
-                      <p className="mt-2 text-lg font-bold transition group-hover:text-white group-hover:underline xl:text-xl 2xl:text-2xl">
-                        {item.title}
-                      </p>
-                      <p className="mt-1 line-clamp-2 transition group-hover:text-white">
-                        {truncateText(item.description || 'Sem descrição.', 180)}
-                      </p>
-                      <div className="mt-2 flex items-center space-x-3 text-sm text-gray-600 transition group-hover:text-white">
-                        <span>{getEventTag(item)}</span>
-                      </div>
-                    </div>
-                  </Link>
-                ))}
               </div>
             </div>
           </div>
