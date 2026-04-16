@@ -239,12 +239,14 @@ function HeaderNav({ transparent = false }: HeaderNavProps) {
     : mobileMenuButton;
   const logoSrc = transparent ? logoNegative : logo;
   const dropdownListClassName = transparent
-    ? 'rounded border border-white/12 bg-[#10263b]/96 px-4 py-3 text-white shadow-xl backdrop-blur-md space-y-3'
+    ? 'rounded border border-gray-100 bg-white px-4 py-3 text-slate-900 shadow-xl space-y-3'
     : navDropdownList;
   const dropdownItemClassName = transparent
-    ? 'flex items-center font-medium text-white/90 hover:text-[#f7c47a]'
+    ? 'flex items-center font-medium text-slate-900 hover:text-[#dd8609] hover:underline underline-offset-2'
     : navDropdownItem;
-  const dropdownAnchorClassName = transparent ? 'inline-block w-full py-0.5' : navDropdownAnchor;
+  const dropdownAnchorClassName = transparent
+    ? 'inline-block w-full py-0.5 text-inherit'
+    : navDropdownAnchor;
 
   return (
     <header className={rootClassName}>
