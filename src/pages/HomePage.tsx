@@ -2,6 +2,9 @@ import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import Footer from '../components/Footer';
 import HeaderNav from '../components/HeaderNav';
+import NewsHighlightsSection, {
+  type NewsHighlightItem
+} from '../components/NewsHighlightsSection';
 import TopBar from '../components/TopBar';
 import heroWelcomeImage from '../assets/backgroundphotos/bem-vindos-estudantes-ispgaya.webp';
 import heroStudyImage from '../assets/backgroundphotos/estudar-no-ispagaya.webp';
@@ -151,6 +154,125 @@ const testimonialSlides: TestimonialSlide[] = [
     name: 'Maribel Carvalho',
     role: 'Estudante ISPGAYA',
     image: maribel
+  }
+];
+
+const homepageNewsHighlights: NewsHighlightItem[] = [
+  {
+    title: 'Seminário: Comércio Internacional com DR. Ricardo Oliveira',
+    href: 'https://ispgaya.pt/pt/vida-academica/noticias/seminario-comercio-internacional-com-dr-ricardo-oliveira',
+    excerpt:
+      'No próximo dia 24 de abril, pelas 18h, terá lugar, no Auditório Padre Freitas (ISPGAYA), o seminário “Comércio Internacional: Uma Visão Estratégica sobre os Mercados Globais”, dinamizado pelo Dr. Ricardo Oliveira, fundador da empresa P&RO – Consultoria.',
+    image:
+      'https://ispg-prd.s3.eu-west-1.amazonaws.com/publications/e7bcd837-69c2-441e-831f-0dddd7d262a6/cover/md-WhatsApp%20Image%202026-04-10%20at%2009.42.45.webp',
+    imageAlt: 'Seminário: Comércio Internacional com DR. Ricardo Oliveira',
+    publishedAt: '2026-04-10 08:52:14',
+    publishedLabel: '10 abril, 2026',
+    tags: [
+      {
+        label: '#congressointernacional',
+        href: 'https://ispgaya.pt/pt/vida-academica/hashtag/congressointernacional/noticias'
+      }
+    ]
+  },
+  {
+    title: 'MSUB ISPGAYA',
+    href: 'https://ispgaya.pt/pt/vida-academica/noticias/msub-ispgaya',
+    excerpt:
+      'Entre 23 e 27 de março, estudantes do ISPGAYA em colaboração com estudantes da MSUB desenvolveram um projeto de internacionalização entre Portugal e os EUA.',
+    image:
+      'https://ispg-prd.s3.eu-west-1.amazonaws.com/publications/23b4b152-507b-4d43-9ca8-6c9465a575eb/cover/md-WhatsApp%20Image%202026-04-08%20at%2011.39.28.webp',
+    imageAlt: 'MSUB ISPGAYA',
+    publishedAt: '2026-04-08 10:57:20',
+    publishedLabel: '08 abril, 2026',
+    tags: [
+      {
+        label: '#estudantesinternacionais',
+        href: 'https://ispgaya.pt/pt/vida-academica/hashtag/estudantesinternacionais/noticias'
+      },
+      {
+        label: '#programaerasmus',
+        href: 'https://ispgaya.pt/pt/vida-academica/hashtag/programaerasmus/noticias'
+      }
+    ]
+  },
+  {
+    title: 'FII;)CA PROJECT ISPGAYA',
+    href: 'https://ispgaya.pt/pt/vida-academica/noticias/fiica-project-ispgaya',
+    excerpt:
+      'O ISPGAYA acolheu os estudantes e professores do Projeto FII;)CA nas suas instalações, onde participaram em várias atividades.',
+    image:
+      'https://ispg-prd.s3.eu-west-1.amazonaws.com/publications/962ca966-cf11-476d-8cd6-b257b7aeb6b1/cover/md-FII%3B%29CA%201%20site%20%281%29.webp',
+    imageAlt: 'FII;)CA PROJECT ISPGAYA',
+    publishedAt: '2026-04-07 16:44:52',
+    publishedLabel: '07 abril, 2026',
+    tags: [
+      {
+        label: '#congressointernacional',
+        href: 'https://ispgaya.pt/pt/vida-academica/hashtag/congressointernacional/noticias'
+      },
+      {
+        label: '#estudantesinternacionais',
+        href: 'https://ispgaya.pt/pt/vida-academica/hashtag/estudantesinternacionais/noticias'
+      }
+    ]
+  }
+];
+
+const homepageEventHighlights: NewsHighlightItem[] = [
+  {
+    title: 'Celebração do Dia Internacional do Voluntariado',
+    href: 'https://ispgaya.pt/pt/vida-academica/eventos/celebracao-do-dia-internacional-do-voluntariado',
+    excerpt:
+      'O teu tempo pode mudar a comunidade. Junta-te à Bolsa de Voluntariado ISPGAYA!',
+    image:
+      'https://ispg-prd.s3.eu-west-1.amazonaws.com/publications/19592afb-c1ec-496b-a531-522d9553c12d/cover/md-7.webp',
+    imageAlt: 'Celebração do Dia Internacional do Voluntariado',
+    publishedAt: '2025-12-02 11:33:58',
+    publishedLabel: '02 dezembro, 2025',
+    tags: [
+      {
+        label: '#apoioaoestudante',
+        href: 'https://ispgaya.pt/pt/vida-academica/hashtag/apoioaoestudante/eventos'
+      }
+    ]
+  },
+  {
+    title: 'Magusto 2025',
+    href: 'https://ispgaya.pt/pt/vida-academica/eventos/magusto-2025',
+    excerpt: 'O ISPGAYA deseja a toda a comunidade um bom Magusto!',
+    image:
+      'https://ispg-prd.s3.eu-west-1.amazonaws.com/publications/fd8b219e-0f56-4ebc-9f0a-e0bac3e9104f/cover/md-NOTICIA%20BOM%20MAGUSTO%21.webp',
+    imageAlt: 'Magusto 2025',
+    publishedAt: '2025-11-12 10:27:30',
+    publishedLabel: '12 novembro, 2025',
+    tags: [
+      {
+        label: '#atunabiracopos',
+        href: 'https://ispgaya.pt/pt/vida-academica/hashtag/atunabiracopos/eventos'
+      },
+      {
+        label: '#apoioaoestudante',
+        href: 'https://ispgaya.pt/pt/vida-academica/hashtag/apoioaoestudante/eventos'
+      }
+    ]
+  },
+  {
+    title: 'Apresentação Centro de Formação para a Transição Energética',
+    href: 'https://ispgaya.pt/pt/vida-academica/eventos/apresentacao-centro-de-formacao-para-a-transicao-energetica',
+    excerpt:
+      'No próximo dia 17 de novembro, entre as 18h00 e as 19h30, terá lugar, no Auditório Padre Freitas, a sessão de apresentação do Centro de Formação para a Transição Energética.',
+    image:
+      'https://ispg-prd.s3.eu-west-1.amazonaws.com/publications/b5824817-3d71-4956-aaac-f2eae53cb1a6/cover/md-3.webp',
+    imageAlt: 'Apresentação Centro de Formação para a Transição Energética',
+    publishedAt: '2025-11-10 10:22:00',
+    publishedLabel: '10 novembro, 2025',
+    tags: [
+      {
+        label: '#engenhariaeletronicaedeautomacao',
+        href: 'https://ispgaya.pt/pt/vida-academica/hashtag/engenhariaeletronicaedeautomacao/eventos'
+      }
+    ]
   }
 ];
 
@@ -525,6 +647,25 @@ function HomePage() {
                   ))}
                 </div>
               </div>
+            </div>
+          </div>
+        </section>
+
+        <section className="mt-12 bg-white lg:mt-16 xl:mt-20">
+          <div className={`${container}`}>
+            <div className="mx-auto grid w-full max-w-7xl grid-cols-1 gap-10 lg:grid-cols-2">
+              <NewsHighlightsSection
+                title="Notícias"
+                viewAllHref="https://ispgaya.pt/pt/vida-academica/noticias"
+                items={homepageNewsHighlights}
+                className="w-full"
+              />
+              <NewsHighlightsSection
+                title="Eventos"
+                viewAllHref="https://ispgaya.pt/pt/vida-academica/eventos"
+                items={homepageEventHighlights}
+                className="w-full"
+              />
             </div>
           </div>
         </section>
