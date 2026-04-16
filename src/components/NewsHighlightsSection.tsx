@@ -1,3 +1,5 @@
+import { Link } from 'react-router-dom';
+
 type NewsTag = {
   label: string;
   href: string;
@@ -6,6 +8,7 @@ type NewsTag = {
 export type NewsHighlightItem = {
   title: string;
   href: string;
+  internal?: boolean;
   excerpt: string;
   image: string;
   imageAlt: string;
@@ -18,6 +21,7 @@ type NewsHighlightsSectionProps = {
   title?: string;
   viewAllHref: string;
   viewAllLabel?: string;
+  viewAllInternal?: boolean;
   items: NewsHighlightItem[];
   className?: string;
 };
@@ -45,6 +49,7 @@ function NewsHighlightsSection({
   title = 'Notícias',
   viewAllHref,
   viewAllLabel = 'Ver tudo',
+  viewAllInternal = false,
   items,
   className = 'col-span-2 lg:col-span-1 z-10'
 }: NewsHighlightsSectionProps) {
@@ -54,13 +59,23 @@ function NewsHighlightsSection({
         <h2 className="font-heading text-3xl font-bold tracking-tight text-black xl:text-4xl 2xl:text-5xl">
           {title}
         </h2>
-        <a
-          href={viewAllHref}
-          className="ml-1 mt-1 flex items-center text-sm text-gray-500 underline-offset-2 hover:underline"
-        >
-          <span>{viewAllLabel}</span>
-          <ArrowIcon />
-        </a>
+        {viewAllInternal ? (
+          <Link
+            to={viewAllHref}
+            className="ml-1 mt-1 flex items-center text-sm text-gray-500 underline-offset-2 hover:underline"
+          >
+            <span>{viewAllLabel}</span>
+            <ArrowIcon />
+          </Link>
+        ) : (
+          <a
+            href={viewAllHref}
+            className="ml-1 mt-1 flex items-center text-sm text-gray-500 underline-offset-2 hover:underline"
+          >
+            <span>{viewAllLabel}</span>
+            <ArrowIcon />
+          </a>
+        )}
       </div>
 
       <div className="z-10 mt-2 sm:mt-4">
@@ -89,11 +104,15 @@ function NewsHighlightsSection({
               </time>
 
               <p className="mt-2 text-md font-bold transition underline-offset-2 group-hover:text-white group-hover:underline lg:text-lg xl:text-xl 2xl:text-2xl">
-                <a href={item.href}>{item.title}</a>
+                {item.internal ? <Link to={item.href}>{item.title}</Link> : <a href={item.href}>{item.title}</a>}
               </p>
 
               <p className="mt-1 line-clamp-2 transition group-hover:text-white">
-                <a href={item.href}>{item.excerpt}</a>
+                {item.internal ? (
+                  <Link to={item.href}>{item.excerpt}</Link>
+                ) : (
+                  <a href={item.href}>{item.excerpt}</a>
+                )}
               </p>
 
               {item.tags && item.tags.length > 0 ? (
