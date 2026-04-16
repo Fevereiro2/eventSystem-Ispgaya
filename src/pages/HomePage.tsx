@@ -193,6 +193,7 @@ function HomePage() {
   const [activeHero, setActiveHero] = useState(0);
   const [activeSupport, setActiveSupport] = useState(0);
   const [activeTestimonial, setActiveTestimonial] = useState(0);
+  const [isHeaderSolid, setIsHeaderSolid] = useState(false);
   const [newsItems, setNewsItems] = useState<InfoCulturaNews[]>([]);
   const [events, setEvents] = useState<InfoCulturaEvent[]>([]);
   const [loadError, setLoadError] = useState('');
@@ -203,6 +204,17 @@ function HomePage() {
     }, 6000);
 
     return () => window.clearInterval(interval);
+  }, []);
+
+  useEffect(() => {
+    function handleScroll() {
+      setIsHeaderSolid(window.scrollY > 40);
+    }
+
+    handleScroll();
+    window.addEventListener('scroll', handleScroll, { passive: true });
+
+    return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
   useEffect(() => {
@@ -392,9 +404,13 @@ function HomePage() {
             <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(18,30,44,0.78)_0%,rgba(18,30,44,0.55)_45%,rgba(18,30,44,0.25)_100%)]" />
           </div>
 
-          <div className="absolute inset-x-0 top-0 z-30">
-            <TopBar transparent />
-            <HeaderNav transparent />
+          <div
+            className={`fixed inset-x-0 top-0 z-50 transition-all duration-300 ${
+              isHeaderSolid ? 'bg-white' : 'bg-transparent'
+            }`}
+          >
+            <TopBar transparent={!isHeaderSolid} />
+            <HeaderNav transparent={!isHeaderSolid} />
           </div>
 
           <div className={`relative z-10 h-full ${container}`}>
