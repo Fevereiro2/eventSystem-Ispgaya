@@ -33,7 +33,7 @@ export const navDropdownItem =
   'flex items-center font-medium text-black hover:text-orange-400 hover:underline underline-offset-2';
 export const navDropdownAnchor = 'inline-block w-full';
 export const mobileMenuButton =
-  'inline-flex h-11 w-11 items-center justify-center rounded-md bg-transparent text-slate-700 transition-colors hover:bg-slate-100 hover:text-[#dd8609] lg:hidden';
+  'inline-flex h-11 w-11 items-center justify-center rounded-md bg-transparent text-slate-700 transition-colors hover:text-[#dd8609] lg:hidden';
 
 export const breadcrumbsWrap = 'border-b border-slate-200 bg-white';
 export const breadcrumbsInner = 'flex items-center gap-2 py-3 text-sm text-slate-500';

@@ -1,4 +1,4 @@
-import { ChevronDown, Lock, Menu, X, Zap } from 'lucide-react';
+import { ChevronDown, Lock, X, Zap } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
@@ -286,7 +286,7 @@ function HeaderNav({ transparent = false }: HeaderNavProps) {
 
   return (
     <header className={rootClassName}>
-      <div className={`${container} ${innerClassName}`}>
+      <div className={`${container} ${innerClassName} px-6 sm:px-6 lg:px-3`}>
         <Link to="/" className={brandWrap}>
           <img src={logoSrc} alt="ISPGAYA" className={brandLogo} />
         </Link>
@@ -327,7 +327,14 @@ function HeaderNav({ transparent = false }: HeaderNavProps) {
           aria-expanded={isMobileMenuOpen}
           aria-label={isMobileMenuOpen ? 'Fechar menu' : 'Abrir menu'}
         >
-          {isMobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+          {isMobileMenuOpen ? (
+            <X className="h-5 w-5" />
+          ) : (
+            <span className="flex h-5 w-5 flex-col items-center justify-center gap-1.5" aria-hidden="true">
+              <span className="block h-0.5 w-5 bg-current" />
+              <span className="block h-0.5 w-5 bg-current" />
+            </span>
+          )}
         </button>
       </div>
 
@@ -335,20 +342,20 @@ function HeaderNav({ transparent = false }: HeaderNavProps) {
         <div className="fixed inset-0 z-[100] lg:hidden">
           <button
             type="button"
-            className="absolute inset-0 bg-black/25"
+            className="absolute inset-0 bg-transparent"
             onClick={closeMobileMenu}
             aria-label="Fechar menu"
           />
 
           <div className="absolute inset-0 overflow-y-auto bg-white text-slate-900">
-            <div className={`${container} py-4`}>
-              <div className="flex items-start justify-between gap-4">
-                <Link to="/" className="flex items-center" onClick={closeMobileMenu}>
+            <div className={`${container} px-6 py-4 sm:px-6 lg:px-3`}>
+              <div className="mx-auto flex w-full max-w-md items-center justify-between gap-4">
+                <Link to="/" className="flex items-center justify-center" onClick={closeMobileMenu}>
                   <img src={logo} alt="ISPGAYA" className="h-12 w-auto" />
                 </Link>
 
                 <div className="flex items-center gap-4">
-                  <div className="flex items-center gap-3 text-sm font-semibold text-slate-700">
+                  <div className="flex items-center justify-center gap-3 text-sm font-semibold text-slate-700">
                     <a
                       href="https://ispgaya.pt/pt"
                       title="pt"
@@ -382,7 +389,8 @@ function HeaderNav({ transparent = false }: HeaderNavProps) {
             </div>
 
             <div className="border-t border-slate-200">
-              <div className={`${container} divide-y divide-slate-200`}>
+              <div className={`${container} px-6 sm:px-6 lg:px-3`}>
+                <div className="mx-auto w-full max-w-md divide-y divide-slate-200">
                 {resolvedMenuItems.map((item) => {
                   const isExpanded = activeMobileSection === item.label;
                   const hasDropdown = Boolean(item.dropdown && item.dropdown.length > 0);
@@ -390,7 +398,11 @@ function HeaderNav({ transparent = false }: HeaderNavProps) {
                   return (
                     <div key={item.label} className="py-3">
                       <div className="flex items-center justify-between gap-3">
-                        {renderMenuLink(item, 'text-[15px] font-medium text-slate-800', closeMobileMenu)}
+                        {renderMenuLink(
+                          item,
+                          'text-[15px] font-medium text-slate-800 text-left',
+                          closeMobileMenu
+                        )}
                         {hasDropdown ? (
                           <button
                             type="button"
@@ -411,7 +423,7 @@ function HeaderNav({ transparent = false }: HeaderNavProps) {
                       </div>
 
                       {hasDropdown && isExpanded ? (
-                        <div className="mt-3 bg-slate-50 py-2">
+                        <div className="mt-3 rounded-lg bg-slate-50 py-2">
                           {item.dropdown?.map((child) => (
                             <div key={child.label} className="border-t border-slate-200 first:border-t-0">
                               {renderMenuLink(
@@ -428,16 +440,16 @@ function HeaderNav({ transparent = false }: HeaderNavProps) {
                 })}
 
                 <div className="py-4">
-                  <div className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">
+                  <div className="flex items-center justify-center gap-2 text-center text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">
                     <Lock className="h-4 w-4" />
                     <span>Área Privada</span>
                   </div>
-                  <div className="mt-3 grid gap-2">
+                  <div className="mt-3 grid gap-2 text-center">
                     {mobilePrivateLinks.map((item) => (
                       <div key={item.label}>
                         {renderMenuLink(
                           item,
-                          'text-[14px] text-slate-700 hover:text-[#dd8609]',
+                          'block px-2 text-[14px] text-slate-700 hover:text-[#dd8609]',
                           closeMobileMenu
                         )}
                       </div>
@@ -446,16 +458,16 @@ function HeaderNav({ transparent = false }: HeaderNavProps) {
                 </div>
 
                 <div className="py-4">
-                  <div className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">
+                  <div className="flex items-center justify-center gap-2 text-center text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">
                     <Zap className="h-4 w-4" />
                     <span>Links de Interesse</span>
                   </div>
-                  <div className="mt-3 grid gap-2">
+                  <div className="mt-3 grid gap-2 text-center">
                     {mobileInterestLinks.map((item) => (
                       <div key={item.label}>
                         {renderMenuLink(
                           item,
-                          'text-[14px] text-slate-700 hover:text-[#dd8609]',
+                          'block px-2 text-[14px] text-slate-700 hover:text-[#dd8609]',
                           closeMobileMenu
                         )}
                       </div>
@@ -464,6 +476,7 @@ function HeaderNav({ transparent = false }: HeaderNavProps) {
                 </div>
 
                 <div className="py-5" />
+                </div>
               </div>
             </div>
           </div>

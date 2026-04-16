@@ -1,5 +1,5 @@
 import { ChevronLeft, ChevronRight } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import Footer from '../components/Footer';
 import HeaderNav from '../components/HeaderNav';
 import TopBar from '../components/TopBar';
@@ -7,9 +7,12 @@ import heroWelcomeImage from '../assets/backgroundphotos/bem-vindos-estudantes-i
 import heroStudyImage from '../assets/backgroundphotos/estudar-no-ispagaya.webp';
 import heroEmployabilityImage from '../assets/backgroundphotos/empregabilidade-ispgaya.webp';
 import gaiaSkyline from '../assets/gaia-skyline.webp';
+import aondefuturo from '../assets/homepage/ondefuturo.webp'
 import helix from '../assets/homepage/destaques/helix-ispgaya-site.webp';
 import internacionalStudents from '../assets/homepage/destaques/2.webp';
 import mais23 from '../assets/homepage/destaques/3.webp';
+import manuel from '../assets/homepage/testemunhos/2.webp';
+import maribel from '../assets/homepage/testemunhos/1.webp'
 import { container, mainContent } from '../styles/ui';
 
 type HeroSlide = {
@@ -140,14 +143,14 @@ const testimonialSlides: TestimonialSlide[] = [
       'De forma a consolidar os conhecimentos na área da segurança de informação e cibersegurança, optei pelo mestrado do ISPGAYA pela diversidade de oportunidades e pela transversalidade das competências adquiridas.',
     name: 'Manuel Oliveira',
     role: 'Estudante Mestrado',
-    image: heroEmployabilityImage
+    image: manuel
   },
   {
     quote:
-      'Escolhi o ISPGAYA por recomendação de outros alunos. Professores e colaboradores acompanharam-me de forma próxima e deixaram um contributo real para a minha realização pessoal e profissional.',
+      'Escolhi o ISPGAYA por recomendação de outros alunos e da mesma forma também, eu o recomendo. A maioria dos professores e colaboradores que me acompanharam ao longo da minha licenciatura em gestão foram sempre muito prestáveis e cada um com a sua função proporcionaram me momento inesquecíveis que me enriqueceram para o meu futuro. Por isso quero desde já agradecer a todas as pessoas que me acompanharam, porque em cada dia que estiveram presentes na minha vida deixaram o seu contributo para a minha realização pessoal e profissional, muito obrigada.',
     name: 'Maribel Carvalho',
     role: 'Estudante ISPGAYA',
-    image: heroWelcomeImage
+    image: maribel
   }
 ];
 
@@ -156,6 +159,7 @@ function HomePage() {
   const [activeSupport, setActiveSupport] = useState(0);
   const [activeTestimonial, setActiveTestimonial] = useState(0);
   const [isHeaderSolid, setIsHeaderSolid] = useState(false);
+  const testimonialTouchStartX = useRef<number | null>(null);
 
   useEffect(() => {
     const interval = window.setInterval(() => {
@@ -178,6 +182,57 @@ function HomePage() {
 
   const currentHero = heroSlides[activeHero];
   const showStudyLinks = activeHero === 0;
+
+  function showPreviousTestimonial() {
+    setActiveTestimonial((current) => Math.max(current - 1, 0));
+  }
+
+  function showNextTestimonial() {
+    setActiveTestimonial((current) => Math.min(current + 1, testimonialSlides.length - 1));
+  }
+
+  function handleTestimonialTouchStart(event: React.TouchEvent<HTMLDivElement>) {
+    testimonialTouchStartX.current = event.touches[0]?.clientX ?? null;
+  }
+
+  function handleTestimonialTouchEnd(event: React.TouchEvent<HTMLDivElement>) {
+    const startX = testimonialTouchStartX.current;
+    const endX = event.changedTouches[0]?.clientX ?? null;
+
+    testimonialTouchStartX.current = null;
+
+    if (startX === null || endX === null) return;
+
+    const deltaX = endX - startX;
+
+    if (Math.abs(deltaX) < 40) return;
+
+    if (deltaX > 0) {
+      showPreviousTestimonial();
+      return;
+    }
+
+    showNextTestimonial();
+  }
+
+  function SliderArrowIcon({ direction }: { direction: 'left' | 'right' }) {
+    return (
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        className={`h-7 w-7 ${direction === 'left' ? 'rotate-180' : ''}`}
+        fill="none"
+        viewBox="0 0 24 24"
+        stroke="currentColor"
+      >
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth="2"
+          d="M17 8l4 4m0 0l-4 4m4-4H3"
+        />
+      </svg>
+    );
+  }
 
   return (
     <>
@@ -212,19 +267,21 @@ function HomePage() {
             <HeaderNav transparent={!isHeaderSolid} />
           </div>
 
-          <div className={`relative z-10 h-full ${container}`}>
-            <div className="absolute inset-x-0 bottom-[12vh]">
-              <div className="grid grid-cols-12 gap-y-8 text-white">
+          <div className={`relative z-10 flex h-full flex-col ${container}`}>
+            <div className="flex-1" />
+
+            <div className="pb-[7vh] text-white">
+              <div className="grid grid-cols-12 gap-y-8">
                 <div className="col-span-12 lg:col-span-6 xl:col-span-7">
                   <h1 className="font-heading text-3xl font-bold leading-snug sm:text-5xl sm:leading-snug lg:text-4xl lg:leading-snug xl:pr-[8vw] xl:text-5xl xl:leading-snug 2xl:pr-[5vw] 2xl:text-6xl">
                     {currentHero.title}
                   </h1>
-                  <p className="mt-5 hidden max-w-2xl whitespace-pre-line text-lg font-medium xl:block">
+                  <p className="mt-4 max-w-2xl whitespace-pre-line text-base font-medium sm:text-lg">
                     {currentHero.text}
                   </p>
                 </div>
 
-                <div className="col-span-12 lg:col-span-6 xl:col-span-5">
+                <div className="col-span-12 hidden lg:block lg:col-span-6 xl:col-span-5">
                   <div
                     className={showStudyLinks ? '' : 'invisible pointer-events-none select-none'}
                     aria-hidden={!showStudyLinks}
@@ -265,16 +322,14 @@ function HomePage() {
                   </div>
                 </div>
               </div>
-            </div>
 
-            <div className="absolute inset-x-0 bottom-[5vh]">
-              <div className="swiper-pagination slider-bullet-clickable swiper-pagination-horizontal flex items-center space-x-5">
+              <div className="mt-8 flex items-center space-x-5">
                 {heroSlides.map((slide, index) => (
                   <button
                     key={slide.title}
                     type="button"
                     onClick={() => setActiveHero(index)}
-                    className={`swiper-pagination-bullet flex h-7 w-7 items-center justify-center rounded-full border border-white transition-opacity ${
+                    className={`flex h-7 w-7 items-center justify-center rounded-full border border-white transition-opacity ${
                       index === activeHero ? 'opacity-100' : 'opacity-60'
                     }`}
                   >
@@ -294,12 +349,14 @@ function HomePage() {
             </h2>
           </div>
 
-          <div className={`${container} mt-10 flex snap-x gap-2 overflow-x-auto py-2 md:justify-center md:gap-6`}>
+          <div
+            className={`${container} mt-10 flex snap-x snap-mandatory gap-4 overflow-x-auto px-6 pb-4 pt-2 sm:px-6 md:justify-center md:gap-6 md:px-0`}
+          >
             {highlightCards.map((item) => (
               <a
                 key={item.title}
                 href={item.href}
-                className="group relative flex min-h-[500px] basis-[90vw] snap-center flex-col overflow-hidden rounded bg-gray-200 md:basis-6/12 lg:basis-4/12 2xl:basis-3/12"
+                className="group relative flex min-h-[500px] min-w-[78vw] max-w-[78vw] snap-center flex-col overflow-hidden rounded bg-gray-200 first:ml-0 md:min-w-0 md:max-w-none md:basis-6/12 lg:basis-4/12 2xl:basis-3/12"
               >
                 <div className="absolute inset-0">
                   <img
@@ -313,7 +370,7 @@ function HomePage() {
                   <p className="font-heading text-2xl underline-offset-2 group-hover:underline">
                     {item.title}
                   </p>
-                  <div className="overflow-hidden transition-[max-height] duration-500 ease-in-out max-h-0 group-hover:max-h-40">
+                  <div className="max-h-40 overflow-hidden transition-[max-height] duration-500 ease-in-out md:max-h-0 md:group-hover:max-h-40">
                     <p className="mt-4 font-medium">{item.text}</p>
                   </div>
                 </div>
@@ -331,7 +388,7 @@ function HomePage() {
             <div className="relative col-span-1 hidden lg:block">
               <div className="sticky top-36">
                 <img
-                  src={gaiaSkyline}
+                  src={aondefuturo}
                   alt="Onde o Futuro Te Leva"
                   className="relative z-10 mx-auto block shadow-2xl lg:w-10/12 xl:w-auto"
                 />
@@ -480,53 +537,62 @@ function HomePage() {
           </div>
 
           <div className={`${container} mx-auto w-full overflow-hidden lg:max-w-2xl`}>
-            <div className="w-full pb-2 pt-6 md:pb-4 md:pt-8 lg:pb-4 lg:pt-10 xl:pb-6 xl:pt-12">
-              <div className="relative">
-                <div className="absolute -top-4 text-orange-400 opacity-20 sm:-left-1 sm:-top-5">
-                  <svg className="h-20 w-20 sm:h-28 sm:w-28" viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M23 5.655c-3.008 1.475-4.511 3.208-4.511 5.2 1.282.148 2.342.67 3.18 1.567.838.897 1.257 1.936 1.257 3.116 0 1.254-.407 2.311-1.22 3.171-.814.86-1.837 1.291-3.069 1.291-1.38 0-2.576-.559-3.587-1.678-1.011-1.119-1.516-2.477-1.516-4.075 0-4.794 2.687-8.543 8.061-11.247L23 5.655zm-13.534 0c-3.032 1.475-4.548 3.208-4.548 5.2 1.307.148 2.379.67 3.217 1.567.838.897 1.257 1.936 1.257 3.116 0 1.254-.413 2.311-1.239 3.171C7.327 19.569 6.298 20 5.065 20c-1.38 0-2.57-.559-3.568-1.678-.998-1.119-1.498-2.477-1.498-4.075C-.001 9.453 2.674 5.704 8.023 3l1.442 2.655z" />
-                  </svg>
-                </div>
-                <blockquote className="text-center text-lg sm:text-lg">
-                  {testimonialSlides[activeTestimonial].quote}
-                </blockquote>
-              </div>
+            <div
+              className="w-full touch-pan-y overflow-hidden pb-2 pt-6 md:pb-4 md:pt-8 lg:pb-4 lg:pt-10 xl:pb-6 xl:pt-12"
+              onTouchStart={handleTestimonialTouchStart}
+              onTouchEnd={handleTestimonialTouchEnd}
+            >
+              <div
+                className="flex w-full transition-transform duration-500 ease-out"
+                style={{ transform: `translateX(-${activeTestimonial * 100}%)` }}
+              >
+                {testimonialSlides.map((item) => (
+                  <div key={item.name} className="w-full shrink-0">
+                    <div className="relative">
+                      <div className="absolute -top-4 text-orange-400 opacity-20 sm:-left-1 sm:-top-5">
+                        <svg className="h-20 w-20 sm:h-28 sm:w-28" viewBox="0 0 24 24" fill="currentColor">
+                          <path d="M23 5.655c-3.008 1.475-4.511 3.208-4.511 5.2 1.282.148 2.342.67 3.18 1.567.838.897 1.257 1.936 1.257 3.116 0 1.254-.407 2.311-1.22 3.171-.814.86-1.837 1.291-3.069 1.291-1.38 0-2.576-.559-3.587-1.678-1.011-1.119-1.516-2.477-1.516-4.075 0-4.794 2.687-8.543 8.061-11.247L23 5.655zm-13.534 0c-3.032 1.475-4.548 3.208-4.548 5.2 1.307.148 2.379.67 3.217 1.567.838.897 1.257 1.936 1.257 3.116 0 1.254-.413 2.311-1.239 3.171C7.327 19.569 6.298 20 5.065 20c-1.38 0-2.57-.559-3.568-1.678-.998-1.119-1.498-2.477-1.498-4.075C-.001 9.453 2.674 5.704 8.023 3l1.442 2.655z" />
+                        </svg>
+                      </div>
+                      <blockquote className="text-center text-lg sm:text-lg">
+                        {item.quote}
+                      </blockquote>
+                    </div>
 
-              <div className="mt-7 flex items-center justify-center">
-                <img
-                  src={testimonialSlides[activeTestimonial].image}
-                  alt={testimonialSlides[activeTestimonial].name}
-                  className="block h-16 w-16 shrink-0 rounded-full border-2 border-white object-cover shadow"
-                />
+                    <div className="mt-7 flex items-center justify-center">
+                      <img
+                        src={item.image}
+                        alt={item.name}
+                        className="block h-16 w-16 shrink-0 rounded-full border-2 border-white object-cover shadow"
+                      />
 
-                <div className="ml-5 font-medium">
-                  <p className="text-xl">{testimonialSlides[activeTestimonial].name}</p>
-                  <p className="text-base text-gray-500">{testimonialSlides[activeTestimonial].role}</p>
-                </div>
+                      <div className="ml-5 font-medium">
+                        <p className="text-xl">{item.name}</p>
+                        <p className="text-base text-gray-500">{item.role}</p>
+                      </div>
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
 
             <div className="flex w-full items-center justify-center">
               <button
                 type="button"
-                onClick={() =>
-                  setActiveTestimonial((current) =>
-                    current === 0 ? testimonialSlides.length - 1 : current - 1
-                  )
-                }
-                className="p-2 text-gray-700 transition hover:text-gray-600"
+                onClick={showPreviousTestimonial}
+                disabled={activeTestimonial === 0}
+                className="p-2 text-gray-700 transition hover:text-gray-600 disabled:cursor-not-allowed disabled:opacity-30"
               >
-                <ChevronLeft className="h-7 w-7" />
+                <SliderArrowIcon direction="left" />
               </button>
 
               <button
                 type="button"
-                onClick={() =>
-                  setActiveTestimonial((current) => (current + 1) % testimonialSlides.length)
-                }
-                className="p-2 text-gray-700 transition hover:text-gray-600"
+                onClick={showNextTestimonial}
+                disabled={activeTestimonial === testimonialSlides.length - 1}
+                className="p-2 text-gray-700 transition hover:text-gray-600 disabled:cursor-not-allowed disabled:opacity-30"
               >
-                <ChevronRight className="h-7 w-7" />
+                <SliderArrowIcon direction="right" />
               </button>
             </div>
           </div>
