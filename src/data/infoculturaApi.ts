@@ -371,6 +371,36 @@ export class InfoCulturaApiError extends Error {
   }
 }
 
+function extractApiErrorMessage(body: unknown): string | null {
+  if (!body || typeof body !== 'object') return null;
+
+  const typedBody = body as Record<string, unknown>;
+
+  if (typeof typedBody.message === 'string' && typedBody.message.trim()) {
+    return typedBody.message;
+  }
+
+  const fieldMessages = Object.entries(typedBody)
+    .flatMap(([field, value]) => {
+      if (typeof value === 'string' && value.trim()) {
+        return [`${field}: ${value}`];
+      }
+
+      if (Array.isArray(value)) {
+        return value
+          .filter((item): item is string => typeof item === 'string' && item.trim().length > 0)
+          .map((item) =>
+            field === 'non_field_errors' ? item : `${field}: ${item}`
+          );
+      }
+
+      return [];
+    })
+    .filter(Boolean);
+
+  return fieldMessages.length > 0 ? fieldMessages.join(' ') : null;
+}
+
 function getStoredAccessToken(): string {
   if (typeof window === 'undefined') return '';
   return sessionStorage.getItem(ACCESS_TOKEN_STORAGE_KEY) || '';
@@ -458,9 +488,10 @@ async function request<T>(
     let message = 'Erro ao comunicar com o servidor.';
 
     try {
-      const body = (await response.json()) as { message?: string };
-      if (body.message) {
-        message = body.message;
+      const body = (await response.json()) as unknown;
+      const extractedMessage = extractApiErrorMessage(body);
+      if (extractedMessage) {
+        message = extractedMessage;
       }
     } catch {
       // ignore parse errors and use default message
@@ -509,9 +540,10 @@ async function requestBlob(
   if (!response.ok) {
     let message = 'Erro ao comunicar com o servidor.';
     try {
-      const body = (await response.json()) as { message?: string };
-      if (body.message) {
-        message = body.message;
+      const body = (await response.json()) as unknown;
+      const extractedMessage = extractApiErrorMessage(body);
+      if (extractedMessage) {
+        message = extractedMessage;
       }
     } catch {
       // ignore
