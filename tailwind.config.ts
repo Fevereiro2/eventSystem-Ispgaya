@@ -15,6 +15,9 @@ export default {
           soft: '#243B53'
         }
       },
+      maxWidth: {
+        '7xl': '95rem'
+      },
       fontFamily: {
         sans: ['var(--font-body)', 'Open Sans', 'Inter', 'system-ui', 'sans-serif'],
         heading: [

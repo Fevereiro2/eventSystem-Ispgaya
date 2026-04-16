@@ -1,6 +1,6 @@
 export const appRoot = 'min-h-screen bg-white font-sans text-slate-800 antialiased';
 
-export const container = 'mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8';
+export const container = 'mx-auto w-full max-w-7xl px-1 sm:px-2 lg:px-3';
 export const sectionSpace = 'py-12 md:py-16';
 
 export const topBar = 'bg-white';
