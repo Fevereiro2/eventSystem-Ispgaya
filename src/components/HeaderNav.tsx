@@ -220,7 +220,7 @@ function HeaderNav({ transparent = false }: HeaderNavProps) {
   );
 
   const rootClassName = transparent
-    ? 'border-b border-white/10 bg-transparent text-white'
+    ? 'border-white/10 bg-transparent text-white'
     : headerNav;
   const desktopMenuClassName = transparent
     ? 'relative z-[80] hidden items-center gap-7 xl:flex'
