@@ -290,9 +290,7 @@ function HeaderNav({ transparent = false }: HeaderNavProps) {
       {isMobileMenuOpen ? (
         <div
           className={`border-t px-4 py-4 lg:hidden ${
-            transparent
-              ? 'border-white/10 bg-[#10263b]/96 text-white backdrop-blur-md'
-              : 'border-slate-200 bg-white'
+            transparent ? 'border-slate-200 bg-white text-slate-900' : 'border-slate-200 bg-white'
           }`}
         >
           <div className={`${container} grid gap-5`}>
@@ -300,20 +298,13 @@ function HeaderNav({ transparent = false }: HeaderNavProps) {
               <div key={item.label} className="space-y-2">
                 {renderMenuLink(
                   item,
-                  transparent
-                    ? 'text-sm font-semibold text-white'
-                    : 'text-sm font-semibold text-slate-900'
+                  'text-sm font-semibold text-slate-900'
                 )}
                 {item.dropdown ? (
-                  <div className="grid gap-2 pl-3">
+                  <div className="grid gap-2 rounded-md bg-slate-50 px-3 py-3">
                     {item.dropdown.map((child) => (
                       <div key={child.label}>
-                        {renderMenuLink(
-                          child,
-                          transparent
-                            ? 'text-sm text-white/80'
-                            : 'text-sm text-slate-600'
-                        )}
+                        {renderMenuLink(child, 'text-sm text-slate-600')}
                       </div>
                     ))}
                   </div>
