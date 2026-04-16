@@ -23,7 +23,7 @@ export const brandWrap = 'flex items-center';
 export const brandLogo = 'h-12 w-auto md:h-14';
 export const desktopMenu = 'relative z-[80] hidden items-center gap-7 lg:flex';
 export const navLink =
-  'text-[15px] font-medium text-[#3f4a58] transition-colors hover:text-[#dd8609]';
+  'text-[16px] font-medium text-[#3f4a58] transition-colors hover:text-[#dd8609]';
 export const navItemGroup = 'group relative';
 export const navDropdownWrap =
   'right-0 z-[90] transition-opacity pt-2 absolute w-72 hidden opacity-0 group-hover:block group-hover:opacity-100 group-focus-within:block group-focus-within:opacity-100';

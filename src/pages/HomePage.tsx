@@ -8,6 +8,9 @@ import heroWelcomeImage from '../assets/backgroundphotos/bem-vindos-estudantes-i
 import heroStudyImage from '../assets/backgroundphotos/estudar-no-ispagaya.webp';
 import heroEmployabilityImage from '../assets/backgroundphotos/empregabilidade-ispgaya.webp';
 import gaiaSkyline from '../assets/gaia-skyline.webp';
+import helix from '../assets/homepage/destaques/helix-ispgaya-site.webp';
+import internacionalStudents from '../assets/homepage/destaques/2.webp';
+import mais23 from '../assets/homepage/destaques/3.webp';
 import {
   fetchPublicEvents,
   fetchPublicNews,
@@ -78,25 +81,24 @@ const heroSlides: HeroSlide[] = [
 
 const highlightCards: HighlightCard[] = [
   {
-    title: 'Laboratório Cultural',
-    text:
-      'Projeto cultural aberto a quem quer participar em atividades nas áreas da música, teatro e leitura.',
-    href: '/laboratorio-cultural',
-    image: heroWelcomeImage,
+    title: 'O ISPGAYA integra a AMBA e BGA',
+    text: 'ISPGAYA tem o orgulho de anunciar a sua filiação oficial na Association of MBAs (AMBA) e na Business Graduates Association (BGA).',
+    href: 'https://ispgaya.pt/pt/vida-academica/noticias/o-ispgaya-integra-a-amba-e-bga',
+    image: internacionalStudents,
     internal: true
   },
   {
-    title: 'Estudantes Internacionais',
-    text: 'Área preparada para candidaturas e campanhas dirigidas a estudantes internacionais.',
-    href: 'https://international.ispgaya.pt/pt',
-    image: heroStudyImage
+    title: 'Regime M23 - Candidaturas Abertas!',
+    text: 'Estão abertas as candidaturas ao Regime M23!',
+    href: 'https://ispgaya.pt/pt/ensino/candidaturas/licenciaturas/m-23',
+    image: mais23
   },
   {
-    title: 'Candidaturas Abertas',
+    title: 'O ISPGAYA junta-se à Q-Helix Alliance!',
     text:
-      'Espaço pensado para destacar acesso ao ensino superior, prazos e modalidades de candidatura.',
-    href: 'https://ispgaya.pt/pt/ensino/candidaturas',
-    image: heroEmployabilityImage
+      'É com grande satisfação que anunciamos que o ISPGAYA – Instituto Superior Politécnico de Gaia passou a integrar oficialmente a Q-Helix Alliance, uma rede europeia em crescimento dedicada ao reforço da cooperação no ensino superior, investigação e inovação.',
+    href: 'https://ispgaya.pt/pt/vida-academica/noticias/o-ispgaya-junta-se-a-q-helix-alliance',
+    image: helix
   }
 ];
 
@@ -503,7 +505,9 @@ function HomePage() {
                     <p className="font-heading text-2xl underline-offset-2 group-hover:underline">
                       {item.title}
                     </p>
-                    <p className="mt-4 font-medium">{item.text}</p>
+                    <div className="overflow-hidden transition-[max-height] duration-500 ease-in-out max-h-0 group-hover:max-h-40">
+                      <p className="mt-4 font-medium">{item.text}</p>
+                    </div>
                   </div>
                   <div className="relative z-10 flex items-center px-6 py-6 text-white">
                     <ChevronRight className="h-7 w-7" />
@@ -528,7 +532,9 @@ function HomePage() {
                     <p className="font-heading text-2xl underline-offset-2 group-hover:underline">
                       {item.title}
                     </p>
-                    <p className="mt-4 font-medium">{item.text}</p>
+                    <div className="overflow-hidden transition-[max-height] duration-500 ease-in-out max-h-0 group-hover:max-h-40">
+                      <p className="mt-4 font-medium">{item.text}</p>
+                    </div>
                   </div>
                   <div className="relative z-10 flex items-center px-6 py-6 text-white">
                     <ChevronRight className="h-7 w-7" />
