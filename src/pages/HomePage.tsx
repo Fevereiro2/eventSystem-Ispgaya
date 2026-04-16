@@ -9,13 +9,13 @@ import TopBar from '../components/TopBar';
 import heroWelcomeImage from '../assets/backgroundphotos/bem-vindos-estudantes-ispgaya.webp';
 import heroStudyImage from '../assets/backgroundphotos/estudar-no-ispagaya.webp';
 import heroEmployabilityImage from '../assets/backgroundphotos/empregabilidade-ispgaya.webp';
-import gaiaSkyline from '../assets/gaia-skyline.webp';
 import aondefuturo from '../assets/homepage/ondefuturo.webp'
 import helix from '../assets/homepage/destaques/helix-ispgaya-site.webp';
 import internacionalStudents from '../assets/homepage/destaques/2.webp';
 import mais23 from '../assets/homepage/destaques/3.webp';
 import manuel from '../assets/homepage/testemunhos/2.webp';
 import maribel from '../assets/homepage/testemunhos/1.webp'
+import { fetchPublicEvents, resolveInfoCulturaAssetUrl } from '../data/infoculturaApi';
 import { container, mainContent } from '../styles/ui';
 
 type HeroSlide = {
@@ -219,69 +219,13 @@ const homepageNewsHighlights: NewsHighlightItem[] = [
   }
 ];
 
-const homepageEventHighlights: NewsHighlightItem[] = [
-  {
-    title: 'Celebração do Dia Internacional do Voluntariado',
-    href: 'https://ispgaya.pt/pt/vida-academica/eventos/celebracao-do-dia-internacional-do-voluntariado',
-    excerpt:
-      'O teu tempo pode mudar a comunidade. Junta-te à Bolsa de Voluntariado ISPGAYA!',
-    image:
-      'https://ispg-prd.s3.eu-west-1.amazonaws.com/publications/19592afb-c1ec-496b-a531-522d9553c12d/cover/md-7.webp',
-    imageAlt: 'Celebração do Dia Internacional do Voluntariado',
-    publishedAt: '2025-12-02 11:33:58',
-    publishedLabel: '02 dezembro, 2025',
-    tags: [
-      {
-        label: '#apoioaoestudante',
-        href: 'https://ispgaya.pt/pt/vida-academica/hashtag/apoioaoestudante/eventos'
-      }
-    ]
-  },
-  {
-    title: 'Magusto 2025',
-    href: 'https://ispgaya.pt/pt/vida-academica/eventos/magusto-2025',
-    excerpt: 'O ISPGAYA deseja a toda a comunidade um bom Magusto!',
-    image:
-      'https://ispg-prd.s3.eu-west-1.amazonaws.com/publications/fd8b219e-0f56-4ebc-9f0a-e0bac3e9104f/cover/md-NOTICIA%20BOM%20MAGUSTO%21.webp',
-    imageAlt: 'Magusto 2025',
-    publishedAt: '2025-11-12 10:27:30',
-    publishedLabel: '12 novembro, 2025',
-    tags: [
-      {
-        label: '#atunabiracopos',
-        href: 'https://ispgaya.pt/pt/vida-academica/hashtag/atunabiracopos/eventos'
-      },
-      {
-        label: '#apoioaoestudante',
-        href: 'https://ispgaya.pt/pt/vida-academica/hashtag/apoioaoestudante/eventos'
-      }
-    ]
-  },
-  {
-    title: 'Apresentação Centro de Formação para a Transição Energética',
-    href: 'https://ispgaya.pt/pt/vida-academica/eventos/apresentacao-centro-de-formacao-para-a-transicao-energetica',
-    excerpt:
-      'No próximo dia 17 de novembro, entre as 18h00 e as 19h30, terá lugar, no Auditório Padre Freitas, a sessão de apresentação do Centro de Formação para a Transição Energética.',
-    image:
-      'https://ispg-prd.s3.eu-west-1.amazonaws.com/publications/b5824817-3d71-4956-aaac-f2eae53cb1a6/cover/md-3.webp',
-    imageAlt: 'Apresentação Centro de Formação para a Transição Energética',
-    publishedAt: '2025-11-10 10:22:00',
-    publishedLabel: '10 novembro, 2025',
-    tags: [
-      {
-        label: '#engenhariaeletronicaedeautomacao',
-        href: 'https://ispgaya.pt/pt/vida-academica/hashtag/engenhariaeletronicaedeautomacao/eventos'
-      }
-    ]
-  }
-];
-
 function HomePage() {
   const [activeHero, setActiveHero] = useState(0);
   const [activeSupport, setActiveSupport] = useState(0);
   const [activeTestimonial, setActiveTestimonial] = useState(0);
   const [isHeaderSolid, setIsHeaderSolid] = useState(false);
   const testimonialTouchStartX = useRef<number | null>(null);
+  const [homepageEventHighlights, setHomepageEventHighlights] = useState<NewsHighlightItem[]>([]);
 
   useEffect(() => {
     const interval = window.setInterval(() => {
@@ -300,6 +244,55 @@ function HomePage() {
     window.addEventListener('scroll', handleScroll, { passive: true });
 
     return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  useEffect(() => {
+    let active = true;
+
+    async function loadHomepageEvents() {
+      try {
+        const events = await fetchPublicEvents();
+        if (!active) return;
+
+        const items = events
+          .slice()
+          .sort((left, right) => {
+            const leftTime = new Date(left.start_date || left.event_date).getTime();
+            const rightTime = new Date(right.start_date || right.event_date).getTime();
+            return rightTime - leftTime;
+          })
+          .slice(0, 3)
+          .map((item) => ({
+            title: item.title,
+            href: `/vida-academica/eventos/${item.id}`,
+            internal: true,
+            excerpt: item.description,
+            image: resolveInfoCulturaAssetUrl(item.image),
+            imageAlt: item.title,
+            publishedAt: item.start_date || item.event_date,
+            publishedLabel: new Intl.DateTimeFormat('pt-PT', {
+              day: '2-digit',
+              month: 'long',
+              year: 'numeric'
+            }).format(new Date(item.start_date || item.event_date)),
+            tags: item.categories.map((category) => ({
+              label: `#${category.name.toLowerCase().replace(/\s+/g, '')}`,
+              href: '/vida-academica/eventos'
+            }))
+          }));
+
+        setHomepageEventHighlights(items);
+      } catch {
+        if (!active) return;
+        setHomepageEventHighlights([]);
+      }
+    }
+
+    void loadHomepageEvents();
+
+    return () => {
+      active = false;
+    };
   }, []);
 
   const currentHero = heroSlides[activeHero];
@@ -662,7 +655,8 @@ function HomePage() {
               />
               <NewsHighlightsSection
                 title="Eventos"
-                viewAllHref="https://ispgaya.pt/pt/vida-academica/eventos"
+                viewAllHref="/vida-academica/eventos"
+                viewAllInternal
                 items={homepageEventHighlights}
                 className="w-full"
               />
