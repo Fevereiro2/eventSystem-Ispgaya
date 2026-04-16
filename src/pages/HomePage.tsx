@@ -384,39 +384,22 @@ function HomePage() {
 
                 <div className="mt-8 flex flex-wrap items-center gap-3">
 
-                  <button
-                    type="button"
-                    onClick={() =>
-                      setActiveHero((current) =>
-                        current === 0 ? heroSlides.length - 1 : current - 1
-                      )
-                    }
-                    className="inline-flex h-12 w-12 items-center justify-center rounded-full border border-white/25 bg-white/10 text-white transition-colors hover:bg-white/20"
-                    aria-label="Slide anterior"
-                  >
-                    <ChevronLeft className="h-5 w-5" />
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setActiveHero((current) => (current + 1) % heroSlides.length)}
-                    className="inline-flex h-12 w-12 items-center justify-center rounded-full border border-white/25 bg-white/10 text-white transition-colors hover:bg-white/20"
-                    aria-label="Slide seguinte"
-                  >
-                    <ChevronRight className="h-5 w-5" />
-                  </button>
+
                 </div>
 
-                <div className="mt-8 flex gap-3">
+                <div className="swiper-pagination slider-bullet-clickable swiper-pagination-horizontal mt-8 flex items-center space-x-5">
                   {heroSlides.map((slide, index) => (
                     <button
                       key={slide.title}
                       type="button"
                       onClick={() => setActiveHero(index)}
-                      aria-label={`Ir para slide ${index + 1}`}
-                      className={`h-1.5 rounded-full transition-all ${
-                        index === activeHero ? 'w-16 bg-[#dd8609]' : 'w-8 bg-white/35'
+                      className={`swiper-pagination-bullet flex h-7 w-7 items-center justify-center rounded-full border border-white transition-opacity ${
+                        index === activeHero ? 'opacity-100' : 'opacity-60'
                       }`}
-                    />
+                    >
+                      <span className="sr-only">Slide {index + 1}</span>
+                      <span className="h-3 w-3 rounded-full bg-white" />
+                    </button>
                   ))}
                 </div>
               </div>
