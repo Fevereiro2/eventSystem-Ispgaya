@@ -1,15 +1,15 @@
 export const appRoot = 'min-h-screen bg-white font-sans text-slate-800 antialiased';
 
-export const container = 'mx-auto w-full max-w-7xl px-1 sm:px-2 lg:px-3';
+export const container = 'mx-auto w-full max-w-[92rem] sm:px-2 lg:px-3';
 export const sectionSpace = 'py-12 md:py-16';
 
 export const topBar = 'bg-white';
 export const topBarInner =
   'relative z-10 flex items-center justify-between py-2.5';
 export const topBarGroup =
-  'hidden items-center gap-5 text-[13px] font-medium tracking-tight xl:flex';
+  'hidden items-center gap-5 text-[14px] font-medium tracking-tight xl:flex';
 export const topBarRightGroup =
-  'hidden items-center gap-5 text-[13px] font-medium tracking-tight xl:flex';
+  'hidden items-center gap-5 text-[14px] font-medium tracking-tight xl:flex';
 export const topBarRightLinks = 'flex items-center gap-5';
 export const topBarLocaleWrap = 'ml-3 flex items-center gap-2';
 export const topBarLink = 'text-black transition-opacity hover:opacity-80';
@@ -17,10 +17,10 @@ export const topBarLocaleActive =
   'text-black transition-opacity hover:opacity-80 font-bold';
 export const topBarLocale = 'text-black transition-opacity hover:opacity-80';
 
-export const headerNav = 'relative z-[80] border-b border-slate-200 bg-white';
+export const headerNav = 'relative z-[80] bg-white';
 export const headerNavInner = 'flex items-center justify-between gap-6 py-4';
 export const brandWrap = 'flex items-center';
-export const brandLogo = 'h-11 w-auto md:h-12';
+export const brandLogo = 'h-12 w-auto md:h-14';
 export const desktopMenu = 'relative z-[80] hidden items-center gap-7 lg:flex';
 export const navLink =
   'text-[15px] font-medium text-[#3f4a58] transition-colors hover:text-[#dd8609]';
