@@ -67,7 +67,7 @@ type TopBarProps = {
 
 function TopBar({ transparent = false }: TopBarProps) {
   const rootClassName = transparent
-    ? 'hidden xl:block border-b border-white/10 bg-transparent text-white'
+    ? 'hidden xl:block bg-transparent text-white'
     : topBar;
   const linkClassName = transparent
     ? 'text-white/90 transition-colors hover:text-white'
@@ -78,6 +78,7 @@ function TopBar({ transparent = false }: TopBarProps) {
   const localeClassName = transparent
     ? 'text-white/80 transition-colors hover:text-white'
     : topBarLocale;
+  const dividerClassName = transparent ? 'border-white/10' : 'border-slate-200';
 
   return (
     <div className={rootClassName}>
@@ -132,7 +133,7 @@ function TopBar({ transparent = false }: TopBarProps) {
           </span>
         </div>
       </div>
-      {transparent ? null : <hr />}
+      <hr className={dividerClassName} />
     </div>
   );
 }
