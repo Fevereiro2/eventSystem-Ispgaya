@@ -158,16 +158,23 @@ class EventModel(AuditSchema):
     status: str = EventStatus.DRAFT.value
     city: str = ""
     location: str = ""
-    user_id: int
+    user_id: Optional[int] = None
 
     user: Optional[UserModel] = None
     event_categories: list[EventCategoryModel] = Field(default_factory=list)
     categories: list[CategoryModel] = Field(default_factory=list)
 
-    @field_validator("event_id", "user_id")
+    @field_validator("event_id")
     @classmethod
     def validate_positive_ids(cls, value: int) -> int:
         if value <= 0:
+            raise ValueError("identifier values must be positive integers.")
+        return value
+
+    @field_validator("user_id")
+    @classmethod
+    def validate_positive_optional_user_id(cls, value: Optional[int]) -> Optional[int]:
+        if value is not None and value <= 0:
             raise ValueError("identifier values must be positive integers.")
         return value
 
@@ -206,7 +213,7 @@ class BookModel(CreatedAtSchema):
     cover_image: str
     summary: str
     is_featured: bool
-    club_id: int
+    club_id: Optional[int] = None
 
     club: Optional[ClubModel] = None
 
@@ -221,7 +228,7 @@ class SessionModel(AuditSchema):
     session_date: date
     start_date: datetime
     end_date: datetime
-    club_id: int
+    club_id: Optional[int] = None
 
     club: Optional[ClubModel] = None
 
@@ -240,7 +247,7 @@ class RegistrationModel(CreatedAtSchema):
     email: str
     phone: str
     message: str
-    registration_status_id: int
+    registration_status_id: Optional[int] = None
 
     registration_status: Optional[RegistrationStatusModel] = None
     club_links: list[ClubRegistrationModel] = Field(default_factory=list)
@@ -282,7 +289,7 @@ class NewsletterModel(CreatedAtSchema):
     content: str
     status: str = NewsletterStatus.DRAFT.value
     sent_at: Optional[datetime] = None
-    user_id: int
+    user_id: Optional[int] = None
 
     user: Optional[UserModel] = None
 

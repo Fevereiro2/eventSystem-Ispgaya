@@ -1844,15 +1844,6 @@ class AdminClubDetailView(AdminAuditDestroyMixin, generics.RetrieveUpdateDestroy
                 status=400,
             )
 
-        if News.objects.filter(club=club).exists() or Book.objects.filter(club=club).exists() or Session.objects.filter(club=club).exists():
-            return Response(
-                {
-                    'message':
-                        'Nao podes apagar um clube com conteúdos ou atividades associadas. Remove noticias, livros e sessoes primeiro.'
-                },
-                status=400,
-            )
-
         try:
             return super().destroy(request, *args, **kwargs)
         except DatabaseError:
