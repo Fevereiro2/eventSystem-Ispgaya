@@ -294,7 +294,7 @@ function LaboratorioCultural() {
       <HeaderNav />
       <Breadcrumbs
         title="Laboratorio Cultural"
-        description="A nossa abordagem cultural e interdisciplinar, promovendo criacao artistica, participacao academica e ligacao com a comunidade."
+        description="O Laboratório Cultural é um espaço vivo onde a criatividade ganha forma e a cultura se torna experiência."
         parentLabel="Laboratorio Cultural"
         parentHref="/laboratorio-cultural"
         currentLabel="Laboratorio Cultural"
@@ -304,44 +304,23 @@ function LaboratorioCultural() {
       <main className={mainContent}>
         <section className={labResearchSection}>
           <div className={container}>
-            <div className={labResearchGrid}>
-              <article className={labResearchHeroCard}>
-                <h2 className={labResearchHeroTitle}>InfoCultura</h2>
-                <p className={labResearchHeroText}>
-                  A plataforma de gestao cultural agrega publicacoes, agenda e comunicacao das
-                  iniciativas do Laboratorio Cultural.
-                </p>
-                <Link to="/infocultura" className={labResearchLink}>
-                  Ver mais
-                </Link>
-              </article>
-
+           
+              
               <article className={labResearchSubcard}>
-                <h3 className={labResearchSubtitle}>Pesquisa global</h3>
+                <h3 className={labResearchSubtitle}>Missão</h3>
                 <p className={labResearchSubtext}>
-                  Procura por clubes, noticias, livros, sessoes e eventos.
+                  Promover a cultura na comunidade académica, incentivando a participação, a criatividade e a partilha de experiências.
                 </p>
-                <input
-                  type="search"
-                  value={searchQuery}
-                  onChange={(event) => setSearchQuery(event.target.value)}
-                  placeholder="Pesquisar por clube, noticia, livro ou evento"
-                  className="mt-4 w-full rounded-xl border border-slate-200 px-4 py-3 text-sm text-slate-800 outline-none transition focus:border-slate-400"
-                />
-                {hasSearch ? (
-                  <p className="mt-3 text-sm text-slate-500">
-                    {totalResults} resultado(s) encontrados para "{searchQuery}".
-                  </p>
-                ) : (
-                  <p className="mt-3 text-sm text-slate-500">
-                    Introduz um termo para pesquisar em todo o Laboratorio Cultural.
-                  </p>
-                )}
+
+                <h4 className={labResearchSubtitle}>Objetivos</h4>
+                <p className={labResearchSubtext}>
+                  Promover a cultura na comunidade académica, incentivando a participação, a criatividade e a partilha de experiências.
+                </p>
               </article>
 
               {isLoading ? <p className={contentEmpty}>A carregar laboratorio...</p> : null}
               {!isLoading && loadError ? <p className={contentEmpty}>{loadError}</p> : null}
-            </div>
+            
 
             {!isLoading && !loadError && hasSearch ? (
               <div className="mt-10 space-y-10">
