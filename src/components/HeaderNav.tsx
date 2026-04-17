@@ -1,4 +1,4 @@
-import { Menu, X } from 'lucide-react';
+import { ChevronDown, Lock, X, Zap } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
@@ -167,13 +167,29 @@ const menuItems: MenuItem[] = [
   }
 ];
 
-function renderMenuLink(item: LinkItem, className: string) {
+const mobilePrivateLinks: LinkItem[] = [
+  { label: 'Inforestudante', href: 'https://inforestudante.ispgaya.pt' },
+  { label: 'Infordocente', href: 'https://infordocente.ispgaya.pt' },
+  { label: 'Email', href: 'https://outlook.office.com' },
+  { label: 'Horários', href: 'https://horarios.ispgaya.pt/geral/' }
+];
+
+const mobileInterestLinks: LinkItem[] = [
+  { label: 'Perguntas Frequentes', href: 'https://ispgaya.pt/pt/perguntas-frequentes' },
+  {
+    label: 'Candidatura Online',
+    href: 'https://inforestudante.ispgaya.pt/nonio/security/preRegisto.do?origem=CANDIDATURAS'
+  },
+  { label: 'Contactos', href: 'https://ispgaya.pt/pt/instituicao/contactos' }
+];
+
+function renderMenuLink(item: LinkItem, className: string, onClick?: () => void) {
   return item.internal ? (
-    <Link to={item.href} className={className}>
+    <Link to={item.href} className={className} onClick={onClick}>
       {item.label}
     </Link>
   ) : (
-    <a href={item.href} className={className}>
+    <a href={item.href} className={className} onClick={onClick}>
       {item.label}
     </a>
   );
@@ -188,6 +204,7 @@ function HeaderNav({ transparent = false }: HeaderNavProps) {
     defaultLaboratorioDropdown
   );
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [activeMobileSection, setActiveMobileSection] = useState<string | null>(null);
 
   useEffect(() => {
     let active = true;
@@ -213,6 +230,21 @@ function HeaderNav({ transparent = false }: HeaderNavProps) {
     };
   }, []);
 
+  useEffect(() => {
+    if (!isMobileMenuOpen) {
+      setActiveMobileSection(null);
+    }
+  }, [isMobileMenuOpen]);
+
+  useEffect(() => {
+    if (!isMobileMenuOpen) return;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [isMobileMenuOpen]);
+
   const resolvedMenuItems = menuItems.map((item) =>
     item.label === 'Laboratorio Cultural'
       ? { ...item, dropdown: laboratorioDropdown }
@@ -220,35 +252,41 @@ function HeaderNav({ transparent = false }: HeaderNavProps) {
   );
 
   const rootClassName = transparent
-    ? 'border-b border-white/10 bg-transparent text-white'
+    ? 'border-white/10 bg-transparent text-white'
     : headerNav;
   const desktopMenuClassName = transparent
     ? 'relative z-[80] hidden items-center gap-7 xl:flex'
     : desktopMenu;
   const innerClassName = transparent
-    ? 'flex items-center justify-between gap-6 py-4'
+    ? 'flex items-center justify-between gap-6 py-5 lg:py-4'
     : headerNavInner;
   const linkClassName = transparent
-    ? 'text-[14px] font-medium text-white transition-colors hover:text-[#f7c47a]'
+    ? 'text-[16px] font-medium text-white transition-colors hover:text-[#f7c47a]'
     : navLink;
   const dropdownWrapClassName = transparent
     ? 'right-0 z-[90] absolute hidden w-72 pt-2 opacity-0 transition-opacity group-hover:block group-hover:opacity-100 group-focus-within:block group-focus-within:opacity-100'
     : navDropdownWrap;
   const mobileButtonClassName = transparent
-    ? 'inline-flex items-center rounded-lg border border-white/25 bg-transparent px-3 py-2 text-xs font-semibold uppercase tracking-wide text-white transition-colors hover:border-white hover:bg-white/10 xl:hidden'
+    ? 'inline-flex h-11 w-11 items-center justify-center rounded-md bg-white/10 text-white transition-colors hover:bg-white/20 lg:hidden'
     : mobileMenuButton;
   const logoSrc = transparent ? logoNegative : logo;
   const dropdownListClassName = transparent
-    ? 'rounded border border-white/12 bg-[#10263b]/96 px-4 py-3 text-white shadow-xl backdrop-blur-md space-y-3'
+    ? 'rounded border border-gray-100 bg-white px-4 py-3 text-slate-900 shadow-xl space-y-3'
     : navDropdownList;
   const dropdownItemClassName = transparent
-    ? 'flex items-center font-medium text-white/90 hover:text-[#f7c47a]'
+    ? 'flex items-center font-medium text-slate-900 hover:text-[#dd8609] hover:underline underline-offset-2'
     : navDropdownItem;
-  const dropdownAnchorClassName = transparent ? 'inline-block w-full py-0.5' : navDropdownAnchor;
+  const dropdownAnchorClassName = transparent
+    ? 'inline-block w-full py-0.5 text-inherit'
+    : navDropdownAnchor;
+
+  function closeMobileMenu() {
+    setIsMobileMenuOpen(false);
+  }
 
   return (
     <header className={rootClassName}>
-      <div className={`${container} ${innerClassName}`}>
+      <div className={`${container} ${innerClassName} px-6 sm:px-6 lg:px-3`}>
         <Link to="/" className={brandWrap}>
           <img src={logoSrc} alt="ISPGAYA" className={brandLogo} />
         </Link>
@@ -277,47 +315,170 @@ function HeaderNav({ transparent = false }: HeaderNavProps) {
         <button
           type="button"
           className={mobileButtonClassName}
-          onClick={() => setIsMobileMenuOpen((value) => !value)}
+          onClick={() => {
+            setIsMobileMenuOpen((value) => {
+              const nextValue = !value;
+              if (nextValue) {
+                setActiveMobileSection(resolvedMenuItems[0]?.label ?? null);
+              }
+              return nextValue;
+            });
+          }}
           aria-expanded={isMobileMenuOpen}
-          aria-label="Abrir menu"
+          aria-label={isMobileMenuOpen ? 'Fechar menu' : 'Abrir menu'}
         >
-          {isMobileMenuOpen ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
+          {isMobileMenuOpen ? (
+            <X className="h-5 w-5" />
+          ) : (
+            <span className="flex h-5 w-5 flex-col items-center justify-center gap-1.5" aria-hidden="true">
+              <span className="block h-0.5 w-5 bg-current" />
+              <span className="block h-0.5 w-5 bg-current" />
+            </span>
+          )}
         </button>
       </div>
 
       {isMobileMenuOpen ? (
-        <div
-          className={`border-t px-4 py-4 lg:hidden ${
-            transparent
-              ? 'border-white/10 bg-[#10263b]/96 text-white backdrop-blur-md'
-              : 'border-slate-200 bg-white'
-          }`}
-        >
-          <div className={`${container} grid gap-5`}>
-            {resolvedMenuItems.map((item) => (
-              <div key={item.label} className="space-y-2">
-                {renderMenuLink(
-                  item,
-                  transparent
-                    ? 'text-sm font-semibold text-white'
-                    : 'text-sm font-semibold text-slate-900'
-                )}
-                {item.dropdown ? (
-                  <div className="grid gap-2 pl-3">
-                    {item.dropdown.map((child) => (
-                      <div key={child.label}>
+        <div className="fixed inset-0 z-[100] lg:hidden">
+          <button
+            type="button"
+            className="absolute inset-0 bg-transparent"
+            onClick={closeMobileMenu}
+            aria-label="Fechar menu"
+          />
+
+          <div className="absolute inset-0 overflow-y-auto bg-white text-slate-900">
+            <div className={`${container} px-6 py-4 sm:px-6 lg:px-3`}>
+              <div className="mx-auto flex w-full max-w-md items-center justify-between gap-4">
+                <Link to="/" className="flex items-center justify-center" onClick={closeMobileMenu}>
+                  <img src={logo} alt="ISPGAYA" className="h-12 w-auto" />
+                </Link>
+
+                <div className="flex items-center gap-4">
+                  <div className="flex items-center justify-center gap-3 text-sm font-semibold text-slate-700">
+                    <a
+                      href="https://ispgaya.pt/pt"
+                      title="pt"
+                      rel="alternate"
+                      hrefLang="pt"
+                      className="text-slate-900"
+                    >
+                      PT
+                    </a>
+                    <a
+                      href="https://ispgaya.pt/en"
+                      title="en"
+                      rel="alternate"
+                      hrefLang="en"
+                      className="text-slate-500 hover:text-slate-700"
+                    >
+                      EN
+                    </a>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={closeMobileMenu}
+                    className="inline-flex h-11 w-11 items-center justify-center rounded-md text-slate-700 transition hover:bg-slate-100"
+                    aria-label="Fechar menu"
+                  >
+                    <X className="h-5 w-5" />
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <div className="border-t border-slate-200">
+              <div className={`${container} px-6 sm:px-6 lg:px-3`}>
+                <div className="mx-auto w-full max-w-md divide-y divide-slate-200">
+                {resolvedMenuItems.map((item) => {
+                  const isExpanded = activeMobileSection === item.label;
+                  const hasDropdown = Boolean(item.dropdown && item.dropdown.length > 0);
+
+                  return (
+                    <div key={item.label} className="py-3">
+                      <div className="flex items-center justify-between gap-3">
                         {renderMenuLink(
-                          child,
-                          transparent
-                            ? 'text-sm text-white/80'
-                            : 'text-sm text-slate-600'
+                          item,
+                          'text-[15px] font-medium text-slate-800 text-left',
+                          closeMobileMenu
+                        )}
+                        {hasDropdown ? (
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setActiveMobileSection((current) =>
+                                current === item.label ? null : item.label
+                              )
+                            }
+                            className="inline-flex h-10 w-10 items-center justify-center rounded-md text-slate-600 transition hover:bg-slate-100"
+                            aria-expanded={isExpanded}
+                            aria-label={isExpanded ? 'Fechar submenu' : 'Abrir submenu'}
+                          >
+                            <ChevronDown
+                              className={`h-5 w-5 transition-transform ${isExpanded ? 'rotate-180' : ''}`}
+                            />
+                          </button>
+                        ) : null}
+                      </div>
+
+                      {hasDropdown && isExpanded ? (
+                        <div className="mt-3 rounded-lg bg-slate-50 py-2">
+                          {item.dropdown?.map((child) => (
+                            <div key={child.label} className="border-t border-slate-200 first:border-t-0">
+                              {renderMenuLink(
+                                child,
+                                'flex items-center gap-3 px-4 py-3 text-[14px] text-slate-700 hover:text-[#dd8609]',
+                                closeMobileMenu
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      ) : null}
+                    </div>
+                  );
+                })}
+
+                <div className="py-4">
+                  <div className="flex items-center justify-center gap-2 text-center text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">
+                    <Lock className="h-4 w-4" />
+                    <span>Área Privada</span>
+                  </div>
+                  <div className="mt-3 grid gap-2 text-center">
+                    {mobilePrivateLinks.map((item) => (
+                      <div key={item.label}>
+                        {renderMenuLink(
+                          item,
+                          'block px-2 text-[14px] text-slate-700 hover:text-[#dd8609]',
+                          closeMobileMenu
                         )}
                       </div>
                     ))}
                   </div>
-                ) : null}
+                </div>
+
+                <div className="py-4">
+                  <div className="flex items-center justify-center gap-2 text-center text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">
+                    <Zap className="h-4 w-4" />
+                    <span>Links de Interesse</span>
+                  </div>
+                  <div className="mt-3 grid gap-2 text-center">
+                    {mobileInterestLinks.map((item) => (
+                      <div key={item.label}>
+                        {renderMenuLink(
+                          item,
+                          'block px-2 text-[14px] text-slate-700 hover:text-[#dd8609]',
+                          closeMobileMenu
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="py-5" />
+                </div>
               </div>
-            ))}
+            </div>
           </div>
         </div>
       ) : null}

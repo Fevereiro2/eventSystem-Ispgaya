@@ -1,51 +1,86 @@
 import { ChevronLeft, ChevronRight } from 'lucide-react';
-import { useEffect, useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { useEffect, useRef, useState } from 'react';
 import Footer from '../components/Footer';
 import HeaderNav from '../components/HeaderNav';
+import NewsHighlightsSection, {
+  type NewsHighlightItem
+} from '../components/NewsHighlightsSection';
 import TopBar from '../components/TopBar';
 import heroWelcomeImage from '../assets/backgroundphotos/bem-vindos-estudantes-ispgaya.webp';
 import heroStudyImage from '../assets/backgroundphotos/estudar-no-ispagaya.webp';
 import heroEmployabilityImage from '../assets/backgroundphotos/empregabilidade-ispgaya.webp';
-import gaiaSkyline from '../assets/gaia-skyline.webp';
+import aondefuturo from '../assets/homepage/ondefuturo.webp'
+import helix from '../assets/homepage/destaques/helix-ispgaya-site.webp';
+import internacionalStudents from '../assets/homepage/destaques/2.webp';
+import mais23 from '../assets/homepage/destaques/3.webp';
+import manuel from '../assets/homepage/testemunhos/2.webp';
+import maribel from '../assets/homepage/testemunhos/1.webp'
 import {
   fetchPublicEvents,
   fetchPublicNews,
-  InfoCulturaEvent,
-  InfoCulturaNews,
   resolveInfoCulturaAssetUrl
 } from '../data/infoculturaApi';
-import { adminBtnPrimary, adminBtnSecondary, container, mainContent } from '../styles/ui';
+import { container, mainContent } from '../styles/ui';
+
+type HeroSlide = {
+  title: string;
+  text: string;
+  image: string;
+};
+
+type HighlightCard = {
+  title: string;
+  text: string;
+  href: string;
+  image: string;
+};
+
+type SupportSlide = {
+  title: string;
+  text: string;
+  href: string;
+  image: string;
+};
+
+type TestimonialSlide = {
+  quote: string;
+  name: string;
+  role: string;
+  image: string;
+};
 
 const studyLinks = [
-  { label: 'CTeSP', href: 'https://ispgaya.pt/pt/ensino/oferta-formativa' },
-  { label: 'Licenciaturas', href: 'https://ispgaya.pt/pt/ensino/oferta-formativa' },
-  { label: 'Mestrados', href: 'https://ispgaya.pt/pt/ensino/oferta-formativa' },
-  { label: 'Pos-Graduacoes', href: 'https://ispgaya.pt/pt/ensino/oferta-formativa' }
+  { label: 'CTeSP', href: 'https://ispgaya.pt/pt/ensino/oferta-formativa/ctesp' },
+  { label: 'Licenciaturas', href: 'https://ispgaya.pt/pt/ensino/oferta-formativa/licenciaturas' },
+  { label: 'Mestrados', href: 'https://ispgaya.pt/pt/ensino/oferta-formativa/mestrados' },
+  {
+    label: 'Pós-Graduações',
+    href: 'https://ispgaya.pt/pt/ensino/programas-avancados/pos-graduacoes'
+  }
 ];
 
-const heroSlides = [
+const heroSlides: HeroSlide[] = [
   {
-    title: 'Bem-vindo? ao Instituto Superior Politecnico Gaya',
+    title: 'Bem-vindo ao Instituto Superior Politécnico Gaya',
     text:
-      'Uma homepage com header transparente, mensagem de entrada forte e uma estrutura visual alinhada com o portal institucional.',
+      'Aqui, é onde o teu futuro começa!\nNo ISPGAYA vais adquirir novos conhecimentos, desenvolver novas competências e experienciar um clima académico único.',
     image: heroWelcomeImage
   },
   {
     title: 'Dinamiza as tuas capacidades connosco',
     text:
-      'Espaco preparado para destacar instalacoes, proximidade com docentes e um ambiente academico mais vivo.',
+      'Temos à tua disposição instalações modernas, estreita proximidade entre o corpo docente e os estudantes, assim como, um excelente ambiente académico.',
     image: heroStudyImage
   },
   {
     title: 'O mercado de trabalho espera por ti',
     text:
-      'Zona central pensada para ligar formacao, empregabilidade, estagios e percurso profissional.',
+      'Temos como objetivo dar-te as ferramentas necessárias para criar uma carreira com significado e tomares as melhores decisões para a tua vida profissional e pessoal.',
     image: heroEmployabilityImage
   }
 ];
 
-const highlightCards = [
+const highlightCards: HighlightCard[] = [
   {
     title: 'Laboratório Cultural',
     text:
@@ -54,104 +89,87 @@ const highlightCards = [
     internal: true
   },
   {
-    title: 'Estudantes Internacionais',
-    text: 'Bloco pronto para campanhas e candidaturas dirigidas a publico internacional.',
-    href: 'https://international.ispgaya.pt/pt'
+    title: 'Regime M23 - Candidaturas Abertas!',
+    text: 'Estão abertas as candidaturas ao Regime M23!',
+    href: 'https://ispgaya.pt/pt/ensino/candidaturas/licenciaturas/m-23',
+    image: mais23
   },
   {
-    title: 'Candidaturas Abertas',
+    title: 'O ISPGAYA junta-se à Q-Helix Alliance!',
     text:
-      'Espaco pensado para dar visibilidade imediata ao acesso ao ensino superior e a periodos de candidatura.',
-    href: 'https://ispgaya.pt/pt/ensino/candidaturas'
+      'É com grande satisfação que anunciamos que o ISPGAYA – Instituto Superior Politécnico de Gaia passou a integrar oficialmente a Q-Helix Alliance, uma rede europeia em crescimento dedicada ao reforço da cooperação no ensino superior, investigação e inovação.',
+    href: 'https://ispgaya.pt/pt/vida-academica/noticias/o-ispgaya-junta-se-a-q-helix-alliance',
+    image: helix
   }
 ];
 
 const metrics = [
   {
-    value: '35',
-    title: 'Experiencia',
+    value: '36',
+    title: 'Experiência',
     text:
-      'Mais de tres decadas de percurso a formar profissionais e a consolidar uma identidade forte em Vila Nova de Gaia.'
+      'Desde 1990 a formar futuros empreendedores. Somos uma instituição de ensino de referência há mais de 30 anos em Vila Nova de Gaia. Quer pela qualidade dos seus cursos, quer pelo corpo docente qualificado, quer pelo clima académico estimulante e diferenciador.'
   },
   {
     value: '+3.5k',
     title: 'Profissionais Formados',
     text:
-      'Um bloco de impacto para mostrar resultados, percurso academico e alcance da formacao ao longo do tempo.'
+      'A formação continua a ser um dos nossos principais pilares. Somos reconhecidos pela formação de excelência e já formamos mais de 3500 profissionais de sucesso. Aqui os estudantes têm oportunidade de construir o seu futuro pessoal e profissional.'
   },
   {
     value: '+200',
     title: 'Empresas',
     text:
-      'Parcerias e protocolos que ajudam a ligar o percurso academico ao contexto real de trabalho.'
+      'Trabalhamos em proximidade com as empresas, estando atentos às suas necessidades e a par das suas aspirações. Temos protocolos celebrados com mais de 200 empresas que garantem a qualidade dos estágios e permitem a integração de estudantes no mercado de trabalho.'
   }
 ];
 
-const supportSlides = [
+const supportSlides: SupportSlide[] = [
   {
     title: 'Quero Candidatar-me',
-    text: 'Comeca aqui a tua candidatura e organiza o processo de entrada num dos cursos.',
+    text: 'Sabias que podes realizar a tua candidatura online? Começa aqui a candidatura a um dos nossos cursos.',
     href: 'https://inforestudante.ispgaya.pt/nonio/security/preRegisto.do?origem=CANDIDATURAS',
     image: heroWelcomeImage
   },
   {
     title: 'Bolsas e Apoios',
-    text: 'Consulta as modalidades de apoio financeiro e a informacao util para candidatos.',
+    text: 'Fica a saber como funcionam as bolsas de estudo e os apoios disponíveis para candidatos.',
     href: 'https://ispgaya.pt/pt/ensino/bolsas-e-financiamento',
     image: heroStudyImage
   },
   {
     title: 'Acesso ao Ensino Superior',
-    text: 'Explora as vias de ingresso e percebe que percurso faz mais sentido para ti.',
+    text: 'Existem várias formas de ingressar no ISPGAYA. Aqui tens um ponto de entrada simples para perceber tudo.',
     href: 'https://ispgaya.pt/pt/ensino/candidaturas',
     image: heroEmployabilityImage
   }
 ];
 
-const testimonialSlides = [
+const testimonialSlides: TestimonialSlide[] = [
   {
     quote:
-      'Escolhi um percurso onde encontrei proximidade, apoio e contexto para crescer de forma mais completa.',
-    name: 'Maribel Carvalho',
-    role: 'Estudante ISPGAYA',
-    image: heroWelcomeImage
+      'De forma a consolidar os conhecimentos na área da segurança de informação e cibersegurança, optei pelo mestrado do ISPGAYA pela diversidade de oportunidades e pela transversalidade das competências adquiridas.',
+    name: 'Manuel Oliveira',
+    role: 'Estudante Mestrado',
+    image: manuel
   },
   {
     quote:
-      'A componente pratica e o contacto com docentes e projetos ajudaram-me a consolidar o meu percurso profissional.',
-    name: 'Manuel Oliveira',
-    role: 'Estudante Mestrado',
-    image: heroEmployabilityImage
+      'Escolhi o ISPGAYA por recomendação de outros alunos e da mesma forma também, eu o recomendo. A maioria dos professores e colaboradores que me acompanharam ao longo da minha licenciatura em gestão foram sempre muito prestáveis e cada um com a sua função proporcionaram me momento inesquecíveis que me enriqueceram para o meu futuro. Por isso quero desde já agradecer a todas as pessoas que me acompanharam, porque em cada dia que estiveram presentes na minha vida deixaram o seu contributo para a minha realização pessoal e profissional, muito obrigada.',
+    name: 'Maribel Carvalho',
+    role: 'Estudante ISPGAYA',
+    image: maribel
   }
 ];
-
-function formatDate(value?: string | null): string {
-  if (!value) return 'Data por definir';
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return value;
-  return new Intl.DateTimeFormat('pt-PT', { dateStyle: 'long' }).format(date);
-}
-
-function truncateText(value: string, maxLength: number): string {
-  if (value.length <= maxLength) return value;
-  return `${value.slice(0, maxLength).trimEnd()}...`;
-}
-
-function getNewsHref(item: InfoCulturaNews): string {
-  return `/laboratorio-cultural/noticias/${item.id}`;
-}
-
-function getEventHref(item: InfoCulturaEvent): string {
-  return `/laboratorio-cultural/eventos/${item.id}`;
-}
 
 function HomePage() {
   const [activeHero, setActiveHero] = useState(0);
   const [activeSupport, setActiveSupport] = useState(0);
   const [activeTestimonial, setActiveTestimonial] = useState(0);
-  const [newsItems, setNewsItems] = useState<InfoCulturaNews[]>([]);
-  const [events, setEvents] = useState<InfoCulturaEvent[]>([]);
-  const [loadError, setLoadError] = useState('');
+  const [isHeaderSolid, setIsHeaderSolid] = useState(false);
+  const testimonialTouchStartX = useRef<number | null>(null);
+  const [homepageNewsHighlights, setHomepageNewsHighlights] = useState<NewsHighlightItem[]>([]);
+  const [homepageEventHighlights, setHomepageEventHighlights] = useState<NewsHighlightItem[]>([]);
 
   useEffect(() => {
     const interval = window.setInterval(() => {
@@ -162,24 +180,98 @@ function HomePage() {
   }, []);
 
   useEffect(() => {
+    function handleScroll() {
+      setIsHeaderSolid(window.scrollY > 40);
+    }
+
+    handleScroll();
+    window.addEventListener('scroll', handleScroll, { passive: true });
+
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  useEffect(() => {
     let active = true;
 
-    async function loadData() {
+    async function loadHomepageNews() {
       try {
-        const [nextNews, nextEvents] = await Promise.all([fetchPublicNews(), fetchPublicEvents()]);
+        const newsItems = await fetchPublicNews();
+        if (!active) return;
 
+        const items = newsItems
+          .slice()
+          .sort((left, right) => {
+            const leftTime = new Date(left.published_at || left.created_at).getTime();
+            const rightTime = new Date(right.published_at || right.created_at).getTime();
+            return rightTime - leftTime;
+          })
+          .slice(0, 3)
+          .map((item) => ({
+            title: item.title,
+            href: `/vida-academica/noticias/${item.id}`,
+            internal: true,
+            excerpt: item.summary,
+            image: resolveInfoCulturaAssetUrl(item.image),
+            imageAlt: item.title,
+            publishedAt: item.published_at || item.created_at,
+            publishedLabel: new Intl.DateTimeFormat('pt-PT', {
+              day: '2-digit',
+              month: 'long',
+              year: 'numeric'
+            }).format(new Date(item.published_at || item.created_at)),
+            tags: item.club_name
+              ? [{ label: `#${item.club_name.toLowerCase().replace(/\s+/g, '')}`, href: '/vida-academica/noticias' }]
+              : []
+          }));
+
+        setHomepageNewsHighlights(items);
+      } catch {
         if (!active) return;
-        setNewsItems(nextNews);
-        setEvents(nextEvents);
-      } catch (error) {
-        if (!active) return;
-        setLoadError(
-          error instanceof Error ? error.message : 'Nao foi possivel carregar a homepage.'
-        );
+        setHomepageNewsHighlights([]);
       }
     }
 
-    void loadData();
+    async function loadHomepageEvents() {
+      try {
+        const events = await fetchPublicEvents();
+        if (!active) return;
+
+        const items = events
+          .slice()
+          .sort((left, right) => {
+            const leftTime = new Date(left.start_date || left.event_date).getTime();
+            const rightTime = new Date(right.start_date || right.event_date).getTime();
+            return rightTime - leftTime;
+          })
+          .slice(0, 3)
+          .map((item) => ({
+            title: item.title,
+            href: `/vida-academica/eventos/${item.id}`,
+            internal: true,
+            excerpt: item.description,
+            image: resolveInfoCulturaAssetUrl(item.image),
+            imageAlt: item.title,
+            publishedAt: item.start_date || item.event_date,
+            publishedLabel: new Intl.DateTimeFormat('pt-PT', {
+              day: '2-digit',
+              month: 'long',
+              year: 'numeric'
+            }).format(new Date(item.start_date || item.event_date)),
+            tags: item.categories.map((category) => ({
+              label: `#${category.name.toLowerCase().replace(/\s+/g, '')}`,
+              href: '/vida-academica/eventos'
+            }))
+          }));
+
+        setHomepageEventHighlights(items);
+      } catch {
+        if (!active) return;
+        setHomepageEventHighlights([]);
+      }
+    }
+
+    void loadHomepageNews();
+    void loadHomepageEvents();
 
     return () => {
       active = false;
@@ -187,633 +279,441 @@ function HomePage() {
   }, []);
 
   const currentHero = heroSlides[activeHero];
-  const highlightedNews = useMemo(() => newsItems.slice(0, 3), [newsItems]);
-  const highlightedEvents = useMemo(() => events.slice(0, 3), [events]);
-  const fallbackNews = useMemo<InfoCulturaNews[]>(
-    () =>
-      highlightedNews.length > 0
-        ? highlightedNews
-        : [
-            {
-              id: 0,
-              title: 'Espaco preparado para noticia institucional',
-              summary: 'Substitui depois por conteudo real vindo da area publica.',
-              image: '',
-              content: '',
-              published_at: null,
-              created_at: '',
-              updated_at: '',
-              news_status_id: 0,
-              news_status_name: 'published',
-              club_id: 0,
-              club_name: ''
-            },
-            {
-              id: 1,
-              title: 'Segundo destaque noticioso',
-              summary: 'Estrutura pronta para thumbnail, data, titulo e resumo.',
-              image: '',
-              content: '',
-              published_at: null,
-              created_at: '',
-              updated_at: '',
-              news_status_id: 0,
-              news_status_name: 'published',
-              club_id: 0,
-              club_name: ''
-            },
-            {
-              id: 2,
-              title: 'Terceiro destaque da homepage',
-              summary: 'Bloco alinhado com a grelha editorial da homepage institucional.',
-              image: '',
-              content: '',
-              published_at: null,
-              created_at: '',
-              updated_at: '',
-              news_status_id: 0,
-              news_status_name: 'published',
-              club_id: 0,
-              club_name: ''
-            }
-          ],
-    [highlightedNews]
-  );
-  const fallbackEvents = useMemo<InfoCulturaEvent[]>(
-    () =>
-      highlightedEvents.length > 0
-        ? highlightedEvents
-        : [
-            {
-              id: 0,
-              title: 'Espaco preparado para evento institucional',
-              description: 'Area pronta para data, imagem, titulo e descricao.',
-              event_date: '',
-              start_date: '',
-              end_date: '',
-              image: '',
-              is_external: false,
-              enable_registrations: false,
-              registration_capacity: null,
-              status: 'published',
-              created_at: null,
-              updated_at: null,
-              city: '',
-              location: '',
-              user_id: 0,
-              club_id: null,
-              club_name: null,
-              owner_name: null,
-              categories: [],
-              category_ids: [],
-              confirmed_registrations: 0,
-              waitlist_registrations: 0,
-              remaining_slots: null,
-              registration_state: 'closed',
-              google_calendar_url: '',
-              outlook_calendar_url: ''
-            },
-            {
-              id: 1,
-              title: 'Segundo evento em destaque',
-              description: 'Mantem a composicao do site real e fica pronto para conteudo final.',
-              event_date: '',
-              start_date: '',
-              end_date: '',
-              image: '',
-              is_external: false,
-              enable_registrations: false,
-              registration_capacity: null,
-              status: 'published',
-              created_at: null,
-              updated_at: null,
-              city: '',
-              location: '',
-              user_id: 0,
-              club_id: null,
-              club_name: null,
-              owner_name: null,
-              categories: [],
-              category_ids: [],
-              confirmed_registrations: 0,
-              waitlist_registrations: 0,
-              remaining_slots: null,
-              registration_state: 'closed',
-              google_calendar_url: '',
-              outlook_calendar_url: ''
-            },
-            {
-              id: 2,
-              title: 'Terceiro evento da agenda',
-              description: 'Este card fica alinhado com a mesma grelha da homepage de referencia.',
-              event_date: '',
-              start_date: '',
-              end_date: '',
-              image: '',
-              is_external: false,
-              enable_registrations: false,
-              registration_capacity: null,
-              status: 'published',
-              created_at: null,
-              updated_at: null,
-              city: '',
-              location: '',
-              user_id: 0,
-              club_id: null,
-              club_name: null,
-              owner_name: null,
-              categories: [],
-              category_ids: [],
-              confirmed_registrations: 0,
-              waitlist_registrations: 0,
-              remaining_slots: null,
-              registration_state: 'closed',
-              google_calendar_url: '',
-              outlook_calendar_url: ''
-            }
-          ],
-    [highlightedEvents]
-  );
+  const showStudyLinks = activeHero === 0;
+
+  function showPreviousTestimonial() {
+    setActiveTestimonial((current) => Math.max(current - 1, 0));
+  }
+
+  function showNextTestimonial() {
+    setActiveTestimonial((current) => Math.min(current + 1, testimonialSlides.length - 1));
+  }
+
+  function handleTestimonialTouchStart(event: React.TouchEvent<HTMLDivElement>) {
+    testimonialTouchStartX.current = event.touches[0]?.clientX ?? null;
+  }
+
+  function handleTestimonialTouchEnd(event: React.TouchEvent<HTMLDivElement>) {
+    const startX = testimonialTouchStartX.current;
+    const endX = event.changedTouches[0]?.clientX ?? null;
+
+    testimonialTouchStartX.current = null;
+
+    if (startX === null || endX === null) return;
+
+    const deltaX = endX - startX;
+
+    if (Math.abs(deltaX) < 40) return;
+
+    if (deltaX > 0) {
+      showPreviousTestimonial();
+      return;
+    }
+
+    showNextTestimonial();
+  }
+
+  function SliderArrowIcon({ direction }: { direction: 'left' | 'right' }) {
+    return (
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        className={`h-7 w-7 ${direction === 'left' ? 'rotate-180' : ''}`}
+        fill="none"
+        viewBox="0 0 24 24"
+        stroke="currentColor"
+      >
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth="2"
+          d="M17 8l4 4m0 0l-4 4m4-4H3"
+        />
+      </svg>
+    );
+  }
 
   return (
     <>
       <main className={mainContent}>
-        <section className="relative overflow-hidden bg-[#10263b]">
-          <div className="absolute inset-0">
-            <img
-              src={currentHero.image}
-              alt={currentHero.title}
-              className="h-full w-full object-cover object-center"
-            />
-            <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(11,24,37,0.82)_0%,rgba(15,38,59,0.74)_46%,rgba(15,38,59,0.48)_100%)]" />
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(233,159,55,0.42),transparent_28%)]" />
+        <section className="relative h-screen overflow-hidden bg-[#10263b]">
+          <div className="absolute inset-0 overflow-hidden">
+            <div
+              className="flex h-full w-full transition-transform duration-700 ease-in-out"
+              style={{ transform: `translateX(-${activeHero * 100}%)` }}
+            >
+              {heroSlides.map((slide, index) => (
+                <img
+                  key={slide.title}
+                  src={slide.image}
+                  alt={slide.title}
+                  className="h-full w-full shrink-0 object-cover"
+                  loading={index === 0 ? 'eager' : 'lazy'}
+                  fetchPriority={index === 0 ? 'high' : 'auto'}
+                />
+              ))}
+            </div>
+            <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(0,0,0,0.15),rgba(0,0,0,0.15))]" />
+            <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(18,30,44,0.78)_0%,rgba(18,30,44,0.55)_45%,rgba(18,30,44,0.25)_100%)]" />
           </div>
 
-          <div className="absolute inset-x-0 top-0 z-30">
-            <TopBar transparent />
-            <HeaderNav transparent />
+          <div
+            className={`fixed inset-x-0 top-0 z-50 transition-all duration-300 ${
+              isHeaderSolid ? 'bg-white' : 'bg-transparent'
+            }`}
+          >
+            <TopBar transparent={!isHeaderSolid} />
+            <HeaderNav transparent={!isHeaderSolid} />
           </div>
 
-          <div className={`relative z-10 ${container} pb-16 pt-44 md:pb-20 md:pt-52 lg:pt-56`}>
-            <div className="grid gap-8 lg:grid-cols-[1.02fr_0.98fr] lg:items-end">
-              <div className="max-w-2xl text-white">
-                <p className="inline-flex rounded-full border border-white/20 bg-white/10 px-4 py-1 text-xs font-semibold uppercase tracking-[0.24em] text-white/90 backdrop-blur">
-                  Instituto Superior Politecnico Gaya
-                </p>
-                <h1 className="mt-6 text-4xl font-bold leading-tight tracking-tight md:text-6xl">
-                  {currentHero.title}
-                </h1>
-                <p className="mt-6 max-w-xl text-base leading-8 text-white/82 md:text-lg">
-                  {currentHero.text}
-                </p>
+          <div className={`relative z-10 flex h-full flex-col ${container}`}>
+            <div className="flex-1" />
 
-                <p className="mt-8 text-sm font-semibold uppercase tracking-[0.18em] text-white/72">
-                  Fica a conhecer a nossa oferta formativa
-                </p>
-                <div className="mt-4 flex flex-wrap gap-3">
-                  {studyLinks.map((item) => (
+            <div className="pb-[7vh] text-white">
+              <div className="grid grid-cols-12 gap-y-8">
+                <div className="col-span-12 lg:col-span-6 xl:col-span-7">
+                  <h1 className="font-heading text-3xl font-bold leading-snug sm:text-5xl sm:leading-snug lg:text-4xl lg:leading-snug xl:pr-[8vw] xl:text-5xl xl:leading-snug 2xl:pr-[5vw] 2xl:text-6xl">
+                    {currentHero.title}
+                  </h1>
+                  <p className="mt-4 max-w-2xl whitespace-pre-line text-base font-medium sm:text-lg">
+                    {currentHero.text}
+                  </p>
+                </div>
+
+                <div className="col-span-12 hidden lg:block lg:col-span-6 xl:col-span-5">
+                  <div
+                    className={showStudyLinks ? '' : 'invisible pointer-events-none select-none'}
+                    aria-hidden={!showStudyLinks}
+                  >
+                    <p className="font-medium">Fica a conhecer a nossa oferta formativa:</p>
+                    <ul className="mt-1 divide-y-2 divide-white">
+                      {studyLinks.map((item) => (
+                        <li key={item.label}>
+                          <a
+                            href={item.href}
+                            className="group flex items-center justify-between px-1.5 py-2 text-lg font-bold xl:px-4 xl:py-3 xl:text-xl 2xl:text-2xl"
+                          >
+                            <span className="transition-opacity group-hover:opacity-80">{item.label}</span>
+                            <span className="-translate-x-4 opacity-0 transition-all group-hover:translate-x-0 group-hover:opacity-100">
+                              &#10230;
+                            </span>
+                          </a>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+
+                  <div
+                    className={`mt-5 lg:mt-6 xl:text-right ${
+                      showStudyLinks ? '' : 'invisible pointer-events-none select-none'
+                    }`}
+                    aria-hidden={!showStudyLinks}
+                  >
                     <a
-                      key={item.label}
-                      href={item.href}
-                      className="rounded-full border border-white/25 bg-white/10 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-white/20"
+                      href="#content-start"
+                      className="inline-flex items-center justify-end opacity-70 transition-opacity hover:opacity-100"
                     >
-                      {item.label}
+                      <span className="text-sm font-bold uppercase tracking-tight">Descobre Mais</span>
+                      <span className="ml-4 flex h-10 w-10 items-center justify-center rounded-full border-2 border-white transition hover:scale-110 hover:border-dashed">
+                        <ChevronRight className="h-5 w-5 rotate-90" />
+                      </span>
                     </a>
-                  ))}
-                </div>
-
-                <div className="mt-8 flex flex-wrap items-center gap-3">
-                  <a href="https://ispgaya.pt/pt" className={adminBtnPrimary}>
-                    Descobre Mais
-                  </a>
-                  <button
-                    type="button"
-                    onClick={() =>
-                      setActiveHero((current) =>
-                        current === 0 ? heroSlides.length - 1 : current - 1
-                      )
-                    }
-                    className="inline-flex h-12 w-12 items-center justify-center rounded-full border border-white/25 bg-white/10 text-white transition-colors hover:bg-white/20"
-                    aria-label="Slide anterior"
-                  >
-                    <ChevronLeft className="h-5 w-5" />
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setActiveHero((current) => (current + 1) % heroSlides.length)}
-                    className="inline-flex h-12 w-12 items-center justify-center rounded-full border border-white/25 bg-white/10 text-white transition-colors hover:bg-white/20"
-                    aria-label="Slide seguinte"
-                  >
-                    <ChevronRight className="h-5 w-5" />
-                  </button>
-                </div>
-
-                <div className="mt-8 flex gap-3">
-                  {heroSlides.map((slide, index) => (
-                    <button
-                      key={slide.title}
-                      type="button"
-                      onClick={() => setActiveHero(index)}
-                      aria-label={`Ir para slide ${index + 1}`}
-                      className={`h-1.5 rounded-full transition-all ${
-                        index === activeHero ? 'w-16 bg-[#dd8609]' : 'w-8 bg-white/35'
-                      }`}
-                    />
-                  ))}
-                </div>
-              </div>
-
-              <div className="grid gap-5 lg:pl-8">
-                <div className="overflow-hidden rounded-[30px] border border-white/12 bg-white/10 shadow-2xl shadow-black/20 backdrop-blur-sm">
-                  <div className="grid min-h-[390px] lg:grid-cols-[1.1fr_0.9fr]">
-                    <div className="p-7 text-white">
-                      <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#f2c17a]">
-                        Destaque Principal
-                      </p>
-                      <h2 className="mt-4 text-3xl font-semibold leading-tight">
-                        Header transparente sobre imagem, com o mesmo peso visual do site real.
-                      </h2>
-                      <p className="mt-4 text-sm leading-7 text-white/78">
-                        Esta zona fica pronta para entrarem as tuas fotos reais sem voltares a
-                        refazer a composicao.
-                      </p>
-                    </div>
-                    <div className="relative min-h-[260px]">
-                      <img
-                        src={heroSlides[activeHero].image}
-                        alt="Placeholder institucional"
-                        className="h-full w-full object-cover"
-                      />
-                      <div className="absolute inset-0 bg-[linear-gradient(180deg,transparent,rgba(15,38,59,0.65))]" />
-                    </div>
                   </div>
                 </div>
+              </div>
 
-                <div className="grid gap-5 md:grid-cols-2">
-                  <article className="overflow-hidden rounded-[26px] border border-white/12 bg-white/10 p-6 text-white backdrop-blur-sm">
-                    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#f2c17a]">
-                      Slide Atual
-                    </p>
-                    <h3 className="mt-4 text-2xl font-semibold">{heroSlides[activeHero].title}</h3>
-                    <p className="mt-3 text-sm leading-7 text-white/76">
-                      Estrutura pronta para cartaz, campanha ou fotografia de rececao.
-                    </p>
-                  </article>
-                  <article className="overflow-hidden rounded-[26px] border border-white/12 bg-white/10">
-                    <img
-                      src={heroSlides[(activeHero + 1) % heroSlides.length].image}
-                      alt="Placeholder secundario"
-                      className="h-44 w-full object-cover"
-                    />
-                  </article>
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        <section className="bg-white py-14 md:py-20">
-          <div className={`${container} grid gap-6 lg:grid-cols-2`}>
-            <article className="overflow-hidden rounded-[30px] border border-slate-200 bg-white shadow-[0_30px_70px_rgba(15,23,42,0.07)]">
-              <div className="h-64 overflow-hidden">
-                <img src={heroStudyImage} alt="Instalacoes" className="h-full w-full object-cover" />
-              </div>
-              <div className="p-8">
-                <h2 className="text-3xl font-semibold text-slate-900">
-                  Dinamiza as tuas capacidades connosco
-                </h2>
-                <p className="mt-4 text-base leading-8 text-slate-600">
-                  Bloco principal para destacar instalacoes, acompanhamento e ambiente academico.
-                </p>
-              </div>
-            </article>
-
-            <article className="overflow-hidden rounded-[30px] border border-slate-200 bg-[#f7f4ec] shadow-[0_30px_70px_rgba(15,23,42,0.06)]">
-              <div className="h-64 overflow-hidden">
-                <img
-                  src={heroEmployabilityImage}
-                  alt="Empregabilidade"
-                  className="h-full w-full object-cover"
-                />
-              </div>
-              <div className="p-8">
-                <h2 className="text-3xl font-semibold text-slate-900">
-                  O mercado de trabalho espera por ti
-                </h2>
-                <p className="mt-4 text-base leading-8 text-slate-600">
-                  Secao pronta para falar de carreira, oportunidades, estagios e preparacao para o
-                  mundo profissional.
-                </p>
-              </div>
-            </article>
-          </div>
-        </section>
-
-        <section className="bg-[#f6f3ec] py-14 md:py-18">
-          <div className={container}>
-            <div className="mb-8">
-              <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[#dd8609]">
-                Destaques
-              </p>
-            </div>
-            <div className="grid gap-6 lg:grid-cols-3">
-              {highlightCards.map((item) =>
-                item.internal ? (
-                  <Link
-                    key={item.title}
-                    to={item.href}
-                    className="group rounded-[28px] border border-slate-200 bg-white p-7 shadow-[0_22px_60px_rgba(15,23,42,0.05)] transition-transform hover:-translate-y-1"
+              <div className="mt-8 flex items-center space-x-5">
+                {heroSlides.map((slide, index) => (
+                  <button
+                    key={slide.title}
+                    type="button"
+                    onClick={() => setActiveHero(index)}
+                    className={`flex h-7 w-7 items-center justify-center rounded-full border border-white transition-opacity ${
+                      index === activeHero ? 'opacity-100' : 'opacity-60'
+                    }`}
                   >
-                    <div className="mb-5 h-40 rounded-[22px] bg-[linear-gradient(135deg,#dde4ec,#f6f7f8)]" />
-                    <h3 className="text-2xl font-semibold text-slate-900">{item.title}</h3>
-                    <p className="mt-4 text-sm leading-7 text-slate-600">{item.text}</p>
-                    <span className="mt-5 inline-flex text-sm font-semibold text-[#dd8609]">
-                      Fica a saber mais
-                    </span>
-                  </Link>
-                ) : (
-                  <a
-                    key={item.title}
-                    href={item.href}
-                    className="group rounded-[28px] border border-slate-200 bg-white p-7 shadow-[0_22px_60px_rgba(15,23,42,0.05)] transition-transform hover:-translate-y-1"
-                  >
-                    <div className="mb-5 h-40 rounded-[22px] bg-[linear-gradient(135deg,#dde4ec,#f6f7f8)]" />
-                    <h3 className="text-2xl font-semibold text-slate-900">{item.title}</h3>
-                    <p className="mt-4 text-sm leading-7 text-slate-600">{item.text}</p>
-                    <span className="mt-5 inline-flex text-sm font-semibold text-[#dd8609]">
-                      Fica a saber mais
-                    </span>
-                  </a>
-                )
-              )}
-            </div>
-          </div>
-        </section>
-
-        <section className="bg-white py-16 md:py-20">
-          <div className={`${container} grid gap-10 lg:grid-cols-[0.95fr_1.05fr] lg:items-center`}>
-            <div className="overflow-hidden rounded-[32px] border border-slate-200 shadow-[0_28px_80px_rgba(15,23,42,0.07)]">
-              <img
-                src={gaiaSkyline}
-                alt="Onde o Futuro Te Leva"
-                className="h-full min-h-[520px] w-full object-cover"
-              />
-            </div>
-
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[#dd8609]">
-                Onde o Futuro Te Leva
-              </p>
-              <div className="mt-6 grid gap-6">
-                {metrics.map((item) => (
-                  <article
-                    key={item.title}
-                    className="rounded-[28px] border border-slate-200 bg-[#f8f6f1] p-7"
-                  >
-                    <div className="flex flex-col gap-3 md:flex-row md:items-start md:gap-6">
-                      <div className="min-w-[120px] text-4xl font-bold text-[#dd8609]">
-                        {item.value}
-                      </div>
-                      <div>
-                        <h3 className="text-2xl font-semibold text-slate-900">{item.title}</h3>
-                        <p className="mt-3 text-sm leading-7 text-slate-600">{item.text}</p>
-                      </div>
-                    </div>
-                  </article>
+                    <span className="sr-only">Slide {index + 1}</span>
+                    <span className="h-3 w-3 rounded-full bg-white" />
+                  </button>
                 ))}
               </div>
             </div>
           </div>
         </section>
 
-        <section className="bg-[#10263b] py-16 text-white md:py-20">
-          <div className={container}>
-            <div className="max-w-4xl">
-              <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[#f2c17a]">
-                Ainda queres saber mais? Nos podemos ajudar-te.
-              </p>
-              <h2 className="mt-4 text-3xl font-semibold md:text-4xl">
-                Slider institucional preparado para candidatura, bolsas e informacao de acesso.
-              </h2>
-              <p className="mt-4 text-base leading-8 text-white/75">
-                Esta secao passa a comportar-se como carrossel, com setas e transicao de blocos,
-                como pediste.
-              </p>
-            </div>
+        <section id="content-start" className="scroll-mt-36 bg-white pt-10 lg:pt-12 xl:pt-16 2xl:pt-20">
+          <div className={`${container} text-center`}>
+            <h2 className="font-heading text-3xl font-bold tracking-tight text-black xl:text-4xl 2xl:text-5xl">
+              Destaques
+            </h2>
+          </div>
 
-            <div className="mt-10 flex flex-wrap items-center gap-3">
+          <div
+            className={`${container} mt-10 flex snap-x snap-mandatory gap-4 overflow-x-auto px-6 pb-4 pt-2 sm:px-6 md:justify-center md:gap-6 md:px-0`}
+          >
+            {highlightCards.map((item) => (
               <a
-                href="https://inforestudante.ispgaya.pt/nonio/security/preRegisto.do?origem=CANDIDATURAS"
-                className={adminBtnPrimary}
+                key={item.title}
+                href={item.href}
+                className="group relative flex min-h-[500px] min-w-[78vw] max-w-[78vw] snap-center flex-col overflow-hidden rounded bg-gray-200 first:ml-0 md:min-w-0 md:max-w-none md:basis-6/12 lg:basis-4/12 2xl:basis-3/12"
               >
-                Candidatar-me
-              </a>
-              <a href="https://ispgaya.pt/pt/ensino/candidaturas" className={adminBtnSecondary}>
-                Quero saber mais
-              </a>
-            </div>
-
-            <div className="mt-10 flex items-center justify-between">
-              <div className="flex gap-3">
-                <button
-                  type="button"
-                  onClick={() =>
-                    setActiveSupport((current) =>
-                      current === 0 ? supportSlides.length - 1 : current - 1
-                    )
-                  }
-                  className="inline-flex h-12 w-12 items-center justify-center rounded-full border border-white/20 bg-white/10 text-white transition-colors hover:bg-white/15"
-                >
-                  <ChevronLeft className="h-5 w-5" />
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setActiveSupport((current) => (current + 1) % supportSlides.length)}
-                  className="inline-flex h-12 w-12 items-center justify-center rounded-full border border-white/20 bg-white/10 text-white transition-colors hover:bg-white/15"
-                >
-                  <ChevronRight className="h-5 w-5" />
-                </button>
-              </div>
-            </div>
-
-            <div className="mt-8 grid gap-6 lg:grid-cols-3">
-              {supportSlides.map((item, index) => (
-                <a
-                  key={item.title}
-                  href={item.href}
-                  className={`rounded-[28px] border p-7 transition-all ${
-                    index === activeSupport
-                      ? 'border-[#f2c17a] bg-white/10 shadow-[0_30px_70px_rgba(0,0,0,0.2)]'
-                      : 'border-white/10 bg-white/5 opacity-70'
-                  }`}
-                >
-                  <div className="mb-5 h-44 overflow-hidden rounded-[20px]">
-                    <img src={item.image} alt={item.title} className="h-full w-full object-cover" />
-                  </div>
-                  <h3 className="text-2xl font-semibold">{item.title}</h3>
-                  <p className="mt-4 text-sm leading-7 text-white/75">{item.text}</p>
-                  <span className="mt-5 inline-flex text-sm font-semibold text-[#f2c17a]">
-                    Ver mais
-                  </span>
-                </a>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        <section className="bg-white py-16 md:py-20">
-          <div className={container}>
-            <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[#dd8609]">
-                  Noticias
-                </p>
-                <h2 className="mt-4 text-3xl font-semibold text-slate-900 md:text-4xl">
-                  Grelha editorial preparada como no portal principal.
-                </h2>
-              </div>
-              <a href="https://ispgaya.pt/pt/vida-academica/noticias" className={adminBtnSecondary}>
-                Ver tudo
-              </a>
-            </div>
-
-            {loadError ? (
-              <p className="mt-8 rounded-2xl border border-red-200 bg-red-50 px-5 py-4 text-sm text-red-700">
-                {loadError}
-              </p>
-            ) : null}
-
-            <div className="mt-10 grid gap-6 lg:grid-cols-3">
-              {fallbackNews.map((item) => (
-                <Link
-                  key={item.id}
-                  to={item.id > 0 ? getNewsHref(item) : '#'}
-                  className="overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-[0_24px_70px_rgba(15,23,42,0.05)] transition-transform hover:-translate-y-1"
-                >
-                  {item.image ? (
-                    <img
-                      src={resolveInfoCulturaAssetUrl(item.image)}
-                      alt={item.title}
-                      className="h-56 w-full object-cover"
-                    />
-                  ) : (
-                    <img src={heroWelcomeImage} alt={item.title} className="h-56 w-full object-cover" />
-                  )}
-                  <div className="p-6">
-                    <p className="text-sm font-medium text-slate-500">
-                      {formatDate(item.published_at || item.created_at)}
-                    </p>
-                    <h3 className="mt-3 text-xl font-semibold text-slate-900">{item.title}</h3>
-                    <p className="mt-3 text-sm leading-7 text-slate-600">
-                      {truncateText(item.summary || item.content || 'Sem resumo.', 180)}
-                    </p>
-                  </div>
-                </Link>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        <section className="bg-[#f7f3ea] py-16 md:py-20">
-          <div className={container}>
-            <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[#dd8609]">
-                  Eventos
-                </p>
-                <h2 className="mt-4 text-3xl font-semibold text-slate-900 md:text-4xl">
-                  Agenda com a mesma leitura da homepage institucional.
-                </h2>
-              </div>
-              <a href="https://ispgaya.pt/pt/vida-academica/eventos" className={adminBtnSecondary}>
-                Ver tudo
-              </a>
-            </div>
-
-            <div className="mt-10 grid gap-6 lg:grid-cols-3">
-              {fallbackEvents.map((item) => (
-                <Link
-                  key={item.id}
-                  to={item.id > 0 ? getEventHref(item) : '#'}
-                  className="overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-[0_24px_70px_rgba(15,23,42,0.05)] transition-transform hover:-translate-y-1"
-                >
-                  {item.image ? (
-                    <img
-                      src={resolveInfoCulturaAssetUrl(item.image)}
-                      alt={item.title}
-                      className="h-56 w-full object-cover"
-                    />
-                  ) : (
-                    <img src={heroEmployabilityImage} alt={item.title} className="h-56 w-full object-cover" />
-                  )}
-                  <div className="p-6">
-                    <p className="text-sm font-medium text-slate-500">{formatDate(item.event_date)}</p>
-                    <h3 className="mt-3 text-xl font-semibold text-slate-900">{item.title}</h3>
-                    <p className="mt-3 text-sm leading-7 text-slate-600">
-                      {truncateText(item.description || 'Sem descricao.', 190)}
-                    </p>
-                  </div>
-                </Link>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        <section className="bg-white py-16 md:py-20">
-          <div className={`${container} grid gap-8 lg:grid-cols-[0.9fr_1.1fr]`}>
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[#dd8609]">
-                Testemunhos
-              </p>
-              <h2 className="mt-4 text-3xl font-semibold text-slate-900 md:text-4xl">
-                Secao em formato de carrossel, com controlo manual.
-              </h2>
-              <div className="mt-8 flex gap-3">
-                <button
-                  type="button"
-                  onClick={() =>
-                    setActiveTestimonial((current) =>
-                      current === 0 ? testimonialSlides.length - 1 : current - 1
-                    )
-                  }
-                  className="inline-flex h-12 w-12 items-center justify-center rounded-full border border-slate-300 text-slate-700 transition-colors hover:border-[#dd8609] hover:text-[#dd8609]"
-                >
-                  <ChevronLeft className="h-5 w-5" />
-                </button>
-                <button
-                  type="button"
-                  onClick={() =>
-                    setActiveTestimonial((current) => (current + 1) % testimonialSlides.length)
-                  }
-                  className="inline-flex h-12 w-12 items-center justify-center rounded-full border border-slate-300 text-slate-700 transition-colors hover:border-[#dd8609] hover:text-[#dd8609]"
-                >
-                  <ChevronRight className="h-5 w-5" />
-                </button>
-              </div>
-            </div>
-
-            <article className="overflow-hidden rounded-[32px] border border-slate-200 bg-[#fbfaf7] shadow-[0_26px_70px_rgba(15,23,42,0.06)]">
-              <div className="grid gap-0 md:grid-cols-[1.05fr_0.95fr]">
-                <div className="p-8 md:p-10">
-                  <p className="text-xl leading-9 text-slate-700">
-                    “{testimonialSlides[activeTestimonial].quote}”
-                  </p>
-                  <p className="mt-8 text-lg font-semibold text-slate-900">
-                    {testimonialSlides[activeTestimonial].name}
-                  </p>
-                  <p className="mt-1 text-sm uppercase tracking-[0.14em] text-slate-500">
-                    {testimonialSlides[activeTestimonial].role}
-                  </p>
-                </div>
-                <div className="h-full min-h-[280px]">
+                <div className="absolute inset-0">
                   <img
-                    src={testimonialSlides[activeTestimonial].image}
-                    alt={testimonialSlides[activeTestimonial].name}
-                    className="h-full w-full object-cover"
+                    src={item.image}
+                    alt={item.title}
+                    className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
                   />
+                  <div className="absolute inset-0 bg-gradient-to-t from-gray-900 via-gray-900/50 to-transparent" />
+                </div>
+                <div className="relative z-10 mt-auto px-6 pb-6 pt-6 text-white">
+                  <p className="font-heading text-2xl underline-offset-2 group-hover:underline">
+                    {item.title}
+                  </p>
+                  <div className="max-h-40 overflow-hidden transition-[max-height] duration-500 ease-in-out md:max-h-0 md:group-hover:max-h-40">
+                    <p className="mt-4 font-medium">{item.text}</p>
+                  </div>
+                </div>
+                <div className="relative z-10 flex items-center px-6 py-6 text-white">
+                  <ChevronRight className="h-7 w-7" />
+                  <p className="ml-3 font-medium">Fica a saber mais</p>
+                </div>
+              </a>
+            ))}
+          </div>
+        </section>
+
+        <section className="relative mt-20 bg-gray-50 py-16 before:absolute before:-top-5 before:h-14 before:w-full before:-skew-y-1 before:bg-gray-50 after:absolute after:-bottom-5 after:h-14 after:w-full after:-skew-y-1 after:bg-gray-50 lg:mt-24 xl:mt-28">
+          <div className={`${container} grid grid-cols-2 gap-y-10 lg:gap-x-4 xl:gap-x-6 2xl:gap-x-8`}>
+            <div className="relative col-span-1 hidden lg:block">
+              <div className="sticky top-36">
+                <img
+                  src={aondefuturo}
+                  alt="Onde o Futuro Te Leva"
+                  className="relative z-10 mx-auto block shadow-2xl lg:w-10/12 xl:w-auto"
+                />
+              </div>
+            </div>
+
+            <div className="col-span-2 mx-auto max-w-xl space-y-10 lg:col-span-1 lg:mx-0 lg:max-w-none xl:space-y-14">
+              <div className="text-center lg:text-left">
+                <h2 className="font-heading text-3xl font-bold tracking-tight text-black xl:text-4xl 2xl:text-5xl">
+                  Onde o Futuro Te Leva
+                </h2>
+              </div>
+
+              {metrics.map((item, index) => (
+                <div key={item.title} className="flex">
+                  {index % 2 === 1 ? (
+                    <>
+                      <div className="mr-4 border-b-2 border-l-2 border-gray-300 pb-6 pl-6 pr-2 pt-2">
+                        <p className="text-lg font-bold xl:text-2xl">{item.title}</p>
+                        <p className="mt-3 max-w-md text-sm sm:text-base">{item.text}</p>
+                      </div>
+                      <div>
+                        <p className="mt-2 font-heading text-3xl font-bold text-orange-400 sm:text-4xl lg:text-5xl xl:text-6xl">
+                          {item.value}
+                        </p>
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <div>
+                        <p className="mt-2 font-heading text-3xl font-bold text-orange-400 sm:text-4xl lg:text-5xl xl:text-6xl">
+                          {item.value}
+                        </p>
+                      </div>
+                      <div className="ml-2 border-b-2 border-r-2 border-gray-300 pb-2 pl-2 pr-2 pt-2 sm:ml-4 sm:pb-6 sm:pl-6">
+                        <p className="text-lg font-bold xl:text-2xl">{item.title}</p>
+                        <p className="mt-3 max-w-md text-sm sm:text-base">{item.text}</p>
+                      </div>
+                    </>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        <section className="relative mt-16 overflow-hidden lg:mt-28 xl:mt-32 2xl:mt-32">
+          <div className={`${container} grid grid-cols-2 gap-x-10 bg-white`}>
+            <div className="relative z-10 col-span-2 bg-white py-6 lg:col-span-1">
+              <h2 className="max-w-2xl font-heading text-3xl font-bold tracking-tight text-black xl:text-4xl 2xl:text-5xl">
+                Ainda queres saber mais? Nós podemos ajudar-te.
+              </h2>
+              <p className="mt-4">
+                A candidatura ao ensino superior é um passo muito importante. O ISPGAYA dispõe da
+                modalidade de acesso ideal para ti, quer tenhas terminado o ensino secundário ou já
+                estejas a trabalhar e queiras aperfeiçoar os teus conhecimentos.
+              </p>
+
+              <div className="mt-6 flex flex-col sm:flex-row sm:items-center">
+                <a
+                  href="https://inforestudante.ispgaya.pt/nonio/security/preRegisto.do?origem=CANDIDATURAS"
+                  className="inline-block bg-orange-400 px-6 py-2 text-center font-bold text-white transition hover:bg-orange-500"
+                >
+                  Candidatar-me
+                </a>
+                <a
+                  href="https://ispgaya.pt/pt/ensino/candidaturas"
+                  className="mt-3 inline-block border-2 border-orange-700 px-6 py-2 text-center font-bold text-orange-700 transition hover:border-orange-600 hover:bg-orange-600 hover:text-white sm:ml-6 sm:mt-0"
+                >
+                  Quero saber mais
+                </a>
+              </div>
+            </div>
+
+            <div className="col-span-2 min-w-0 bg-white lg:col-span-1">
+              <div className="xl:max-w-2xl">
+                <div className="flex items-center py-4">
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setActiveSupport((current) =>
+                        current === 0 ? supportSlides.length - 1 : current - 1
+                      )
+                    }
+                    className="p-2 text-gray-700 transition hover:text-gray-600"
+                  >
+                    <ChevronLeft className="h-7 w-7" />
+                  </button>
+
+                  <div className="mx-2 flex items-center space-x-3">
+                    {supportSlides.map((item, index) => (
+                      <button
+                        key={item.title}
+                        type="button"
+                        onClick={() => setActiveSupport(index)}
+                        className={`h-2.5 w-2.5 rounded-full ${
+                          index === activeSupport ? 'bg-orange-400' : 'bg-gray-300'
+                        }`}
+                      >
+                        <span className="sr-only">Slide {index + 1}</span>
+                      </button>
+                    ))}
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => setActiveSupport((current) => (current + 1) % supportSlides.length)}
+                    className="p-2 text-gray-700 transition hover:text-gray-600"
+                  >
+                    <ChevronRight className="h-7 w-7" />
+                  </button>
+                </div>
+
+                <div className="grid gap-4 md:grid-cols-3">
+                  {supportSlides.map((item, index) => (
+                    <a
+                      key={item.title}
+                      href={item.href}
+                      className={`border px-6 py-8 text-center transition ${
+                        index === activeSupport
+                          ? 'border-orange-200 bg-orange-100'
+                          : 'border-orange-50 bg-orange-50 hover:border-orange-200 hover:bg-orange-100'
+                      }`}
+                    >
+                      <div className="mx-auto h-40 w-40">
+                        <img src={item.image} alt={item.title} className="h-full w-full object-cover" />
+                      </div>
+                      <p className="mt-3 text-lg font-bold">{item.title}</p>
+                      <p className="mt-2">{item.text}</p>
+                      <span className="mt-6 inline-block border-2 border-orange-700 px-5 py-1.5 text-sm font-semibold text-orange-700 transition hover:border-orange-600 hover:bg-orange-600 hover:text-white">
+                        Ver mais
+                      </span>
+                    </a>
+                  ))}
                 </div>
               </div>
-            </article>
+            </div>
+          </div>
+        </section>
+
+        <section className="mt-12 bg-white lg:mt-16 xl:mt-20">
+          <div className={`${container}`}>
+            <div className="mx-auto grid w-full max-w-7xl grid-cols-1 gap-10 lg:grid-cols-2">
+              <NewsHighlightsSection
+                title="Notícias"
+                viewAllHref="/vida-academica/noticias"
+                viewAllInternal
+                items={homepageNewsHighlights}
+                className="w-full"
+              />
+              <NewsHighlightsSection
+                title="Eventos"
+                viewAllHref="/vida-academica/eventos"
+                viewAllInternal
+                items={homepageEventHighlights}
+                className="w-full"
+              />
+            </div>
+          </div>
+        </section>
+
+        <section className="mb-6 mt-8 bg-white md:mb-8 md:mt-10 lg:mb-10 lg:mt-12 xl:mb-16 xl:mt-16">
+          <div className="text-center">
+            <h2 className="font-heading text-3xl font-bold tracking-tight text-black xl:text-4xl 2xl:text-5xl">
+              Testemunhos
+            </h2>
+          </div>
+
+          <div className={`${container} mx-auto w-full overflow-hidden lg:max-w-2xl`}>
+            <div
+              className="w-full touch-pan-y overflow-hidden pb-2 pt-6 md:pb-4 md:pt-8 lg:pb-4 lg:pt-10 xl:pb-6 xl:pt-12"
+              onTouchStart={handleTestimonialTouchStart}
+              onTouchEnd={handleTestimonialTouchEnd}
+            >
+              <div
+                className="flex w-full transition-transform duration-500 ease-out"
+                style={{ transform: `translateX(-${activeTestimonial * 100}%)` }}
+              >
+                {testimonialSlides.map((item) => (
+                  <div key={item.name} className="w-full shrink-0">
+                    <div className="relative">
+                      <div className="absolute -top-4 text-orange-400 opacity-20 sm:-left-1 sm:-top-5">
+                        <svg className="h-20 w-20 sm:h-28 sm:w-28" viewBox="0 0 24 24" fill="currentColor">
+                          <path d="M23 5.655c-3.008 1.475-4.511 3.208-4.511 5.2 1.282.148 2.342.67 3.18 1.567.838.897 1.257 1.936 1.257 3.116 0 1.254-.407 2.311-1.22 3.171-.814.86-1.837 1.291-3.069 1.291-1.38 0-2.576-.559-3.587-1.678-1.011-1.119-1.516-2.477-1.516-4.075 0-4.794 2.687-8.543 8.061-11.247L23 5.655zm-13.534 0c-3.032 1.475-4.548 3.208-4.548 5.2 1.307.148 2.379.67 3.217 1.567.838.897 1.257 1.936 1.257 3.116 0 1.254-.413 2.311-1.239 3.171C7.327 19.569 6.298 20 5.065 20c-1.38 0-2.57-.559-3.568-1.678-.998-1.119-1.498-2.477-1.498-4.075C-.001 9.453 2.674 5.704 8.023 3l1.442 2.655z" />
+                        </svg>
+                      </div>
+                      <blockquote className="text-center text-lg sm:text-lg">
+                        {item.quote}
+                      </blockquote>
+                    </div>
+
+                    <div className="mt-7 flex items-center justify-center">
+                      <img
+                        src={item.image}
+                        alt={item.name}
+                        className="block h-16 w-16 shrink-0 rounded-full border-2 border-white object-cover shadow"
+                      />
+
+                      <div className="ml-5 font-medium">
+                        <p className="text-xl">{item.name}</p>
+                        <p className="text-base text-gray-500">{item.role}</p>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="flex w-full items-center justify-center">
+              <button
+                type="button"
+                onClick={showPreviousTestimonial}
+                disabled={activeTestimonial === 0}
+                className="p-2 text-gray-700 transition hover:text-gray-600 disabled:cursor-not-allowed disabled:opacity-30"
+              >
+                <SliderArrowIcon direction="left" />
+              </button>
+
+              <button
+                type="button"
+                onClick={showNextTestimonial}
+                disabled={activeTestimonial === testimonialSlides.length - 1}
+                className="p-2 text-gray-700 transition hover:text-gray-600 disabled:cursor-not-allowed disabled:opacity-30"
+              >
+                <SliderArrowIcon direction="right" />
+              </button>
+            </div>
           </div>
         </section>
       </main>
