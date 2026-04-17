@@ -3,6 +3,9 @@ import { Link } from 'react-router-dom';
 import Breadcrumbs from '../components/Breadcrumbs';
 import Footer from '../components/Footer';
 import HeaderNav from '../components/HeaderNav';
+import NewsHighlightsSection, {
+  type NewsHighlightItem
+} from '../components/NewsHighlightsSection';
 import TopBar from '../components/TopBar';
 import {
   fetchPublicCategories,
@@ -276,6 +279,68 @@ function LaboratorioCultural() {
       ).sort((a, b) => a.localeCompare(b, 'pt')),
     [events]
   );
+  const homepageStyleNews = useMemo<NewsHighlightItem[]>(
+    () =>
+      [...newsItems]
+        .sort((left, right) => {
+          const leftTime = new Date(left.published_at || left.created_at).getTime();
+          const rightTime = new Date(right.published_at || right.created_at).getTime();
+          return rightTime - leftTime;
+        })
+        .slice(0, 3)
+        .map((item) => ({
+          title: item.title,
+          href: `/vida-academica/noticias/${item.id}`,
+          internal: true,
+          excerpt: item.summary,
+          image: resolveInfoCulturaAssetUrl(item.image),
+          imageAlt: item.title,
+          publishedAt: item.published_at || item.created_at,
+          publishedLabel: new Intl.DateTimeFormat('pt-PT', {
+            day: '2-digit',
+            month: 'long',
+            year: 'numeric'
+          }).format(new Date(item.published_at || item.created_at)),
+          tags: item.club_name
+            ? [
+                {
+                  label: `#${normalizeLabel(item.club_name).replace(/\s+/g, '')}`,
+                  href: '/vida-academica/noticias'
+                }
+              ]
+            : []
+        })),
+    [newsItems]
+  );
+  const homepageStyleEvents = useMemo<NewsHighlightItem[]>(
+    () =>
+      [...events]
+        .sort((left, right) => {
+          const leftTime = new Date(left.start_date || left.event_date).getTime();
+          const rightTime = new Date(right.start_date || right.event_date).getTime();
+          return rightTime - leftTime;
+        })
+        .slice(0, 3)
+        .map((item) => ({
+          title: item.title,
+          href: `/vida-academica/eventos/${item.id}`,
+          internal: true,
+          excerpt: item.description,
+          image: resolveInfoCulturaAssetUrl(item.image),
+          imageAlt: item.title,
+          publishedAt: item.start_date || item.event_date,
+          publishedLabel: new Intl.DateTimeFormat('pt-PT', {
+            day: '2-digit',
+            month: 'long',
+            year: 'numeric'
+          }).format(new Date(item.start_date || item.event_date)),
+          tags: item.categories.map((category) => ({
+            label: `#${normalizeLabel(category.name).replace(/\s+/g, '')}`,
+            href: '/vida-academica/eventos'
+          }))
+        })),
+    [events]
+  );
 
   const hasSearch = normalizedQuery.length > 0;
   const totalResults =
@@ -326,9 +391,6 @@ function LaboratorioCultural() {
                         >
                           Abrir página
                         </Link>
-                        <span className="inline-flex items-center rounded-md border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-600">
-                          Missão, objetivos e enquadramento
-                        </span>
                       </div>
                   </div>
                 </div>
@@ -413,6 +475,68 @@ function LaboratorioCultural() {
                           href={`/laboratorio-cultural/livros/${item.id}`}
                           image={item.cover_image}
                           status={item.is_featured ? 'Destaque' : 'Livro'}
+                        />
+                      ))}
+                    </div>
+                  </section>
+                ) : null}
+              </div>
+            ) : null}
+
+            {!isLoading && !loadError && !hasSearch ? (
+              <div className="mt-10 space-y-10">
+                {homepageStyleNews.length > 0 || homepageStyleEvents.length > 0 ? (
+                  <section className="mt-12 bg-white lg:mt-16 xl:mt-20">
+                    <div className="mx-auto grid w-full max-w-7xl grid-cols-1 gap-10 lg:grid-cols-2">
+                      <NewsHighlightsSection
+                        title="Notícias"
+                        viewAllHref="/vida-academica/noticias"
+                        viewAllInternal
+                        items={homepageStyleNews}
+                        className="w-full"
+                      />
+                      <NewsHighlightsSection
+                        title="Eventos"
+                        viewAllHref="/vida-academica/eventos"
+                        viewAllInternal
+                        items={homepageStyleEvents}
+                        className="w-full"
+                      />
+                    </div>
+                  </section>
+                ) : null}
+
+                {filteredEvents.length > 0 ? (
+                  <section>
+                    <h2 className="mb-4 text-2xl font-semibold text-slate-900">Eventos</h2>
+                    <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
+                      {filteredEvents.slice(0, 6).map((item) => (
+                        <ResultCard
+                          key={`event-overview-${item.id}`}
+                          title={item.title}
+                          meta={getClubNameById(clubs, item.club_id)}
+                          description={item.description}
+                          href={`/laboratorio-cultural/eventos/${item.id}`}
+                          image={item.image}
+                          status={item.status}
+                        />
+                      ))}
+                    </div>
+                  </section>
+                ) : null}
+
+                {filteredSessions.length > 0 ? (
+                  <section>
+                    <h2 className="mb-4 text-2xl font-semibold text-slate-900">Sessoes</h2>
+                    <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
+                      {filteredSessions.slice(0, 6).map((item) => (
+                        <ResultCard
+                          key={`session-overview-${item.id}`}
+                          title={item.title}
+                          meta={item.club_name}
+                          description={item.description}
+                          href={`/laboratorio-cultural/sessoes/${item.id}`}
+                          status={item.name}
                         />
                       ))}
                     </div>

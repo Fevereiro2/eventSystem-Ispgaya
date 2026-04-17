@@ -11,7 +11,6 @@ import heroStudyImage from '../assets/backgroundphotos/estudar-no-ispagaya.webp'
 import heroEmployabilityImage from '../assets/backgroundphotos/empregabilidade-ispgaya.webp';
 import aondefuturo from '../assets/homepage/ondefuturo.webp'
 import helix from '../assets/homepage/destaques/helix-ispgaya-site.webp';
-import internacionalStudents from '../assets/homepage/destaques/2.webp';
 import mais23 from '../assets/homepage/destaques/3.webp';
 import manuel from '../assets/homepage/testemunhos/2.webp';
 import maribel from '../assets/homepage/testemunhos/1.webp'
@@ -86,7 +85,7 @@ const highlightCards: HighlightCard[] = [
     text:
       'Projeto cultural aberto a quem quer participar em atividades nas áreas da musica, teatro e leitura.',
     href: '/laboratorio-cultural',
-    internal: true
+    image: helix
   },
   {
     title: 'Regime M23 - Candidaturas Abertas!',
