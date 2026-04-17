@@ -59,9 +59,6 @@ import {
   adminPortalSidebarSection,
   adminPortalSidebarSub,
   adminPortalSidebarTitle,
-  adminSectionLink,
-  adminSectionLinkActive,
-  adminSectionNav,
   adminStatCard,
   adminStatLabel,
   adminStatsGrid,
@@ -364,6 +361,7 @@ type CategoryFormState = {
 };
 
 type ActivityTab = 'books' | 'sessions' | 'events';
+type ActivitySection = 'livros' | 'sessoes' | 'eventos';
 
 type AdminSection =
   | 'resumo'
@@ -371,6 +369,9 @@ type AdminSection =
   | 'utilizadores'
   | 'conteudos'
   | 'noticias'
+  | 'livros'
+  | 'sessoes'
+  | 'eventos'
   | 'atividades'
   | 'clubes'
   | 'inscricoes';
@@ -460,12 +461,68 @@ const initialCategoryForm: CategoryFormState = {
   description: ''
 };
 
+const activitySectionByTab: Record<ActivityTab, ActivitySection> = {
+  books: 'livros',
+  sessions: 'sessoes',
+  events: 'eventos'
+};
+
+const activityTabBySection: Record<ActivitySection, ActivityTab> = {
+  livros: 'books',
+  sessoes: 'sessions',
+  eventos: 'events'
+};
+
+const allActivityTabs: ActivityTab[] = ['books', 'sessions', 'events'];
+
+function normalizeClubName(value?: string | null): string {
+  return (value || '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .trim()
+    .toLowerCase();
+}
+
+function getAllowedActivityTabs(user: InfoCulturaUser | null): ActivityTab[] {
+  if (!user) return allActivityTabs;
+  if (user.role === 'superadmin') return allActivityTabs;
+
+  const clubName = normalizeClubName(user.club_name);
+  if (clubName.includes('teatro')) {
+    return ['sessions', 'events'];
+  }
+
+  if (clubName.includes('tuna')) {
+    return ['sessions', 'events'];
+  }
+
+  if (clubName.includes('leitura')) {
+    return allActivityTabs;
+  }
+
+  return allActivityTabs;
+}
+
+function getDefaultActivityTab(user: InfoCulturaUser | null): ActivityTab {
+  return getAllowedActivityTabs(user)[0] || 'sessions';
+}
+
+function getActivityHrefForTab(tab: ActivityTab): string {
+  return `/infocultura/${activitySectionByTab[tab]}`;
+}
+
+function isActivitySection(section: AdminSection | null): section is ActivitySection | 'atividades' {
+  return section === 'livros' || section === 'sessoes' || section === 'eventos' || section === 'atividades';
+}
+
 const adminSections: { id: AdminSection; label: string; href: string }[] = [
   { id: 'resumo', label: 'Resumo', href: '/infocultura/resumo' },
   { id: 'notificacoes', label: 'Notificacoes', href: '/infocultura/notificacoes' },
   { id: 'utilizadores', label: 'Utilizadores', href: '/infocultura/utilizadores' },
   { id: 'noticias', label: 'Noticias', href: '/infocultura/noticias' },
-  { id: 'atividades', label: 'Atividades', href: '/infocultura/atividades' },
+  { id: 'livros', label: 'Livros', href: '/infocultura/livros' },
+  { id: 'sessoes', label: 'Sessoes', href: '/infocultura/sessoes' },
+  { id: 'eventos', label: 'Eventos', href: '/infocultura/eventos' },
   { id: 'conteudos', label: 'Conteudos', href: '/infocultura/conteudos' },
   { id: 'inscricoes', label: 'Inscricoes', href: '/infocultura/inscricoes' },
   { id: 'clubes', label: 'Clubes', href: '/infocultura/clubes' }
@@ -477,7 +534,7 @@ const adminSectionGroups: {
 }[] = [
   { title: 'Painel', ids: ['resumo', 'notificacoes'] },
   { title: 'Gestao', ids: ['utilizadores', 'clubes', 'inscricoes'] },
-  { title: 'Conteudos', ids: ['noticias', 'atividades', 'conteudos'] }
+  { title: 'Conteudos', ids: ['noticias', 'livros', 'sessoes', 'eventos', 'conteudos'] }
 ];
 
 function getAdminSection(pathname: string): AdminSection | null {
@@ -502,6 +559,18 @@ function getAdminSection(pathname: string): AdminSection | null {
 
   if (pathname === '/infocultura/notificacoes') {
     return 'notificacoes';
+  }
+
+  if (pathname === '/infocultura/livros') {
+    return 'livros';
+  }
+
+  if (pathname === '/infocultura/sessoes') {
+    return 'sessoes';
+  }
+
+  if (pathname === '/infocultura/eventos') {
+    return 'eventos';
   }
 
   if (pathname === '/infocultura/atividades') {
@@ -877,9 +946,32 @@ function AdminCultura() {
   const activeSection = getAdminSection(location.pathname);
   const userPage = useMemo(() => getUserPage(location.pathname), [location.pathname]);
   const canManageUsers = currentUser?.role === 'superadmin';
+  const allowedActivityTabs = useMemo(
+    () => getAllowedActivityTabs(currentUser),
+    [currentUser]
+  );
+  const defaultActivityTab = useMemo(
+    () => getDefaultActivityTab(currentUser),
+    [currentUser]
+  );
+  const defaultActivityHref = useMemo(
+    () => getActivityHrefForTab(defaultActivityTab),
+    [defaultActivityTab]
+  );
   const visibleSections = useMemo(
-    () => adminSections.filter((section) => section.id !== 'clubes' || canManageUsers),
-    [canManageUsers]
+    () =>
+      adminSections.filter((section) => {
+        if (section.id === 'clubes') {
+          return canManageUsers;
+        }
+
+        if (section.id === 'livros' || section.id === 'sessoes' || section.id === 'eventos') {
+          return allowedActivityTabs.includes(activityTabBySection[section.id]);
+        }
+
+        return true;
+      }),
+    [allowedActivityTabs, canManageUsers]
   );
   const visibleSectionGroups = useMemo(
     () =>
@@ -1019,6 +1111,14 @@ function AdminCultura() {
     ],
     [activeUsers, dashboardStats, pendingRegistrations, publishedItems, sessions.length]
   );
+  const activitySectionLabel =
+    activityTab === 'books' ? 'Livros' : activityTab === 'sessions' ? 'Sessoes' : 'Eventos';
+  const activitySectionDescription =
+    activityTab === 'books'
+      ? 'Gestao editorial dos livros associados aos clubes.'
+      : activityTab === 'sessions'
+        ? 'Planeamento e acompanhamento das sessoes de cada clube.'
+        : 'Programacao e workflow editorial dos eventos culturais.';
   const readNotificationIdSet = useMemo(
     () => new Set(readNotificationIds),
     [readNotificationIds]
@@ -1092,7 +1192,7 @@ function AdminCultura() {
               title: dashboardStats.next_session.title,
               meta: dashboardStats.next_session.club_name || 'Sem clube',
               date: formatAdminDateTime(dashboardStats.next_session.date || ''),
-              href: '/infocultura/atividades',
+              href: '/infocultura/sessoes',
             }
           : null,
         dashboardStats?.next_event
@@ -1105,7 +1205,7 @@ function AdminCultura() {
                   : ''
               }`,
               date: formatAdminDateTime(dashboardStats.next_event.date || ''),
-              href: '/infocultura/atividades',
+              href: '/infocultura/eventos',
             }
           : null,
       ].filter(Boolean) as Array<{
@@ -1129,7 +1229,7 @@ function AdminCultura() {
         {
           label: 'Nova atividade',
           hint: 'Gerir livros, sessoes e eventos',
-          href: '/infocultura/atividades',
+          href: defaultActivityHref,
           icon: CalendarClock,
         },
         {
@@ -1157,7 +1257,7 @@ function AdminCultura() {
 
       return actions;
     },
-    [canManageUsers]
+    [canManageUsers, defaultActivityHref]
   );
   const latestNotifications = useMemo(
     () =>
@@ -1943,6 +2043,33 @@ function AdminCultura() {
   }, [currentUser?.club_id, canManageUsers]);
 
   useEffect(() => {
+    if (!currentUser) return;
+
+    if (activeSection === 'atividades') {
+      navigate(defaultActivityHref, { replace: true });
+      return;
+    }
+
+    if (
+      (activeSection === 'livros' || activeSection === 'sessoes' || activeSection === 'eventos') &&
+      !allowedActivityTabs.includes(activityTabBySection[activeSection])
+    ) {
+      navigate(defaultActivityHref, { replace: true });
+    }
+  }, [activeSection, allowedActivityTabs, currentUser, defaultActivityHref, navigate]);
+
+  useEffect(() => {
+    if (activeSection === 'livros' || activeSection === 'sessoes' || activeSection === 'eventos') {
+      setActivityTab(activityTabBySection[activeSection]);
+      return;
+    }
+
+    if (activeSection === 'atividades') {
+      setActivityTab(defaultActivityTab);
+    }
+  }, [activeSection, defaultActivityTab]);
+
+  useEffect(() => {
     setNewsPage(1);
   }, [newsClubFilter, newsStatusFilter, newsOrder, newsDateFrom, newsDateTo]);
 
@@ -2099,7 +2226,7 @@ function AdminCultura() {
   ]);
 
   useEffect(() => {
-    if (!token || !currentUser || activeSection !== 'atividades') {
+    if (!token || !currentUser || !isActivitySection(activeSection)) {
       return;
     }
 
@@ -3349,35 +3476,17 @@ function AdminCultura() {
               <p className={infoLegacyBrandSub}>Gestao cultural interna</p>
             </div>
           </div>
-          <p className={infoLegacyLang}>PT | EN</p>
+          <div className="flex items-center gap-3">
+            <button type="button" onClick={handleLogout} className={adminBtnSecondary}>
+              Terminar sessao
+            </button>
+            <p className={infoLegacyLang}>PT | EN</p>
+          </div>
         </div>
       </header>
 
       <main className={infoLegacyMain}>
         <div className={container}>
-          <div className={adminHeaderRow}>
-            <span className={adminBadge}>InfoCultura</span>
-            <p className={adminInfo}>
-              {activeSection === 'utilizadores'
-                ? 'Gestao e consulta dos utilizadores do InfoCultura.'
-                : activeSection === 'notificacoes'
-                  ? 'Centro de notificacoes operacionais e editoriais do painel.'
-                : activeSection === 'noticias'
-                  ? 'Criacao, publicacao e arquivo de noticias por clube.'
-                : activeSection === 'atividades'
-                  ? 'Gestao de livros, sessoes e eventos ligados aos clubes.'
-                : activeSection === 'clubes'
-                  ? 'Criacao e manutencao dos clubes internos.'
-                : activeSection === 'inscricoes'
-                  ? 'Consulta e validacao das inscricoes submetidas pelos clubes.'
-                : activeSection === 'conteudos'
-                  ? 'Gestao de Tuna, Clube de Leitura e Teatro.'
-                  : 'Visao geral do painel administrativo.'}
-            </p>
-            <button type="button" onClick={handleLogout} className={adminBtnSecondary}>
-              Terminar sessao
-            </button>
-          </div>
           {panelError ? <p className={adminError}>{panelError}</p> : null}
 
           <div className={adminPortalShell}>
@@ -4958,12 +5067,15 @@ function AdminCultura() {
             </div>
           ) : null}
 
-          {activeSection === 'atividades' ? (
+          {(activeSection === 'atividades' ||
+            activeSection === 'livros' ||
+            activeSection === 'sessoes' ||
+            activeSection === 'eventos') ? (
             <div className="space-y-6">
               <AdminPageHero
                 icon={CalendarClock}
-                title="Atividades"
-                description="Gestao integrada de livros, sessoes e eventos com filtros, agenda e workflow."
+                title={activitySectionLabel}
+                description={activitySectionDescription}
                 tone="blue"
                 stats={activityOverviewStats}
                 actions={
@@ -4981,10 +5093,8 @@ function AdminCultura() {
               <section className={adminPanelCard}>
                 <div className={adminHeaderRow}>
                   <div>
-                    <h2 className={blockTitle}>Atividades dos clubes</h2>
-                    <p className={blockText}>
-                      Gere livros, sessoes e eventos ligados aos clubes.
-                    </p>
+                    <h2 className={blockTitle}>{activitySectionLabel}</h2>
+                    <p className={blockText}>{activitySectionDescription}</p>
                   </div>
                   <div className="flex flex-wrap gap-4">
                     {canManageUsers ? (
@@ -5048,30 +5158,6 @@ function AdminCultura() {
                       </div>
                     ) : null}
                   </div>
-                </div>
-
-                <div className={adminSectionNav}>
-                  <button
-                    type="button"
-                    className={activityTab === 'books' ? adminSectionLinkActive : adminSectionLink}
-                    onClick={() => setActivityTab('books')}
-                  >
-                    Livros
-                  </button>
-                  <button
-                    type="button"
-                    className={activityTab === 'sessions' ? adminSectionLinkActive : adminSectionLink}
-                    onClick={() => setActivityTab('sessions')}
-                  >
-                    Sessoes
-                  </button>
-                  <button
-                    type="button"
-                    className={activityTab === 'events' ? adminSectionLinkActive : adminSectionLink}
-                    onClick={() => setActivityTab('events')}
-                  >
-                    Eventos
-                  </button>
                 </div>
 
                 {activityError ? <p className={adminError}>{activityError}</p> : null}
