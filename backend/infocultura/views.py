@@ -7,6 +7,7 @@ import hashlib
 from django.conf import settings
 from django.core.cache import cache
 from django.core.files.storage import default_storage
+from django.db import DatabaseError
 from django.db.models import Q
 from django.http import HttpResponse
 from django.core.paginator import Paginator
@@ -1843,7 +1844,25 @@ class AdminClubDetailView(AdminAuditDestroyMixin, generics.RetrieveUpdateDestroy
                 status=400,
             )
 
-        return super().destroy(request, *args, **kwargs)
+        if News.objects.filter(club=club).exists() or Book.objects.filter(club=club).exists() or Session.objects.filter(club=club).exists():
+            return Response(
+                {
+                    'message':
+                        'Nao podes apagar um clube com conteúdos ou atividades associadas. Remove noticias, livros e sessoes primeiro.'
+                },
+                status=400,
+            )
+
+        try:
+            return super().destroy(request, *args, **kwargs)
+        except DatabaseError:
+            return Response(
+                {
+                    'message':
+                        'Erro ao apagar o clube. Verifica se existem dependências na base de dados e tenta novamente.'
+                },
+                status=400,
+            )
 
 
 class AdminClubMemberAssignView(APIView):
