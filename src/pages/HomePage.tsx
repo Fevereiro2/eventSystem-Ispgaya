@@ -15,7 +15,11 @@ import internacionalStudents from '../assets/homepage/destaques/2.webp';
 import mais23 from '../assets/homepage/destaques/3.webp';
 import manuel from '../assets/homepage/testemunhos/2.webp';
 import maribel from '../assets/homepage/testemunhos/1.webp'
-import { fetchPublicEvents, resolveInfoCulturaAssetUrl } from '../data/infoculturaApi';
+import {
+  fetchPublicEvents,
+  fetchPublicNews,
+  resolveInfoCulturaAssetUrl
+} from '../data/infoculturaApi';
 import { container, mainContent } from '../styles/ui';
 
 type HeroSlide = {
@@ -157,74 +161,13 @@ const testimonialSlides: TestimonialSlide[] = [
   }
 ];
 
-const homepageNewsHighlights: NewsHighlightItem[] = [
-  {
-    title: 'Seminário: Comércio Internacional com DR. Ricardo Oliveira',
-    href: 'https://ispgaya.pt/pt/vida-academica/noticias/seminario-comercio-internacional-com-dr-ricardo-oliveira',
-    excerpt:
-      'No próximo dia 24 de abril, pelas 18h, terá lugar, no Auditório Padre Freitas (ISPGAYA), o seminário “Comércio Internacional: Uma Visão Estratégica sobre os Mercados Globais”, dinamizado pelo Dr. Ricardo Oliveira, fundador da empresa P&RO – Consultoria.',
-    image:
-      'https://ispg-prd.s3.eu-west-1.amazonaws.com/publications/e7bcd837-69c2-441e-831f-0dddd7d262a6/cover/md-WhatsApp%20Image%202026-04-10%20at%2009.42.45.webp',
-    imageAlt: 'Seminário: Comércio Internacional com DR. Ricardo Oliveira',
-    publishedAt: '2026-04-10 08:52:14',
-    publishedLabel: '10 abril, 2026',
-    tags: [
-      {
-        label: '#congressointernacional',
-        href: 'https://ispgaya.pt/pt/vida-academica/hashtag/congressointernacional/noticias'
-      }
-    ]
-  },
-  {
-    title: 'MSUB ISPGAYA',
-    href: 'https://ispgaya.pt/pt/vida-academica/noticias/msub-ispgaya',
-    excerpt:
-      'Entre 23 e 27 de março, estudantes do ISPGAYA em colaboração com estudantes da MSUB desenvolveram um projeto de internacionalização entre Portugal e os EUA.',
-    image:
-      'https://ispg-prd.s3.eu-west-1.amazonaws.com/publications/23b4b152-507b-4d43-9ca8-6c9465a575eb/cover/md-WhatsApp%20Image%202026-04-08%20at%2011.39.28.webp',
-    imageAlt: 'MSUB ISPGAYA',
-    publishedAt: '2026-04-08 10:57:20',
-    publishedLabel: '08 abril, 2026',
-    tags: [
-      {
-        label: '#estudantesinternacionais',
-        href: 'https://ispgaya.pt/pt/vida-academica/hashtag/estudantesinternacionais/noticias'
-      },
-      {
-        label: '#programaerasmus',
-        href: 'https://ispgaya.pt/pt/vida-academica/hashtag/programaerasmus/noticias'
-      }
-    ]
-  },
-  {
-    title: 'FII;)CA PROJECT ISPGAYA',
-    href: 'https://ispgaya.pt/pt/vida-academica/noticias/fiica-project-ispgaya',
-    excerpt:
-      'O ISPGAYA acolheu os estudantes e professores do Projeto FII;)CA nas suas instalações, onde participaram em várias atividades.',
-    image:
-      'https://ispg-prd.s3.eu-west-1.amazonaws.com/publications/962ca966-cf11-476d-8cd6-b257b7aeb6b1/cover/md-FII%3B%29CA%201%20site%20%281%29.webp',
-    imageAlt: 'FII;)CA PROJECT ISPGAYA',
-    publishedAt: '2026-04-07 16:44:52',
-    publishedLabel: '07 abril, 2026',
-    tags: [
-      {
-        label: '#congressointernacional',
-        href: 'https://ispgaya.pt/pt/vida-academica/hashtag/congressointernacional/noticias'
-      },
-      {
-        label: '#estudantesinternacionais',
-        href: 'https://ispgaya.pt/pt/vida-academica/hashtag/estudantesinternacionais/noticias'
-      }
-    ]
-  }
-];
-
 function HomePage() {
   const [activeHero, setActiveHero] = useState(0);
   const [activeSupport, setActiveSupport] = useState(0);
   const [activeTestimonial, setActiveTestimonial] = useState(0);
   const [isHeaderSolid, setIsHeaderSolid] = useState(false);
   const testimonialTouchStartX = useRef<number | null>(null);
+  const [homepageNewsHighlights, setHomepageNewsHighlights] = useState<NewsHighlightItem[]>([]);
   const [homepageEventHighlights, setHomepageEventHighlights] = useState<NewsHighlightItem[]>([]);
 
   useEffect(() => {
@@ -248,6 +191,44 @@ function HomePage() {
 
   useEffect(() => {
     let active = true;
+
+    async function loadHomepageNews() {
+      try {
+        const newsItems = await fetchPublicNews();
+        if (!active) return;
+
+        const items = newsItems
+          .slice()
+          .sort((left, right) => {
+            const leftTime = new Date(left.published_at || left.created_at).getTime();
+            const rightTime = new Date(right.published_at || right.created_at).getTime();
+            return rightTime - leftTime;
+          })
+          .slice(0, 3)
+          .map((item) => ({
+            title: item.title,
+            href: `/vida-academica/noticias/${item.id}`,
+            internal: true,
+            excerpt: item.summary,
+            image: resolveInfoCulturaAssetUrl(item.image),
+            imageAlt: item.title,
+            publishedAt: item.published_at || item.created_at,
+            publishedLabel: new Intl.DateTimeFormat('pt-PT', {
+              day: '2-digit',
+              month: 'long',
+              year: 'numeric'
+            }).format(new Date(item.published_at || item.created_at)),
+            tags: item.club_name
+              ? [{ label: `#${item.club_name.toLowerCase().replace(/\s+/g, '')}`, href: '/vida-academica/noticias' }]
+              : []
+          }));
+
+        setHomepageNewsHighlights(items);
+      } catch {
+        if (!active) return;
+        setHomepageNewsHighlights([]);
+      }
+    }
 
     async function loadHomepageEvents() {
       try {
@@ -288,6 +269,7 @@ function HomePage() {
       }
     }
 
+    void loadHomepageNews();
     void loadHomepageEvents();
 
     return () => {
@@ -649,7 +631,8 @@ function HomePage() {
             <div className="mx-auto grid w-full max-w-7xl grid-cols-1 gap-10 lg:grid-cols-2">
               <NewsHighlightsSection
                 title="Notícias"
-                viewAllHref="https://ispgaya.pt/pt/vida-academica/noticias"
+                viewAllHref="/vida-academica/noticias"
+                viewAllInternal
                 items={homepageNewsHighlights}
                 className="w-full"
               />
