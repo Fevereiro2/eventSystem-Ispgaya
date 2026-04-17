@@ -82,10 +82,11 @@ const heroSlides: HeroSlide[] = [
 
 const highlightCards: HighlightCard[] = [
   {
-    title: 'O ISPGAYA integra a AMBA e BGA',
-    text: 'ISPGAYA tem o orgulho de anunciar a sua filiação oficial na Association of MBAs (AMBA) e na Business Graduates Association (BGA).',
-    href: 'https://ispgaya.pt/pt/vida-academica/noticias/o-ispgaya-integra-a-amba-e-bga',
-    image: internacionalStudents
+    title: 'Laboratório Cultural',
+    text:
+      'Projeto cultural aberto a quem quer participar em atividades nas áreas da musica, teatro e leitura.',
+    href: '/laboratorio-cultural',
+    internal: true
   },
   {
     title: 'Regime M23 - Candidaturas Abertas!',
