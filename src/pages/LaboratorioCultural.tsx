@@ -343,6 +343,40 @@ function LaboratorioCultural() {
               {!isLoading && loadError ? <p className={contentEmpty}>{loadError}</p> : null}
             
 
+            {!isLoading && !loadError ? (
+              <div className="mt-10">
+                <h2 className="mb-4 text-2xl font-semibold text-slate-900">
+                  {hasSearch ? 'Clubes encontrados' : 'Clubes ativos'}
+                </h2>
+                {filteredClubs.length === 0 ? (
+                  <p className={contentEmpty}>Ainda nao existem clubes ativos para mostrar.</p>
+                ) : (
+                  <div className={labResearchGrid}>
+                    {filteredClubs.map((club) => (
+                      <article key={club.id} className={labResearchSubcard}>
+                        {club.image ? (
+                          <img
+                            src={resolveInfoCulturaAssetUrl(club.image)}
+                            alt={club.name}
+                            className="mb-4 h-40 w-full rounded-xl object-cover"
+                          />
+                        ) : null}
+                        <h3 className={labResearchSubtitle}>{club.name}</h3>
+                        <p className={labResearchSubtext}>
+                          {club.mission ||
+                            club.description ||
+                            'Clube cultural disponivel no laboratorio.'}
+                        </p>
+                        <Link to={getClubHref(club)} className={labResearchLink}>
+                          Ver mais
+                        </Link>
+                      </article>
+                    ))}
+                  </div>
+                )}
+              </div>
+            ) : null}
+
             {!isLoading && !loadError && hasSearch ? (
               <div className="mt-10 space-y-10">
                 {totalResults === 0 ? (
@@ -485,40 +519,6 @@ function LaboratorioCultural() {
                     Ver agenda completa
                   </Link>
                 </div>
-              </div>
-            ) : null}
-
-            {!isLoading && !loadError ? (
-              <div className="mt-10">
-                <h2 className="mb-4 text-2xl font-semibold text-slate-900">
-                  {hasSearch ? 'Clubes encontrados' : 'Clubes ativos'}
-                </h2>
-                {filteredClubs.length === 0 ? (
-                  <p className={contentEmpty}>Ainda nao existem clubes ativos para mostrar.</p>
-                ) : (
-                  <div className={labResearchGrid}>
-                    {filteredClubs.map((club) => (
-                      <article key={club.id} className={labResearchSubcard}>
-                        {club.image ? (
-                          <img
-                            src={resolveInfoCulturaAssetUrl(club.image)}
-                            alt={club.name}
-                            className="mb-4 h-40 w-full rounded-xl object-cover"
-                          />
-                        ) : null}
-                        <h3 className={labResearchSubtitle}>{club.name}</h3>
-                        <p className={labResearchSubtext}>
-                          {club.mission ||
-                            club.description ||
-                            'Clube cultural disponivel no laboratorio.'}
-                        </p>
-                        <Link to={getClubHref(club)} className={labResearchLink}>
-                          Ver mais
-                        </Link>
-                      </article>
-                    ))}
-                  </div>
-                )}
               </div>
             ) : null}
           </div>
