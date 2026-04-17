@@ -42,7 +42,7 @@ export const breadcrumbsCurrent = 'font-medium text-slate-700';
 export const heroPatternWrap =
   "before:hidden lg:before:block relative hero-triangles hero-dots-pattern mt-2 md:mt-6 after:hidden lg:after:block before:content-[''] before:absolute before:h-[260px] before:w-[280px] before:-left-[132px] before:-top-5 before:z-[1] before:opacity-90 before:bg-[url('/images/triangles-pattern-2.svg')] before:bg-no-repeat before:bg-left-top after:content-[''] after:absolute after:right-0 after:-bottom-[6px] after:h-[66px] after:w-[28%] after:opacity-60 after:[background-image:radial-gradient(ellipse_at_center,#fb923c,#fb923c_1px,transparent_0,transparent_100%)] after:[background-size:18px_18px]";
 export const heroPatternSection =
-  'relative container mx-auto px-4 sm:px-6 xl:px-8 z-10';
+  'relative container mx-auto px-4 sm:px-6 lg:px-3 z-10';
 export const breadcrumbsNav = 'flex relative z-10';
 export const breadcrumbsList =
   'hidden pl-1 items-center space-x-1 md:flex md:space-x-2';

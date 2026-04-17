@@ -28,9 +28,6 @@ import {
   container,
   contentEmpty,
   labResearchGrid,
-  labResearchHeroCard,
-  labResearchHeroText,
-  labResearchHeroTitle,
   labResearchLink,
   labResearchSection,
   labResearchSubcard,
@@ -139,7 +136,7 @@ function LaboratorioCultural() {
   const [books, setBooks] = useState<InfoCulturaBook[]>([]);
   const [sessions, setSessions] = useState<InfoCulturaSession[]>([]);
   const [events, setEvents] = useState<InfoCulturaEvent[]>([]);
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchQuery] = useState('');
   const [eventClubFilter, setEventClubFilter] = useState('all');
   const [eventCategoryFilter, setEventCategoryFilter] = useState('all');
   const [eventCityFilter, setEventCityFilter] = useState('all');
@@ -303,19 +300,38 @@ function LaboratorioCultural() {
 
       <main className={mainContent}>
         <section className={labResearchSection}>
-          <div className={container}>
+          <div className={`${container} px-4 sm:px-6 xl:px-8`}>
            
-              
               <article className={labResearchSubcard}>
-                <h3 className={labResearchSubtitle}>Missão</h3>
-                <p className={labResearchSubtext}>
-                  Promover a cultura na comunidade académica, incentivando a participação, a criatividade e a partilha de experiências.
-                </p>
+                <div className="overflow-hidden rounded-[2rem] border border-slate-200 bg-[linear-gradient(135deg,#fff7ec_0%,#ffffff_46%,#f6f8fb_100%)]">
+                  <div className="px-5 py-7 sm:px-6 lg:px-7 sm:py-8">
+                      <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#dd8609]">
+                        Visão Cultural
+                      </p>
+                      <h3 className="mt-4 font-heading text-3xl font-semibold text-slate-900 sm:text-4xl">
+                        Missão e Objetivos
+                      </h3>
+                      <p className="mt-4 max-w-2xl text-base leading-8 text-slate-700">
+                        O Laboratório Cultural existe para aproximar cultura, comunidade académica
+                        e participação. Esta entrada apresenta de forma clara a missão do espaço,
+                        os seus objetivos e o enquadramento necessário para perceber rapidamente o
+                        propósito do Laboratório Cultural sem procurar essa informação no meio do
+                        resto do conteúdo.
+                      </p>
 
-                <h4 className={labResearchSubtitle}>Objetivos</h4>
-                <p className={labResearchSubtext}>
-                  Promover a cultura na comunidade académica, incentivando a participação, a criatividade e a partilha de experiências.
-                </p>
+                      <div className="mt-6 flex flex-wrap gap-3">
+                        <Link
+                          to="/laboratorio-cultural/roadmap"
+                          className="inline-flex items-center rounded-md bg-[#dd8609] px-4 py-2 text-sm font-semibold text-white transition-opacity hover:opacity-90"
+                        >
+                          Abrir página
+                        </Link>
+                        <span className="inline-flex items-center rounded-md border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-600">
+                          Missão, objetivos e enquadramento
+                        </span>
+                      </div>
+                  </div>
+                </div>
               </article>
 
               {isLoading ? <p className={contentEmpty}>A carregar laboratorio...</p> : null}
