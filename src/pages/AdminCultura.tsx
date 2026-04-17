@@ -26,7 +26,6 @@ import infoCulturaBg from '../assets/19825874_uqliU.jpeg';
 import ispgayaLogo from '../assets/ispgaya-logo.svg';
 import {
   adminActions,
-  adminBadge,
   adminBtnDanger,
   adminBtnEdit,
   adminBtnPrimary,
@@ -507,8 +506,39 @@ function getDefaultActivityTab(user: InfoCulturaUser | null): ActivityTab {
   return getAllowedActivityTabs(user)[0] || 'sessions';
 }
 
-function getActivityHrefForTab(tab: ActivityTab): string {
-  return `/infocultura/${activitySectionByTab[tab]}`;
+function getNewsSubpage(pathname: string): NewsSubpage | null {
+  if (pathname === '/infocultura/noticias/nova') return 'form';
+  if (pathname === '/infocultura/noticias/registadas') return 'list';
+  return null;
+}
+
+function getActivitySubpage(pathname: string): ActivitySubpage | null {
+  if (pathname.endsWith('/novo')) return 'form';
+  if (pathname.endsWith('/registados')) return 'list';
+  if (pathname.endsWith('/categorias')) return 'categories';
+  return null;
+}
+
+function getContentSubpage(pathname: string): ContentSubpage | null {
+  if (pathname === '/infocultura/conteudos/novo') return 'form';
+  if (pathname === '/infocultura/conteudos/registados') return 'list';
+  return null;
+}
+
+function getNewsRoute(page: NewsSubpage): string {
+  return page === 'form' ? '/infocultura/noticias/nova' : '/infocultura/noticias/registadas';
+}
+
+function getActivityRoute(tab: ActivityTab, page: ActivitySubpage): string {
+  if (page === 'categories') {
+    return '/infocultura/eventos/categorias';
+  }
+
+  return `/infocultura/${activitySectionByTab[tab]}/${page === 'form' ? 'novo' : 'registados'}`;
+}
+
+function getContentRoute(page: ContentSubpage): string {
+  return page === 'form' ? '/infocultura/conteudos/novo' : '/infocultura/conteudos/registados';
 }
 
 function isActivitySection(section: AdminSection | null): section is ActivitySection | 'atividades' {
@@ -549,11 +579,11 @@ function getAdminSection(pathname: string): AdminSection | null {
     return 'utilizadores';
   }
 
-  if (pathname === '/infocultura/conteudos') {
+  if (pathname === '/infocultura/conteudos' || pathname.startsWith('/infocultura/conteudos/')) {
     return 'conteudos';
   }
 
-  if (pathname === '/infocultura/noticias') {
+  if (pathname === '/infocultura/noticias' || pathname.startsWith('/infocultura/noticias/')) {
     return 'noticias';
   }
 
@@ -561,15 +591,15 @@ function getAdminSection(pathname: string): AdminSection | null {
     return 'notificacoes';
   }
 
-  if (pathname === '/infocultura/livros') {
+  if (pathname === '/infocultura/livros' || pathname.startsWith('/infocultura/livros/')) {
     return 'livros';
   }
 
-  if (pathname === '/infocultura/sessoes') {
+  if (pathname === '/infocultura/sessoes' || pathname.startsWith('/infocultura/sessoes/')) {
     return 'sessoes';
   }
 
-  if (pathname === '/infocultura/eventos') {
+  if (pathname === '/infocultura/eventos' || pathname.startsWith('/infocultura/eventos/')) {
     return 'eventos';
   }
 
@@ -730,6 +760,15 @@ type AdminPageHeroProps = {
   actions?: ReactNode;
 };
 
+type AdminContextLink = {
+  label: string;
+  href: string;
+};
+
+type NewsSubpage = 'form' | 'list';
+type ActivitySubpage = 'form' | 'list' | 'categories';
+type ContentSubpage = 'form' | 'list';
+
 function getAdminHeroToneClasses(tone: AdminHeroTone): string {
   if (tone === 'blue') return 'bg-sky-100 text-sky-700';
   if (tone === 'rose') return 'bg-rose-100 text-rose-700';
@@ -784,6 +823,69 @@ function AdminPageHero({
         </div>
       ) : null}
     </section>
+  );
+}
+
+function AdminContextNav({
+  title,
+  links,
+  activeHref,
+}: {
+  title: string;
+  links: AdminContextLink[];
+  activeHref?: string | null;
+}) {
+  const navigate = useNavigate();
+
+  if (links.length === 0) return null;
+
+  return (
+    <>
+      <div className="xl:hidden">
+        <label className={adminLabel} htmlFor={`${title}-context-nav`}>
+          Nesta pagina
+        </label>
+        <select
+          id={`${title}-context-nav`}
+          className={`${adminInput} mt-2`}
+          value={activeHref || ''}
+          onChange={(event) => {
+            const target = event.target.value;
+            if (!target) return;
+            navigate(target);
+          }}
+        >
+          {links.map((link) => (
+            <option key={link.href} value={link.href}>
+              {link.label}
+            </option>
+          ))}
+        </select>
+      </div>
+
+      <aside className="sticky top-24 hidden xl:block">
+        <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+          <p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">
+            Nesta pagina
+          </p>
+          <nav className="mt-3 flex flex-col gap-2" aria-label={title}>
+            {links.map((link) => (
+              <NavLink
+                key={link.href}
+                to={link.href}
+                className={({ isActive }) =>
+                  isActive
+                    ? 'rounded-xl border border-slate-300 bg-slate-100 px-3 py-2 text-sm font-medium text-slate-900'
+                    : 'rounded-xl border border-slate-200 px-3 py-2 text-sm font-medium text-slate-700 transition hover:border-slate-300 hover:bg-slate-50 hover:text-slate-900'
+                }
+              >
+                {link.label}
+              </NavLink>
+            ))}
+          </nav>
+        </div>
+      </aside>
+    </>
   );
 }
 
@@ -944,6 +1046,15 @@ function AdminCultura() {
   const [eventFormError, setEventFormError] = useState('');
 
   const activeSection = getAdminSection(location.pathname);
+  const activeNewsSubpage = useMemo(() => getNewsSubpage(location.pathname), [location.pathname]);
+  const activeActivitySubpage = useMemo(
+    () => getActivitySubpage(location.pathname),
+    [location.pathname]
+  );
+  const activeContentSubpage = useMemo(
+    () => getContentSubpage(location.pathname),
+    [location.pathname]
+  );
   const userPage = useMemo(() => getUserPage(location.pathname), [location.pathname]);
   const canManageUsers = currentUser?.role === 'superadmin';
   const allowedActivityTabs = useMemo(
@@ -955,7 +1066,7 @@ function AdminCultura() {
     [currentUser]
   );
   const defaultActivityHref = useMemo(
-    () => getActivityHrefForTab(defaultActivityTab),
+    () => getActivityRoute(defaultActivityTab, 'list'),
     [defaultActivityTab]
   );
   const visibleSections = useMemo(
@@ -1119,6 +1230,51 @@ function AdminCultura() {
       : activityTab === 'sessions'
         ? 'Planeamento e acompanhamento das sessoes de cada clube.'
         : 'Programacao e workflow editorial dos eventos culturais.';
+  const newsPageHref = activeNewsSubpage ? getNewsRoute(activeNewsSubpage) : null;
+  const activityPageHref = activeActivitySubpage
+    ? getActivityRoute(activityTab, activeActivitySubpage)
+    : null;
+  const contentPageHref = activeContentSubpage ? getContentRoute(activeContentSubpage) : null;
+  const showNewsForm = activeNewsSubpage === 'form';
+  const showNewsList = activeNewsSubpage === 'list';
+  const showActivityFiltersAndList = activeActivitySubpage === 'list';
+  const showActivityForm = activeActivitySubpage === 'form';
+  const showEventCategories = activityTab === 'events' && activeActivitySubpage === 'categories';
+  const showContentForm = activeContentSubpage === 'form';
+  const showContentList = activeContentSubpage === 'list';
+  const newsPageLinks = useMemo<AdminContextLink[]>(
+    () => [
+      { label: editingNewsId ? 'Editar Noticia' : 'Nova Noticia', href: getNewsRoute('form') },
+      { label: 'Noticias Registadas', href: getNewsRoute('list') },
+    ],
+    [editingNewsId]
+  );
+  const activityPageLinks = useMemo<AdminContextLink[]>(
+    () =>
+      activityTab === 'books'
+        ? [
+            { label: editingBookId ? 'Editar Livro' : 'Novo Livro', href: getActivityRoute(activityTab, 'form') },
+            { label: 'Livros Registados', href: getActivityRoute(activityTab, 'list') },
+          ]
+        : activityTab === 'sessions'
+          ? [
+              { label: editingSessionId ? 'Editar Sessao' : 'Nova Sessao', href: getActivityRoute(activityTab, 'form') },
+              { label: 'Sessoes Registadas', href: getActivityRoute(activityTab, 'list') },
+            ]
+          : [
+              { label: editingEventId ? 'Editar Evento' : 'Novo Evento', href: getActivityRoute(activityTab, 'form') },
+              { label: 'Eventos Registados', href: getActivityRoute(activityTab, 'list') },
+              { label: 'Categorias de Eventos', href: getActivityRoute(activityTab, 'categories') },
+            ],
+    [activityTab, editingBookId, editingEventId, editingSessionId]
+  );
+  const contentPageLinks = useMemo<AdminContextLink[]>(
+    () => [
+      { label: editingId ? 'Editar Conteudo' : 'Novo Conteudo', href: getContentRoute('form') },
+      { label: 'Conteudos Registados', href: getContentRoute('list') },
+    ],
+    [editingId]
+  );
   const readNotificationIdSet = useMemo(
     () => new Set(readNotificationIds),
     [readNotificationIds]
@@ -2070,6 +2226,25 @@ function AdminCultura() {
   }, [activeSection, defaultActivityTab]);
 
   useEffect(() => {
+    if (activeSection === 'noticias' && !activeNewsSubpage) {
+      navigate(getNewsRoute('list'), { replace: true });
+      return;
+    }
+
+    if (
+      (activeSection === 'livros' || activeSection === 'sessoes' || activeSection === 'eventos') &&
+      !activeActivitySubpage
+    ) {
+      navigate(getActivityRoute(activityTabBySection[activeSection], 'list'), { replace: true });
+      return;
+    }
+
+    if (activeSection === 'conteudos' && !activeContentSubpage) {
+      navigate(getContentRoute('list'), { replace: true });
+    }
+  }, [activeActivitySubpage, activeContentSubpage, activeNewsSubpage, activeSection, navigate]);
+
+  useEffect(() => {
     setNewsPage(1);
   }, [newsClubFilter, newsStatusFilter, newsOrder, newsDateFrom, newsDateTo]);
 
@@ -2483,12 +2658,14 @@ function AdminCultura() {
         const updated = await updateAdminContent(token, editingId, payload);
         setItems((prev) => prev.map((item) => (item.id === editingId ? updated : item)));
         resetContentForm();
+        navigate(getContentRoute('list'));
         return;
       }
 
       const created = await createAdminContent(token, payload);
       setItems((prev) => [created, ...prev]);
       resetContentForm();
+      navigate(getContentRoute('list'));
     } catch (error) {
       const message =
         error instanceof Error ? error.message : 'Nao foi possivel guardar o conteudo.';
@@ -2507,6 +2684,7 @@ function AdminCultura() {
       date: item.date,
       status: item.status
     });
+    navigate(getContentRoute('form'));
   }
 
   async function handleDeleteContent(id: string) {
@@ -2789,6 +2967,7 @@ function AdminCultura() {
       club_id: item.club_id ? String(item.club_id) : ''
     });
     setNewsFormError('');
+    navigate(getNewsRoute('form'));
   }
 
   async function handleSaveNews(event: FormEvent<HTMLFormElement>) {
@@ -2831,6 +3010,7 @@ function AdminCultura() {
           : prev.map((item) => (item.id === savedNews.id ? savedNews : item))
       );
       resetNewsForm();
+      navigate(getNewsRoute('list'));
     } catch (error) {
       const message =
         error instanceof Error ? error.message : 'Nao foi possivel guardar a noticia.';
@@ -2896,6 +3076,7 @@ function AdminCultura() {
     });
     setBookFormError('');
     setActivityTab('books');
+    navigate(getActivityRoute('books', 'form'));
   }
 
   async function handleUploadBookImage(file: File | null) {
@@ -2958,6 +3139,7 @@ function AdminCultura() {
           : prev.map((item) => (item.id === savedBook.id ? savedBook : item))
       );
       resetBookForm();
+      navigate(getActivityRoute('books', 'list'));
     } catch (error) {
       const message =
         error instanceof Error ? error.message : 'Nao foi possivel guardar o livro.';
@@ -2997,6 +3179,7 @@ function AdminCultura() {
     });
     setCategoryFormError('');
     setActivityTab('events');
+    navigate(getActivityRoute('events', 'categories'));
   }
 
   async function handleSaveCategory(event: FormEvent<HTMLFormElement>) {
@@ -3029,6 +3212,7 @@ function AdminCultura() {
           : prev.map((item) => (item.id === savedCategory.id ? savedCategory : item))
       );
       resetCategoryForm();
+      navigate(getActivityRoute('events', 'categories'));
     } catch (error) {
       const message =
         error instanceof Error ? error.message : 'Nao foi possivel guardar a categoria.';
@@ -3087,6 +3271,7 @@ function AdminCultura() {
     });
     setSessionFormError('');
     setActivityTab('sessions');
+    navigate(getActivityRoute('sessions', 'form'));
   }
 
   async function handleSaveSession(event: FormEvent<HTMLFormElement>) {
@@ -3140,6 +3325,7 @@ function AdminCultura() {
           : prev.map((item) => (item.id === savedSession.id ? savedSession : item))
       );
       resetSessionForm();
+      navigate(getActivityRoute('sessions', 'list'));
     } catch (error) {
       const message =
         error instanceof Error ? error.message : 'Nao foi possivel guardar a sessao.';
@@ -3194,6 +3380,7 @@ function AdminCultura() {
     });
     setEventFormError('');
     setActivityTab('events');
+    navigate(getActivityRoute('events', 'form'));
   }
 
   async function handleSaveEvent(event: FormEvent<HTMLFormElement>) {
@@ -3252,6 +3439,7 @@ function AdminCultura() {
           : prev.map((item) => (item.id === savedEvent.id ? savedEvent : item))
       );
       resetEventForm();
+      navigate(getActivityRoute('events', 'list'));
     } catch (error) {
       const message =
         error instanceof Error ? error.message : 'Nao foi possivel guardar o evento.';
@@ -4600,26 +4788,28 @@ function AdminCultura() {
           ) : null}
 
           {activeSection === 'noticias' ? (
-            <div className="space-y-6">
-              <AdminPageHero
-                icon={Newspaper}
-                title="Noticias"
-                description="Workflow editorial, publicacao e acompanhamento das noticias por clube."
-                tone="blue"
-                stats={newsOverviewStats}
-                actions={
-                  <button
-                    type="button"
-                    className={adminBtnSecondary}
-                    disabled={isExportingNews}
-                    onClick={() => void handleExportNewsCsv()}
-                  >
-                    {isExportingNews ? 'A exportar...' : 'Exportar CSV'}
-                  </button>
-                }
-              />
+            <div className="space-y-6 xl:grid xl:grid-cols-[minmax(0,1fr)_260px] xl:items-start xl:gap-6 xl:space-y-0">
+              <div className="space-y-6">
+                <AdminPageHero
+                  icon={Newspaper}
+                  title="Noticias"
+                  description="Workflow editorial, publicacao e acompanhamento das noticias por clube."
+                  tone="blue"
+                  stats={newsOverviewStats}
+                  actions={
+                    <button
+                      type="button"
+                      className={adminBtnSecondary}
+                      disabled={isExportingNews}
+                      onClick={() => void handleExportNewsCsv()}
+                    >
+                      {isExportingNews ? 'A exportar...' : 'Exportar CSV'}
+                    </button>
+                  }
+                />
 
-              <form onSubmit={handleSaveNews} className={adminPanelForm}>
+              {showNewsForm ? (
+              <form id="news-form" onSubmit={handleSaveNews} className={adminPanelForm}>
                 <h2 className={blockTitle}>
                   {editingNewsId ? 'Editar Noticia' : 'Nova Noticia'}
                 </h2>
@@ -4792,8 +4982,10 @@ function AdminCultura() {
                   </button>
                 </div>
               </form>
+              ) : null}
 
-              <section className={adminPanelCard}>
+              {showNewsList ? (
+              <section id="news-list" className={adminPanelCard}>
                 <div className={adminHeaderRow}>
                   <div>
                     <h2 className={blockTitle}>Noticias registadas</h2>
@@ -5064,6 +5256,14 @@ function AdminCultura() {
                   </div>
                 ) : null}
               </section>
+              ) : null}
+              </div>
+
+              <AdminContextNav
+                title="Navegacao de noticias"
+                links={newsPageLinks}
+                activeHref={newsPageHref}
+              />
             </div>
           ) : null}
 
@@ -5071,25 +5271,27 @@ function AdminCultura() {
             activeSection === 'livros' ||
             activeSection === 'sessoes' ||
             activeSection === 'eventos') ? (
-            <div className="space-y-6">
-              <AdminPageHero
-                icon={CalendarClock}
-                title={activitySectionLabel}
-                description={activitySectionDescription}
-                tone="blue"
-                stats={activityOverviewStats}
-                actions={
-                  <button
-                    type="button"
-                    className={adminBtnSecondary}
-                    disabled={isExportingActivities}
-                    onClick={() => void handleExportActivitiesCsv()}
-                  >
-                    {isExportingActivities ? 'A exportar...' : 'Exportar CSV'}
-                  </button>
-                }
-              />
+            <div className="space-y-6 xl:grid xl:grid-cols-[minmax(0,1fr)_260px] xl:items-start xl:gap-6 xl:space-y-0">
+              <div className="space-y-6">
+                <AdminPageHero
+                  icon={CalendarClock}
+                  title={activitySectionLabel}
+                  description={activitySectionDescription}
+                  tone="blue"
+                  stats={activityOverviewStats}
+                  actions={
+                    <button
+                      type="button"
+                      className={adminBtnSecondary}
+                      disabled={isExportingActivities}
+                      onClick={() => void handleExportActivitiesCsv()}
+                    >
+                      {isExportingActivities ? 'A exportar...' : 'Exportar CSV'}
+                    </button>
+                  }
+                />
 
+              {showActivityFiltersAndList ? (
               <section className={adminPanelCard}>
                 <div className={adminHeaderRow}>
                   <div>
@@ -5365,10 +5567,12 @@ function AdminCultura() {
                   </div>
                 ) : null}
               </section>
+              ) : null}
 
               {activityTab === 'books' ? (
                 <>
-                  <form onSubmit={handleSaveBook} className={adminPanelForm}>
+                  {showActivityForm ? (
+                  <form id="activity-form" onSubmit={handleSaveBook} className={adminPanelForm}>
                     <h2 className={blockTitle}>
                       {editingBookId ? 'Editar Livro' : 'Novo Livro'}
                     </h2>
@@ -5537,8 +5741,10 @@ function AdminCultura() {
                       </button>
                     </div>
                   </form>
+                  ) : null}
 
-                  <div className={adminList}>
+                  {showActivityFiltersAndList ? (
+                  <div id="activity-list" className={adminList}>
                     {isLoadingActivities ? <p className={adminInfo}>A carregar livros...</p> : null}
                     {!isLoadingActivities && sortedBooks.length === 0 ? (
                       <p className={adminInfo}>Nao existem livros para o filtro atual.</p>
@@ -5582,7 +5788,8 @@ function AdminCultura() {
                       </article>
                     ))}
                   </div>
-                  {!isLoadingActivities ? (
+                  ) : null}
+                  {showActivityFiltersAndList && !isLoadingActivities ? (
                     <div className={`${adminActions} mt-6`}>
                       <p className={adminInfo}>
                         {activityTotal} livro(s) · pagina {activityPage} de {activityTotalPages || 1}
@@ -5610,7 +5817,8 @@ function AdminCultura() {
 
               {activityTab === 'sessions' ? (
                 <>
-                  <form onSubmit={handleSaveSession} className={adminPanelForm}>
+                  {showActivityForm ? (
+                  <form id="activity-form" onSubmit={handleSaveSession} className={adminPanelForm}>
                     <h2 className={blockTitle}>
                       {editingSessionId ? 'Editar Sessao' : 'Nova Sessao'}
                     </h2>
@@ -5800,8 +6008,10 @@ function AdminCultura() {
                       </button>
                     </div>
                   </form>
+                  ) : null}
 
-                  <div className={adminList}>
+                  {showActivityFiltersAndList ? (
+                  <div id="activity-list" className={adminList}>
                     {isLoadingActivities ? <p className={adminInfo}>A carregar sessoes...</p> : null}
                     {!isLoadingActivities && sortedSessions.length === 0 ? (
                       <p className={adminInfo}>Nao existem sessoes para o filtro atual.</p>
@@ -5846,7 +6056,8 @@ function AdminCultura() {
                       </article>
                     ))}
                   </div>
-                  {!isLoadingActivities ? (
+                  ) : null}
+                  {showActivityFiltersAndList && !isLoadingActivities ? (
                     <div className={`${adminActions} mt-6`}>
                       <p className={adminInfo}>
                         {activityTotal} sessao(oes) · pagina {activityPage} de {activityTotalPages || 1}
@@ -5874,7 +6085,8 @@ function AdminCultura() {
 
               {activityTab === 'events' ? (
                 <>
-                  <form onSubmit={handleSaveEvent} className={adminPanelForm}>
+                  {showActivityForm ? (
+                  <form id="activity-form" onSubmit={handleSaveEvent} className={adminPanelForm}>
                     <h2 className={blockTitle}>
                       {editingEventId ? 'Editar Evento' : 'Novo Evento'}
                     </h2>
@@ -6171,8 +6383,10 @@ function AdminCultura() {
                       </button>
                     </div>
                   </form>
+                  ) : null}
 
-                  <div className={adminList}>
+                  {showActivityFiltersAndList ? (
+                  <div id="activity-list" className={adminList}>
                     {isLoadingActivities ? <p className={adminInfo}>A carregar eventos...</p> : null}
                     {!isLoadingActivities && sortedEvents.length === 0 ? (
                       <p className={adminInfo}>Nao existem eventos para o filtro atual.</p>
@@ -6245,7 +6459,8 @@ function AdminCultura() {
                       </article>
                     ))}
                   </div>
-                  {!isLoadingActivities ? (
+                  ) : null}
+                  {showActivityFiltersAndList && !isLoadingActivities ? (
                     <div className={`${adminActions} mt-6`}>
                       <p className={adminInfo}>
                         {activityTotal} evento(s) · pagina {activityPage} de {activityTotalPages || 1}
@@ -6271,8 +6486,8 @@ function AdminCultura() {
                 </>
               ) : null}
 
-              {activityTab === 'events' ? (
-                <section className={adminPanelCard}>
+              {showEventCategories ? (
+                <section id="event-categories" className={adminPanelCard}>
                   <h2 className={blockTitle}>Categorias de eventos</h2>
                   <p className={blockText}>
                     Cria categorias para classificar eventos e usar filtros no painel e no publico.
@@ -6368,6 +6583,13 @@ function AdminCultura() {
                   </div>
                 </section>
               ) : null}
+              </div>
+
+              <AdminContextNav
+                title="Navegacao de atividades"
+                links={activityPageLinks}
+                activeHref={activityPageHref}
+              />
             </div>
           ) : null}
 
@@ -6704,16 +6926,18 @@ function AdminCultura() {
           ) : null}
 
           {activeSection === 'conteudos' ? (
-            <div className="space-y-6">
-              <AdminPageHero
-                icon={FolderKanban}
-                title="Conteudos"
-                description="Gestao editorial das areas permanentes do Laboratorio Cultural."
-                tone="emerald"
-                stats={contentOverviewStats}
-              />
+            <div className="space-y-6 xl:grid xl:grid-cols-[minmax(0,1fr)_260px] xl:items-start xl:gap-6 xl:space-y-0">
+              <div className="space-y-6">
+                <AdminPageHero
+                  icon={FolderKanban}
+                  title="Conteudos"
+                  description="Gestao editorial das areas permanentes do Laboratorio Cultural."
+                  tone="emerald"
+                  stats={contentOverviewStats}
+                />
 
-              <form onSubmit={handleSaveContent} className={adminPanelForm}>
+              {showContentForm ? (
+              <form id="content-form" onSubmit={handleSaveContent} className={adminPanelForm}>
                 <h2 className={blockTitle}>
                   {editingId ? 'Editar Conteudo' : 'Novo Conteudo'}
                 </h2>
@@ -6825,8 +7049,10 @@ function AdminCultura() {
                   </button>
                 </div>
               </form>
+              ) : null}
 
-              <div className={adminList}>
+              {showContentList ? (
+              <div id="content-list" className={adminList}>
                 {isLoadingItems ? (
                   <p className={adminInfo}>A carregar conteudos...</p>
                 ) : null}
@@ -6863,6 +7089,14 @@ function AdminCultura() {
                   </article>
                 ))}
               </div>
+              ) : null}
+              </div>
+
+              <AdminContextNav
+                title="Navegacao de conteudos"
+                links={contentPageLinks}
+                activeHref={contentPageHref}
+              />
             </div>
           ) : null}
             </div>
