@@ -8,6 +8,7 @@ import HomePage from './pages/HomePage';
 import LaboratorioCultural from './pages/LaboratorioCultural';
 import LivroCultural from './pages/LivroCultural';
 import NoticiaCultural from './pages/NoticiaCultural';
+import NoticiasPage from './pages/NoticiasPage';
 import PublicacoesCientificas from './pages/PublicacoesCientificas';
 import SessaoCultural from './pages/SessaoCultural';
 import Teatro from './pages/Teatro';
@@ -20,6 +21,8 @@ function App() {
       <div className={appRoot}>
         <Routes>
           <Route path="/" element={<HomePage />} />
+          <Route path="/vida-academica/noticias" element={<NoticiasPage />} />
+          <Route path="/vida-academica/noticias/:newsId" element={<NoticiaCultural />} />
           <Route path="/vida-academica/eventos" element={<EventosPage />} />
           <Route path="/vida-academica/eventos/:eventId" element={<EventoCultural />} />
           <Route path="/investigacao/publicacoes-cientificas" element={<PublicacoesCientificas />} />
