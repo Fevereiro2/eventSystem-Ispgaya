@@ -160,8 +160,10 @@ class News(models.Model):
     updated_at = models.DateTimeField()
     club = models.ForeignKey(
         Club,
-        on_delete=models.DO_NOTHING,
+        on_delete=models.SET_NULL,
         db_column='id_clubs',
+        blank=True,
+        null=True,
         related_name='news_items',
     )
     content = models.TextField()
@@ -187,8 +189,10 @@ class Book(models.Model):
     created_at = models.DateTimeField(blank=True, null=True)
     club = models.ForeignKey(
         Club,
-        on_delete=models.DO_NOTHING,
+        on_delete=models.SET_NULL,
         db_column='id_club',
+        blank=True,
+        null=True,
         related_name='books',
     )
 
@@ -213,8 +217,10 @@ class Session(models.Model):
     updated_at = models.DateTimeField(blank=True, null=True)
     club = models.ForeignKey(
         Club,
-        on_delete=models.DO_NOTHING,
+        on_delete=models.SET_NULL,
         db_column='id_club',
+        blank=True,
+        null=True,
         related_name='sessions',
     )
     registrations = models.ManyToManyField(
@@ -308,8 +314,10 @@ class Event(models.Model):
     status = models.CharField(max_length=50)
     user = models.ForeignKey(
         AppUser,
-        on_delete=models.DO_NOTHING,
+        on_delete=models.SET_NULL,
         db_column='user_id',
+        blank=True,
+        null=True,
         related_name='events',
     )
     created_at = models.DateTimeField(blank=True, null=True)

@@ -209,7 +209,7 @@ class Event(AuditMixin):
     city: str = ""
     location: str = ""
 
-    user_id: int
+    user_id: Optional[int]
 
     user: Optional[User] = None
     event_categories: list[EventCategory] = field(default_factory=list, repr=False)
@@ -224,7 +224,8 @@ class Event(AuditMixin):
         _require_datetime(self.end_date, "end_date")
         _require_chronological(self.start_date, self.end_date)
         _require_non_empty(self.status, "status")
-        _require_positive_int(self.user_id, "user_id")
+        if self.user_id is not None:
+            _require_positive_int(self.user_id, "user_id")
 
 
 @dataclass(slots=True, kw_only=True)
@@ -255,7 +256,7 @@ class Book(CreatedAtMixin):
     summary: str
     is_featured: bool
 
-    club_id: int
+    club_id: Optional[int]
 
     club: Optional[Club] = None
 
@@ -265,7 +266,8 @@ class Book(CreatedAtMixin):
         _require_non_empty(self.title, "title")
         _require_non_empty(self.author, "author")
         _require_positive_int(self.publication_year, "publication_year")
-        _require_positive_int(self.club_id, "club_id")
+        if self.club_id is not None:
+            _require_positive_int(self.club_id, "club_id")
 
 
 @dataclass(slots=True, kw_only=True)
@@ -280,7 +282,7 @@ class Session(AuditMixin):
     start_date: datetime
     end_date: datetime
 
-    club_id: int
+    club_id: Optional[int]
 
     club: Optional[Club] = None
 
@@ -293,7 +295,8 @@ class Session(AuditMixin):
         _require_datetime(self.start_date, "start_date")
         _require_datetime(self.end_date, "end_date")
         _require_chronological(self.start_date, self.end_date)
-        _require_positive_int(self.club_id, "club_id")
+        if self.club_id is not None:
+            _require_positive_int(self.club_id, "club_id")
 
 
 @dataclass(slots=True, kw_only=True)
@@ -306,7 +309,7 @@ class Registration(CreatedAtMixin):
     phone: str
     message: str
 
-    registration_status_id: int
+    registration_status_id: Optional[int]
 
     registration_status: Optional[RegistrationStatus] = None
     club_links: list[ClubRegistration] = field(default_factory=list, repr=False)
@@ -317,7 +320,8 @@ class Registration(CreatedAtMixin):
         _require_positive_int(self.registration_id, "registration_id")
         _require_non_empty(self.name, "name")
         _require_email(self.email)
-        _require_positive_int(self.registration_status_id, "registration_status_id")
+        if self.registration_status_id is not None:
+            _require_positive_int(self.registration_status_id, "registration_status_id")
 
 
 @dataclass(slots=True, kw_only=True)
@@ -374,7 +378,7 @@ class Newsletter(CreatedAtMixin):
     status: str = NewsletterStatus.DRAFT.value
     sent_at: Optional[datetime] = None
 
-    user_id: int
+    user_id: Optional[int]
 
     user: Optional[User] = None
 
@@ -385,7 +389,8 @@ class Newsletter(CreatedAtMixin):
         _require_non_empty(self.subject, "subject")
         _require_non_empty(self.content, "content")
         _require_non_empty(self.status, "status")
-        _require_positive_int(self.user_id, "user_id")
+        if self.user_id is not None:
+            _require_positive_int(self.user_id, "user_id")
         if self.sent_at is not None:
             _require_datetime(self.sent_at, "sent_at")
 

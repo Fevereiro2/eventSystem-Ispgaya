@@ -173,7 +173,11 @@ class Registration(Base, ReprMixin):
     )
     id_rstatus: Mapped[Optional[int]] = mapped_column(
         Integer,
-        ForeignKey("rstatus.id_rstatus", name="fk_registrations_rstatus"),
+        ForeignKey(
+            "rstatus.id_rstatus",
+            name="fk_registrations_rstatus",
+            ondelete="SET NULL",
+        ),
         nullable=True,
     )
 
@@ -246,13 +250,13 @@ class Book(Base, CreatedAtMixin, ReprMixin):
     cover_image: Mapped[str] = mapped_column(String(500), nullable=False, server_default=text("''"))
     summary: Mapped[str] = mapped_column(Text, nullable=False)
     is_featured: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default=text("0"))
-    id_club: Mapped[int] = mapped_column(
+    id_club: Mapped[Optional[int]] = mapped_column(
         Integer,
-        ForeignKey("clubs.id_clubs"),
-        nullable=False,
+        ForeignKey("clubs.id_clubs", ondelete="SET NULL"),
+        nullable=True,
     )
 
-    club: Mapped[Club] = relationship(back_populates="books")
+    club: Mapped[Optional[Club]] = relationship(back_populates="books")
 
 
 class Session(Base, AuditMixin, ReprMixin):
@@ -268,13 +272,13 @@ class Session(Base, AuditMixin, ReprMixin):
     session_date: Mapped[date] = mapped_column(Date, nullable=False)
     start_date: Mapped[datetime] = mapped_column(DateTime, nullable=False)
     end_date: Mapped[datetime] = mapped_column(DateTime, nullable=False)
-    id_club: Mapped[int] = mapped_column(
+    id_club: Mapped[Optional[int]] = mapped_column(
         Integer,
-        ForeignKey("clubs.id_clubs"),
-        nullable=False,
+        ForeignKey("clubs.id_clubs", ondelete="SET NULL"),
+        nullable=True,
     )
 
-    club: Mapped[Club] = relationship(back_populates="sessions")
+    club: Mapped[Optional[Club]] = relationship(back_populates="sessions")
 
 
 class ClubRegistration(Base, ReprMixin):
@@ -285,7 +289,7 @@ class ClubRegistration(Base, ReprMixin):
 
     id_clubs: Mapped[int] = mapped_column(
         Integer,
-        ForeignKey("clubs.id_clubs"),
+        ForeignKey("clubs.id_clubs", ondelete="CASCADE"),
         primary_key=True,
     )
     id_registrations: Mapped[int] = mapped_column(
@@ -315,13 +319,13 @@ class Event(Base, AuditMixin, ReprMixin):
     status: Mapped[str] = mapped_column(String(50), nullable=False)
     city: Mapped[str] = mapped_column(String(120), nullable=False, server_default=text("''"))
     location: Mapped[str] = mapped_column(String(255), nullable=False, server_default=text("''"))
-    user_id: Mapped[int] = mapped_column(
+    user_id: Mapped[Optional[int]] = mapped_column(
         Integer,
-        ForeignKey("users.id"),
-        nullable=False,
+        ForeignKey("users.id", ondelete="SET NULL"),
+        nullable=True,
     )
 
-    user: Mapped[User] = relationship(back_populates="events")
+    user: Mapped[Optional[User]] = relationship(back_populates="events")
     event_categories: Mapped[list[EventCategory]] = relationship(back_populates="event")
     categories: Mapped[list[Category]] = relationship(
         secondary="event_category",
@@ -367,15 +371,15 @@ class News(Base, AuditMixin, ReprMixin):
         nullable=False,
     )
     published_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
-    id_clubs: Mapped[int] = mapped_column(
+    id_clubs: Mapped[Optional[int]] = mapped_column(
         Integer,
-        ForeignKey("clubs.id_clubs"),
-        nullable=False,
+        ForeignKey("clubs.id_clubs", ondelete="SET NULL"),
+        nullable=True,
     )
     content: Mapped[str] = mapped_column(Text, nullable=False)
 
     news_status: Mapped[NewsStatus] = relationship(back_populates="news_items")
-    club: Mapped[Club] = relationship(back_populates="news_items")
+    club: Mapped[Optional[Club]] = relationship(back_populates="news_items")
 
 
 class Newsletter(Base, CreatedAtMixin, ReprMixin):
@@ -390,13 +394,13 @@ class Newsletter(Base, CreatedAtMixin, ReprMixin):
     content: Mapped[str] = mapped_column(Text, nullable=False)
     status: Mapped[str] = mapped_column(String(50), nullable=False)
     sent_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
-    user_id: Mapped[int] = mapped_column(
+    user_id: Mapped[Optional[int]] = mapped_column(
         Integer,
-        ForeignKey("users.id"),
-        nullable=False,
+        ForeignKey("users.id", ondelete="SET NULL"),
+        nullable=True,
     )
 
-    user: Mapped[User] = relationship(back_populates="newsletters")
+    user: Mapped[Optional[User]] = relationship(back_populates="newsletters")
 
 
 class NewsletterSubscriber(Base, ReprMixin):
