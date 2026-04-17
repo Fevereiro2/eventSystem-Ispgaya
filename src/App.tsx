@@ -5,6 +5,7 @@ import ClubeLeitura from './pages/ClubeLeitura';
 import EventoCultural from './pages/EventoCultural';
 import EventosPage from './pages/EventosPage';
 import HomePage from './pages/HomePage';
+import LaboratorioAgendaPage from './pages/LaboratorioAgendaPage';
 import LaboratorioCultural from './pages/LaboratorioCultural';
 import LaboratorioRoadmap from './pages/LaboratorioRoadmap';
 import LivroCultural from './pages/LivroCultural';
@@ -28,6 +29,7 @@ function App() {
           <Route path="/vida-academica/eventos/:eventId" element={<EventoCultural />} />
           <Route path="/investigacao/publicacoes-cientificas" element={<PublicacoesCientificas />} />
           <Route path="/laboratorio-cultural" element={<LaboratorioCultural />} />
+          <Route path="/laboratorio-cultural/agenda" element={<LaboratorioAgendaPage />} />
           <Route path="/laboratorio-cultural/roadmap" element={<LaboratorioRoadmap />} />
           <Route
             path="/infocultura/*"
