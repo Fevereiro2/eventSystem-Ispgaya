@@ -826,69 +826,6 @@ function AdminPageHero({
   );
 }
 
-function AdminContextNav({
-  title,
-  links,
-  activeHref,
-}: {
-  title: string;
-  links: AdminContextLink[];
-  activeHref?: string | null;
-}) {
-  const navigate = useNavigate();
-
-  if (links.length === 0) return null;
-
-  return (
-    <>
-      <div className="xl:hidden">
-        <label className={adminLabel} htmlFor={`${title}-context-nav`}>
-          Nesta pagina
-        </label>
-        <select
-          id={`${title}-context-nav`}
-          className={`${adminInput} mt-2`}
-          value={activeHref || ''}
-          onChange={(event) => {
-            const target = event.target.value;
-            if (!target) return;
-            navigate(target);
-          }}
-        >
-          {links.map((link) => (
-            <option key={link.href} value={link.href}>
-              {link.label}
-            </option>
-          ))}
-        </select>
-      </div>
-
-      <aside className="sticky top-24 hidden xl:block">
-        <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-          <p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">
-            Nesta pagina
-          </p>
-          <nav className="mt-3 flex flex-col gap-2" aria-label={title}>
-            {links.map((link) => (
-              <NavLink
-                key={link.href}
-                to={link.href}
-                className={({ isActive }) =>
-                  isActive
-                    ? 'rounded-xl border border-slate-300 bg-slate-100 px-3 py-2 text-sm font-medium text-slate-900'
-                    : 'rounded-xl border border-slate-200 px-3 py-2 text-sm font-medium text-slate-700 transition hover:border-slate-300 hover:bg-slate-50 hover:text-slate-900'
-                }
-              >
-                {link.label}
-              </NavLink>
-            ))}
-          </nav>
-        </div>
-      </aside>
-    </>
-  );
-}
-
 function AdminCultura() {
   const location = useLocation();
   const navigate = useNavigate();
@@ -1274,6 +1211,41 @@ function AdminCultura() {
       { label: 'Conteudos Registados', href: getContentRoute('list') },
     ],
     [editingId]
+  );
+  const sidebarContextNavBySection = useMemo<
+    Partial<Record<AdminSection, { links: AdminContextLink[]; activeHref?: string | null }>>
+  >(
+    () => ({
+      noticias: {
+        links: newsPageLinks,
+        activeHref: newsPageHref,
+      },
+      livros: {
+        links: activityTab === 'books' ? activityPageLinks : [],
+        activeHref: activityTab === 'books' ? activityPageHref : null,
+      },
+      sessoes: {
+        links: activityTab === 'sessions' ? activityPageLinks : [],
+        activeHref: activityTab === 'sessions' ? activityPageHref : null,
+      },
+      eventos: {
+        links: activityTab === 'events' ? activityPageLinks : [],
+        activeHref: activityTab === 'events' ? activityPageHref : null,
+      },
+      conteudos: {
+        links: contentPageLinks,
+        activeHref: contentPageHref,
+      },
+    }),
+    [
+      activityPageHref,
+      activityPageLinks,
+      activityTab,
+      contentPageHref,
+      contentPageLinks,
+      newsPageHref,
+      newsPageLinks,
+    ]
   );
   const readNotificationIdSet = useMemo(
     () => new Set(readNotificationIds),
@@ -3689,17 +3661,41 @@ function AdminCultura() {
                   <p className={adminPortalSidebarTitle}>{group.title}</p>
                   <nav className={adminPortalSidebarNav} aria-label={group.title}>
                     {group.sections.map((section) => (
-                      <NavLink
-                        key={section.id}
-                        to={section.href}
-                        className={({ isActive }) =>
-                          isActive ? adminPortalSidebarLinkActive : adminPortalSidebarLink
-                        }
-                      >
-                        {section.id === 'notificacoes' && unreadNotifications.length > 0
-                          ? `${section.label} (${unreadNotifications.length})`
-                          : section.label}
-                      </NavLink>
+                      <div key={section.id}>
+                        <NavLink
+                          to={section.href}
+                          className={({ isActive }) =>
+                            isActive ? adminPortalSidebarLinkActive : adminPortalSidebarLink
+                          }
+                        >
+                          {section.id === 'notificacoes' && unreadNotifications.length > 0
+                            ? `${section.label} (${unreadNotifications.length})`
+                            : section.label}
+                        </NavLink>
+                        {section.id === activeSection &&
+                        sidebarContextNavBySection[section.id]?.links.length ? (
+                          <div className="border-l-[4px] border-[#f4a24d] bg-white/75 px-4 py-2">
+                            <div className="flex flex-col gap-1">
+                              {sidebarContextNavBySection[section.id]?.links.map((link) => (
+                                <NavLink
+                                  key={link.href}
+                                  to={link.href}
+                                  className={({ isActive }) =>
+                                    `block w-full rounded-md px-3 py-2 text-sm transition-colors ${
+                                      isActive ||
+                                      sidebarContextNavBySection[section.id]?.activeHref === link.href
+                                        ? 'bg-orange-50 font-semibold text-[#dd8609]'
+                                        : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
+                                    }`
+                                  }
+                                >
+                                  {link.label}
+                                </NavLink>
+                              ))}
+                            </div>
+                          </div>
+                        ) : null}
+                      </div>
                     ))}
                   </nav>
                 </div>
@@ -4788,8 +4784,7 @@ function AdminCultura() {
           ) : null}
 
           {activeSection === 'noticias' ? (
-            <div className="space-y-6 xl:grid xl:grid-cols-[minmax(0,1fr)_260px] xl:items-start xl:gap-6 xl:space-y-0">
-              <div className="space-y-6">
+            <div className="space-y-6">
                 <AdminPageHero
                   icon={Newspaper}
                   title="Noticias"
@@ -5257,13 +5252,6 @@ function AdminCultura() {
                 ) : null}
               </section>
               ) : null}
-              </div>
-
-              <AdminContextNav
-                title="Navegacao de noticias"
-                links={newsPageLinks}
-                activeHref={newsPageHref}
-              />
             </div>
           ) : null}
 
@@ -5271,8 +5259,7 @@ function AdminCultura() {
             activeSection === 'livros' ||
             activeSection === 'sessoes' ||
             activeSection === 'eventos') ? (
-            <div className="space-y-6 xl:grid xl:grid-cols-[minmax(0,1fr)_260px] xl:items-start xl:gap-6 xl:space-y-0">
-              <div className="space-y-6">
+            <div className="space-y-6">
                 <AdminPageHero
                   icon={CalendarClock}
                   title={activitySectionLabel}
@@ -6583,13 +6570,6 @@ function AdminCultura() {
                   </div>
                 </section>
               ) : null}
-              </div>
-
-              <AdminContextNav
-                title="Navegacao de atividades"
-                links={activityPageLinks}
-                activeHref={activityPageHref}
-              />
             </div>
           ) : null}
 
@@ -6926,8 +6906,7 @@ function AdminCultura() {
           ) : null}
 
           {activeSection === 'conteudos' ? (
-            <div className="space-y-6 xl:grid xl:grid-cols-[minmax(0,1fr)_260px] xl:items-start xl:gap-6 xl:space-y-0">
-              <div className="space-y-6">
+            <div className="space-y-6">
                 <AdminPageHero
                   icon={FolderKanban}
                   title="Conteudos"
@@ -7090,13 +7069,6 @@ function AdminCultura() {
                 ))}
               </div>
               ) : null}
-              </div>
-
-              <AdminContextNav
-                title="Navegacao de conteudos"
-                links={contentPageLinks}
-                activeHref={contentPageHref}
-              />
             </div>
           ) : null}
             </div>
