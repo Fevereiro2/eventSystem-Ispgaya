@@ -8,11 +8,11 @@ from typing import Any
 from dotenv import load_dotenv
 from sqlalchemy import create_engine, inspect
 
-from .sqlalchemy_live_models import Base as LiveBase
-from .sqlalchemy_models import Base as TargetBase
+from ..database.sqlalchemy_live_models import Base as LiveBase
+from ..database.sqlalchemy_models import Base as TargetBase
 
 
-BASE_DIR = Path(__file__).resolve().parent.parent
+BASE_DIR = Path(__file__).resolve().parent.parent.parent
 load_dotenv(BASE_DIR / ".env")
 
 

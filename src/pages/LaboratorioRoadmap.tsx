@@ -1,7 +1,7 @@
-import Breadcrumbs from '../components/Breadcrumbs';
-import Footer from '../components/Footer';
-import HeaderNav from '../components/HeaderNav';
-import TopBar from '../components/TopBar';
+import Breadcrumbs from '../components/ui/Breadcrumbs';
+import Footer from '../components/layout/Footer';
+import HeaderNav from '../components/layout/HeaderNav';
+import TopBar from '../components/layout/TopBar';
 import logo from '../assets/ispgaya-logo.svg';
 import { container, mainContent } from '../styles/ui';
 

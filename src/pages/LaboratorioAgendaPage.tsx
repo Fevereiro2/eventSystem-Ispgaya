@@ -1,10 +1,10 @@
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import Breadcrumbs from '../components/Breadcrumbs';
-import Footer from '../components/Footer';
-import HeaderNav from '../components/HeaderNav';
-import TopBar from '../components/TopBar';
+import Breadcrumbs from '../components/ui/Breadcrumbs';
+import Footer from '../components/layout/Footer';
+import HeaderNav from '../components/layout/HeaderNav';
+import TopBar from '../components/layout/TopBar';
 import {
   fetchPublicCategories,
   fetchPublicClubs,
@@ -13,7 +13,7 @@ import {
   InfoCulturaClub,
   InfoCulturaEvent,
   resolveInfoCulturaAssetUrl
-} from '../data/infoculturaApi';
+} from '../api/infoculturaApi';
 import {
   adminBtnSecondary,
   adminField,

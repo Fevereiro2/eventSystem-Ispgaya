@@ -4,7 +4,7 @@ from django.db import connection
 from django.core.validators import validate_email as django_validate_email
 from django.core.exceptions import ValidationError as DjangoValidationError
 
-from .models import (
+from ..models import (
     AppUser,
     Book,
     Category,
@@ -18,7 +18,7 @@ from .models import (
     Role,
     Session,
 )
-from .services import (
+from ..services import (
     ActivityRegistrationError,
     ActivityRegistrationRateLimitError,
     AdminClubRegistrationRecord,
@@ -37,7 +37,7 @@ from .services import (
     notify_news_workflow_status,
     record_editorial_action,
 )
-from .security import (
+from ..core.security import (
     hash_password,
     normalize_email_address,
     validate_login_identifier,

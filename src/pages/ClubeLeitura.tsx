@@ -1,10 +1,10 @@
-import Breadcrumbs from '../components/Breadcrumbs';
-import DocumentRow from '../components/DocumentRow';
-import Footer from '../components/Footer';
-import HeaderNav from '../components/HeaderNav';
-import PieChartHero from '../components/PieChartHero';
-import StatCard from '../components/StatCard';
-import TopBar from '../components/TopBar';
+import Breadcrumbs from '../components/ui/Breadcrumbs';
+import DocumentRow from '../components/ui/DocumentRow';
+import Footer from '../components/layout/Footer';
+import HeaderNav from '../components/layout/HeaderNav';
+import PieChartHero from '../components/ui/PieChartHero';
+import StatCard from '../components/ui/StatCard';
+import TopBar from '../components/layout/TopBar';
 import {
   blockText,
   blockTitle,

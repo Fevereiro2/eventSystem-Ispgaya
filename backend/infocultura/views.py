@@ -17,8 +17,8 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from .models import AppUser, Book, Category, Club, CulturalContent, Event, News, NewsStatus, RegistrationStatus, Role, Session
-from .permissions import IsClubAdmin, IsSuperAdmin
-from .serializers import (
+from .core.permissions import IsClubAdmin, IsSuperAdmin
+from .api.serializers import (
     AdminBulkIdsSerializer,
     AdminBulkStatusUpdateSerializer,
     AdminBookWriteSerializer,
@@ -67,7 +67,7 @@ from .services import (
     notify_news_workflow_status,
     update_admin_club_registration_status,
 )
-from .security import (
+from .core.security import (
     check_password_hash,
     decode_refresh_token,
     is_refresh_token_revoked,

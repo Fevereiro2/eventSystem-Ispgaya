@@ -15,10 +15,10 @@ import {
   navDropdownWrap,
   navItemGroup,
   navLink
-} from '../styles/ui';
-import logo from '../assets/ispgaya-logo.svg';
-import logoNegative from '../assets/ispgaya-logo-negative.svg';
-import { fetchPublicClubs, InfoCulturaClub } from '../data/infoculturaApi';
+} from '../../styles/ui';
+import logo from '../../assets/ispgaya-logo.svg';
+import logoNegative from '../../assets/ispgaya-logo-negative.svg';
+import { fetchPublicClubs, InfoCulturaClub } from '../../api/infoculturaApi';
 
 type LinkItem = {
   label: string;

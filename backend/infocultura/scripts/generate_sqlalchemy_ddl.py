@@ -5,10 +5,10 @@ from pathlib import Path
 from sqlalchemy.schema import CreateTable
 from sqlalchemy.dialects import mysql
 
-from .sqlalchemy_models import Base
+from ..database.sqlalchemy_models import Base
 
 
-OUTPUT_FILE = Path(__file__).with_name("sqlalchemy_schema.sql")
+OUTPUT_FILE = Path(__file__).parent.parent / "database" / "sqlalchemy_schema.sql"
 
 
 def render_mysql_ddl() -> str:

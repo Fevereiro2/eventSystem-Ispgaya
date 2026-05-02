@@ -7,7 +7,7 @@ import {
   pieLegendItem,
   pieSubtitle,
   pieTitle
-} from '../styles/ui';
+} from '../../styles/ui';
 
 const legendItems = [
   { label: 'Artigos Cientificos', color: '#1f77b4' },

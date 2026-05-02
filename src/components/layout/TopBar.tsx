@@ -9,7 +9,7 @@ import {
   topBarLocaleWrap,
   topBarRightGroup,
   topBarRightLinks
-} from '../styles/ui';
+} from '../../styles/ui';
 
 const leftLinks = [
   {

@@ -6,7 +6,7 @@ import {
   adminInput,
   adminLabel,
   adminTextarea
-} from '../styles/ui';
+} from '../../styles/ui';
 
 export type ClubRegistrationFormData = {
   name: string;

@@ -8,7 +8,7 @@ import {
   docName,
   docRow,
   docTop
-} from '../styles/ui';
+} from '../../styles/ui';
 
 type DocumentRowProps = {
   name: string;

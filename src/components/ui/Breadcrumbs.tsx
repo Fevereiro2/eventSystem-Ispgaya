@@ -11,7 +11,7 @@ import {
   heroIntroWrap,
   heroPatternSection,
   heroPatternWrap
-} from '../styles/ui';
+} from '../../styles/ui';
 
 type BreadcrumbsProps = {
   title?: string;

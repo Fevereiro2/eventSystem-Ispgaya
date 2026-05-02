@@ -32,12 +32,12 @@ import {
   footerSubTitle,
   footerTitle,
   footerWrap
-} from '../styles/ui';
-import iso14001 from '../assets/ISO-14001.svg';
-import iso21001 from '../assets/ISO-21001.svg';
-import iso9001 from '../assets/ISO-9001.svg';
-import gaiaSkyline from '../assets/gaia-skyline.webp';
-import logoNegative from '../assets/ispgaya-logo-negative.svg';
+} from '../../styles/ui';
+import iso14001 from '../../assets/ISO-14001.svg';
+import iso21001 from '../../assets/ISO-21001.svg';
+import iso9001 from '../../assets/ISO-9001.svg';
+import gaiaSkyline from '../../assets/gaia-skyline.webp';
+import logoNegative from '../../assets/ispgaya-logo-negative.svg';
 
 const ensinoLinks = [
   'CTeSP',

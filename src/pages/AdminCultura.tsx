@@ -187,7 +187,7 @@ import {
   updateAdminNews,
   updateAdminSession,
   updateAdminUser,
-} from '../data/infoculturaApi';
+} from '../api/infoculturaApi';
 
 const TOKEN_KEY = 'ispgaya_cultura_token';
 const NOTIFICATION_READ_KEY = 'ispgaya_cultura_notifications_read';

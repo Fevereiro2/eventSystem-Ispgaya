@@ -1,11 +1,11 @@
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
-import Footer from '../components/Footer';
-import HeaderNav from '../components/HeaderNav';
+import Footer from '../components/layout/Footer';
+import HeaderNav from '../components/layout/HeaderNav';
 import NewsHighlightsSection, {
   type NewsHighlightItem
-} from '../components/NewsHighlightsSection';
-import TopBar from '../components/TopBar';
+} from '../components/ui/NewsHighlightsSection';
+import TopBar from '../components/layout/TopBar';
 import heroWelcomeImage from '../assets/backgroundphotos/bem-vindos-estudantes-ispgaya.webp';
 import heroStudyImage from '../assets/backgroundphotos/estudar-no-ispagaya.webp';
 import heroEmployabilityImage from '../assets/backgroundphotos/empregabilidade-ispgaya.webp';
@@ -18,7 +18,7 @@ import {
   fetchPublicEvents,
   fetchPublicNews,
   resolveInfoCulturaAssetUrl
-} from '../data/infoculturaApi';
+} from '../api/infoculturaApi';
 import { container, mainContent } from '../styles/ui';
 
 type HeroSlide = {

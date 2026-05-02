@@ -1,4 +1,4 @@
-import { statCard, statLabel, statValue } from '../styles/ui';
+import { statCard, statLabel, statValue } from '../../styles/ui';
 
 type StatCardProps = {
   value: number;
