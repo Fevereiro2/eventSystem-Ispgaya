@@ -57,6 +57,9 @@ from .api.serializers import (
 from .services import (
     ClubRegistrationNotFoundError,
     build_activity_calendar_payload,
+    filter_activities_by_range,
+    get_upcoming_activities,
+    get_past_activities,
     get_admin_dashboard_metrics,
     list_admin_audit_logs,
     get_admin_notifications,
@@ -586,13 +589,18 @@ class PublicSessionListView(generics.ListAPIView):
         club_id = self.request.query_params.get('club_id')
         date_from = (self.request.query_params.get('date_from') or '').strip()
         date_to = (self.request.query_params.get('date_to') or '').strip()
+        state = (self.request.query_params.get('state') or '').strip().lower()
 
         if club_id:
             queryset = queryset.filter(club_id=club_id)
-        if date_from:
-            queryset = queryset.filter(session_date__gte=date_from)
-        if date_to:
-            queryset = queryset.filter(session_date__lte=date_to)
+        
+        # Scheduling filters
+        if state == 'upcoming':
+            queryset = get_upcoming_activities(queryset, limit=50)
+        elif state == 'past':
+            queryset = get_past_activities(queryset, limit=50)
+        else:
+            queryset = filter_activities_by_range(queryset, date_from, date_to)
 
         return queryset.order_by('session_date', 'start_date', '-id')
 
@@ -686,16 +694,16 @@ class PublicEventListView(generics.ListAPIView):
             queryset = queryset.filter(categories__id=int(category_id))
         if city:
             queryset = queryset.filter(Q(city__icontains=city) | Q(location__icontains=city))
-        if date_from:
-            queryset = queryset.filter(event_date__gte=date_from)
-        if date_to:
-            queryset = queryset.filter(event_date__lte=date_to)
+        
+        # Scheduling filters
         if state == 'upcoming':
-            queryset = queryset.filter(start_date__gt=now)
+            queryset = get_upcoming_activities(queryset, limit=50)
         elif state == 'ongoing':
             queryset = queryset.filter(start_date__lte=now, end_date__gte=now)
         elif state == 'past':
-            queryset = queryset.filter(end_date__lt=now)
+            queryset = get_past_activities(queryset, limit=50)
+        else:
+            queryset = filter_activities_by_range(queryset, date_from, date_to)
 
         return queryset.order_by('event_date', 'start_date', '-id')
 

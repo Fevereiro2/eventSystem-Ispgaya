@@ -36,6 +36,7 @@ from ..services import (
     notify_event_workflow_status,
     notify_news_workflow_status,
     record_editorial_action,
+    validate_date_interval,
 )
 from ..core.security import (
     hash_password,
@@ -751,8 +752,10 @@ class AdminSessionWriteSerializer(ClubScopedWriteSerializer):
         start_date = attrs.get('start_date') or getattr(self.instance, 'start_date', None)
         end_date = attrs.get('end_date') or getattr(self.instance, 'end_date', None)
 
-        if start_date and end_date and start_date > end_date:
-            raise serializers.ValidationError({'end_date': 'A data final tem de ser posterior.'})
+        try:
+            validate_date_interval(start_date, end_date)
+        except ValueError as error:
+            raise serializers.ValidationError({'end_date': str(error)})
 
         enable_registrations = attrs.get(
             'enable_registrations',
@@ -861,8 +864,11 @@ class AdminEventWriteSerializer(serializers.ModelSerializer):
 
         start_date = attrs.get('start_date') or getattr(self.instance, 'start_date', None)
         end_date = attrs.get('end_date') or getattr(self.instance, 'end_date', None)
-        if start_date and end_date and start_date > end_date:
-            raise serializers.ValidationError({'end_date': 'A data final tem de ser posterior.'})
+        
+        try:
+            validate_date_interval(start_date, end_date)
+        except ValueError as error:
+            raise serializers.ValidationError({'end_date': str(error)})
 
         enable_registrations = attrs.get(
             'enable_registrations',

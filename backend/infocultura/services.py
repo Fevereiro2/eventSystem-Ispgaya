@@ -1009,3 +1009,30 @@ def notify_event_workflow_status(*, event: Event, previous_status: str | None, n
 def notify_news_workflow_status(*, news: News, previous_status: str | None, next_status: str) -> None:
     # Logic for workflow notifications
     pass
+
+
+# Scheduling Services
+
+def validate_date_interval(start_date: datetime, end_date: datetime) -> None:
+    """Validates that the end date is after the start date."""
+    if start_date and end_date and start_date >= end_date:
+        raise ValueError("A data de fim deve ser posterior a data de inicio.")
+
+
+def get_upcoming_activities(queryset, limit: int = 5):
+    """Returns the next upcoming activities from the queryset."""
+    return queryset.filter(end_date__gte=timezone.now()).order_by('start_date')[:limit]
+
+
+def get_past_activities(queryset, limit: int = 5):
+    """Returns the past activities from the queryset."""
+    return queryset.filter(end_date__lt=timezone.now()).order_by('-end_date')[:limit]
+
+
+def filter_activities_by_range(queryset, start_from: datetime | None = None, end_to: datetime | None = None):
+    """Filters activities within a specific date range."""
+    if start_from:
+        queryset = queryset.filter(start_date__gte=start_from)
+    if end_to:
+        queryset = queryset.filter(end_date__lte=end_to)
+    return queryset

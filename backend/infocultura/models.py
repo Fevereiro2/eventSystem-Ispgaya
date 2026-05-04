@@ -172,17 +172,24 @@ class Book(models.Model):
 
 
 class Session(models.Model):
+    STATUS_CHOICES = [
+        ('active', 'Ativo'),
+        ('completed', 'Concluido'),
+        ('cancelled', 'Cancelado'),
+    ]
+
     id = models.AutoField(primary_key=True, db_column=db_constants.COL_ID_SESSIONS)
     name = models.CharField(max_length=150)
     title = models.CharField(max_length=255)
     description = models.TextField()
     session_date = models.DateField()
-    start_date = models.DateTimeField()
-    end_date = models.DateTimeField()
+    start_date = models.DateTimeField(db_column=db_constants.COL_START_DATE)
+    end_date = models.DateTimeField(db_column=db_constants.COL_END_DATE)
+    status = models.CharField(max_length=16, choices=STATUS_CHOICES, default='active')
     enable_registrations = models.BooleanField(default=False)
     registration_capacity = models.IntegerField(blank=True, null=True)
-    created_at = models.DateTimeField(blank=True, null=True)
-    updated_at = models.DateTimeField(blank=True, null=True)
+    created_at = models.DateTimeField(blank=True, null=True, db_column=db_constants.COL_CREATED_AT)
+    updated_at = models.DateTimeField(blank=True, null=True, db_column=db_constants.COL_UPDATED_AT)
     club = models.ForeignKey(
         Club,
         on_delete=models.SET_NULL,
@@ -223,17 +230,27 @@ class Category(models.Model):
 
 
 class Event(models.Model):
+    STATUS_CHOICES = [
+        ('draft', 'Rascunho'),
+        ('review', 'Em Revisao'),
+        ('published', 'Publicado'),
+        ('active', 'Ativo'),
+        ('completed', 'Concluido'),
+        ('cancelled', 'Cancelado'),
+        ('archived', 'Arquivado'),
+    ]
+
     id = models.AutoField(primary_key=True, db_column=db_constants.COL_ID_EVENT)
     title = models.CharField(max_length=255)
     description = models.TextField()
     event_date = models.DateField()
-    start_date = models.DateTimeField()
-    end_date = models.DateTimeField()
+    start_date = models.DateTimeField(db_column=db_constants.COL_START_DATE)
+    end_date = models.DateTimeField(db_column=db_constants.COL_END_DATE)
     image = models.CharField(max_length=500, blank=True, default='')
     is_external = models.BooleanField(default=False)
     enable_registrations = models.BooleanField(default=False)
     registration_capacity = models.IntegerField(blank=True, null=True)
-    status = models.CharField(max_length=50)
+    status = models.CharField(max_length=16, choices=STATUS_CHOICES, default='draft')
     user = models.ForeignKey(
         AppUser,
         on_delete=models.SET_NULL,
@@ -242,8 +259,8 @@ class Event(models.Model):
         null=True,
         related_name='events',
     )
-    created_at = models.DateTimeField(blank=True, null=True)
-    updated_at = models.DateTimeField(blank=True, null=True)
+    created_at = models.DateTimeField(blank=True, null=True, db_column=db_constants.COL_CREATED_AT)
+    updated_at = models.DateTimeField(blank=True, null=True, db_column=db_constants.COL_UPDATED_AT)
     city = models.CharField(max_length=120, blank=True, default='')
     location = models.CharField(max_length=255, blank=True, default='')
     categories = models.ManyToManyField(

@@ -33,3 +33,9 @@ COL_ID_RSTATUS = 'id_rstatus'
 COL_ROLE_ID = 'role_id'
 COL_USER_ID = 'user_id'
 COL_CLUB_ID = 'id_club'  # Some tables use id_club, others id_clubs
+
+# Scheduling Columns
+COL_START_DATE = 'start_date'
+COL_END_DATE = 'end_date'
+COL_CREATED_AT = 'created_at'
+COL_UPDATED_AT = 'updated_at'
