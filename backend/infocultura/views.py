@@ -67,6 +67,7 @@ from .services import (
     notify_news_workflow_status,
     update_admin_club_registration_status,
 )
+from .core.utils import get_client_ip
 from .core.security import (
     check_password_hash,
     decode_refresh_token,
@@ -74,14 +75,6 @@ from .core.security import (
     issue_token_pair,
     revoke_refresh_token,
 )
-
-
-def _get_client_ip(request) -> str:
-    forwarded_for = (request.META.get('HTTP_X_FORWARDED_FOR') or '').strip()
-    if forwarded_for:
-        return forwarded_for.split(',')[0].strip() or 'unknown'
-
-    return (request.META.get('REMOTE_ADDR') or '').strip() or 'unknown'
 
 
 def _get_login_rate_limit_config() -> tuple[int, int, int]:
@@ -235,7 +228,7 @@ class LoginView(APIView):
 
         identifier = serializer.validated_data['username']
         password = serializer.validated_data['password']
-        client_ip = _get_client_ip(request)
+        client_ip = get_client_ip(request)
         _, _, lockout_seconds = _get_login_rate_limit_config()
 
         if _is_login_locked(client_ip=client_ip, identifier=identifier):
@@ -1055,13 +1048,13 @@ class AdminRegistrationStatusUpdateView(APIView):
         serializer = AdminRegistrationStatusUpdateSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
-        try:
-            updated_record = update_admin_club_registration_status(
-                registration_id=pk,
-                registration_status=serializer.validated_data['registration_status'],
-                allowed_club_id=get_allowed_registration_club_id(request.user),
-            )
-        except ClubRegistrationNotFoundError:
+        updated_record = update_admin_club_registration_status(
+            registration_id=pk,
+            registration_status=serializer.validated_data['registration_status'].name,
+            allowed_club_id=get_allowed_registration_club_id(request.user),
+        )
+
+        if updated_record is None:
             return Response({'message': 'Inscricao nao encontrada.'}, status=404)
 
         record_admin_audit_action(
@@ -1091,16 +1084,14 @@ class AdminRegistrationBulkStatusUpdateView(APIView):
 
         updated_items = []
         for registration_id in serializer.validated_data['ids']:
-            try:
-                updated_record = update_admin_club_registration_status(
-                    registration_id=registration_id,
-                    registration_status=status_serializer.validated_data['registration_status'],
-                    allowed_club_id=get_allowed_registration_club_id(request.user),
-                )
-            except ClubRegistrationNotFoundError:
-                continue
+            updated_record = update_admin_club_registration_status(
+                registration_id=registration_id,
+                registration_status=status_serializer.validated_data['registration_status'].name,
+                allowed_club_id=get_allowed_registration_club_id(request.user),
+            )
 
-            updated_items.append(updated_record)
+            if updated_record:
+                updated_items.append(updated_record)
 
         if updated_items:
             record_admin_audit_action(
