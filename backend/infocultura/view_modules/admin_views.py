@@ -1,127 +1,59 @@
-from .view_modules.admin_views import (
-    AdminAuditLogListView,
-    AdminBookBulkDeleteView,
-    AdminBookDetailView,
-    AdminBookListCreateView,
-    AdminCategoryDetailView,
-    AdminCategoryListCreateView,
-    AdminClubDetailView,
-    AdminClubListCreateView,
-    AdminClubMemberAssignView,
-    AdminClubMemberRemoveView,
-    AdminContentDetailView,
-    AdminContentListCreateView,
-    AdminDashboardNotificationsView,
-    AdminDashboardSummaryView,
-    AdminEventBulkDeleteView,
-    AdminEventBulkStatusUpdateView,
-    AdminEventDetailView,
-    AdminEventListCreateView,
-    AdminImageUploadView,
-    AdminNewsBulkDeleteView,
-    AdminNewsBulkStatusUpdateView,
-    AdminNewsDetailView,
-    AdminNewsListCreateView,
-    AdminNewsStatusListView,
-    AdminRegistrationBulkStatusUpdateView,
-    AdminRegistrationListView,
-    AdminRegistrationStatusListView,
-    AdminRegistrationStatusUpdateView,
-    AdminSessionDetailView,
-    AdminSessionListCreateView,
-)
-from .view_modules.auth_views import (
-    AdminRoleListView,
-    AdminUserDeactivateView,
-    AdminUserDetailView,
-    AdminUserListCreateView,
-    LoginView,
-    LogoutView,
-    MeView,
-    RefreshTokenView,
-)
-from .view_modules.public_views import (
-    PublicBookDetailView,
-    PublicBookListView,
-    PublicCategoryListView,
-    PublicClubDetailView,
-    PublicClubListView,
-    PublicClubRegistrationCreateView,
-    PublicContentListView,
-    PublicEventCalendarView,
-    PublicEventDetailView,
-    PublicEventListView,
-    PublicEventRegistrationCreateView,
-    PublicNewsDetailView,
-    PublicNewsListView,
-    PublicNewsStatusListView,
-    PublicSessionCalendarView,
-    PublicSessionDetailView,
-    PublicSessionListView,
-    PublicSessionRegistrationCreateView,
-)
+from __future__ import annotations
 
-__all__ = [
-    'AdminAuditLogListView',
-    'AdminBookBulkDeleteView',
-    'AdminBookDetailView',
-    'AdminBookListCreateView',
-    'AdminCategoryDetailView',
-    'AdminCategoryListCreateView',
-    'AdminClubDetailView',
-    'AdminClubListCreateView',
-    'AdminClubMemberAssignView',
-    'AdminClubMemberRemoveView',
-    'AdminContentDetailView',
-    'AdminContentListCreateView',
-    'AdminDashboardNotificationsView',
-    'AdminDashboardSummaryView',
-    'AdminEventBulkDeleteView',
-    'AdminEventBulkStatusUpdateView',
-    'AdminEventDetailView',
-    'AdminEventListCreateView',
-    'AdminImageUploadView',
-    'AdminNewsBulkDeleteView',
-    'AdminNewsBulkStatusUpdateView',
-    'AdminNewsDetailView',
-    'AdminNewsListCreateView',
-    'AdminNewsStatusListView',
-    'AdminRegistrationBulkStatusUpdateView',
-    'AdminRegistrationListView',
-    'AdminRegistrationStatusListView',
-    'AdminRegistrationStatusUpdateView',
-    'AdminRoleListView',
-    'AdminSessionDetailView',
-    'AdminSessionListCreateView',
-    'AdminUserDeactivateView',
-    'AdminUserDetailView',
-    'AdminUserListCreateView',
-    'LoginView',
-    'LogoutView',
-    'MeView',
-    'PublicBookDetailView',
-    'PublicBookListView',
-    'PublicCategoryListView',
-    'PublicClubDetailView',
-    'PublicClubListView',
-    'PublicClubRegistrationCreateView',
-    'PublicContentListView',
-    'PublicEventCalendarView',
-    'PublicEventDetailView',
-    'PublicEventListView',
-    'PublicEventRegistrationCreateView',
-    'PublicNewsDetailView',
-    'PublicNewsListView',
-    'PublicNewsStatusListView',
-    'PublicSessionCalendarView',
-    'PublicSessionDetailView',
-    'PublicSessionListView',
-    'PublicSessionRegistrationCreateView',
-    'RefreshTokenView',
-]
-
-"""
 from pathlib import Path
+from uuid import uuid4
+
+from django.core.files.storage import default_storage
+from django.db import DatabaseError
+from django.db.models import Q
+from django.utils import timezone
+from rest_framework import generics, permissions
+from rest_framework.response import Response
+from rest_framework.views import APIView
+
+from ..api.response_builders import apply_admin_ordering, apply_date_range_filters, build_csv_response, paginate_queryset
+from ..api.serializers import (
+    AdminAuditLogSerializer,
+    AdminBookWriteSerializer,
+    AdminBulkIdsSerializer,
+    AdminBulkStatusUpdateSerializer,
+    AdminCategoryWriteSerializer,
+    AdminClubRegistrationSerializer,
+    AdminEventReadSerializer,
+    AdminEventWriteSerializer,
+    AdminNewsReadSerializer,
+    AdminNewsWriteSerializer,
+    AdminNotificationSerializer,
+    AdminRegistrationStatusUpdateSerializer,
+    AdminSessionWriteSerializer,
+    BookSerializer,
+    CategorySerializer,
+    ClubMemberAssignSerializer,
+    ClubSerializer,
+    CulturalContentSerializer,
+    NewsStatusSerializer,
+    RegistrationStatusSerializer,
+    SessionSerializer,
+    UserSerializer,
+    EVENT_WORKFLOW_STATUS_ORDER,
+    NEWS_WORKFLOW_STATUS_ORDER,
+    get_role_allowed_workflow_statuses,
+    normalize_workflow_status,
+)
+from ..core.permissions import IsClubAdmin, IsSuperAdmin
+from ..models import AppUser, Book, Category, Club, CulturalContent, Event, News, NewsStatus, RegistrationStatus, Session
+from ..services import (
+    get_admin_dashboard_metrics,
+    get_admin_notifications,
+    list_admin_audit_logs,
+    list_admin_club_registrations,
+    notify_event_workflow_status,
+    notify_news_workflow_status,
+    record_admin_audit_action,
+    record_editorial_action,
+    update_admin_club_registration_status,
+)
+from .admin_common import AdminAuditDestroyMixin, AdminAuditMixin, get_allowed_club_id, get_allowed_registration_club_id
 
 
 class AdminImageUploadView(APIView):
@@ -154,20 +86,6 @@ class AdminImageUploadView(APIView):
             metadata={'folder': folder, 'filename': uploaded_file.name},
         )
         return Response({'path': public_path}, status=201)
-
-
-def get_allowed_registration_club_id(user) -> int | None:
-    role_name = getattr(getattr(user, 'role', None), 'name', None)
-    if role_name == 'club_admin':
-        return user.club_id
-    return None
-
-
-def get_allowed_club_id(user) -> int | None:
-    role_name = getattr(getattr(user, 'role', None), 'name', None)
-    if role_name == 'club_admin':
-        return user.club_id
-    return None
 
 
 class AdminRegistrationStatusListView(generics.ListAPIView):
@@ -1153,4 +1071,3 @@ class AdminClubMemberRemoveView(APIView):
             metadata={'user_id': user.id, 'user_email': user.email},
         )
         return Response({'user': UserSerializer(user).data})
-    """
