@@ -21,7 +21,7 @@ from ..api.serializers import (
     SessionSerializer,
 )
 from ..models import Book, Category, Club, CulturalContent, Event, News, NewsStatus, Session
-from ..services import filter_activities_by_range, get_past_activities, get_upcoming_activities
+from ..service_modules.calendar import filter_activities_by_range, get_past_activities, get_upcoming_activities
 
 
 class PublicContentListView(generics.ListAPIView):
