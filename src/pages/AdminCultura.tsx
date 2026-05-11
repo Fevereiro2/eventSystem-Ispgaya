@@ -8,13 +8,10 @@ import {
 } from 'react';
 import {
   Bell,
-  BookOpen,
   CalendarClock,
   FilePlus2,
   FolderKanban,
-  LayoutDashboard,
   Newspaper,
-  Sparkles,
   Users,
 } from 'lucide-react';
 import { NavLink, Navigate, useLocation, useNavigate } from 'react-router-dom';
@@ -53,12 +50,7 @@ import {
   adminPortalSidebarSection,
   adminPortalSidebarSub,
   adminPortalSidebarTitle,
-  adminStatCard,
-  adminStatLabel,
-  adminStatValue,
   adminTextarea,
-  adminUserStatusActive,
-  adminUserStatusInactive,
   blockText,
   blockTitle,
   container,
@@ -98,6 +90,7 @@ import {
   CulturalItem,
   getAreaLabel,
 } from '../data/culturalContent';
+import AdminPageHero from './adminCultura/AdminPageHero';
 import {
   bulkDeleteAdminBooks,
   bulkDeleteAdminEvents,
@@ -127,23 +120,10 @@ import {
   exportAdminNewsCsv,
   exportAdminRegistrationsCsv,
   exportAdminSessionsCsv,
-  fetchAdminBooks,
-  fetchAdminCategories,
-  fetchAdminClubs,
-  fetchAdminContent,
   fetchAdminDashboard,
   fetchAdminNotifications,
-  fetchAdminEvents,
-  fetchAdminNews,
-  fetchAdminNewsStatuses,
-  fetchAdminRegistrations,
-  fetchAdminRegistrationStatuses,
-  fetchAdminRoles,
-  fetchAdminSessions,
-  fetchAdminUsers,
-  fetchInfoCulturaMe,
-  InfoCulturaBook,
   InfoCulturaAdminNotification,
+  InfoCulturaBook,
   InfoCulturaCategory,
   InfoCulturaClub,
   InfoCulturaDashboardStats,
@@ -159,8 +139,6 @@ import {
   BookPayload,
   CategoryPayload,
   EventPayload,
-  loginInfoCultura,
-  logoutInfoCultura,
   NewsPayload,
   removeUserFromClub,
   SessionPayload,
@@ -175,12 +153,19 @@ import {
   updateAdminSession,
   updateAdminUser,
 } from '../api/infoculturaApi';
-import AdminPageHero from './adminCultura/AdminPageHero';
+import DashboardPage from './adminCultura/pages/DashboardPage';
 import ActivitiesPage from './adminCultura/ActivitiesPage';
-import ClubsPage from './adminCultura/ClubsPage';
-import NewsPage from './adminCultura/NewsPage';
-import RegistrationsPage from './adminCultura/RegistrationsPage';
-import UsersPage from './adminCultura/UsersPage';
+import ClubsPage from './adminCultura/pages/ClubsPage';
+import EventsPage from './adminCultura/pages/EventsPage';
+import NewsPage from './adminCultura/pages/NewsPage';
+import { useAdminActivities } from './adminCultura/hooks/useAdminActivities';
+import { useAdminAuth } from './adminCultura/hooks/useAdminAuth';
+import { useAdminNews } from './adminCultura/hooks/useAdminNews';
+import { useAdminRegistrations } from './adminCultura/hooks/useAdminRegistrations';
+import { useAdminUsers } from './adminCultura/hooks/useAdminUsers';
+import RegistrationsPage from './adminCultura/pages/RegistrationsPage';
+import SessionsPage from './adminCultura/pages/SessionsPage';
+import UsersPage from './adminCultura/pages/UsersPage';
 import {
   ACTIVITY_PAGE_SIZE,
   activityTabBySection,
@@ -232,7 +217,6 @@ import {
   getUserPage,
   getWorkflowStatusLabel,
   getWorkflowStatusOptions,
-  isActivitySection,
   isWithinDateRange,
   normalizeWorkflowStatus,
   sortClubs,
@@ -731,9 +715,27 @@ function AdminCultura() {
               is_read: false,
               created_at: null,
             },
-          ],
+        ],
     [dashboardStats, notifications, pendingRegistrations, readNotificationIdSet]
   );
+  function openDashboardNotification(notification: {
+    id: string;
+    title: string;
+    detail: string;
+    href: string;
+    level: string;
+    created_at: string | null;
+  }) {
+    handleOpenNotification({
+      id: notification.id,
+      kind: 'dashboard',
+      level: notification.level,
+      title: notification.title,
+      message: notification.detail,
+      href: notification.href,
+      created_at: notification.created_at,
+    });
+  }
   const dashboardAgenda = useMemo(
     () =>
       [
@@ -992,6 +994,113 @@ function AdminCultura() {
       sortUsers(users.filter((user) => user.is_active && !user.club_id)),
     [users]
   );
+
+  const { handleLogin: authHandleLogin, handleLogout: authHandleLogout } = useAdminAuth({
+    authUser,
+    authPass,
+    setAuthUser,
+    setAuthPass,
+    setAuthError,
+    setToken,
+    clearDomainState: clearAuth,
+  });
+
+  useAdminUsers({
+    token,
+    canManageUsers,
+    activeSection,
+    userPage,
+    selectedUser,
+    currentUser,
+    setItems,
+    setUsers,
+    setClubs,
+    setRoles,
+    setCurrentUser,
+    setIsLoadingItems,
+    setIsLoadingUsers,
+    setIsLoadingClubs,
+    setIsLoadingRoles,
+    setPanelError,
+    handleAuthError,
+    resetUserForm,
+    resetClubForm,
+    setUserForm,
+    setUserFormError,
+  });
+
+  useAdminNews({
+    token,
+    currentUser,
+    activeSection,
+    canManageUsers,
+    newsClubFilter,
+    newsStatusFilter,
+    newsSearch,
+    newsOrder,
+    newsDateFrom,
+    newsDateTo,
+    newsPage,
+    setIsLoadingNews,
+    setIsLoadingNewsStatuses,
+    setNewsStatuses,
+    setNewsItems,
+    setNewsTotal,
+    setNewsTotalPages,
+    setNewsError,
+    handleAuthError,
+    pageSize: NEWS_PAGE_SIZE,
+  });
+
+  useAdminActivities({
+    token,
+    currentUser,
+    activeSection,
+    canManageUsers,
+    activityTab,
+    activityClubFilter,
+    activityCategoryFilter,
+    activityStatusFilter,
+    activitySearch,
+    activityOrder,
+    activityDateFrom,
+    activityDateTo,
+    activityPage,
+    setIsLoadingActivities,
+    setIsLoadingCategories,
+    setCategories,
+    setBooks,
+    setSessions,
+    setEvents,
+    setActivityTotal,
+    setActivityTotalPages,
+    setActivityError,
+    handleAuthError,
+    pageSize: ACTIVITY_PAGE_SIZE,
+  });
+
+  useAdminRegistrations({
+    token,
+    currentUser,
+    activeSection,
+    canManageUsers,
+    registrationClubFilter,
+    registrationStatusFilter,
+    registrationSearch,
+    registrationOrder,
+    registrationDateFrom,
+    registrationDateTo,
+    registrationPage,
+    setIsLoadingRegistrations,
+    setIsLoadingRegistrationStatuses,
+    setRegistrationStatuses,
+    setRegistrations,
+    setRegistrationTotal,
+    setRegistrationTotalPages,
+    setRegistrationError,
+    handleAuthError,
+    pageSize: REGISTRATION_PAGE_SIZE,
+  });
 
   function handleAuthError(error: unknown): boolean {
     if (isInfoCulturaAuthError(error)) {
@@ -1493,108 +1602,10 @@ function AdminCultura() {
     }
   }
 
-  async function loadAdminData(authToken: string) {
-    setIsLoadingItems(true);
-    setIsLoadingUsers(true);
-    setPanelError('');
-
-    try {
-      const [nextItems, nextUsers, nextCurrentUser] = await Promise.all([
-        fetchAdminContent(authToken),
-        fetchAdminUsers(authToken),
-        fetchInfoCulturaMe(authToken)
-      ]);
-      setItems(nextItems);
-      setUsers(nextUsers);
-      setCurrentUser(nextCurrentUser);
-    } catch (error) {
-      if (handleAuthError(error)) {
-        return;
-      }
-
-      const message =
-        error instanceof Error
-          ? error.message
-          : 'Nao foi possivel carregar os dados do painel.';
-      setPanelError(message);
-    } finally {
-      setIsLoadingItems(false);
-      setIsLoadingUsers(false);
-    }
-  }
-
-  useEffect(() => {
-    if (!token) return;
-    void loadAdminData(token);
-  }, [token]);
-
   useEffect(() => {
     if (typeof window === 'undefined') return;
     window.localStorage.setItem(NOTIFICATION_READ_KEY, JSON.stringify(readNotificationIds));
   }, [readNotificationIds]);
-
-  useEffect(() => {
-    if (!token || !canManageUsers) {
-      setRoles([]);
-      setClubs([]);
-      return;
-    }
-
-    let isMounted = true;
-    setIsLoadingRoles(true);
-
-    void fetchAdminRoles(token)
-      .then((nextRoles) => {
-        if (!isMounted) return;
-        setRoles(nextRoles);
-      })
-      .catch((error) => {
-        if (!isMounted) return;
-        if (handleAuthError(error)) return;
-        const message =
-          error instanceof Error ? error.message : 'Nao foi possivel carregar os perfis.';
-        setPanelError(message);
-      })
-      .finally(() => {
-        if (!isMounted) return;
-        setIsLoadingRoles(false);
-      });
-
-    return () => {
-      isMounted = false;
-    };
-  }, [token, canManageUsers]);
-
-  useEffect(() => {
-    if (!token || !canManageUsers) {
-      resetClubForm();
-      return;
-    }
-
-    let isMounted = true;
-    setIsLoadingClubs(true);
-
-    void fetchAdminClubs(token)
-      .then((nextClubs) => {
-        if (!isMounted) return;
-        setClubs(sortClubs(nextClubs));
-      })
-      .catch((error) => {
-        if (!isMounted) return;
-        if (handleAuthError(error)) return;
-        const message =
-          error instanceof Error ? error.message : 'Nao foi possivel carregar os clubes.';
-        setPanelError(message);
-      })
-      .finally(() => {
-        if (!isMounted) return;
-        setIsLoadingClubs(false);
-      });
-
-    return () => {
-      isMounted = false;
-    };
-  }, [token, canManageUsers]);
 
   useEffect(() => {
     if (!currentUser) return;
@@ -1743,280 +1754,12 @@ function AdminCultura() {
     };
   }, [activeSection, token, currentUser]);
 
-  useEffect(() => {
-    if (!token || !currentUser || activeSection !== 'noticias') {
-      return;
-    }
-
-    let isMounted = true;
-    setIsLoadingNews(true);
-    setIsLoadingNewsStatuses(true);
-    setNewsError('');
-
-    const clubId =
-      canManageUsers && newsClubFilter !== 'all' ? Number(newsClubFilter) : undefined;
-    const status =
-      newsStatusFilter && newsStatusFilter !== 'all' ? newsStatusFilter : undefined;
-
-    void Promise.all([
-      fetchAdminNewsStatuses(token),
-      fetchAdminNews(token, {
-        clubId,
-        status,
-        search: newsSearch,
-        ordering: newsOrder,
-        dateFrom: newsDateFrom,
-        dateTo: newsDateTo,
-        page: newsPage,
-        pageSize: NEWS_PAGE_SIZE
-      })
-    ])
-      .then(([nextStatuses, newsPageData]) => {
-        if (!isMounted) return;
-        setNewsStatuses(nextStatuses);
-        setNewsItems(newsPageData.items);
-        setNewsTotal(newsPageData.total);
-        setNewsTotalPages(newsPageData.total_pages);
-      })
-      .catch((error) => {
-        if (!isMounted) return;
-        if (handleAuthError(error)) return;
-        const message =
-          error instanceof Error ? error.message : 'Nao foi possivel carregar as noticias.';
-        setNewsError(message);
-      })
-      .finally(() => {
-        if (!isMounted) return;
-        setIsLoadingNews(false);
-        setIsLoadingNewsStatuses(false);
-      });
-
-    return () => {
-      isMounted = false;
-    };
-  }, [
-    activeSection,
-    token,
-    currentUser,
-    canManageUsers,
-    newsClubFilter,
-    newsStatusFilter,
-    newsSearch,
-    newsOrder,
-    newsDateFrom,
-    newsDateTo,
-    newsPage
-  ]);
-
-  useEffect(() => {
-    if (!token || !currentUser || !isActivitySection(activeSection)) {
-      return;
-    }
-
-    let isMounted = true;
-    setIsLoadingActivities(true);
-    setIsLoadingCategories(true);
-    setActivityError('');
-
-    const clubId =
-      canManageUsers && activityClubFilter !== 'all'
-        ? Number(activityClubFilter)
-        : undefined;
-    const categoryId =
-      activityCategoryFilter !== 'all' ? Number(activityCategoryFilter) : undefined;
-    const status =
-      activityStatusFilter && activityStatusFilter !== 'all'
-        ? activityStatusFilter
-        : undefined;
-
-    const activityRequest =
-      activityTab === 'books'
-        ? fetchAdminBooks(token, {
-            clubId,
-            search: activitySearch,
-            ordering: activityOrder,
-            dateFrom: activityDateFrom,
-            dateTo: activityDateTo,
-            page: activityPage,
-            pageSize: ACTIVITY_PAGE_SIZE
-          })
-        : activityTab === 'sessions'
-          ? fetchAdminSessions(token, {
-              clubId,
-              search: activitySearch,
-              ordering: activityOrder,
-              dateFrom: activityDateFrom,
-              dateTo: activityDateTo,
-              page: activityPage,
-              pageSize: ACTIVITY_PAGE_SIZE
-            })
-          : fetchAdminEvents(token, {
-              clubId,
-              categoryId,
-              status,
-              search: activitySearch,
-              ordering: activityOrder,
-              dateFrom: activityDateFrom,
-              dateTo: activityDateTo,
-              page: activityPage,
-              pageSize: ACTIVITY_PAGE_SIZE
-            });
-
-    void Promise.all([fetchAdminCategories(token), activityRequest])
-      .then(([nextCategories, activityPageData]) => {
-        if (!isMounted) return;
-        setCategories(nextCategories);
-        setActivityTotal(activityPageData.total);
-        setActivityTotalPages(activityPageData.total_pages);
-        if (activityTab === 'books') {
-          setBooks(activityPageData.items as InfoCulturaBook[]);
-        } else if (activityTab === 'sessions') {
-          setSessions(activityPageData.items as InfoCulturaSession[]);
-        } else {
-          setEvents(activityPageData.items as InfoCulturaEvent[]);
-        }
-      })
-      .catch((error) => {
-        if (!isMounted) return;
-        if (handleAuthError(error)) return;
-        const message =
-          error instanceof Error ? error.message : 'Nao foi possivel carregar as atividades.';
-        setActivityError(message);
-      })
-      .finally(() => {
-        if (!isMounted) return;
-        setIsLoadingActivities(false);
-        setIsLoadingCategories(false);
-      });
-
-    return () => {
-      isMounted = false;
-    };
-  }, [
-    activeSection,
-    token,
-    currentUser,
-    canManageUsers,
-    activityClubFilter,
-    activityCategoryFilter,
-    activityStatusFilter,
-    activitySearch,
-    activityOrder,
-    activityDateFrom,
-    activityDateTo,
-    activityPage,
-    activityTab
-  ]);
-
-  useEffect(() => {
-    if (!token || !currentUser || activeSection !== 'inscricoes') {
-      return;
-    }
-
-    let isMounted = true;
-    setIsLoadingRegistrationStatuses(true);
-    setIsLoadingRegistrations(true);
-    setRegistrationError('');
-
-    const clubId =
-      canManageUsers && registrationClubFilter !== 'all'
-        ? Number(registrationClubFilter)
-        : undefined;
-    const status =
-      registrationStatusFilter && registrationStatusFilter !== 'all'
-        ? registrationStatusFilter
-        : undefined;
-
-    void Promise.all([
-      fetchAdminRegistrationStatuses(token),
-      fetchAdminRegistrations(token, {
-        clubId,
-        status,
-        search: registrationSearch,
-        ordering: registrationOrder,
-        dateFrom: registrationDateFrom,
-        dateTo: registrationDateTo,
-        page: registrationPage,
-        pageSize: REGISTRATION_PAGE_SIZE
-      })
-    ])
-      .then(([nextStatuses, registrationPageData]) => {
-        if (!isMounted) return;
-        setRegistrationStatuses(nextStatuses);
-        setRegistrations(registrationPageData.items);
-        setRegistrationTotal(registrationPageData.total);
-        setRegistrationTotalPages(registrationPageData.total_pages);
-      })
-      .catch((error) => {
-        if (!isMounted) return;
-        if (handleAuthError(error)) return;
-        const message =
-          error instanceof Error ? error.message : 'Nao foi possivel carregar as inscricoes.';
-        setRegistrationError(message);
-      })
-      .finally(() => {
-        if (!isMounted) return;
-        setIsLoadingRegistrationStatuses(false);
-        setIsLoadingRegistrations(false);
-      });
-
-    return () => {
-      isMounted = false;
-    };
-  }, [
-    activeSection,
-    token,
-    currentUser,
-    canManageUsers,
-    registrationClubFilter,
-    registrationStatusFilter,
-    registrationSearch,
-    registrationOrder,
-    registrationDateFrom,
-    registrationDateTo,
-    registrationPage
-  ]);
-
-  useEffect(() => {
-    if (activeSection !== 'utilizadores' || !userPage) return;
-
-    if (userPage.mode === 'create') {
-      resetUserForm();
-      return;
-    }
-
-    if (userPage.mode === 'edit' && selectedUser) {
-      setUserForm({
-        name: selectedUser.name,
-        email: selectedUser.email,
-        role: selectedUser.role,
-        password: ''
-      });
-      setUserFormError('');
-    }
-  }, [activeSection, userPage, selectedUser, roles]);
-
-  async function handleLogin(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    setAuthError('');
-
-    try {
-      const nextToken = await loginInfoCultura(authUser, authPass);
-      setToken(nextToken);
-      sessionStorage.setItem(TOKEN_KEY, nextToken);
-      setAuthPass('');
-      setAuthUser('');
-    } catch (error) {
-      const message = error instanceof Error ? error.message : 'Credenciais invalidas.';
-      setAuthError(message);
-    }
+  function handleLogin(event: FormEvent<HTMLFormElement>) {
+    return authHandleLogin(event);
   }
 
   function handleLogout() {
-    void logoutInfoCultura();
-    clearAuth();
-    setAuthUser('');
-    setAuthPass('');
+    authHandleLogout();
     resetContentForm();
     resetUserForm();
     resetClubForm();
@@ -3176,278 +2919,24 @@ function AdminCultura() {
 
             <div className={adminPortalContent}>
           {activeSection === 'resumo' ? (
-            <div className="space-y-6">
-              <section className="rounded-2xl border border-slate-200 bg-gradient-to-r from-white to-slate-50 p-6 shadow-sm">
-                <div className="flex flex-wrap items-start justify-between gap-4">
-                  <div>
-                    <div className="flex items-center gap-3">
-                      <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-[#dd8609] text-white">
-                        <LayoutDashboard className="h-5 w-5" />
-                      </span>
-                      <div>
-                        <h2 className="text-3xl font-semibold text-slate-900">Dashboard</h2>
-                        <p className="mt-1 text-sm text-slate-600">
-                          Vista inicial com alertas, agenda e atalhos operacionais.
-                        </p>
-                      </div>
-                    </div>
-                    {dashboardStats ? (
-                      <p className="mt-4 text-sm font-medium text-slate-500">
-                        Ambito atual: {dashboardStats.scope_label}
-                      </p>
-                    ) : null}
-                  </div>
-
-                  <div className="rounded-2xl border border-slate-200 bg-white px-5 py-4 shadow-sm">
-                    <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">
-                      Sessao atual
-                    </p>
-                    <p className="mt-2 text-lg font-semibold text-slate-900">
-                      {currentUser?.name || (isLoadingUsers ? 'A carregar...' : 'Sem dados')}
-                    </p>
-                    <p className="mt-1 text-sm text-slate-600">
-                      {currentUser ? `${currentUser.email} · ${currentUser.role}` : 'InfoCultura'}
-                    </p>
-                    {currentUser ? (
-                      <span
-                        className={`mt-3 inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold ${
-                          currentUser.is_active ? adminUserStatusActive : adminUserStatusInactive
-                        }`}
-                      >
-                        {currentUser.is_active ? 'Ativo' : 'Inativo'}
-                      </span>
-                    ) : null}
-                  </div>
-                </div>
-
-                {isLoadingDashboard ? <p className="mt-4 text-sm text-slate-500">A carregar metricas...</p> : null}
-                {dashboardError ? <p className="mt-4 text-sm text-red-600">{dashboardError}</p> : null}
-              </section>
-
-              <section className="grid grid-cols-1 gap-4 xl:grid-cols-4">
-                {dashboardHighlights.map((item) => {
-                  const Icon = item.icon;
-                  const toneClass =
-                    item.tone === 'amber'
-                      ? 'bg-amber-100 text-amber-700'
-                      : item.tone === 'blue'
-                        ? 'bg-sky-100 text-sky-700'
-                        : item.tone === 'rose'
-                          ? 'bg-rose-100 text-rose-700'
-                          : 'bg-slate-100 text-slate-700';
-
-                  return (
-                    <article
-                      key={item.label}
-                      className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"
-                    >
-                      <div className="flex items-center justify-between gap-3">
-                        <div>
-                          <p className="text-sm font-semibold text-slate-500">{item.label}</p>
-                          <p className="mt-3 text-3xl font-semibold text-slate-900">{item.value}</p>
-                        </div>
-                        <span className={`flex h-11 w-11 items-center justify-center rounded-xl ${toneClass}`}>
-                          <Icon className="h-5 w-5" />
-                        </span>
-                      </div>
-                    </article>
-                  );
-                })}
-              </section>
-
-              <div className="grid grid-cols-1 gap-6 xl:grid-cols-[1.2fr_0.8fr]">
-                <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-                  <div className="flex items-center justify-between gap-3">
-                    <div>
-                      <h3 className="text-2xl font-semibold text-slate-900">Alertas</h3>
-                      <p className="mt-1 text-sm text-slate-600">
-                        {unreadNotifications.length > 0
-                          ? `${unreadNotifications.length} notificacoes por ler.`
-                          : 'Itens que merecem atencao imediata.'}
-                      </p>
-                    </div>
-                    <button
-                      type="button"
-                      className="flex h-10 min-w-10 items-center justify-center rounded-xl bg-slate-100 px-3 text-slate-700"
-                      onClick={() => navigate('/infocultura/notificacoes')}
-                    >
-                      <Bell className="h-5 w-5" />
-                    </button>
-                  </div>
-
-                  {isLoadingNotifications ? (
-                    <p className="mt-4 text-sm text-slate-500">A carregar notificacoes...</p>
-                  ) : null}
-                  {notificationError ? (
-                    <p className="mt-4 text-sm text-red-600">{notificationError}</p>
-                  ) : null}
-
-                  <div className="mt-6 space-y-3">
-                    {dashboardAlerts.map((alert) => (
-                      <button
-                        key={alert.id}
-                        type="button"
-                        className={`w-full rounded-2xl border px-4 py-4 text-left transition-colors hover:border-[#dd8609] hover:bg-white ${
-                          alert.is_read
-                            ? 'border-slate-200 bg-slate-50'
-                            : alert.level === 'warning'
-                              ? 'border-amber-200 bg-amber-50'
-                              : alert.level === 'success'
-                                ? 'border-emerald-200 bg-emerald-50'
-                                : 'border-sky-200 bg-sky-50'
-                        }`}
-                        onClick={() =>
-                          handleOpenNotification({
-                            id: alert.id,
-                            kind: 'dashboard',
-                            level: alert.level,
-                            title: alert.title,
-                            message: alert.detail,
-                            href: alert.href,
-                            created_at: alert.created_at,
-                          })
-                        }
-                      >
-                        <div className="flex items-start justify-between gap-3">
-                          <p className="text-sm font-semibold text-slate-900">{alert.title}</p>
-                          {!alert.is_read ? (
-                            <span className="mt-1 inline-flex h-2.5 w-2.5 rounded-full bg-[#dd8609]" />
-                          ) : null}
-                        </div>
-                        <p className="mt-1 text-sm leading-6 text-slate-600">{alert.detail}</p>
-                        {alert.created_at ? (
-                          <p className="mt-3 text-xs font-medium uppercase tracking-[0.12em] text-slate-500">
-                            {formatAdminDateTime(alert.created_at)}
-                          </p>
-                        ) : null}
-                      </button>
-                    ))}
-                  </div>
-                </section>
-
-                <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-                  <div className="flex items-center justify-between gap-3">
-                    <div>
-                      <h3 className="text-2xl font-semibold text-slate-900">Acoes Rapidas</h3>
-                      <p className="mt-1 text-sm text-slate-600">
-                        Atalhos para as operacoes mais frequentes.
-                      </p>
-                    </div>
-                    <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-100 text-amber-700">
-                      <Sparkles className="h-5 w-5" />
-                    </span>
-                  </div>
-
-                  <div className="mt-6 grid grid-cols-1 gap-3">
-                    {dashboardQuickActions.map((action) => {
-                      const Icon = action.icon;
-                      return (
-                        <button
-                          key={action.label}
-                          type="button"
-                          onClick={() => navigate(action.href)}
-                          className="flex items-start gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4 text-left transition-colors hover:border-[#dd8609] hover:bg-white"
-                        >
-                          <span className="mt-0.5 flex h-9 w-9 items-center justify-center rounded-xl bg-white text-[#dd8609] shadow-sm">
-                            <Icon className="h-4 w-4" />
-                          </span>
-                          <span>
-                            <span className="block text-sm font-semibold text-slate-900">
-                              {action.label}
-                            </span>
-                            <span className="mt-1 block text-sm text-slate-600">{action.hint}</span>
-                          </span>
-                        </button>
-                      );
-                    })}
-                  </div>
-                </section>
-              </div>
-
-              <div className="grid grid-cols-1 gap-6 xl:grid-cols-[0.95fr_1.05fr]">
-                <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-                  <div className="flex items-center justify-between gap-3">
-                    <div>
-                      <h3 className="text-2xl font-semibold text-slate-900">Fluxo Editorial</h3>
-                      <p className="mt-1 text-sm text-slate-600">
-                        Estado atual das publicacoes e atividades.
-                      </p>
-                    </div>
-                    <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-100 text-slate-700">
-                      <BookOpen className="h-5 w-5" />
-                    </span>
-                  </div>
-
-                  <div className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-2">
-                    <div className={adminStatCard}>
-                      <p className={adminStatValue}>{dashboardStats?.news_draft ?? 0}</p>
-                      <p className={adminStatLabel}>Noticias em rascunho</p>
-                    </div>
-                    <div className={adminStatCard}>
-                      <p className={adminStatValue}>{dashboardStats?.news_review ?? 0}</p>
-                      <p className={adminStatLabel}>Noticias em revisao</p>
-                    </div>
-                    <div className={adminStatCard}>
-                      <p className={adminStatValue}>{dashboardStats?.events_draft ?? 0}</p>
-                      <p className={adminStatLabel}>Eventos em rascunho</p>
-                    </div>
-                    <div className={adminStatCard}>
-                      <p className={adminStatValue}>{dashboardStats?.events_review ?? 0}</p>
-                      <p className={adminStatLabel}>Eventos em revisao</p>
-                    </div>
-                  </div>
-
-                  {dashboardCards.length > 0 ? (
-                    <div className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-2">
-                      {dashboardCards.slice(0, 6).map((card) => (
-                        <div key={card.label} className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4">
-                          <p className="text-2xl font-semibold text-slate-900">{card.value}</p>
-                          <p className="mt-1 text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">
-                            {card.label}
-                          </p>
-                        </div>
-                      ))}
-                    </div>
-                  ) : null}
-                </section>
-
-                <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-                  <div className="flex items-center justify-between gap-3">
-                    <div>
-                      <h3 className="text-2xl font-semibold text-slate-900">Agenda e Destaques</h3>
-                      <p className="mt-1 text-sm text-slate-600">
-                        Proximos pontos relevantes do panorama cultural.
-                      </p>
-                    </div>
-                    <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-sky-100 text-sky-700">
-                      <CalendarClock className="h-5 w-5" />
-                    </span>
-                  </div>
-
-                  <div className="mt-6 space-y-3">
-                    {dashboardAgenda.length > 0 ? (
-                      dashboardAgenda.map((entry) => (
-                        <button
-                          key={`${entry.label}-${entry.title}`}
-                          type="button"
-                          className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4 text-left transition-colors hover:border-[#dd8609] hover:bg-white"
-                          onClick={() => navigate(entry.href)}
-                        >
-                          <p className="text-xs font-semibold uppercase tracking-[0.12em] text-[#dd8609]">
-                            {entry.label}
-                          </p>
-                          <p className="mt-2 text-base font-semibold text-slate-900">{entry.title}</p>
-                          <p className="mt-1 text-sm text-slate-600">{entry.meta}</p>
-                          <p className="mt-3 text-sm font-medium text-slate-500">{entry.date}</p>
-                        </button>
-                      ))
-                    ) : (
-                      <p className={adminInfo}>Ainda nao existem registos suficientes para mostrar.</p>
-                    )}
-                  </div>
-                </section>
-              </div>
-            </div>
+            <DashboardPage
+              currentUser={currentUser}
+              isLoadingUsers={isLoadingUsers}
+              dashboardStats={dashboardStats}
+              isLoadingDashboard={isLoadingDashboard}
+              dashboardError={dashboardError}
+              unreadNotifications={unreadNotifications.length}
+              isLoadingNotifications={isLoadingNotifications}
+              notificationError={notificationError}
+              dashboardHighlights={dashboardHighlights}
+              dashboardAlerts={dashboardAlerts}
+              dashboardQuickActions={dashboardQuickActions}
+              dashboardCards={dashboardCards}
+              dashboardAgenda={dashboardAgenda}
+              onOpenNotification={openDashboardNotification}
+              onMarkAllAsRead={markAllNotificationsAsRead}
+              onNavigate={navigate}
+            />
           ) : null}
 
           {activeSection === 'notificacoes' ? (
@@ -3666,10 +3155,7 @@ function AdminCultura() {
             />
           ) : null}
 
-          {(activeSection === 'atividades' ||
-            activeSection === 'livros' ||
-            activeSection === 'sessoes' ||
-            activeSection === 'eventos') ? (
+          {activeSection === 'livros' ? (
             <ActivitiesPage
               activitySectionLabel={activitySectionLabel}
               activitySectionDescription={activitySectionDescription}
@@ -3698,6 +3184,210 @@ function AdminCultura() {
               activityOrder={activityOrder}
               setActivityOrder={setActivityOrder}
               activityTab={activityTab}
+              selectedBookIds={selectedBookIds}
+              setSelectedBookIds={setSelectedBookIds}
+              sortedBooks={sortedBooks}
+              isDeletingBulkBooks={isDeletingBulkBooks}
+              handleBulkDeleteBooks={handleBulkDeleteBooks}
+              selectedEventIds={selectedEventIds}
+              setSelectedEventIds={setSelectedEventIds}
+              sortedEvents={sortedEvents}
+              bulkEventStatus={bulkEventStatus}
+              setBulkEventStatus={setBulkEventStatus}
+              availableEventStatuses={availableEventStatuses}
+              isApplyingBulkEvents={isApplyingBulkEvents}
+              handleApplyBulkEventStatus={handleApplyBulkEventStatus}
+              isDeletingBulkEvents={isDeletingBulkEvents}
+              handleBulkDeleteEvents={handleBulkDeleteEvents}
+              showActivityForm={showActivityForm}
+              handleSaveBook={handleSaveBook}
+              editingBookId={editingBookId}
+              bookForm={bookForm}
+              setBookForm={setBookForm}
+              bookImageFileKey={bookImageFileKey}
+              isUploadingBookImage={isUploadingBookImage}
+              handleUploadBookImage={handleUploadBookImage}
+              bookFormError={bookFormError}
+              isSavingBook={isSavingBook}
+              resetBookForm={resetBookForm}
+              handleEditBook={handleEditBook}
+              deletingBookId={deletingBookId}
+              handleDeleteBook={handleDeleteBook}
+              isLoadingActivities={isLoadingActivities}
+              activityTotal={activityTotal}
+              activityPage={activityPage}
+              activityTotalPages={activityTotalPages}
+              handleSaveSession={handleSaveSession}
+              editingSessionId={editingSessionId}
+              sessionForm={sessionForm}
+              setSessionForm={setSessionForm}
+              sessionFormError={sessionFormError}
+              isSavingSession={isSavingSession}
+              resetSessionForm={resetSessionForm}
+              handleEditSession={handleEditSession}
+              deletingSessionId={deletingSessionId}
+              handleDeleteSession={handleDeleteSession}
+              sortedSessions={sortedSessions}
+              handleSaveEvent={handleSaveEvent}
+              editingEventId={editingEventId}
+              eventForm={eventForm}
+              setEventForm={setEventForm}
+              eventImageFileKey={eventImageFileKey}
+              isUploadingEventImage={isUploadingEventImage}
+              handleUploadEventImage={handleUploadEventImage}
+              eventFormError={eventFormError}
+              isSavingEvent={isSavingEvent}
+              resetEventForm={resetEventForm}
+              handleEditEvent={handleEditEvent}
+              deletingEventId={deletingEventId}
+              handleDeleteEvent={handleDeleteEvent}
+              showEventCategories={showEventCategories}
+              handleSaveCategory={handleSaveCategory}
+              categoryForm={categoryForm}
+              setCategoryForm={setCategoryForm}
+              categoryFormError={categoryFormError}
+              isSavingCategory={isSavingCategory}
+              editingCategoryId={editingCategoryId}
+              resetCategoryForm={resetCategoryForm}
+              sortedCategories={sortedCategories}
+              isLoadingCategories={isLoadingCategories}
+              handleEditCategory={handleEditCategory}
+              deletingCategoryId={deletingCategoryId}
+              handleDeleteCategory={handleDeleteCategory}
+              toggleSelectedId={toggleSelectedId}
+            />
+          ) : null}
+
+          {activeSection === 'sessoes' ? (
+            <SessionsPage
+              activitySectionLabel={activitySectionLabel}
+              activitySectionDescription={activitySectionDescription}
+              activityOverviewStats={activityOverviewStats}
+              isExportingActivities={isExportingActivities}
+              handleExportActivitiesCsv={handleExportActivitiesCsv}
+              showActivityFiltersAndList={showActivityFiltersAndList}
+              canManageUsers={canManageUsers}
+              clubs={clubs}
+              activityClubFilter={activityClubFilter}
+              setActivityClubFilter={setActivityClubFilter}
+              activityCategoryFilter={activityCategoryFilter}
+              setActivityCategoryFilter={setActivityCategoryFilter}
+              activityStatusFilter={activityStatusFilter}
+              setActivityStatusFilter={setActivityStatusFilter}
+              activityError={activityError}
+              handleApplyActivitySearch={handleApplyActivitySearch}
+              activitySearchInput={activitySearchInput}
+              setActivitySearchInput={setActivitySearchInput}
+              setActivitySearch={setActivitySearch}
+              setActivityPage={setActivityPage}
+              activityDateFrom={activityDateFrom}
+              setActivityDateFrom={setActivityDateFrom}
+              activityDateTo={activityDateTo}
+              setActivityDateTo={setActivityDateTo}
+              activityOrder={activityOrder}
+              setActivityOrder={setActivityOrder}
+              selectedBookIds={selectedBookIds}
+              setSelectedBookIds={setSelectedBookIds}
+              sortedBooks={sortedBooks}
+              isDeletingBulkBooks={isDeletingBulkBooks}
+              handleBulkDeleteBooks={handleBulkDeleteBooks}
+              selectedEventIds={selectedEventIds}
+              setSelectedEventIds={setSelectedEventIds}
+              sortedEvents={sortedEvents}
+              bulkEventStatus={bulkEventStatus}
+              setBulkEventStatus={setBulkEventStatus}
+              availableEventStatuses={availableEventStatuses}
+              isApplyingBulkEvents={isApplyingBulkEvents}
+              handleApplyBulkEventStatus={handleApplyBulkEventStatus}
+              isDeletingBulkEvents={isDeletingBulkEvents}
+              handleBulkDeleteEvents={handleBulkDeleteEvents}
+              showActivityForm={showActivityForm}
+              handleSaveBook={handleSaveBook}
+              editingBookId={editingBookId}
+              bookForm={bookForm}
+              setBookForm={setBookForm}
+              bookImageFileKey={bookImageFileKey}
+              isUploadingBookImage={isUploadingBookImage}
+              handleUploadBookImage={handleUploadBookImage}
+              bookFormError={bookFormError}
+              isSavingBook={isSavingBook}
+              resetBookForm={resetBookForm}
+              handleEditBook={handleEditBook}
+              deletingBookId={deletingBookId}
+              handleDeleteBook={handleDeleteBook}
+              isLoadingActivities={isLoadingActivities}
+              activityTotal={activityTotal}
+              activityPage={activityPage}
+              activityTotalPages={activityTotalPages}
+              handleSaveSession={handleSaveSession}
+              editingSessionId={editingSessionId}
+              sessionForm={sessionForm}
+              setSessionForm={setSessionForm}
+              sessionFormError={sessionFormError}
+              isSavingSession={isSavingSession}
+              resetSessionForm={resetSessionForm}
+              handleEditSession={handleEditSession}
+              deletingSessionId={deletingSessionId}
+              handleDeleteSession={handleDeleteSession}
+              sortedSessions={sortedSessions}
+              handleSaveEvent={handleSaveEvent}
+              editingEventId={editingEventId}
+              eventForm={eventForm}
+              setEventForm={setEventForm}
+              eventImageFileKey={eventImageFileKey}
+              isUploadingEventImage={isUploadingEventImage}
+              handleUploadEventImage={handleUploadEventImage}
+              eventFormError={eventFormError}
+              isSavingEvent={isSavingEvent}
+              resetEventForm={resetEventForm}
+              handleEditEvent={handleEditEvent}
+              deletingEventId={deletingEventId}
+              handleDeleteEvent={handleDeleteEvent}
+              showEventCategories={showEventCategories}
+              handleSaveCategory={handleSaveCategory}
+              categoryForm={categoryForm}
+              setCategoryForm={setCategoryForm}
+              categoryFormError={categoryFormError}
+              isSavingCategory={isSavingCategory}
+              editingCategoryId={editingCategoryId}
+              resetCategoryForm={resetCategoryForm}
+              sortedCategories={sortedCategories}
+              isLoadingCategories={isLoadingCategories}
+              handleEditCategory={handleEditCategory}
+              deletingCategoryId={deletingCategoryId}
+              handleDeleteCategory={handleDeleteCategory}
+              toggleSelectedId={toggleSelectedId}
+            />
+          ) : null}
+
+          {activeSection === 'eventos' ? (
+            <EventsPage
+              activitySectionLabel={activitySectionLabel}
+              activitySectionDescription={activitySectionDescription}
+              activityOverviewStats={activityOverviewStats}
+              isExportingActivities={isExportingActivities}
+              handleExportActivitiesCsv={handleExportActivitiesCsv}
+              showActivityFiltersAndList={showActivityFiltersAndList}
+              canManageUsers={canManageUsers}
+              clubs={clubs}
+              activityClubFilter={activityClubFilter}
+              setActivityClubFilter={setActivityClubFilter}
+              activityCategoryFilter={activityCategoryFilter}
+              setActivityCategoryFilter={setActivityCategoryFilter}
+              activityStatusFilter={activityStatusFilter}
+              setActivityStatusFilter={setActivityStatusFilter}
+              activityError={activityError}
+              handleApplyActivitySearch={handleApplyActivitySearch}
+              activitySearchInput={activitySearchInput}
+              setActivitySearchInput={setActivitySearchInput}
+              setActivitySearch={setActivitySearch}
+              setActivityPage={setActivityPage}
+              activityDateFrom={activityDateFrom}
+              setActivityDateFrom={setActivityDateFrom}
+              activityDateTo={activityDateTo}
+              setActivityDateTo={setActivityDateTo}
+              activityOrder={activityOrder}
+              setActivityOrder={setActivityOrder}
               selectedBookIds={selectedBookIds}
               setSelectedBookIds={setSelectedBookIds}
               sortedBooks={sortedBooks}

@@ -42,17 +42,14 @@ from ..api.serializers import (
 )
 from ..core.permissions import IsClubAdmin, IsSuperAdmin
 from ..models import AppUser, Book, Category, Club, CulturalContent, Event, News, NewsStatus, RegistrationStatus, Session
-from ..services import (
-    get_admin_dashboard_metrics,
-    get_admin_notifications,
+from ..service_modules.audit import (
     list_admin_audit_logs,
-    list_admin_club_registrations,
-    notify_event_workflow_status,
-    notify_news_workflow_status,
     record_admin_audit_action,
     record_editorial_action,
-    update_admin_club_registration_status,
 )
+from ..service_modules.dashboard import get_admin_dashboard_metrics, get_admin_notifications
+from ..service_modules.registrations import list_admin_club_registrations, update_admin_club_registration_status
+from ..service_modules.workflow import notify_event_workflow_status, notify_news_workflow_status
 from .admin_common import AdminAuditDestroyMixin, AdminAuditMixin, get_allowed_club_id, get_allowed_registration_club_id
 
 

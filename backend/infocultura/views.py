@@ -1,4 +1,10 @@
-from .view_modules.admin_views import (
+from .view_modules.auth_views import (
+    LoginView,
+    LogoutView,
+    MeView,
+    RefreshTokenView,
+)
+from .view_modules.admin_events import (
     AdminAuditLogListView,
     AdminBookBulkDeleteView,
     AdminBookDetailView,
@@ -9,8 +15,6 @@ from .view_modules.admin_views import (
     AdminClubListCreateView,
     AdminClubMemberAssignView,
     AdminClubMemberRemoveView,
-    AdminContentDetailView,
-    AdminContentListCreateView,
     AdminDashboardNotificationsView,
     AdminDashboardSummaryView,
     AdminEventBulkDeleteView,
@@ -18,11 +22,6 @@ from .view_modules.admin_views import (
     AdminEventDetailView,
     AdminEventListCreateView,
     AdminImageUploadView,
-    AdminNewsBulkDeleteView,
-    AdminNewsBulkStatusUpdateView,
-    AdminNewsDetailView,
-    AdminNewsListCreateView,
-    AdminNewsStatusListView,
     AdminRegistrationBulkStatusUpdateView,
     AdminRegistrationListView,
     AdminRegistrationStatusListView,
@@ -30,15 +29,20 @@ from .view_modules.admin_views import (
     AdminSessionDetailView,
     AdminSessionListCreateView,
 )
-from .view_modules.auth_views import (
+from .view_modules.admin_news import (
+    AdminContentDetailView,
+    AdminContentListCreateView,
+    AdminNewsBulkDeleteView,
+    AdminNewsBulkStatusUpdateView,
+    AdminNewsDetailView,
+    AdminNewsListCreateView,
+    AdminNewsStatusListView,
+)
+from .view_modules.admin_users import (
     AdminRoleListView,
     AdminUserDeactivateView,
     AdminUserDetailView,
     AdminUserListCreateView,
-    LoginView,
-    LogoutView,
-    MeView,
-    RefreshTokenView,
 )
 from .view_modules.public_views import (
     PublicBookDetailView,

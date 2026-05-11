@@ -170,6 +170,7 @@ const menuItems: MenuItem[] = [
 const mobilePrivateLinks: LinkItem[] = [
   { label: 'Inforestudante', href: 'https://inforestudante.ispgaya.pt' },
   { label: 'Infordocente', href: 'https://infordocente.ispgaya.pt' },
+  { label: 'Infocultura', href: 'https://infordocente.ispgaya.pt' },
   { label: 'Email', href: 'https://outlook.office.com' },
   { label: 'Horários', href: 'https://horarios.ispgaya.pt/geral/' }
 ];
@@ -267,7 +268,7 @@ function HeaderNav({ transparent = false }: HeaderNavProps) {
     ? 'right-0 z-[90] absolute hidden w-72 pt-2 opacity-0 transition-opacity group-hover:block group-hover:opacity-100 group-focus-within:block group-focus-within:opacity-100'
     : navDropdownWrap;
   const mobileButtonClassName = transparent
-    ? 'inline-flex h-11 w-11 items-center justify-center rounded-md bg-white/10 text-white transition-colors hover:bg-white/20 lg:hidden'
+    ? 'inline-flex h-11 w-11 items-center justify-center rounded-md  text-white transition-colors  lg:hidden'
     : mobileMenuButton;
   const logoSrc = transparent ? logoNegative : logo;
   const dropdownListClassName = transparent
@@ -355,7 +356,23 @@ function HeaderNav({ transparent = false }: HeaderNavProps) {
                 </Link>
 
                 <div className="flex items-center gap-4">
-                  <div className="flex items-center justify-center gap-3 text-sm font-semibold text-slate-700">
+
+                  <button
+                    type="button"
+                    onClick={closeMobileMenu}
+                    className="inline-flex h-11 w-11 items-center justify-center rounded-md text-slate-700 transition hover:bg-slate-100"
+                    aria-label="Fechar menu"
+                  >
+                    <X className="h-5 w-5" />
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <div className="border-t border-slate-200">
+              <div className={`${container} px-6 sm:px-6 lg:px-3`}>
+                <div className="mx-auto w-full max-w-md divide-y divide-slate-200">
+                  <div className="flex items-right justify-right gap-3 text-sm font-semibold text-slate-700">
                     <a
                       href="https://ispgaya.pt/pt"
                       title="pt"
@@ -375,22 +392,6 @@ function HeaderNav({ transparent = false }: HeaderNavProps) {
                       EN
                     </a>
                   </div>
-
-                  <button
-                    type="button"
-                    onClick={closeMobileMenu}
-                    className="inline-flex h-11 w-11 items-center justify-center rounded-md text-slate-700 transition hover:bg-slate-100"
-                    aria-label="Fechar menu"
-                  >
-                    <X className="h-5 w-5" />
-                  </button>
-                </div>
-              </div>
-            </div>
-
-            <div className="border-t border-slate-200">
-              <div className={`${container} px-6 sm:px-6 lg:px-3`}>
-                <div className="mx-auto w-full max-w-md divide-y divide-slate-200">
                 {resolvedMenuItems.map((item) => {
                   const isExpanded = activeMobileSection === item.label;
                   const hasDropdown = Boolean(item.dropdown && item.dropdown.length > 0);
@@ -439,12 +440,12 @@ function HeaderNav({ transparent = false }: HeaderNavProps) {
                   );
                 })}
 
-                <div className="py-4">
-                  <div className="flex items-center justify-center gap-2 text-center text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">
+                
+                  <div className="flex items-left justify-left gap-2 text-left text-[11px] font-semibold  text-slate-500">
                     <Lock className="h-4 w-4" />
                     <span>Área Privada</span>
                   </div>
-                  <div className="mt-3 grid gap-2 text-center">
+                  <div className="mt-3 grid gap-2 text-left">
                     {mobilePrivateLinks.map((item) => (
                       <div key={item.label}>
                         {renderMenuLink(
@@ -455,14 +456,13 @@ function HeaderNav({ transparent = false }: HeaderNavProps) {
                       </div>
                     ))}
                   </div>
-                </div>
+                
 
-                <div className="py-4">
-                  <div className="flex items-center justify-center gap-2 text-center text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">
+                  <div className="flex items-left justify-left gap-2 text-left text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">
                     <Zap className="h-4 w-4" />
                     <span>Links de Interesse</span>
                   </div>
-                  <div className="mt-3 grid gap-2 text-center">
+                  <div className="mt-3 grid gap-2 text-left">
                     {mobileInterestLinks.map((item) => (
                       <div key={item.label}>
                         {renderMenuLink(
@@ -473,9 +473,6 @@ function HeaderNav({ transparent = false }: HeaderNavProps) {
                       </div>
                     ))}
                   </div>
-                </div>
-
-                <div className="py-5" />
                 </div>
               </div>
             </div>

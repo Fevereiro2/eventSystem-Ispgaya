@@ -3,7 +3,7 @@ from django.db import models
 from .database import constants as db_constants
 
 class Role(models.Model):
-    id = models.AutoField(primary_key=True, db_column=db_constants.COL_ID_ROLE)
+    id = models.AutoField(primary_key=True)
     name = models.CharField(max_length=50, unique=True)
     description = models.TextField(blank=True, null=True)
 

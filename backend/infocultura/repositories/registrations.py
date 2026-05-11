@@ -1,42 +1,28 @@
 from __future__ import annotations
 
-from datetime import datetime, timezone as dt_timezone
-from functools import lru_cache
-import json
-from urllib.parse import quote
+from datetime import datetime
 from typing import Any
 
 from django.conf import settings
 from django.core.cache import cache
 from django.core.mail import send_mail
-from django.db import connection, transaction
+from django.db import transaction
 from django.utils import timezone
 
-from .database import constants as db_constants
-from .models import (
-    AppUser,
-    Book,
-    Club,
-    Event,
-    News,
-    Registration,
-    RegistrationStatus,
-    Session,
-)
-from .service_types import (
+from ..database import constants as db_constants
+from ..models import AppUser, Club, Event, Registration, RegistrationStatus, Session
+from ..service_types import (
     ActivityRegistrationError,
     ActivityRegistrationRateLimitError,
     ActivityRegistrationSummary,
-    AdminAuditLogRecord,
     AdminClubRegistrationPage,
     AdminClubRegistrationRecord,
-    AdminNotificationRecord,
     ClubRegistrationInput,
     ClubRegistrationRateLimitError,
     DuplicateActivityRegistrationError,
     DuplicateClubRegistrationError,
-    EditorialHistoryRecord,
 )
+from .sql import execute_sql, fetch_all_dict_rows
 
 
 def _normalized_email(value: str) -> str:
@@ -53,55 +39,6 @@ def _format_dt(value: datetime | None) -> str:
 
     localized = timezone.localtime(value) if timezone.is_aware(value) else value
     return localized.strftime("%d/%m/%Y %H:%M")
-
-
-def _build_google_calendar_url(*, title: str, description: str, start_date: datetime, end_date: datetime, location: str) -> str:
-    def normalize_calendar_dt(value: datetime) -> str:
-        aware_value = timezone.make_aware(value, timezone.get_current_timezone()) if timezone.is_naive(value) else value
-        return timezone.localtime(aware_value, dt_timezone.utc).strftime("%Y%m%dT%H%M%SZ")
-
-    query = (
-        f"action=TEMPLATE&text={quote(title)}"
-        f"&dates={normalize_calendar_dt(start_date)}/{normalize_calendar_dt(end_date)}"
-        f"&details={quote(description)}"
-        f"&location={quote(location)}"
-    )
-    return f"https://calendar.google.com/calendar/render?{query}"
-
-
-def _build_outlook_calendar_url(*, title: str, description: str, start_date: datetime, end_date: datetime, location: str) -> str:
-    def normalize_outlook_dt(value: datetime) -> str:
-        aware_value = timezone.make_aware(value, timezone.get_current_timezone()) if timezone.is_naive(value) else value
-        return timezone.localtime(aware_value, dt_timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
-
-    query = (
-        f"path=/calendar/action/compose&rru=addevent"
-        f"&subject={quote(title)}"
-        f"&startdt={quote(normalize_outlook_dt(start_date))}"
-        f"&enddt={quote(normalize_outlook_dt(end_date))}"
-        f"&body={quote(description)}"
-        f"&location={quote(location)}"
-    )
-    return f"https://outlook.office.com/calendar/0/deeplink/compose?{query}"
-
-
-def _build_calendar_links(*, title: str, description: str, start_date: datetime, end_date: datetime, location: str) -> dict[str, str]:
-    return {
-        "google_url": _build_google_calendar_url(
-            title=title,
-            description=description,
-            start_date=start_date,
-            end_date=end_date,
-            location=location,
-        ),
-        "outlook_url": _build_outlook_calendar_url(
-            title=title,
-            description=description,
-            start_date=start_date,
-            end_date=end_date,
-            location=location,
-        ),
-    }
 
 
 def _get_club_recipient_emails(*, club_id: int | None) -> list[str]:
@@ -135,18 +72,6 @@ def _get_allowed_club_id(user) -> int | None:
     if role_name == "club_admin":
         return user.club_id
     return None
-
-
-def _fetch_all_dict_rows(sql: str, params: tuple[Any, ...] | list[Any] = ()) -> list[dict[str, Any]]:
-    with connection.cursor() as cursor:
-        cursor.execute(sql, params)
-        columns = [column[0] for column in cursor.description or []]
-        return [dict(zip(columns, row)) for row in cursor.fetchall()]
-
-
-def _execute_sql(sql: str, params: tuple[Any, ...] | list[Any] = ()) -> None:
-    with connection.cursor() as cursor:
-        cursor.execute(sql, params)
 
 
 def _registration_rate_limit_key(*, club_id: int, client_ip: str) -> str:
@@ -225,7 +150,7 @@ def club_registration_exists(*, club_id: int, email: str) -> bool:
           AND LOWER(r.email) = %s
         LIMIT 1
     """
-    return bool(_fetch_all_dict_rows(sql, (club_id, normalized_email)))
+    return bool(fetch_all_dict_rows(sql, (club_id, normalized_email)))
 
 
 def event_registration_exists(*, event_id: int, email: str) -> bool:
@@ -239,7 +164,7 @@ def event_registration_exists(*, event_id: int, email: str) -> bool:
           AND LOWER(r.email) = %s
         LIMIT 1
     """
-    return bool(_fetch_all_dict_rows(sql, (event_id, normalized_email)))
+    return bool(fetch_all_dict_rows(sql, (event_id, normalized_email)))
 
 
 def session_registration_exists(*, session_id: int, email: str) -> bool:
@@ -253,7 +178,7 @@ def session_registration_exists(*, session_id: int, email: str) -> bool:
           AND LOWER(r.email) = %s
         LIMIT 1
     """
-    return bool(_fetch_all_dict_rows(sql, (session_id, normalized_email)))
+    return bool(fetch_all_dict_rows(sql, (session_id, normalized_email)))
 
 
 def _normalize_capacity(value: int | None) -> int | None:
@@ -281,7 +206,7 @@ def _build_activity_registration_summary(
         WHERE link.{activity_id_field} = %s
         GROUP BY LOWER(COALESCE(rs.name, r.status))
     """
-    stats = _fetch_all_dict_rows(sql, (activity_id,))
+    stats = fetch_all_dict_rows(sql, (activity_id,))
 
     confirmed_count = 0
     waitlist_count = 0
@@ -355,7 +280,7 @@ def create_club_registration(
             status="pending",
             created_at=timezone.now(),
         )
-        _execute_sql(
+        execute_sql(
             f"""
                 INSERT INTO {db_constants.TABLE_CLUB_REGISTRATION} (
                     {db_constants.COL_ID_CLUBS},
@@ -548,7 +473,7 @@ def _create_activity_registration(
             link_table = db_constants.TABLE_SESSION_REGISTRATION
             activity_column = db_constants.COL_ID_SESSIONS
 
-        _execute_sql(
+        execute_sql(
             f"""
                 INSERT INTO {link_table} (
                     {activity_column},
@@ -685,7 +610,7 @@ def list_admin_club_registrations(
     order_by = ordering_map.get(ordering, "r.created_at DESC")
     where_sql = "WHERE " + " AND ".join(filters)
     count_sql = f"SELECT COUNT(*) AS total_count {joins}\n{where_sql}"
-    total_rows = _fetch_all_dict_rows(count_sql, params)
+    total_rows = fetch_all_dict_rows(count_sql, params)
     total = int(total_rows[0]["total_count"]) if total_rows else 0
 
     select_sql = f"""
@@ -709,7 +634,7 @@ def list_admin_club_registrations(
         select_sql += " LIMIT %s OFFSET %s"
         query_params.extend([page_size, offset])
 
-    rows = _fetch_all_dict_rows(select_sql, tuple(query_params))
+    rows = fetch_all_dict_rows(select_sql, tuple(query_params))
     items = [
         AdminClubRegistrationRecord(
             registration_id=row["registration_id"],
@@ -732,7 +657,7 @@ def list_admin_club_registrations(
         total=total,
         page=page,
         page_size=page_size if not export_all else total,
-        total_pages=total_pages
+        total_pages=total_pages,
     )
 
 
@@ -766,7 +691,7 @@ def get_admin_club_registration(
         sql += f" AND cr.{db_constants.COL_ID_CLUBS} = %s"
         params.append(allowed_club_id)
 
-    rows = _fetch_all_dict_rows(sql, tuple(params))
+    rows = fetch_all_dict_rows(sql, tuple(params))
     if not rows:
         return None
     row = rows[0]
@@ -780,32 +705,6 @@ def get_admin_club_registration(
         message=row["message"],
         status=row["status"],
         created_at=row["created_at"],
-    )
-
-
-def _build_registration_status_email_subject(status: str, club_name: str) -> str:
-    if status == "approved":
-        return f"Inscricao aprovada no clube {club_name}"
-    if status == "rejected":
-        return f"Inscricao rejeitada no clube {club_name}"
-    return f"Atualizacao da inscricao no clube {club_name}"
-
-
-def _build_registration_status_email_body(record: AdminClubRegistrationRecord) -> str:
-    if record.status == "approved":
-        decision_line = "A tua inscricao foi aprovada."
-    elif record.status == "rejected":
-        decision_line = "A tua inscricao foi rejeitada."
-    else:
-        decision_line = f"O estado da tua inscricao foi atualizado para {record.status}."
-
-    return (
-        f"Ola {record.name},\n\n"
-        f"{decision_line}\n"
-        f"Clube: {record.club_name}\n"
-        f"Estado atual: {record.status}\n\n"
-        "Obrigado pelo teu interesse.\n"
-        "InfoCultura"
     )
 
 
@@ -835,200 +734,8 @@ def update_admin_club_registration_status(
     )
     if updated_record:
         _send_mail_message(
-            subject=_build_registration_status_email_subject(registration_status, updated_record.club_name),
-            body=_build_registration_status_email_body(updated_record),
+            subject=f"Inscricao atualizada no clube {updated_record.club_name}",
+            body=f"Ola {updated_record.name},\n\nO estado da tua inscricao mudou para {updated_record.status}.",
             recipient_list=[updated_record.email],
         )
     return updated_record
-
-
-def record_admin_audit_action(
-    *,
-    action: str,
-    content_type: str,
-    object_id: int | None = None,
-    summary: str,
-    actor_user: AppUser,
-    club_id: int | None = None,
-    metadata: dict | None = None,
-) -> None:
-    from .models import AdminAuditLog
-    AdminAuditLog.objects.create(
-        action=action,
-        content_type=content_type,
-        object_id=object_id,
-        summary=summary,
-        actor_user=actor_user,
-        actor_name=actor_user.name,
-        club=Club.objects.filter(id=club_id).first() if club_id else None,
-        metadata_json=json.dumps(metadata) if metadata else None,
-    )
-
-
-def record_editorial_action(
-    *,
-    content_type: str,
-    object_id: int,
-    from_status: str | None,
-    to_status: str,
-    actor_user: AppUser,
-    club_id: int | None = None,
-) -> None:
-    from .models import EditorialAction
-    EditorialAction.objects.create(
-        content_type=content_type,
-        object_id=object_id,
-        from_status=from_status,
-        to_status=to_status,
-        actor_user=actor_user,
-        actor_name=actor_user.name,
-        club=Club.objects.filter(id=club_id).first() if club_id else None,
-    )
-
-
-def list_admin_audit_logs(
-    *,
-    club_id: int | None = None,
-    action: str | None = None,
-    content_type: str | None = None,
-    search: str | None = None,
-    page: int = 1,
-    page_size: int = 20,
-    limit: int | None = None,
-) -> list[AdminAuditLogRecord]:
-    from .models import AdminAuditLog
-    queryset = AdminAuditLog.objects.all()
-    if club_id:
-        queryset = queryset.filter(club_id=club_id)
-    if action:
-        queryset = queryset.filter(action=action)
-    if content_type:
-        queryset = queryset.filter(content_type=content_type)
-    if search:
-        queryset = queryset.filter(summary__icontains=search)
-
-    if limit is not None:
-        queryset = queryset[:max(1, limit)]
-    else:
-        offset = (page - 1) * page_size
-        queryset = queryset[offset:offset + page_size]
-
-    return [
-        AdminAuditLogRecord(
-            id=log.id,
-            action=log.action,
-            content_type=log.content_type,
-            object_id=log.object_id,
-            summary=log.summary,
-            actor_user_id=log.actor_user_id,
-            actor_name=log.actor_name,
-            club_id=log.club_id,
-            metadata_json=log.metadata_json,
-            created_at=log.created_at,
-        )
-        for log in queryset
-    ]
-
-
-def get_admin_dashboard_metrics(*, user: AppUser) -> dict:
-    from .models import Event, News, Registration, Club
-    
-    club_id = _get_allowed_club_id(user)
-    
-    event_qs = Event.objects.all()
-    news_qs = News.objects.all()
-    reg_qs = Registration.objects.all()
-    
-    if club_id:
-        event_qs = event_qs.filter(user__club_id=club_id)
-        news_qs = news_qs.filter(club_id=club_id)
-        reg_qs = reg_qs.filter(club_links__club_id=club_id)
-
-    return {
-        "total_events": event_qs.count(),
-        "total_news": news_qs.count(),
-        "total_registrations": reg_qs.count(),
-        "pending_registrations": reg_qs.filter(status="pending").count(),
-    }
-
-
-def get_admin_notifications(*, user: AppUser) -> list[AdminNotificationRecord]:
-    # Placeholder for notifications logic
-    return []
-
-
-def build_activity_calendar_payload(*, activity_type: str, activity_id: int) -> dict:
-    from .models import Event, Session
-    if activity_type == "event":
-        activity = Event.objects.get(id=activity_id)
-        return _build_calendar_links(
-            title=activity.title,
-            description=activity.description,
-            start_date=activity.start_date,
-            end_date=activity.end_date,
-            location=activity.location or activity.city or "",
-        )
-    elif activity_type == "session":
-        activity = Session.objects.get(id=activity_id)
-        return _build_calendar_links(
-            title=activity.title,
-            description=activity.description,
-            start_date=activity.start_date,
-            end_date=activity.end_date,
-            location=activity.title,
-        )
-    return {}
-
-
-def list_editorial_history(*, content_type: str, object_id: int) -> list[EditorialHistoryRecord]:
-    from .models import EditorialAction
-    queryset = EditorialAction.objects.filter(content_type=content_type, object_id=object_id)
-    return [
-        EditorialHistoryRecord(
-            content_type=action.content_type,
-            object_id=action.object_id,
-            from_status=action.from_status,
-            to_status=action.to_status,
-            actor_user_id=action.actor_user_id,
-            actor_name=action.actor_name,
-            created_at=action.created_at,
-        )
-        for action in queryset
-    ]
-
-
-def notify_event_workflow_status(*, event: Event, previous_status: str | None, next_status: str) -> None:
-    # Logic for workflow notifications
-    pass
-
-
-def notify_news_workflow_status(*, news: News, previous_status: str | None, next_status: str) -> None:
-    # Logic for workflow notifications
-    pass
-
-
-# Scheduling Services
-
-def validate_date_interval(start_date: datetime, end_date: datetime) -> None:
-    """Validates that the end date is after the start date."""
-    if start_date and end_date and start_date >= end_date:
-        raise ValueError("A data de fim deve ser posterior a data de inicio.")
-
-
-def get_upcoming_activities(queryset, limit: int = 5):
-    """Returns the next upcoming activities from the queryset."""
-    return queryset.filter(end_date__gte=timezone.now()).order_by('start_date')[:limit]
-
-
-def get_past_activities(queryset, limit: int = 5):
-    """Returns the past activities from the queryset."""
-    return queryset.filter(end_date__lt=timezone.now()).order_by('-end_date')[:limit]
-
-
-def filter_activities_by_range(queryset, start_from: datetime | None = None, end_to: datetime | None = None):
-    """Filters activities within a specific date range."""
-    if start_from:
-        queryset = queryset.filter(start_date__gte=start_from)
-    if end_to:
-        queryset = queryset.filter(end_date__lte=end_to)
-    return queryset
