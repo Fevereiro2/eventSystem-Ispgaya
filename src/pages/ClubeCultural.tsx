@@ -1,12 +1,12 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import Breadcrumbs from '../components/Breadcrumbs';
+import Breadcrumbs from '../components/ui/Breadcrumbs';
 import ClubRegistrationModal, {
   ClubRegistrationFormData
-} from '../components/ClubRegistrationModal';
-import Footer from '../components/Footer';
-import HeaderNav from '../components/HeaderNav';
-import TopBar from '../components/TopBar';
+} from '../components/ui/ClubRegistrationModal';
+import Footer from '../components/layout/Footer';
+import HeaderNav from '../components/layout/HeaderNav';
+import TopBar from '../components/layout/TopBar';
 import {
   createClubRegistration,
   fetchPublicBooks,
@@ -23,7 +23,7 @@ import {
   InfoCulturaNews,
   InfoCulturaSession,
   resolveInfoCulturaAssetUrl
-} from '../data/infoculturaApi';
+} from '../api/infoculturaApi';
 import {
   adminBtnPrimary,
   adminBtnSecondary,
@@ -31,7 +31,6 @@ import {
   adminFormGridSpaced,
   adminInput,
   adminLabel,
-  blockText,
   blockTitle,
   container,
   contentCard,
@@ -244,10 +243,25 @@ function ClubeCultural({
                 />
               ) : null}
               <h2 className={blockTitle}>{title}</h2>
-              <p className={blockText}>{description}</p>
+              
+              <div className="my-8 rounded-xl bg-gradient-to-br from-slate-50 to-slate-100 p-8">
+                <div className="space-y-6">
+                  {description
+                    .split('\n\n')
+                    .filter((para) => para.trim().length > 0)
+                    .map((para, idx) => (
+                      <p 
+                        key={idx} 
+                        className="text-base leading-relaxed text-slate-700"
+                      >
+                        {para.trim()}
+                      </p>
+                    ))}
+                </div>
+              </div>
 
               {!isLoading && !loadError && club?.enable_registrations ? (
-                <div className="mt-6 flex flex-wrap items-center gap-3">
+                <div className="mb-8 flex flex-wrap items-center gap-4">
                   <button
                     type="button"
                     className={adminBtnPrimary}
@@ -266,13 +280,13 @@ function ClubeCultural({
               ) : null}
 
               {registrationFeedback ? (
-                <p className="mt-4 rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-700">
+                <p className="mb-8 rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-700">
                   {registrationFeedback}
                 </p>
               ) : null}
 
               {!isLoading && !loadError ? (
-                <div className={`${adminFormGridSpaced} mt-8`}>
+                <div className={`${adminFormGridSpaced} mt-12`}>
                   <div className={adminField}>
                     <label className={adminLabel} htmlFor="club-filter-date">
                       Mostrar a partir de

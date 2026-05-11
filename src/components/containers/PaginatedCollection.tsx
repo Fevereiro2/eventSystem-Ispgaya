@@ -1,7 +1,8 @@
 import { ReactNode, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { ChevronRight } from 'lucide-react';
-import { contentEmpty } from '../../styles/ui.js';
+
+import { contentEmpty } from '../../styles/ui';
 
 export type PageToken = number | 'ellipsis';
 

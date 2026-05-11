@@ -1,15 +1,15 @@
 export const appRoot = 'min-h-screen bg-white font-sans text-slate-800 antialiased';
 
-export const container = 'mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8';
+export const container = 'mx-auto w-full max-w-[92rem] sm:px-2 lg:px-3';
 export const sectionSpace = 'py-12 md:py-16';
 
 export const topBar = 'bg-white';
 export const topBarInner =
   'relative z-10 flex items-center justify-between py-2.5';
 export const topBarGroup =
-  'hidden items-center gap-5 text-[13px] font-medium tracking-tight xl:flex';
+  'hidden items-center gap-5 text-[14px] font-medium tracking-tight xl:flex';
 export const topBarRightGroup =
-  'hidden items-center gap-5 text-[13px] font-medium tracking-tight xl:flex';
+  'hidden items-center gap-5 text-[14px] font-medium tracking-tight xl:flex';
 export const topBarRightLinks = 'flex items-center gap-5';
 export const topBarLocaleWrap = 'ml-3 flex items-center gap-2';
 export const topBarLink = 'text-black transition-opacity hover:opacity-80';
@@ -17,13 +17,13 @@ export const topBarLocaleActive =
   'text-black transition-opacity hover:opacity-80 font-bold';
 export const topBarLocale = 'text-black transition-opacity hover:opacity-80';
 
-export const headerNav = 'relative z-[80] border-b border-slate-200 bg-white';
-export const headerNavInner = 'flex items-center justify-between gap-6 py-4';
+export const headerNav = 'relative z-[80] bg-white';
+export const headerNavInner = 'flex items-center justify-between gap-6 py-5 lg:py-4';
 export const brandWrap = 'flex items-center';
-export const brandLogo = 'h-11 w-auto md:h-12';
+export const brandLogo = 'h-12 w-auto md:h-14';
 export const desktopMenu = 'relative z-[80] hidden items-center gap-7 lg:flex';
 export const navLink =
-  'text-[15px] font-medium text-[#3f4a58] transition-colors hover:text-[#dd8609]';
+  'text-[16px] font-medium text-[#3f4a58] transition-colors hover:text-[#dd8609]';
 export const navItemGroup = 'group relative';
 export const navDropdownWrap =
   'right-0 z-[90] transition-opacity pt-2 absolute w-72 hidden opacity-0 group-hover:block group-hover:opacity-100 group-focus-within:block group-focus-within:opacity-100';
@@ -33,7 +33,7 @@ export const navDropdownItem =
   'flex items-center font-medium text-black hover:text-orange-400 hover:underline underline-offset-2';
 export const navDropdownAnchor = 'inline-block w-full';
 export const mobileMenuButton =
-  'inline-flex items-center rounded-lg border border-slate-300 px-3 py-2 text-xs font-semibold uppercase tracking-wide text-slate-600 transition-colors hover:border-[#dd8609] hover:text-[#dd8609] lg:hidden';
+  'inline-flex h-11 w-11 items-center justify-center rounded-md bg-transparent text-slate-700 transition-colors hover:text-[#dd8609] lg:hidden';
 
 export const breadcrumbsWrap = 'border-b border-slate-200 bg-white';
 export const breadcrumbsInner = 'flex items-center gap-2 py-3 text-sm text-slate-500';
@@ -42,7 +42,7 @@ export const breadcrumbsCurrent = 'font-medium text-slate-700';
 export const heroPatternWrap =
   "before:hidden lg:before:block relative hero-triangles hero-dots-pattern mt-2 md:mt-6 after:hidden lg:after:block before:content-[''] before:absolute before:h-[260px] before:w-[280px] before:-left-[132px] before:-top-5 before:z-[1] before:opacity-90 before:bg-[url('/images/triangles-pattern-2.svg')] before:bg-no-repeat before:bg-left-top after:content-[''] after:absolute after:right-0 after:-bottom-[6px] after:h-[66px] after:w-[28%] after:opacity-60 after:[background-image:radial-gradient(ellipse_at_center,#fb923c,#fb923c_1px,transparent_0,transparent_100%)] after:[background-size:18px_18px]";
 export const heroPatternSection =
-  'relative container mx-auto px-4 sm:px-6 xl:px-8 z-10';
+  'relative container mx-auto px-4 sm:px-6 lg:px-3 z-10';
 export const breadcrumbsNav = 'flex relative z-10';
 export const breadcrumbsList =
   'hidden pl-1 items-center space-x-1 md:flex md:space-x-2';
@@ -155,9 +155,9 @@ export const adminPortalSidebarTitle =
   'px-5 text-[11px] font-bold uppercase tracking-[0.12em] text-slate-500';
 export const adminPortalSidebarNav = 'mt-2 flex flex-col';
 export const adminPortalSidebarLink =
-  'border-l-[4px] border-transparent px-5 py-2.5 text-[15px] font-medium text-slate-700 transition-colors hover:bg-white hover:text-[#dd8609]';
+  'block w-full border-l-[4px] border-transparent px-5 py-2.5 text-[15px] font-medium text-slate-700 transition-colors hover:bg-white hover:text-[#dd8609]';
 export const adminPortalSidebarLinkActive =
-  'border-l-[4px] border-[#dd8609] bg-[#f4a24d] text-white px-5 py-2.5 text-[15px] font-semibold shadow-[inset_0_1px_0_rgba(255,255,255,0.3)]';
+  'block w-full border-l-[4px] border-[#dd8609] bg-[#f4a24d] px-5 py-2.5 text-[15px] font-semibold text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.3)]';
 export const adminPortalContent = 'min-w-0';
 export const adminBadge =
   'inline-flex items-center rounded-full bg-slate-900 px-3 py-1 text-xs font-semibold text-white';

@@ -1,36 +1,30 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import Breadcrumbs from '../components/Breadcrumbs';
-import Footer from '../components/Footer';
-import HeaderNav from '../components/HeaderNav';
-import TopBar from '../components/TopBar';
+import Breadcrumbs from '../components/ui/Breadcrumbs';
+import Footer from '../components/layout/Footer';
+import HeaderNav from '../components/layout/HeaderNav';
+import NewsHighlightsSection, {
+  type NewsHighlightItem
+} from '../components/ui/NewsHighlightsSection';
+import TopBar from '../components/layout/TopBar';
 import {
-  fetchPublicCategories,
   fetchPublicBooks,
   fetchPublicClubs,
   fetchPublicEvents,
   fetchPublicNews,
   fetchPublicSessions,
   InfoCulturaBook,
-  InfoCulturaCategory,
   InfoCulturaClub,
   InfoCulturaEvent,
   InfoCulturaNews,
   InfoCulturaSession,
   resolveInfoCulturaAssetUrl
-} from '../data/infoculturaApi';
+} from '../api/infoculturaApi';
 import {
   adminBtnSecondary,
-  adminField,
-  adminFormGridSpaced,
-  adminInput,
-  adminLabel,
   container,
   contentEmpty,
   labResearchGrid,
-  labResearchHeroCard,
-  labResearchHeroText,
-  labResearchHeroTitle,
   labResearchLink,
   labResearchSection,
   labResearchSubcard,
@@ -76,11 +70,6 @@ function getClubNameById(clubs: InfoCulturaClub[], clubId?: number | null): stri
   return clubs.find((club) => club.id === clubId)?.name || '';
 }
 
-function describeEvent(item: InfoCulturaEvent): string {
-  const categoryNames = item.categories.map((category) => category.name).join(', ');
-  return [item.city, item.location, categoryNames].filter(Boolean).join(' · ');
-}
-
 function ResultCard({
   title,
   meta,
@@ -122,32 +111,13 @@ function ResultCard({
   );
 }
 
-function getEventTimeState(item: InfoCulturaEvent): 'upcoming' | 'ongoing' | 'past' {
-  const now = Date.now();
-  const start = new Date(item.start_date).getTime();
-  const end = new Date(item.end_date).getTime();
-
-  if (!Number.isNaN(end) && end < now) return 'past';
-  if (!Number.isNaN(start) && start > now) return 'upcoming';
-  return 'ongoing';
-}
-
 function LaboratorioCultural() {
   const [clubs, setClubs] = useState<InfoCulturaClub[]>([]);
-  const [categories, setCategories] = useState<InfoCulturaCategory[]>([]);
   const [newsItems, setNewsItems] = useState<InfoCulturaNews[]>([]);
   const [books, setBooks] = useState<InfoCulturaBook[]>([]);
   const [sessions, setSessions] = useState<InfoCulturaSession[]>([]);
   const [events, setEvents] = useState<InfoCulturaEvent[]>([]);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [eventClubFilter, setEventClubFilter] = useState('all');
-  const [eventCategoryFilter, setEventCategoryFilter] = useState('all');
-  const [eventCityFilter, setEventCityFilter] = useState('all');
-  const [eventStateFilter, setEventStateFilter] = useState<'all' | 'upcoming' | 'ongoing' | 'past'>(
-    'all'
-  );
-  const [eventDateFrom, setEventDateFrom] = useState('');
-  const [eventDateTo, setEventDateTo] = useState('');
+  const [searchQuery] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState('');
 
@@ -156,10 +126,9 @@ function LaboratorioCultural() {
 
     async function loadData() {
       try {
-        const [nextClubs, nextCategories, nextNews, nextBooks, nextSessions, nextEvents] =
+        const [nextClubs, nextNews, nextBooks, nextSessions, nextEvents] =
           await Promise.all([
           fetchPublicClubs(),
-          fetchPublicCategories(),
           fetchPublicNews(),
           fetchPublicBooks(),
           fetchPublicSessions(),
@@ -168,7 +137,6 @@ function LaboratorioCultural() {
 
         if (!active) return;
         setClubs(nextClubs);
-        setCategories(nextCategories);
         setNewsItems(nextNews);
         setBooks(nextBooks);
         setSessions(nextSessions);
@@ -249,34 +217,71 @@ function LaboratorioCultural() {
           item.description,
           item.city,
           item.location,
-          describeEvent(item),
           getClubNameById(clubs, item.club_id)
-        ) &&
-        (eventClubFilter === 'all' || String(item.club_id || '') === eventClubFilter) &&
-        (eventCategoryFilter === 'all' || item.category_ids.includes(Number(eventCategoryFilter))) &&
-        (eventCityFilter === 'all' ||
-          normalizeLabel(item.city || item.location || '') === normalizeLabel(eventCityFilter)) &&
-        (eventStateFilter === 'all' || getEventTimeState(item) === eventStateFilter) &&
-        (!eventDateFrom || item.event_date.slice(0, 10) >= eventDateFrom) &&
-        (!eventDateTo || item.event_date.slice(0, 10) <= eventDateTo)
+        )
       ),
-    [
-      events,
-      clubs,
-      normalizedQuery,
-      eventClubFilter,
-      eventCategoryFilter,
-      eventCityFilter,
-      eventStateFilter,
-      eventDateFrom,
-      eventDateTo
-    ]
+    [events, clubs, normalizedQuery]
   );
-  const eventCities = useMemo(
+  const homepageStyleNews = useMemo<NewsHighlightItem[]>(
     () =>
-      Array.from(
-        new Set(events.map((item) => (item.city || item.location || '').trim()).filter(Boolean))
-      ).sort((a, b) => a.localeCompare(b, 'pt')),
+      [...newsItems]
+        .sort((left, right) => {
+          const leftTime = new Date(left.published_at || left.created_at).getTime();
+          const rightTime = new Date(right.published_at || right.created_at).getTime();
+          return rightTime - leftTime;
+        })
+        .slice(0, 3)
+        .map((item) => ({
+          title: item.title,
+          href: `/vida-academica/noticias/${item.id}`,
+          internal: true,
+          excerpt: item.summary,
+          image: resolveInfoCulturaAssetUrl(item.image),
+          imageAlt: item.title,
+          publishedAt: item.published_at || item.created_at,
+          publishedLabel: new Intl.DateTimeFormat('pt-PT', {
+            day: '2-digit',
+            month: 'long',
+            year: 'numeric'
+          }).format(new Date(item.published_at || item.created_at)),
+          tags: item.club_name
+            ? [
+                {
+                  label: `#${normalizeLabel(item.club_name).replace(/\s+/g, '')}`,
+                  href: '/vida-academica/noticias'
+                }
+              ]
+            : []
+        })),
+    [newsItems]
+  );
+  const homepageStyleEvents = useMemo<NewsHighlightItem[]>(
+    () =>
+      [...events]
+        .sort((left, right) => {
+          const leftTime = new Date(left.start_date || left.event_date).getTime();
+          const rightTime = new Date(right.start_date || right.event_date).getTime();
+          return rightTime - leftTime;
+        })
+        .slice(0, 3)
+        .map((item) => ({
+          title: item.title,
+          href: `/vida-academica/eventos/${item.id}`,
+          internal: true,
+          excerpt: item.description,
+          image: resolveInfoCulturaAssetUrl(item.image),
+          imageAlt: item.title,
+          publishedAt: item.start_date || item.event_date,
+          publishedLabel: new Intl.DateTimeFormat('pt-PT', {
+            day: '2-digit',
+            month: 'long',
+            year: 'numeric'
+          }).format(new Date(item.start_date || item.event_date)),
+          tags: item.categories.map((category) => ({
+            label: `#${normalizeLabel(category.name).replace(/\s+/g, '')}`,
+            href: '/vida-academica/eventos'
+          }))
+        })),
     [events]
   );
 
@@ -294,7 +299,7 @@ function LaboratorioCultural() {
       <HeaderNav />
       <Breadcrumbs
         title="Laboratorio Cultural"
-        description="A nossa abordagem cultural e interdisciplinar, promovendo criacao artistica, participacao academica e ligacao com a comunidade."
+        description="O Laboratório Cultural é um espaço vivo onde a criatividade ganha forma e a cultura se torna experiência."
         parentLabel="Laboratorio Cultural"
         parentHref="/laboratorio-cultural"
         currentLabel="Laboratorio Cultural"
@@ -303,45 +308,74 @@ function LaboratorioCultural() {
 
       <main className={mainContent}>
         <section className={labResearchSection}>
-          <div className={container}>
-            <div className={labResearchGrid}>
-              <article className={labResearchHeroCard}>
-                <h2 className={labResearchHeroTitle}>InfoCultura</h2>
-                <p className={labResearchHeroText}>
-                  A plataforma de gestao cultural agrega publicacoes, agenda e comunicacao das
-                  iniciativas do Laboratorio Cultural.
-                </p>
-                <Link to="/infocultura" className={labResearchLink}>
-                  Ver mais
-                </Link>
-              </article>
-
+          <div className={`${container} px-4 sm:px-6 xl:px-8`}>
+           
               <article className={labResearchSubcard}>
-                <h3 className={labResearchSubtitle}>Pesquisa global</h3>
-                <p className={labResearchSubtext}>
-                  Procura por clubes, noticias, livros, sessoes e eventos.
-                </p>
-                <input
-                  type="search"
-                  value={searchQuery}
-                  onChange={(event) => setSearchQuery(event.target.value)}
-                  placeholder="Pesquisar por clube, noticia, livro ou evento"
-                  className="mt-4 w-full rounded-xl border border-slate-200 px-4 py-3 text-sm text-slate-800 outline-none transition focus:border-slate-400"
-                />
-                {hasSearch ? (
-                  <p className="mt-3 text-sm text-slate-500">
-                    {totalResults} resultado(s) encontrados para "{searchQuery}".
-                  </p>
-                ) : (
-                  <p className="mt-3 text-sm text-slate-500">
-                    Introduz um termo para pesquisar em todo o Laboratorio Cultural.
-                  </p>
-                )}
+                <div className="overflow-hidden rounded-[2rem] border border-slate-200 bg-[linear-gradient(135deg,#fff7ec_0%,#ffffff_46%,#f6f8fb_100%)]">
+                  <div className="px-5 py-7 sm:px-6 lg:px-7 sm:py-8">
+                      <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#dd8609]">
+                        Visão Cultural
+                      </p>
+                      <h3 className="mt-4 font-heading text-3xl font-semibold text-slate-900 sm:text-4xl">
+                        Missão e Objetivos
+                      </h3>
+                      <p className="mt-4 max-w-2xl text-base leading-8 text-slate-700">
+                        O Laboratório Cultural existe para aproximar cultura, comunidade académica
+                        e participação. Esta entrada apresenta de forma clara a missão do espaço,
+                        os seus objetivos e o enquadramento necessário para perceber rapidamente o
+                        propósito do Laboratório Cultural sem procurar essa informação no meio do
+                        resto do conteúdo.
+                      </p>
+
+                      <div className="mt-6 flex flex-wrap gap-3">
+                        <Link
+                          to="/laboratorio-cultural/roadmap"
+                          className="inline-flex items-center rounded-md bg-[#dd8609] px-4 py-2 text-sm font-semibold text-white transition-opacity hover:opacity-90"
+                        >
+                          Abrir página
+                        </Link>
+                      </div>
+                  </div>
+                </div>
               </article>
 
               {isLoading ? <p className={contentEmpty}>A carregar laboratorio...</p> : null}
               {!isLoading && loadError ? <p className={contentEmpty}>{loadError}</p> : null}
-            </div>
+            
+
+            {!isLoading && !loadError ? (
+              <div className="mt-10">
+                <h2 className="mb-4 text-2xl font-semibold text-slate-900">
+                  {hasSearch ? 'Clubes encontrados' : 'Clubes ativos'}
+                </h2>
+                {filteredClubs.length === 0 ? (
+                  <p className={contentEmpty}>Ainda nao existem clubes ativos para mostrar.</p>
+                ) : (
+                  <div className={labResearchGrid}>
+                    {filteredClubs.map((club) => (
+                      <article key={club.id} className={labResearchSubcard}>
+                        {club.image ? (
+                          <img
+                            src={resolveInfoCulturaAssetUrl(club.image)}
+                            alt={club.name}
+                            className="mb-4 h-40 w-full rounded-xl object-cover"
+                          />
+                        ) : null}
+                        <h3 className={labResearchSubtitle}>{club.name}</h3>
+                        <p className={labResearchSubtext}>
+                          {club.mission ||
+                            club.description ||
+                            'Clube cultural disponivel no laboratorio.'}
+                        </p>
+                        <Link to={getClubHref(club)} className={labResearchLink}>
+                          Ver mais
+                        </Link>
+                      </article>
+                    ))}
+                  </div>
+                )}
+              </div>
+            ) : null}
 
             {!isLoading && !loadError && hasSearch ? (
               <div className="mt-10 space-y-10">
@@ -426,199 +460,65 @@ function LaboratorioCultural() {
               </div>
             ) : null}
 
+            {!isLoading && !loadError && !hasSearch ? (
+              <div className="mt-10 space-y-10">
+                {homepageStyleNews.length > 0 || homepageStyleEvents.length > 0 ? (
+                  <section className="mt-12 bg-white lg:mt-16 xl:mt-20">
+                    <div className="mx-auto grid w-full max-w-7xl grid-cols-1 gap-10 lg:grid-cols-2">
+                      <NewsHighlightsSection
+                        title="Notícias"
+                        viewAllHref="/vida-academica/noticias"
+                        viewAllInternal
+                        items={homepageStyleNews}
+                        className="w-full"
+                      />
+                      <NewsHighlightsSection
+                        title="Eventos"
+                        viewAllHref="/vida-academica/eventos"
+                        viewAllInternal
+                        items={homepageStyleEvents}
+                        className="w-full"
+                      />
+                    </div>
+                  </section>
+                ) : null}
+
+
+
+                {filteredSessions.length > 0 ? (
+                  <section>
+                    <h2 className="mb-4 text-2xl font-semibold text-slate-900">Sessoes</h2>
+                    <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
+                      {filteredSessions.slice(0, 6).map((item) => (
+                        <ResultCard
+                          key={`session-overview-${item.id}`}
+                          title={item.title}
+                          meta={item.club_name}
+                          description={item.description}
+                          href={`/laboratorio-cultural/sessoes/${item.id}`}
+                          status={item.name}
+                        />
+                      ))}
+                    </div>
+                  </section>
+                ) : null}
+              </div>
+            ) : null}
+
             {!isLoading && !loadError ? (
               <div className="mt-10 rounded-2xl border border-slate-200 bg-slate-50 p-6">
                 <div className="flex flex-wrap items-start justify-between gap-4">
                   <div>
                     <h2 className="text-2xl font-semibold text-slate-900">Explorar agenda</h2>
                     <p className="mt-2 text-sm leading-6 text-slate-600">
-                      Filtra eventos por clube, categoria, cidade, estado e intervalo de datas.
+                      Vê todos os eventos numa página própria com filtros e uma leitura geral por
+                      calendário.
                     </p>
                   </div>
-                  <button
-                    type="button"
-                    className={adminBtnSecondary}
-                    onClick={() => {
-                      setEventClubFilter('all');
-                      setEventCategoryFilter('all');
-                      setEventCityFilter('all');
-                      setEventStateFilter('all');
-                      setEventDateFrom('');
-                      setEventDateTo('');
-                    }}
-                  >
-                    Limpar filtros
-                  </button>
+                  <Link to="/laboratorio-cultural/agenda" className={adminBtnSecondary}>
+                    Ver agenda completa
+                  </Link>
                 </div>
-
-                <div className={adminFormGridSpaced}>
-                  <div className={adminField}>
-                    <label className={adminLabel} htmlFor="lab-event-club-filter">
-                      Clube
-                    </label>
-                    <select
-                      id="lab-event-club-filter"
-                      className={adminInput}
-                      value={eventClubFilter}
-                      onChange={(event) => setEventClubFilter(event.target.value)}
-                    >
-                      <option value="all">Todos</option>
-                      {clubs.map((club) => (
-                        <option key={club.id} value={club.id}>
-                          {club.name}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div className={adminField}>
-                    <label className={adminLabel} htmlFor="lab-event-category-filter">
-                      Categoria
-                    </label>
-                    <select
-                      id="lab-event-category-filter"
-                      className={adminInput}
-                      value={eventCategoryFilter}
-                      onChange={(event) => setEventCategoryFilter(event.target.value)}
-                    >
-                      <option value="all">Todas</option>
-                      {categories.map((category) => (
-                        <option key={category.id} value={category.id}>
-                          {category.name}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div className={adminField}>
-                    <label className={adminLabel} htmlFor="lab-event-city-filter">
-                      Cidade
-                    </label>
-                    <select
-                      id="lab-event-city-filter"
-                      className={adminInput}
-                      value={eventCityFilter}
-                      onChange={(event) => setEventCityFilter(event.target.value)}
-                    >
-                      <option value="all">Todas</option>
-                      {eventCities.map((city) => (
-                        <option key={city} value={city}>
-                          {city}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div className={adminField}>
-                    <label className={adminLabel} htmlFor="lab-event-state-filter">
-                      Estado
-                    </label>
-                    <select
-                      id="lab-event-state-filter"
-                      className={adminInput}
-                      value={eventStateFilter}
-                      onChange={(event) =>
-                        setEventStateFilter(
-                          event.target.value as 'all' | 'upcoming' | 'ongoing' | 'past'
-                        )
-                      }
-                    >
-                      <option value="all">Todos</option>
-                      <option value="upcoming">Proximos</option>
-                      <option value="ongoing">A decorrer</option>
-                      <option value="past">Concluidos</option>
-                    </select>
-                  </div>
-
-                  <div className={adminField}>
-                    <label className={adminLabel} htmlFor="lab-event-date-from">
-                      Data inicial
-                    </label>
-                    <input
-                      id="lab-event-date-from"
-                      type="date"
-                      className={adminInput}
-                      value={eventDateFrom}
-                      onChange={(event) => setEventDateFrom(event.target.value)}
-                    />
-                  </div>
-
-                  <div className={adminField}>
-                    <label className={adminLabel} htmlFor="lab-event-date-to">
-                      Data final
-                    </label>
-                    <input
-                      id="lab-event-date-to"
-                      type="date"
-                      className={adminInput}
-                      value={eventDateTo}
-                      onChange={(event) => setEventDateTo(event.target.value)}
-                    />
-                  </div>
-                </div>
-
-                <div className="mt-8">
-                  {filteredEvents.length === 0 ? (
-                    <p className={contentEmpty}>Nao existem eventos para os filtros atuais.</p>
-                  ) : (
-                    <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
-                      {filteredEvents.slice(0, hasSearch ? 6 : 9).map((item) => {
-                        const stateLabel =
-                          getEventTimeState(item) === 'upcoming'
-                            ? 'Proximo'
-                            : getEventTimeState(item) === 'ongoing'
-                              ? 'A decorrer'
-                              : 'Concluido';
-
-                        return (
-                          <ResultCard
-                            key={`agenda-event-${item.id}`}
-                            title={item.title}
-                            meta={`${getClubNameById(clubs, item.club_id)} · ${describeEvent(item)}`}
-                            description={item.description}
-                            href={`/laboratorio-cultural/eventos/${item.id}`}
-                            image={item.image}
-                            status={stateLabel}
-                          />
-                        );
-                      })}
-                    </div>
-                  )}
-                </div>
-              </div>
-            ) : null}
-
-            {!isLoading && !loadError ? (
-              <div className="mt-10">
-                <h2 className="mb-4 text-2xl font-semibold text-slate-900">
-                  {hasSearch ? 'Clubes encontrados' : 'Clubes ativos'}
-                </h2>
-                {filteredClubs.length === 0 ? (
-                  <p className={contentEmpty}>Ainda nao existem clubes ativos para mostrar.</p>
-                ) : (
-                  <div className={labResearchGrid}>
-                    {filteredClubs.map((club) => (
-                      <article key={club.id} className={labResearchSubcard}>
-                        {club.image ? (
-                          <img
-                            src={resolveInfoCulturaAssetUrl(club.image)}
-                            alt={club.name}
-                            className="mb-4 h-40 w-full rounded-xl object-cover"
-                          />
-                        ) : null}
-                        <h3 className={labResearchSubtitle}>{club.name}</h3>
-                        <p className={labResearchSubtext}>
-                          {club.mission ||
-                            club.description ||
-                            'Clube cultural disponivel no laboratorio.'}
-                        </p>
-                        <Link to={getClubHref(club)} className={labResearchLink}>
-                          Ver mais
-                        </Link>
-                      </article>
-                    ))}
-                  </div>
-                )}
               </div>
             ) : null}
           </div>
