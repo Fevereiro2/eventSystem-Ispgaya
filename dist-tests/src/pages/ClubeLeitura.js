@@ -1,0 +1,10 @@
+import { jsx as _jsx, jsxs as _jsxs, Fragment as _Fragment } from "react/jsx-runtime";
+import Breadcrumbs from '../components/ui/Breadcrumbs';
+import Footer from '../components/layout/Footer';
+import HeaderNav from '../components/layout/HeaderNav';
+import TopBar from '../components/layout/TopBar';
+import { blockText, blockTitle, container, mainContent, sectionSpace, } from '../styles/ui';
+function PublicacoesCientificas() {
+    return (_jsxs(_Fragment, { children: [_jsx(TopBar, {}), _jsx(HeaderNav, {}), _jsx(Breadcrumbs, { title: "Clube de Leitura", description: "Bem-vindo ao Clube de Leitura da ISPGAYA! Um espa\u00E7o dedicado aos amantes de livros e hist\u00F3rias. " }), _jsx("main", { className: mainContent, children: _jsxs("div", { className: `${container} ${sectionSpace}`, children: [_jsx("h2", { className: blockTitle, children: "Aqui podes: " }), _jsx("p", { className: blockText, children: "Descobrir novas obras liter\u00E1rias, participar em sess\u00F5es de leitura, trocar recomenda\u00E7\u00F5es com outros clubistas, aprofundar a tua paix\u00E3o pela literatura. Junta-te a uma comunidade vibrante onde cada livro \u00E9 uma porta para novos mundos e ideias." }), _jsx("img", { className: "mt-8 mb-8 mx-auto w-full max-w-5xl aspect-[3/1] object-cover shadow-xl rounded-sm", src: "/src/assets/img/clube_leitura_ispgaya.jpg ", alt: "Clube de Leitura" }), _jsx("p", { className: `${blockText} mb-8`, children: "Se gostas de ler, refletir e conversar sobre livros num ambiente descontra\u00EDdo, este \u00E9 o teu lugar." }), _jsxs("div", { className: "mb-8 max-w-3xl flex flex-col md:flex-row items-center gap-4", children: [_jsx("button", { type: "button", className: "rounded-md bg-[#dd8609] px-4 py-2 text-sm font-semibold text-white transition-opacity hover:opacity-90", children: "Inscrever-me neste clube" }), _jsx("p", { className: "text-sm text-slate-600", children: "O pedido sera enviado para validacao da equipa do clube." })] })] }) }), _jsx(Footer, {})] }));
+}
+export default PublicacoesCientificas;
