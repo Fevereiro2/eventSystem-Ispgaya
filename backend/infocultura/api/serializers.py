@@ -1,53 +1,86 @@
-from rest_framework import serializers
-from django.utils import timezone
-from django.core.validators import validate_email as django_validate_email
-from django.core.exceptions import ValidationError as DjangoValidationError
+from .serializers_activities import (
+    AdminBookWriteSerializer,
+    AdminCategoryWriteSerializer,
+    AdminEventReadSerializer,
+    AdminEventWriteSerializer,
+    AdminSessionWriteSerializer,
+    BookSerializer,
+    CategorySerializer,
+    EventSerializer,
+    SessionSerializer,
+)
+from .serializers_admin import (
+    AdminAuditLogSerializer,
+    AdminBulkIdsSerializer,
+    AdminBulkStatusUpdateSerializer,
+    AdminClubRegistrationSerializer,
+    AdminNotificationSerializer,
+    AdminRegistrationStatusUpdateSerializer,
+)
+from .serializers_auth import LoginSerializer
+from .serializers_clubs import ClubMemberAssignSerializer, ClubSerializer
+from .serializers_content import CulturalContentSerializer
+from .serializers_news import (
+    AdminNewsReadSerializer,
+    AdminNewsWriteSerializer,
+    EditorialHistorySerializer,
+    NewsSerializer,
+    NewsStatusSerializer,
+)
+from .serializers_registrations import (
+    ClubRegistrationCreateSerializer,
+    EventRegistrationCreateSerializer,
+    RegistrationStatusSerializer,
+    SessionRegistrationCreateSerializer,
+)
+from .serializers_users import AdminUserWriteSerializer, RoleSerializer, UserSerializer
+from .serializers_workflow import (
+    EVENT_WORKFLOW_STATUS_ORDER,
+    NEWS_WORKFLOW_STATUS_ORDER,
+    get_role_allowed_workflow_statuses,
+    normalize_workflow_status,
+)
 
-from ..models import (
-    AppUser,
-    Book,
-    Category,
-    Club,
-    CulturalContent,
-    Event,
-    EventCategory,
-    News,
-    NewsStatus,
-    RegistrationStatus,
-    Role,
-    Session,
-)
-from ..service_types import (
-    ActivityRegistrationError,
-    ActivityRegistrationRateLimitError,
-    ActivityRegistrationSummary,
-    AdminClubRegistrationRecord,
-    ClubRegistrationInput,
-    DuplicateClubRegistrationError,
-    DuplicateActivityRegistrationError,
-    ClubRegistrationRateLimitError,
-)
-from ..services import (
-    build_activity_calendar_payload,
-    create_club_registration,
-    create_event_registration,
-    create_session_registration,
-    get_event_registration_summary,
-    get_session_registration_summary,
-    list_editorial_history,
-    notify_event_workflow_status,
-    notify_news_workflow_status,
-    record_editorial_action,
-    validate_date_interval,
-)
-from ..core.security import (
-    hash_password,
-    normalize_email_address,
-    validate_login_identifier,
-    validate_person_name,
-    validate_plaintext_password,
-)
-from ..core.utils import get_client_ip
+__all__ = [
+    'AdminAuditLogSerializer',
+    'AdminBookWriteSerializer',
+    'AdminBulkIdsSerializer',
+    'AdminBulkStatusUpdateSerializer',
+    'AdminCategoryWriteSerializer',
+    'AdminClubRegistrationSerializer',
+    'AdminEventReadSerializer',
+    'AdminEventWriteSerializer',
+    'AdminNewsReadSerializer',
+    'AdminNewsWriteSerializer',
+    'AdminNotificationSerializer',
+    'AdminRegistrationStatusUpdateSerializer',
+    'AdminSessionWriteSerializer',
+    'AdminUserWriteSerializer',
+    'BookSerializer',
+    'CategorySerializer',
+    'ClubMemberAssignSerializer',
+    'ClubRegistrationCreateSerializer',
+    'ClubSerializer',
+    'CulturalContentSerializer',
+    'EditorialHistorySerializer',
+    'EventRegistrationCreateSerializer',
+    'EventSerializer',
+    'LoginSerializer',
+    'NewsSerializer',
+    'NewsStatusSerializer',
+    'RegistrationStatusSerializer',
+    'RoleSerializer',
+    'SessionRegistrationCreateSerializer',
+    'SessionSerializer',
+    'UserSerializer',
+    'EVENT_WORKFLOW_STATUS_ORDER',
+    'NEWS_WORKFLOW_STATUS_ORDER',
+    'get_role_allowed_workflow_statuses',
+    'normalize_workflow_status',
+]
+
+"""
+from rest_framework import serializers
 
 
 NEWS_WORKFLOW_STATUS_ORDER = ("draft", "review", "published", "archived")
@@ -1093,6 +1126,8 @@ class EventRegistrationCreateSerializer(serializers.Serializer):
             raise serializers.ValidationError({'email': str(error)})
         except ActivityRegistrationRateLimitError as error:
             raise serializers.ValidationError({'message': str(error)})
+
+"""
 
 
 class SessionRegistrationCreateSerializer(serializers.Serializer):
