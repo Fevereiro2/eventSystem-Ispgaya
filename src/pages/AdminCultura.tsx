@@ -1,8 +1,6 @@
 import {
-  ComponentType,
   Dispatch,
   FormEvent,
-  ReactNode,
   SetStateAction,
   useEffect,
   useMemo,
@@ -188,547 +186,68 @@ import {
   updateAdminSession,
   updateAdminUser,
 } from '../api/infoculturaApi';
-
-const TOKEN_KEY = 'ispgaya_cultura_token';
-const NOTIFICATION_READ_KEY = 'ispgaya_cultura_notifications_read';
-const REGISTRATION_PAGE_SIZE = 10;
-const NEWS_PAGE_SIZE = 8;
-const ACTIVITY_PAGE_SIZE = 8;
-const NEWS_WORKFLOW_ORDER = ['draft', 'review', 'published', 'archived'];
-const EVENT_WORKFLOW_ORDER = ['draft', 'review', 'published', 'archived'];
-const WORKFLOW_LABELS: Record<string, string> = {
-  draft: 'Rascunho',
-  review: 'Em revisao',
-  published: 'Publicado',
-  archived: 'Arquivado',
-  rascunho: 'Rascunho',
-  publicado: 'Publicado'
-};
-
-function getDefaultActivityOrdering(tab: ActivityTab): string {
-  if (tab === 'books') return 'featured';
-  if (tab === 'sessions') return 'date_asc';
-  return 'date_asc';
-}
-
-function normalizeWorkflowStatus(value: string): string {
-  const normalized = value.trim().toLowerCase();
-  if (normalized === 'rascunho') return 'draft';
-  if (normalized === 'publicado') return 'published';
-  return normalized;
-}
-
-function getWorkflowStatusLabel(value: string): string {
-  return WORKFLOW_LABELS[normalizeWorkflowStatus(value)] || value;
-}
-
-function getWorkflowStatusOptions(order: string[], currentValue: string): string[] {
-  const normalizedCurrent = normalizeWorkflowStatus(currentValue || '');
-  const nextValues = [...order];
-
-  if (normalizedCurrent && !nextValues.includes(normalizedCurrent)) {
-    nextValues.push(normalizedCurrent);
-  }
-
-  return nextValues;
-}
-
-function downloadBlobFile(blob: Blob, filename: string) {
-  const url = window.URL.createObjectURL(blob);
-  const link = document.createElement('a');
-  link.href = url;
-  link.download = filename;
-  document.body.appendChild(link);
-  link.click();
-  link.remove();
-  window.URL.revokeObjectURL(url);
-}
-
-function escapeCsvValue(value: string | number | boolean | null | undefined): string {
-  const text = value === null || value === undefined ? '' : String(value);
-  if (/[",\n;]/.test(text)) {
-    return `"${text.replace(/"/g, '""')}"`;
-  }
-  return text;
-}
-
-function getStoredReadNotificationIds(): string[] {
-  if (typeof window === 'undefined') return [];
-
-  try {
-    const raw = window.localStorage.getItem(NOTIFICATION_READ_KEY);
-    if (!raw) return [];
-    const parsed = JSON.parse(raw);
-    if (!Array.isArray(parsed)) return [];
-    return parsed.filter((value): value is string => typeof value === 'string');
-  } catch {
-    return [];
-  }
-}
-
-function isWithinDateRange(value: string | null | undefined, fromDate: string, toDate: string): boolean {
-  const target = value ? value.slice(0, 10) : '';
-
-  if (fromDate && (!target || target < fromDate)) {
-    return false;
-  }
-
-  if (toDate && (!target || target > toDate)) {
-    return false;
-  }
-
-  return true;
-}
-
-type FormState = {
-  area: CulturalArea;
-  title: string;
-  description: string;
-  date: string;
-  status: 'rascunho' | 'publicado';
-};
-
-type UserFormState = {
-  name: string;
-  email: string;
-  role: string;
-  password: string;
-};
-
-type ClubFormState = {
-  name: string;
-  description: string;
-  mission: string;
-  image: string;
-  is_active: boolean;
-  enable_registrations: boolean;
-};
-
-type NewsFormState = {
-  title: string;
-  summary: string;
-  image: string;
-  content: string;
-  news_status: string;
-  published_at: string;
-  club_id: string;
-};
-
-type BookFormState = {
-  title: string;
-  author: string;
-  publisher: string;
-  publication_year: string;
-  cover_image: string;
-  summary: string;
-  is_featured: boolean;
-  club_id: string;
-};
-
-type SessionFormState = {
-  name: string;
-  title: string;
-  description: string;
-  session_date: string;
-  start_date: string;
-  end_date: string;
-  enable_registrations: boolean;
-  registration_capacity: string;
-  club_id: string;
-};
-
-type EventFormState = {
-  title: string;
-  description: string;
-  event_date: string;
-  start_date: string;
-  end_date: string;
-  image: string;
-  is_external: boolean;
-  enable_registrations: boolean;
-  registration_capacity: string;
-  status: string;
-  city: string;
-  location: string;
-  club_id: string;
-  category_ids: string[];
-};
-
-type CategoryFormState = {
-  name: string;
-  description: string;
-};
-
-type ActivityTab = 'books' | 'sessions' | 'events';
-type ActivitySection = 'livros' | 'sessoes' | 'eventos';
-
-type AdminSection =
-  | 'resumo'
-  | 'notificacoes'
-  | 'utilizadores'
-  | 'conteudos'
-  | 'noticias'
-  | 'livros'
-  | 'sessoes'
-  | 'eventos'
-  | 'atividades'
-  | 'clubes'
-  | 'inscricoes';
-
-type UserPage =
-  | { mode: 'list' }
-  | { mode: 'create' }
-  | { mode: 'edit'; userId: number }
-  | { mode: 'deactivate'; userId: number };
-
-const initialContentForm: FormState = {
-  area: 'tuna',
-  title: '',
-  description: '',
-  date: '',
-  status: 'rascunho'
-};
-
-const initialUserForm: UserFormState = {
-  name: '',
-  email: '',
-  role: 'club_admin',
-  password: ''
-};
-
-const initialClubForm: ClubFormState = {
-  name: '',
-  description: '',
-  mission: '',
-  image: '',
-  is_active: true,
-  enable_registrations: false
-};
-
-const initialNewsForm: NewsFormState = {
-  title: '',
-  summary: '',
-  image: '',
-  content: '',
-  news_status: 'draft',
-  published_at: '',
-  club_id: ''
-};
-
-const initialBookForm: BookFormState = {
-  title: '',
-  author: '',
-  publisher: '',
-  publication_year: '',
-  cover_image: '',
-  summary: '',
-  is_featured: false,
-  club_id: ''
-};
-
-const initialSessionForm: SessionFormState = {
-  name: '',
-  title: '',
-  description: '',
-  session_date: '',
-  start_date: '',
-  end_date: '',
-  enable_registrations: false,
-  registration_capacity: '',
-  club_id: ''
-};
-
-const initialEventForm: EventFormState = {
-  title: '',
-  description: '',
-  event_date: '',
-  start_date: '',
-  end_date: '',
-  image: '',
-  is_external: false,
-  enable_registrations: false,
-  registration_capacity: '',
-  status: 'draft',
-  city: '',
-  location: '',
-  club_id: '',
-  category_ids: []
-};
-
-const initialCategoryForm: CategoryFormState = {
-  name: '',
-  description: ''
-};
-
-const activitySectionByTab: Record<ActivityTab, ActivitySection> = {
-  books: 'livros',
-  sessions: 'sessoes',
-  events: 'eventos'
-};
-
-const activityTabBySection: Record<ActivitySection, ActivityTab> = {
-  livros: 'books',
-  sessoes: 'sessions',
-  eventos: 'events'
-};
-
-const allActivityTabs: ActivityTab[] = ['books', 'sessions', 'events'];
-
-function normalizeClubName(value?: string | null): string {
-  return (value || '')
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .trim()
-    .toLowerCase();
-}
-
-function getAllowedActivityTabs(user: InfoCulturaUser | null): ActivityTab[] {
-  if (!user) return allActivityTabs;
-  if (user.role === 'superadmin') return allActivityTabs;
-
-  const clubName = normalizeClubName(user.club_name);
-  if (clubName.includes('teatro')) {
-    return ['sessions', 'events'];
-  }
-
-  if (clubName.includes('tuna')) {
-    return ['sessions', 'events'];
-  }
-
-  if (clubName.includes('leitura')) {
-    return allActivityTabs;
-  }
-
-  return allActivityTabs;
-}
-
-function getDefaultActivityTab(user: InfoCulturaUser | null): ActivityTab {
-  return getAllowedActivityTabs(user)[0] || 'sessions';
-}
-
-function getNewsSubpage(pathname: string): NewsSubpage | null {
-  if (pathname === '/infocultura/noticias/nova') return 'form';
-  if (pathname === '/infocultura/noticias/registadas') return 'list';
-  return null;
-}
-
-function getActivitySubpage(pathname: string): ActivitySubpage | null {
-  if (pathname.endsWith('/novo')) return 'form';
-  if (pathname.endsWith('/registados')) return 'list';
-  if (pathname.endsWith('/categorias')) return 'categories';
-  return null;
-}
-
-function getContentSubpage(pathname: string): ContentSubpage | null {
-  if (pathname === '/infocultura/conteudos/novo') return 'form';
-  if (pathname === '/infocultura/conteudos/registados') return 'list';
-  return null;
-}
-
-function getNewsRoute(page: NewsSubpage): string {
-  return page === 'form' ? '/infocultura/noticias/nova' : '/infocultura/noticias/registadas';
-}
-
-function getActivityRoute(tab: ActivityTab, page: ActivitySubpage): string {
-  if (page === 'categories') {
-    return '/infocultura/eventos/categorias';
-  }
-
-  return `/infocultura/${activitySectionByTab[tab]}/${page === 'form' ? 'novo' : 'registados'}`;
-}
-
-function getContentRoute(page: ContentSubpage): string {
-  return page === 'form' ? '/infocultura/conteudos/novo' : '/infocultura/conteudos/registados';
-}
-
-function isActivitySection(section: AdminSection | null): section is ActivitySection | 'atividades' {
-  return section === 'livros' || section === 'sessoes' || section === 'eventos' || section === 'atividades';
-}
-
-const adminSections: { id: AdminSection; label: string; href: string }[] = [
-  { id: 'resumo', label: 'Resumo', href: '/infocultura/resumo' },
-  { id: 'notificacoes', label: 'Notificacoes', href: '/infocultura/notificacoes' },
-  { id: 'utilizadores', label: 'Utilizadores', href: '/infocultura/utilizadores' },
-  { id: 'noticias', label: 'Noticias', href: '/infocultura/noticias' },
-  { id: 'livros', label: 'Livros', href: '/infocultura/livros' },
-  { id: 'sessoes', label: 'Sessoes', href: '/infocultura/sessoes' },
-  { id: 'eventos', label: 'Eventos', href: '/infocultura/eventos' },
-  { id: 'conteudos', label: 'Conteudos', href: '/infocultura/conteudos' },
-  { id: 'inscricoes', label: 'Inscricoes', href: '/infocultura/inscricoes' },
-  { id: 'clubes', label: 'Clubes', href: '/infocultura/clubes' }
-];
-
-const adminSectionGroups: {
-  title: string;
-  ids: AdminSection[];
-}[] = [
-  { title: 'Painel', ids: ['resumo', 'notificacoes'] },
-  { title: 'Gestao', ids: ['utilizadores', 'clubes', 'inscricoes'] },
-  { title: 'Conteudos', ids: ['noticias', 'livros', 'sessoes', 'eventos', 'conteudos'] }
-];
-
-function getAdminSection(pathname: string): AdminSection | null {
-  if (pathname === '/infocultura' || pathname === '/infocultura/' || pathname === '/infocultura/resumo') {
-    return 'resumo';
-  }
-
-  if (
-    pathname === '/infocultura/utilizadores' ||
-    pathname.startsWith('/infocultura/utilizadores/')
-  ) {
-    return 'utilizadores';
-  }
-
-  if (pathname === '/infocultura/conteudos' || pathname.startsWith('/infocultura/conteudos/')) {
-    return 'conteudos';
-  }
-
-  if (pathname === '/infocultura/noticias' || pathname.startsWith('/infocultura/noticias/')) {
-    return 'noticias';
-  }
-
-  if (pathname === '/infocultura/notificacoes') {
-    return 'notificacoes';
-  }
-
-  if (pathname === '/infocultura/livros' || pathname.startsWith('/infocultura/livros/')) {
-    return 'livros';
-  }
-
-  if (pathname === '/infocultura/sessoes' || pathname.startsWith('/infocultura/sessoes/')) {
-    return 'sessoes';
-  }
-
-  if (pathname === '/infocultura/eventos' || pathname.startsWith('/infocultura/eventos/')) {
-    return 'eventos';
-  }
-
-  if (pathname === '/infocultura/atividades') {
-    return 'atividades';
-  }
-
-  if (pathname === '/infocultura/inscricoes') {
-    return 'inscricoes';
-  }
-
-  if (pathname === '/infocultura/clubes') {
-    return 'clubes';
-  }
-
-  return null;
-}
-
-function getUserPage(pathname: string): UserPage | null {
-  if (pathname === '/infocultura/utilizadores') {
-    return { mode: 'list' };
-  }
-
-  if (pathname === '/infocultura/utilizadores/novo') {
-    return { mode: 'create' };
-  }
-
-  const editMatch = pathname.match(/^\/infocultura\/utilizadores\/(\d+)\/editar\/?$/);
-  if (editMatch) {
-    return { mode: 'edit', userId: Number(editMatch[1]) };
-  }
-
-  const deactivateMatch = pathname.match(
-    /^\/infocultura\/utilizadores\/(\d+)\/desativar\/?$/
-  );
-  if (deactivateMatch) {
-    return { mode: 'deactivate', userId: Number(deactivateMatch[1]) };
-  }
-
-  return null;
-}
-
-function sortUsers(list: InfoCulturaUser[]): InfoCulturaUser[] {
-  return [...list].sort((a, b) => {
-    if (a.is_active !== b.is_active) {
-      return a.is_active ? -1 : 1;
-    }
-
-    return a.name.localeCompare(b.name) || a.email.localeCompare(b.email);
-  });
-}
-
-function sortUsersByOrder(list: InfoCulturaUser[], ordering: string): InfoCulturaUser[] {
-  const sorted = [...list];
-
-  switch (ordering) {
-    case 'newest':
-      return sorted.sort((a, b) => (b.created_at || '').localeCompare(a.created_at || ''));
-    case 'oldest':
-      return sorted.sort((a, b) => (a.created_at || '').localeCompare(b.created_at || ''));
-    case 'name_desc':
-      return sorted.sort((a, b) => b.name.localeCompare(a.name) || b.email.localeCompare(a.email));
-    case 'email_asc':
-      return sorted.sort((a, b) => a.email.localeCompare(b.email) || a.name.localeCompare(b.name));
-    case 'email_desc':
-      return sorted.sort((a, b) => b.email.localeCompare(a.email) || b.name.localeCompare(a.name));
-    case 'name_asc':
-      return sorted.sort((a, b) => a.name.localeCompare(b.name) || a.email.localeCompare(b.email));
-    default:
-      return sortUsers(sorted);
-  }
-}
-
-function sortClubs(list: InfoCulturaClub[]): InfoCulturaClub[] {
-  return [...list].sort((a, b) => {
-    if (a.is_active !== b.is_active) {
-      return a.is_active ? -1 : 1;
-    }
-
-    return a.name.localeCompare(b.name);
-  });
-}
-
-function sortClubsByOrder(list: InfoCulturaClub[], ordering: string): InfoCulturaClub[] {
-  const sorted = [...list];
-
-  switch (ordering) {
-    case 'newest':
-      return sorted.sort((a, b) => (b.created_at || '').localeCompare(a.created_at || ''));
-    case 'oldest':
-      return sorted.sort((a, b) => (a.created_at || '').localeCompare(b.created_at || ''));
-    case 'name_desc':
-      return sorted.sort((a, b) => b.name.localeCompare(a.name));
-    case 'registrations_open':
-      return sorted.sort(
-        (a, b) =>
-          Number(Boolean(b.enable_registrations)) - Number(Boolean(a.enable_registrations)) ||
-          a.name.localeCompare(b.name)
-      );
-    case 'name_asc':
-      return sorted.sort((a, b) => a.name.localeCompare(b.name));
-    default:
-      return sortClubs(sorted);
-  }
-}
-
-function formatAdminDateTime(value?: string | null): string {
-  if (!value) return 'Sem data';
-
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) {
-    return value;
-  }
-
-  return new Intl.DateTimeFormat('pt-PT', {
-    dateStyle: 'short',
-    timeStyle: 'short'
-  }).format(date);
-}
-
-function toDateInputValue(value?: string | null): string {
-  if (!value) return '';
-  return value.slice(0, 10);
-}
-
-function toDateTimeLocalValue(value?: string | null): string {
-  if (!value) return '';
-  return value.slice(0, 16);
-}
+import AdminPageHero from './adminCultura/AdminPageHero';
+import {
+  ACTIVITY_PAGE_SIZE,
+  activityTabBySection,
+  adminSectionGroups,
+  adminSections,
+  EVENT_WORKFLOW_ORDER,
+  initialBookForm,
+  initialCategoryForm,
+  initialClubForm,
+  initialContentForm,
+  initialEventForm,
+  initialNewsForm,
+  initialSessionForm,
+  initialUserForm,
+  NEWS_PAGE_SIZE,
+  NEWS_WORKFLOW_ORDER,
+  NOTIFICATION_READ_KEY,
+  REGISTRATION_PAGE_SIZE,
+  TOKEN_KEY
+} from './adminCultura/constants';
+import {
+  ActivityTab,
+  AdminContextLink,
+  AdminSection,
+  BookFormState,
+  CategoryFormState,
+  ClubFormState,
+  EventFormState,
+  FormState,
+  NewsFormState,
+  SessionFormState,
+  UserFormState
+} from './adminCultura/types';
+import {
+  downloadBlobFile,
+  escapeCsvValue,
+  formatAdminDateTime,
+  getActivityRoute,
+  getActivitySubpage,
+  getAdminSection,
+  getAllowedActivityTabs,
+  getContentRoute,
+  getContentSubpage,
+  getDefaultActivityOrdering,
+  getDefaultActivityTab,
+  getNewsRoute,
+  getNewsSubpage,
+  getStoredReadNotificationIds,
+  getUserPage,
+  getWorkflowStatusLabel,
+  getWorkflowStatusOptions,
+  isActivitySection,
+  isWithinDateRange,
+  normalizeWorkflowStatus,
+  sortClubs,
+  sortClubsByOrder,
+  sortUsers,
+  sortUsersByOrder,
+  toDateInputValue,
+  toDateTimeLocalValue
+} from './adminCultura/utils';
 
 function getRegistrationStatusBadge(status: string): string {
   const normalized = status.trim().toLowerCase();
@@ -742,88 +261,6 @@ function getRegistrationStatusBadge(status: string): string {
   }
 
   return `${adminUserStatus} bg-amber-100 text-amber-700`;
-}
-
-type AdminHeroTone = 'amber' | 'blue' | 'slate' | 'rose' | 'emerald';
-
-type AdminHeroStat = {
-  label: string;
-  value: string | number;
-};
-
-type AdminPageHeroProps = {
-  icon: ComponentType<{ className?: string }>;
-  title: string;
-  description: string;
-  tone?: AdminHeroTone;
-  stats?: AdminHeroStat[];
-  actions?: ReactNode;
-};
-
-type AdminContextLink = {
-  label: string;
-  href: string;
-};
-
-type NewsSubpage = 'form' | 'list';
-type ActivitySubpage = 'form' | 'list' | 'categories';
-type ContentSubpage = 'form' | 'list';
-
-function getAdminHeroToneClasses(tone: AdminHeroTone): string {
-  if (tone === 'blue') return 'bg-sky-100 text-sky-700';
-  if (tone === 'rose') return 'bg-rose-100 text-rose-700';
-  if (tone === 'emerald') return 'bg-emerald-100 text-emerald-700';
-  if (tone === 'slate') return 'bg-slate-100 text-slate-700';
-  return 'bg-amber-100 text-amber-700';
-}
-
-function AdminPageHero({
-  icon: Icon,
-  title,
-  description,
-  tone = 'amber',
-  stats = [],
-  actions,
-}: AdminPageHeroProps) {
-  return (
-    <section className="rounded-2xl border border-slate-200 bg-gradient-to-r from-white to-slate-50 p-6 shadow-sm">
-      <div className="flex flex-wrap items-start justify-between gap-4">
-        <div>
-          <div className="flex items-center gap-3">
-            <span
-              className={`flex h-11 w-11 items-center justify-center rounded-xl ${getAdminHeroToneClasses(
-                tone
-              )}`}
-            >
-              <Icon className="h-5 w-5" />
-            </span>
-            <div>
-              <h2 className="text-3xl font-semibold text-slate-900">{title}</h2>
-              <p className="mt-1 text-sm text-slate-600">{description}</p>
-            </div>
-          </div>
-        </div>
-
-        {actions ? <div className="flex flex-wrap gap-3">{actions}</div> : null}
-      </div>
-
-      {stats.length > 0 ? (
-        <div className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
-          {stats.map((stat) => (
-            <div
-              key={stat.label}
-              className="rounded-2xl border border-slate-200 bg-white px-4 py-4 shadow-sm"
-            >
-              <p className="text-2xl font-semibold text-slate-900">{stat.value}</p>
-              <p className="mt-1 text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">
-                {stat.label}
-              </p>
-            </div>
-          ))}
-        </div>
-      ) : null}
-    </section>
-  );
 }
 
 function AdminCultura() {

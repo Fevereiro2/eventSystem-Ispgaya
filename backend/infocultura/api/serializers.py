@@ -17,16 +17,18 @@ from ..models import (
     Role,
     Session,
 )
-from ..services import (
+from ..service_types import (
     ActivityRegistrationError,
     ActivityRegistrationRateLimitError,
     ActivityRegistrationSummary,
     AdminClubRegistrationRecord,
-    build_activity_calendar_payload,
     ClubRegistrationInput,
     DuplicateClubRegistrationError,
     DuplicateActivityRegistrationError,
     ClubRegistrationRateLimitError,
+)
+from ..services import (
+    build_activity_calendar_payload,
     create_club_registration,
     create_event_registration,
     create_session_registration,
@@ -971,41 +973,6 @@ class AdminEventWriteSerializer(serializers.ModelSerializer):
 
     def to_representation(self, instance):
         return EventSerializer(instance).data
-
-
-class AdminBookWriteSerializer(ClubScopedWriteSerializer):
-    class Meta:
-        model = Book
-        fields = [
-            'id',
-            'title',
-            'author',
-            'publisher',
-            'publication_year',
-            'cover_image',
-            'summary',
-            'is_featured',
-            'club_id',
-        ]
-        read_only_fields = ['id']
-
-    def validate(self, attrs):
-        self.validate_club_scope(attrs)
-        return attrs
-
-    def create(self, validated_data):
-        validated_data.setdefault('created_at', timezone.now())
-        return Book.objects.create(**validated_data)
-
-    def update(self, instance, validated_data):
-        for field, value in validated_data.items():
-            setattr(instance, field, value)
-
-        instance.save()
-        return instance
-
-    def to_representation(self, instance):
-        return BookSerializer(instance).data
 
 
 class AdminCategoryWriteSerializer(serializers.ModelSerializer):

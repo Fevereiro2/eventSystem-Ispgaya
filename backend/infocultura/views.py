@@ -1,16 +1,9 @@
-from datetime import timezone as dt_timezone
 from pathlib import Path
 from uuid import uuid4
-import csv
-import hashlib
 
-from django.conf import settings
-from django.core.cache import cache
 from django.core.files.storage import default_storage
 from django.db import DatabaseError
 from django.db.models import Q
-from django.http import HttpResponse
-from django.core.paginator import Paginator
 from django.utils import timezone
 from rest_framework import generics, permissions
 from rest_framework.response import Response
@@ -54,8 +47,15 @@ from .api.serializers import (
     get_role_allowed_workflow_statuses,
     normalize_workflow_status,
 )
+from .api.response_builders import (
+    apply_admin_ordering,
+    apply_date_range_filters,
+    build_calendar_ics_response,
+    build_csv_response,
+    paginate_queryset,
+)
+from .core.auth_services import AuthCookieManager, LoginIdentity, LoginRateLimiter
 from .services import (
-    ClubRegistrationNotFoundError,
     build_activity_calendar_payload,
     filter_activities_by_range,
     get_upcoming_activities,
@@ -78,95 +78,6 @@ from .core.security import (
     issue_token_pair,
     revoke_refresh_token,
 )
-
-
-def _get_login_rate_limit_config() -> tuple[int, int, int]:
-    max_attempts = max(1, int(getattr(settings, 'INFOCULTURA_LOGIN_MAX_ATTEMPTS', 5)))
-    window_seconds = max(60, int(getattr(settings, 'INFOCULTURA_LOGIN_WINDOW_SECONDS', 900)))
-    lockout_seconds = max(60, int(getattr(settings, 'INFOCULTURA_LOGIN_LOCKOUT_SECONDS', 900)))
-    return max_attempts, window_seconds, lockout_seconds
-
-
-def _build_login_cache_key(*, prefix: str, client_ip: str, identifier: str) -> str:
-    identifier_hash = hashlib.sha256(identifier.lower().encode('utf-8')).hexdigest()
-    return f'infocultura:login:{prefix}:{client_ip}:{identifier_hash}'
-
-
-def _get_login_lockout_message(lockout_seconds: int) -> str:
-    minutes = max(1, lockout_seconds // 60)
-    if minutes == 1:
-        return 'Login temporariamente bloqueado. Tenta novamente dentro de 1 minuto.'
-    return f'Login temporariamente bloqueado. Tenta novamente dentro de {minutes} minutos.'
-
-
-def _is_login_locked(*, client_ip: str, identifier: str) -> bool:
-    lock_key = _build_login_cache_key(prefix='lock', client_ip=client_ip, identifier=identifier)
-    return bool(cache.get(lock_key))
-
-
-def _clear_login_failures(*, client_ip: str, identifier: str) -> None:
-    fail_key = _build_login_cache_key(prefix='fail', client_ip=client_ip, identifier=identifier)
-    lock_key = _build_login_cache_key(prefix='lock', client_ip=client_ip, identifier=identifier)
-    cache.delete_many([fail_key, lock_key])
-
-
-def _record_failed_login_attempt(*, client_ip: str, identifier: str) -> bool:
-    max_attempts, window_seconds, lockout_seconds = _get_login_rate_limit_config()
-    fail_key = _build_login_cache_key(prefix='fail', client_ip=client_ip, identifier=identifier)
-    lock_key = _build_login_cache_key(prefix='lock', client_ip=client_ip, identifier=identifier)
-
-    added = cache.add(fail_key, 1, timeout=window_seconds)
-    if added:
-        attempts = 1
-    else:
-        attempts = cache.get(fail_key, 0)
-        try:
-            attempts = cache.incr(fail_key)
-        except ValueError:
-            attempts = int(attempts) + 1
-            cache.set(fail_key, attempts, timeout=window_seconds)
-
-    if int(attempts) >= max_attempts:
-        cache.set(lock_key, True, timeout=lockout_seconds)
-        cache.delete(fail_key)
-        return True
-
-    return False
-
-
-def _get_auth_cookie_settings() -> dict[str, object]:
-    return {
-        'httponly': True,
-        'secure': bool(getattr(settings, 'INFOCULTURA_AUTH_COOKIE_SECURE', False)),
-        'samesite': getattr(settings, 'INFOCULTURA_AUTH_COOKIE_SAMESITE', 'Lax'),
-        'path': '/',
-    }
-
-
-def _attach_auth_cookies(response: Response, *, access_token: str, refresh_token: str) -> None:
-    cookie_settings = _get_auth_cookie_settings()
-    access_cookie_name = getattr(settings, 'INFOCULTURA_ACCESS_COOKIE_NAME', 'infocultura_access')
-    refresh_cookie_name = getattr(settings, 'INFOCULTURA_REFRESH_COOKIE_NAME', 'infocultura_refresh')
-    response.set_cookie(
-        access_cookie_name,
-        access_token,
-        max_age=max(60, int(getattr(settings, 'INFOCULTURA_ACCESS_TOKEN_MINUTES', 30)) * 60),
-        **cookie_settings,
-    )
-    response.set_cookie(
-        refresh_cookie_name,
-        refresh_token,
-        max_age=max(3600, int(getattr(settings, 'INFOCULTURA_REFRESH_TOKEN_DAYS', 7)) * 24 * 60 * 60),
-        **cookie_settings,
-    )
-
-
-def _clear_auth_cookies(response: Response) -> None:
-    cookie_settings = _get_auth_cookie_settings()
-    access_cookie_name = getattr(settings, 'INFOCULTURA_ACCESS_COOKIE_NAME', 'infocultura_access')
-    refresh_cookie_name = getattr(settings, 'INFOCULTURA_REFRESH_COOKIE_NAME', 'infocultura_refresh')
-    response.delete_cookie(access_cookie_name, path='/', samesite=cookie_settings['samesite'])
-    response.delete_cookie(refresh_cookie_name, path='/', samesite=cookie_settings['samesite'])
 
 
 def _describe_audit_target(instance) -> str:
@@ -224,6 +135,8 @@ class AdminAuditDestroyMixin(AdminAuditMixin):
 
 class LoginView(APIView):
     permission_classes = [permissions.AllowAny]
+    rate_limiter = LoginRateLimiter()
+    cookie_manager = AuthCookieManager()
 
     def post(self, request):
         serializer = LoginSerializer(data=request.data)
@@ -231,12 +144,11 @@ class LoginView(APIView):
 
         identifier = serializer.validated_data['username']
         password = serializer.validated_data['password']
-        client_ip = get_client_ip(request)
-        _, _, lockout_seconds = _get_login_rate_limit_config()
+        identity = LoginIdentity(client_ip=get_client_ip(request), identifier=identifier)
 
-        if _is_login_locked(client_ip=client_ip, identifier=identifier):
+        if self.rate_limiter.is_locked(identity):
             return Response(
-                {'message': _get_login_lockout_message(lockout_seconds)},
+                {'message': self.rate_limiter.config.lockout_message},
                 status=429,
             )
 
@@ -247,24 +159,24 @@ class LoginView(APIView):
         )
 
         if not user or not user.is_active:
-            locked = _record_failed_login_attempt(client_ip=client_ip, identifier=identifier)
+            locked = self.rate_limiter.record_failure(identity)
             if locked:
                 return Response(
-                    {'message': _get_login_lockout_message(lockout_seconds)},
+                    {'message': self.rate_limiter.config.lockout_message},
                     status=429,
                 )
             return Response({'message': 'Credenciais invalidas.'}, status=401)
 
         if not check_password_hash(password, user.password_hash):
-            locked = _record_failed_login_attempt(client_ip=client_ip, identifier=identifier)
+            locked = self.rate_limiter.record_failure(identity)
             if locked:
                 return Response(
-                    {'message': _get_login_lockout_message(lockout_seconds)},
+                    {'message': self.rate_limiter.config.lockout_message},
                     status=429,
                 )
             return Response({'message': 'Credenciais invalidas.'}, status=401)
 
-        _clear_login_failures(client_ip=client_ip, identifier=identifier)
+        self.rate_limiter.clear_failures(identity)
 
         access_token, refresh_token = issue_token_pair(
             user_id=user.id,
@@ -279,16 +191,16 @@ class LoginView(APIView):
                 'user': UserSerializer(user).data,
             }
         )
-        _attach_auth_cookies(response, access_token=access_token, refresh_token=refresh_token)
+        self.cookie_manager.attach(response, access_token=access_token, refresh_token=refresh_token)
         return response
 
 
 class RefreshTokenView(APIView):
     permission_classes = [permissions.AllowAny]
+    cookie_manager = AuthCookieManager()
 
     def post(self, request):
-        refresh_cookie_name = getattr(settings, 'INFOCULTURA_REFRESH_COOKIE_NAME', 'infocultura_refresh')
-        refresh_token = request.COOKIES.get(refresh_cookie_name)
+        refresh_token = request.COOKIES.get(self.cookie_manager.configured_refresh_cookie_name())
         if not refresh_token:
             return Response({'message': 'Refresh token em falta.'}, status=401)
 
@@ -296,19 +208,19 @@ class RefreshTokenView(APIView):
             payload = decode_refresh_token(refresh_token)
         except Exception:
             response = Response({'message': 'Refresh token invalido.'}, status=401)
-            _clear_auth_cookies(response)
+            self.cookie_manager.clear(response)
             return response
 
         if is_refresh_token_revoked(payload):
             response = Response({'message': 'Refresh token revogado.'}, status=401)
-            _clear_auth_cookies(response)
+            self.cookie_manager.clear(response)
             return response
 
         user_id = payload.get('sub')
         user = AppUser.objects.select_related('role', 'club').filter(id=user_id, is_active=True).first()
         if not user:
             response = Response({'message': 'Utilizador nao encontrado ou inativo.'}, status=401)
-            _clear_auth_cookies(response)
+            self.cookie_manager.clear(response)
             return response
 
         revoke_refresh_token(payload)
@@ -319,16 +231,16 @@ class RefreshTokenView(APIView):
             name=user.name,
         )
         response = Response({'token': access_token, 'user': UserSerializer(user).data})
-        _attach_auth_cookies(response, access_token=access_token, refresh_token=next_refresh_token)
+        self.cookie_manager.attach(response, access_token=access_token, refresh_token=next_refresh_token)
         return response
 
 
 class LogoutView(APIView):
     permission_classes = [permissions.AllowAny]
+    cookie_manager = AuthCookieManager()
 
     def post(self, request):
-        refresh_cookie_name = getattr(settings, 'INFOCULTURA_REFRESH_COOKIE_NAME', 'infocultura_refresh')
-        refresh_token = request.COOKIES.get(refresh_cookie_name)
+        refresh_token = request.COOKIES.get(self.cookie_manager.configured_refresh_cookie_name())
         if refresh_token:
             try:
                 revoke_refresh_token(decode_refresh_token(refresh_token))
@@ -336,7 +248,7 @@ class LogoutView(APIView):
                 pass
 
         response = Response({'message': 'Sessao terminada.'}, status=200)
-        _clear_auth_cookies(response)
+        self.cookie_manager.clear(response)
         return response
 
 
@@ -827,106 +739,6 @@ def get_allowed_club_id(user) -> int | None:
     if role_name == 'club_admin':
         return user.club_id
     return None
-
-
-def get_query_page(request) -> int:
-    try:
-        return max(1, int(request.query_params.get('page', '1')))
-    except (TypeError, ValueError):
-        return 1
-
-
-def get_query_page_size(request, *, default: int = 10, maximum: int = 100) -> int:
-    try:
-        value = int(request.query_params.get('page_size', str(default)))
-    except (TypeError, ValueError):
-        return default
-    return min(max(1, value), maximum)
-
-
-def paginate_queryset(queryset, *, request, serializer_class, context=None):
-    page = get_query_page(request)
-    page_size = get_query_page_size(request)
-    paginator = Paginator(queryset, page_size)
-    page_obj = paginator.get_page(page)
-    serializer = serializer_class(page_obj.object_list, many=True, context=context or {})
-    return Response(
-        {
-            'items': serializer.data,
-            'total': paginator.count,
-            'page': page_obj.number,
-            'page_size': page_size,
-            'total_pages': paginator.num_pages,
-        }
-    )
-
-
-def apply_date_range_filters(queryset, request, *, date_field: str):
-    date_from = (request.query_params.get('date_from') or '').strip()
-    date_to = (request.query_params.get('date_to') or '').strip()
-
-    if date_from:
-        queryset = queryset.filter(**{f'{date_field}__gte': date_from})
-    if date_to:
-        queryset = queryset.filter(**{f'{date_field}__lte': date_to})
-
-    return queryset
-
-
-def build_csv_response(*, rows: list[list[str]], headers: list[str], filename: str) -> HttpResponse:
-    response = HttpResponse(content_type='text/csv; charset=utf-8')
-    response['Content-Disposition'] = f'attachment; filename="{filename}"'
-    writer = csv.writer(response)
-    writer.writerow(headers)
-    writer.writerows(rows)
-    return response
-
-
-def _format_ics_datetime(value):
-    if timezone.is_naive(value):
-        value = timezone.make_aware(value, timezone.get_current_timezone())
-    return timezone.localtime(value, dt_timezone.utc).strftime('%Y%m%dT%H%M%SZ')
-
-
-def _escape_ics_text(value: str) -> str:
-    return (
-        (value or '')
-        .replace('\\', '\\\\')
-        .replace(';', r'\;')
-        .replace(',', r'\,')
-        .replace('\n', r'\n')
-    )
-
-
-def build_calendar_ics_response(*, uid_prefix: str, title: str, description: str, start_date, end_date, location: str, filename: str) -> HttpResponse:
-    content = '\r\n'.join(
-        [
-            'BEGIN:VCALENDAR',
-            'VERSION:2.0',
-            'PRODID:-//ISPGAYA//InfoCultura//PT',
-            'CALSCALE:GREGORIAN',
-            'BEGIN:VEVENT',
-            f'UID:{uid_prefix}',
-            f'DTSTAMP:{_format_ics_datetime(timezone.now())}',
-            f'DTSTART:{_format_ics_datetime(start_date)}',
-            f'DTEND:{_format_ics_datetime(end_date)}',
-            f'SUMMARY:{_escape_ics_text(title)}',
-            f'DESCRIPTION:{_escape_ics_text(description)}',
-            f'LOCATION:{_escape_ics_text(location)}',
-            'END:VEVENT',
-            'END:VCALENDAR',
-            '',
-        ]
-    )
-    response = HttpResponse(content, content_type='text/calendar; charset=utf-8')
-    response['Content-Disposition'] = f'attachment; filename="{filename}"'
-    return response
-
-
-def apply_admin_ordering(queryset, request, *, default_ordering: tuple[str, ...], ordering_map: dict[str, tuple[str, ...]]):
-    ordering_key = (request.query_params.get('ordering') or '').strip().lower()
-    ordering = ordering_map.get(ordering_key, default_ordering)
-    return queryset.order_by(*ordering)
 
 
 class AdminRegistrationStatusListView(generics.ListAPIView):

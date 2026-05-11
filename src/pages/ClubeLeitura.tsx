@@ -1,30 +1,14 @@
 import Breadcrumbs from '../components/ui/Breadcrumbs';
-import DocumentRow from '../components/ui/DocumentRow';
 import Footer from '../components/layout/Footer';
 import HeaderNav from '../components/layout/HeaderNav';
-import PieChartHero from '../components/ui/PieChartHero';
-import StatCard from '../components/ui/StatCard';
 import TopBar from '../components/layout/TopBar';
 import {
   blockText,
   blockTitle,
   container,
-  docsList,
-  docsSection,
   mainContent,
-  pieSection,
   sectionSpace,
-  statsGrid,
-  statsSection
 } from '../styles/ui';
-
-const stats = [
-  { value: 611, label: 'Publicacoes' },
-  { value: 43, label: 'Livros' },
-  { value: 162, label: 'Capitulos' },
-  { value: 292, label: 'Artigos Cientificos' },
-  { value: 114, label: 'Artigos em atas' }
-];
 
 
 function PublicacoesCientificas() {
@@ -66,4 +50,3 @@ function PublicacoesCientificas() {
 }
 
 export default PublicacoesCientificas;
-
