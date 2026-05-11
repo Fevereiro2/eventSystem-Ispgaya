@@ -170,6 +170,7 @@ const menuItems: MenuItem[] = [
 const mobilePrivateLinks: LinkItem[] = [
   { label: 'Inforestudante', href: 'https://inforestudante.ispgaya.pt' },
   { label: 'Infordocente', href: 'https://infordocente.ispgaya.pt' },
+  { label: 'Infocultura', href: 'https://infordocente.ispgaya.pt' },
   { label: 'Email', href: 'https://outlook.office.com' },
   { label: 'Horários', href: 'https://horarios.ispgaya.pt/geral/' }
 ];
