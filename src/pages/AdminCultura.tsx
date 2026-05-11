@@ -120,23 +120,10 @@ import {
   exportAdminNewsCsv,
   exportAdminRegistrationsCsv,
   exportAdminSessionsCsv,
-  fetchAdminBooks,
-  fetchAdminCategories,
-  fetchAdminClubs,
-  fetchAdminContent,
   fetchAdminDashboard,
   fetchAdminNotifications,
-  fetchAdminEvents,
-  fetchAdminNews,
-  fetchAdminNewsStatuses,
-  fetchAdminRegistrations,
-  fetchAdminRegistrationStatuses,
-  fetchAdminRoles,
-  fetchAdminSessions,
-  fetchAdminUsers,
-  fetchInfoCulturaMe,
-  InfoCulturaBook,
   InfoCulturaAdminNotification,
+  InfoCulturaBook,
   InfoCulturaCategory,
   InfoCulturaClub,
   InfoCulturaDashboardStats,
@@ -152,8 +139,6 @@ import {
   BookPayload,
   CategoryPayload,
   EventPayload,
-  loginInfoCultura,
-  logoutInfoCultura,
   NewsPayload,
   removeUserFromClub,
   SessionPayload,
@@ -173,6 +158,11 @@ import ActivitiesPage from './adminCultura/ActivitiesPage';
 import ClubsPage from './adminCultura/pages/ClubsPage';
 import EventsPage from './adminCultura/pages/EventsPage';
 import NewsPage from './adminCultura/pages/NewsPage';
+import { useAdminActivities } from './adminCultura/hooks/useAdminActivities';
+import { useAdminAuth } from './adminCultura/hooks/useAdminAuth';
+import { useAdminNews } from './adminCultura/hooks/useAdminNews';
+import { useAdminRegistrations } from './adminCultura/hooks/useAdminRegistrations';
+import { useAdminUsers } from './adminCultura/hooks/useAdminUsers';
 import RegistrationsPage from './adminCultura/pages/RegistrationsPage';
 import SessionsPage from './adminCultura/pages/SessionsPage';
 import UsersPage from './adminCultura/pages/UsersPage';
@@ -227,7 +217,6 @@ import {
   getUserPage,
   getWorkflowStatusLabel,
   getWorkflowStatusOptions,
-  isActivitySection,
   isWithinDateRange,
   normalizeWorkflowStatus,
   sortClubs,
@@ -1006,6 +995,113 @@ function AdminCultura() {
     [users]
   );
 
+  const { handleLogin: authHandleLogin, handleLogout: authHandleLogout } = useAdminAuth({
+    authUser,
+    authPass,
+    setAuthUser,
+    setAuthPass,
+    setAuthError,
+    setToken,
+    clearDomainState: clearAuth,
+  });
+
+  useAdminUsers({
+    token,
+    canManageUsers,
+    activeSection,
+    userPage,
+    selectedUser,
+    currentUser,
+    setItems,
+    setUsers,
+    setClubs,
+    setRoles,
+    setCurrentUser,
+    setIsLoadingItems,
+    setIsLoadingUsers,
+    setIsLoadingClubs,
+    setIsLoadingRoles,
+    setPanelError,
+    handleAuthError,
+    resetUserForm,
+    resetClubForm,
+    setUserForm,
+    setUserFormError,
+  });
+
+  useAdminNews({
+    token,
+    currentUser,
+    activeSection,
+    canManageUsers,
+    newsClubFilter,
+    newsStatusFilter,
+    newsSearch,
+    newsOrder,
+    newsDateFrom,
+    newsDateTo,
+    newsPage,
+    setIsLoadingNews,
+    setIsLoadingNewsStatuses,
+    setNewsStatuses,
+    setNewsItems,
+    setNewsTotal,
+    setNewsTotalPages,
+    setNewsError,
+    handleAuthError,
+    pageSize: NEWS_PAGE_SIZE,
+  });
+
+  useAdminActivities({
+    token,
+    currentUser,
+    activeSection,
+    canManageUsers,
+    activityTab,
+    activityClubFilter,
+    activityCategoryFilter,
+    activityStatusFilter,
+    activitySearch,
+    activityOrder,
+    activityDateFrom,
+    activityDateTo,
+    activityPage,
+    setIsLoadingActivities,
+    setIsLoadingCategories,
+    setCategories,
+    setBooks,
+    setSessions,
+    setEvents,
+    setActivityTotal,
+    setActivityTotalPages,
+    setActivityError,
+    handleAuthError,
+    pageSize: ACTIVITY_PAGE_SIZE,
+  });
+
+  useAdminRegistrations({
+    token,
+    currentUser,
+    activeSection,
+    canManageUsers,
+    registrationClubFilter,
+    registrationStatusFilter,
+    registrationSearch,
+    registrationOrder,
+    registrationDateFrom,
+    registrationDateTo,
+    registrationPage,
+    setIsLoadingRegistrations,
+    setIsLoadingRegistrationStatuses,
+    setRegistrationStatuses,
+    setRegistrations,
+    setRegistrationTotal,
+    setRegistrationTotalPages,
+    setRegistrationError,
+    handleAuthError,
+    pageSize: REGISTRATION_PAGE_SIZE,
+  });
+
   function handleAuthError(error: unknown): boolean {
     if (isInfoCulturaAuthError(error)) {
       clearAuth();
@@ -1506,108 +1602,10 @@ function AdminCultura() {
     }
   }
 
-  async function loadAdminData(authToken: string) {
-    setIsLoadingItems(true);
-    setIsLoadingUsers(true);
-    setPanelError('');
-
-    try {
-      const [nextItems, nextUsers, nextCurrentUser] = await Promise.all([
-        fetchAdminContent(authToken),
-        fetchAdminUsers(authToken),
-        fetchInfoCulturaMe(authToken)
-      ]);
-      setItems(nextItems);
-      setUsers(nextUsers);
-      setCurrentUser(nextCurrentUser);
-    } catch (error) {
-      if (handleAuthError(error)) {
-        return;
-      }
-
-      const message =
-        error instanceof Error
-          ? error.message
-          : 'Nao foi possivel carregar os dados do painel.';
-      setPanelError(message);
-    } finally {
-      setIsLoadingItems(false);
-      setIsLoadingUsers(false);
-    }
-  }
-
-  useEffect(() => {
-    if (!token) return;
-    void loadAdminData(token);
-  }, [token]);
-
   useEffect(() => {
     if (typeof window === 'undefined') return;
     window.localStorage.setItem(NOTIFICATION_READ_KEY, JSON.stringify(readNotificationIds));
   }, [readNotificationIds]);
-
-  useEffect(() => {
-    if (!token || !canManageUsers) {
-      setRoles([]);
-      setClubs([]);
-      return;
-    }
-
-    let isMounted = true;
-    setIsLoadingRoles(true);
-
-    void fetchAdminRoles(token)
-      .then((nextRoles) => {
-        if (!isMounted) return;
-        setRoles(nextRoles);
-      })
-      .catch((error) => {
-        if (!isMounted) return;
-        if (handleAuthError(error)) return;
-        const message =
-          error instanceof Error ? error.message : 'Nao foi possivel carregar os perfis.';
-        setPanelError(message);
-      })
-      .finally(() => {
-        if (!isMounted) return;
-        setIsLoadingRoles(false);
-      });
-
-    return () => {
-      isMounted = false;
-    };
-  }, [token, canManageUsers]);
-
-  useEffect(() => {
-    if (!token || !canManageUsers) {
-      resetClubForm();
-      return;
-    }
-
-    let isMounted = true;
-    setIsLoadingClubs(true);
-
-    void fetchAdminClubs(token)
-      .then((nextClubs) => {
-        if (!isMounted) return;
-        setClubs(sortClubs(nextClubs));
-      })
-      .catch((error) => {
-        if (!isMounted) return;
-        if (handleAuthError(error)) return;
-        const message =
-          error instanceof Error ? error.message : 'Nao foi possivel carregar os clubes.';
-        setPanelError(message);
-      })
-      .finally(() => {
-        if (!isMounted) return;
-        setIsLoadingClubs(false);
-      });
-
-    return () => {
-      isMounted = false;
-    };
-  }, [token, canManageUsers]);
 
   useEffect(() => {
     if (!currentUser) return;
@@ -1756,280 +1754,12 @@ function AdminCultura() {
     };
   }, [activeSection, token, currentUser]);
 
-  useEffect(() => {
-    if (!token || !currentUser || activeSection !== 'noticias') {
-      return;
-    }
-
-    let isMounted = true;
-    setIsLoadingNews(true);
-    setIsLoadingNewsStatuses(true);
-    setNewsError('');
-
-    const clubId =
-      canManageUsers && newsClubFilter !== 'all' ? Number(newsClubFilter) : undefined;
-    const status =
-      newsStatusFilter && newsStatusFilter !== 'all' ? newsStatusFilter : undefined;
-
-    void Promise.all([
-      fetchAdminNewsStatuses(token),
-      fetchAdminNews(token, {
-        clubId,
-        status,
-        search: newsSearch,
-        ordering: newsOrder,
-        dateFrom: newsDateFrom,
-        dateTo: newsDateTo,
-        page: newsPage,
-        pageSize: NEWS_PAGE_SIZE
-      })
-    ])
-      .then(([nextStatuses, newsPageData]) => {
-        if (!isMounted) return;
-        setNewsStatuses(nextStatuses);
-        setNewsItems(newsPageData.items);
-        setNewsTotal(newsPageData.total);
-        setNewsTotalPages(newsPageData.total_pages);
-      })
-      .catch((error) => {
-        if (!isMounted) return;
-        if (handleAuthError(error)) return;
-        const message =
-          error instanceof Error ? error.message : 'Nao foi possivel carregar as noticias.';
-        setNewsError(message);
-      })
-      .finally(() => {
-        if (!isMounted) return;
-        setIsLoadingNews(false);
-        setIsLoadingNewsStatuses(false);
-      });
-
-    return () => {
-      isMounted = false;
-    };
-  }, [
-    activeSection,
-    token,
-    currentUser,
-    canManageUsers,
-    newsClubFilter,
-    newsStatusFilter,
-    newsSearch,
-    newsOrder,
-    newsDateFrom,
-    newsDateTo,
-    newsPage
-  ]);
-
-  useEffect(() => {
-    if (!token || !currentUser || !isActivitySection(activeSection)) {
-      return;
-    }
-
-    let isMounted = true;
-    setIsLoadingActivities(true);
-    setIsLoadingCategories(true);
-    setActivityError('');
-
-    const clubId =
-      canManageUsers && activityClubFilter !== 'all'
-        ? Number(activityClubFilter)
-        : undefined;
-    const categoryId =
-      activityCategoryFilter !== 'all' ? Number(activityCategoryFilter) : undefined;
-    const status =
-      activityStatusFilter && activityStatusFilter !== 'all'
-        ? activityStatusFilter
-        : undefined;
-
-    const activityRequest =
-      activityTab === 'books'
-        ? fetchAdminBooks(token, {
-            clubId,
-            search: activitySearch,
-            ordering: activityOrder,
-            dateFrom: activityDateFrom,
-            dateTo: activityDateTo,
-            page: activityPage,
-            pageSize: ACTIVITY_PAGE_SIZE
-          })
-        : activityTab === 'sessions'
-          ? fetchAdminSessions(token, {
-              clubId,
-              search: activitySearch,
-              ordering: activityOrder,
-              dateFrom: activityDateFrom,
-              dateTo: activityDateTo,
-              page: activityPage,
-              pageSize: ACTIVITY_PAGE_SIZE
-            })
-          : fetchAdminEvents(token, {
-              clubId,
-              categoryId,
-              status,
-              search: activitySearch,
-              ordering: activityOrder,
-              dateFrom: activityDateFrom,
-              dateTo: activityDateTo,
-              page: activityPage,
-              pageSize: ACTIVITY_PAGE_SIZE
-            });
-
-    void Promise.all([fetchAdminCategories(token), activityRequest])
-      .then(([nextCategories, activityPageData]) => {
-        if (!isMounted) return;
-        setCategories(nextCategories);
-        setActivityTotal(activityPageData.total);
-        setActivityTotalPages(activityPageData.total_pages);
-        if (activityTab === 'books') {
-          setBooks(activityPageData.items as InfoCulturaBook[]);
-        } else if (activityTab === 'sessions') {
-          setSessions(activityPageData.items as InfoCulturaSession[]);
-        } else {
-          setEvents(activityPageData.items as InfoCulturaEvent[]);
-        }
-      })
-      .catch((error) => {
-        if (!isMounted) return;
-        if (handleAuthError(error)) return;
-        const message =
-          error instanceof Error ? error.message : 'Nao foi possivel carregar as atividades.';
-        setActivityError(message);
-      })
-      .finally(() => {
-        if (!isMounted) return;
-        setIsLoadingActivities(false);
-        setIsLoadingCategories(false);
-      });
-
-    return () => {
-      isMounted = false;
-    };
-  }, [
-    activeSection,
-    token,
-    currentUser,
-    canManageUsers,
-    activityClubFilter,
-    activityCategoryFilter,
-    activityStatusFilter,
-    activitySearch,
-    activityOrder,
-    activityDateFrom,
-    activityDateTo,
-    activityPage,
-    activityTab
-  ]);
-
-  useEffect(() => {
-    if (!token || !currentUser || activeSection !== 'inscricoes') {
-      return;
-    }
-
-    let isMounted = true;
-    setIsLoadingRegistrationStatuses(true);
-    setIsLoadingRegistrations(true);
-    setRegistrationError('');
-
-    const clubId =
-      canManageUsers && registrationClubFilter !== 'all'
-        ? Number(registrationClubFilter)
-        : undefined;
-    const status =
-      registrationStatusFilter && registrationStatusFilter !== 'all'
-        ? registrationStatusFilter
-        : undefined;
-
-    void Promise.all([
-      fetchAdminRegistrationStatuses(token),
-      fetchAdminRegistrations(token, {
-        clubId,
-        status,
-        search: registrationSearch,
-        ordering: registrationOrder,
-        dateFrom: registrationDateFrom,
-        dateTo: registrationDateTo,
-        page: registrationPage,
-        pageSize: REGISTRATION_PAGE_SIZE
-      })
-    ])
-      .then(([nextStatuses, registrationPageData]) => {
-        if (!isMounted) return;
-        setRegistrationStatuses(nextStatuses);
-        setRegistrations(registrationPageData.items);
-        setRegistrationTotal(registrationPageData.total);
-        setRegistrationTotalPages(registrationPageData.total_pages);
-      })
-      .catch((error) => {
-        if (!isMounted) return;
-        if (handleAuthError(error)) return;
-        const message =
-          error instanceof Error ? error.message : 'Nao foi possivel carregar as inscricoes.';
-        setRegistrationError(message);
-      })
-      .finally(() => {
-        if (!isMounted) return;
-        setIsLoadingRegistrationStatuses(false);
-        setIsLoadingRegistrations(false);
-      });
-
-    return () => {
-      isMounted = false;
-    };
-  }, [
-    activeSection,
-    token,
-    currentUser,
-    canManageUsers,
-    registrationClubFilter,
-    registrationStatusFilter,
-    registrationSearch,
-    registrationOrder,
-    registrationDateFrom,
-    registrationDateTo,
-    registrationPage
-  ]);
-
-  useEffect(() => {
-    if (activeSection !== 'utilizadores' || !userPage) return;
-
-    if (userPage.mode === 'create') {
-      resetUserForm();
-      return;
-    }
-
-    if (userPage.mode === 'edit' && selectedUser) {
-      setUserForm({
-        name: selectedUser.name,
-        email: selectedUser.email,
-        role: selectedUser.role,
-        password: ''
-      });
-      setUserFormError('');
-    }
-  }, [activeSection, userPage, selectedUser, roles]);
-
-  async function handleLogin(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    setAuthError('');
-
-    try {
-      const nextToken = await loginInfoCultura(authUser, authPass);
-      setToken(nextToken);
-      sessionStorage.setItem(TOKEN_KEY, nextToken);
-      setAuthPass('');
-      setAuthUser('');
-    } catch (error) {
-      const message = error instanceof Error ? error.message : 'Credenciais invalidas.';
-      setAuthError(message);
-    }
+  function handleLogin(event: FormEvent<HTMLFormElement>) {
+    return authHandleLogin(event);
   }
 
   function handleLogout() {
-    void logoutInfoCultura();
-    clearAuth();
-    setAuthUser('');
-    setAuthPass('');
+    authHandleLogout();
     resetContentForm();
     resetUserForm();
     resetClubForm();
