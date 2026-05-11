@@ -1,18 +1,6 @@
 import uuid
-from functools import lru_cache
 from django.db import models
-from django.db import connection
-
-
-@lru_cache(maxsize=32)
-def _has_table_column(table_name: str, column_name: str) -> bool:
-    with connection.cursor() as cursor:
-        columns = {
-            info.name
-            for info in connection.introspection.get_table_description(cursor, table_name)
-        }
-    return column_name in columns
-
+from .database import constants as db_constants
 
 class Role(models.Model):
     id = models.AutoField(primary_key=True)
@@ -20,7 +8,7 @@ class Role(models.Model):
     description = models.TextField(blank=True, null=True)
 
     class Meta:
-        db_table = 'roles'
+        db_table = db_constants.TABLE_ROLE
         managed = False
 
     def __str__(self):
@@ -30,13 +18,13 @@ class Role(models.Model):
 class AppUser(models.Model):
     id = models.AutoField(primary_key=True)
     name = models.CharField(max_length=150)
-    email = models.EmailField(max_length=150, unique=True)
+    email = models.EmailField(max_length=150, unique=True, db_index=True)
     password_hash = models.CharField(max_length=255)
-    role = models.ForeignKey(Role, on_delete=models.DO_NOTHING, db_column='role_id')
+    role = models.ForeignKey(Role, on_delete=models.DO_NOTHING, db_column=db_constants.COL_ROLE_ID)
     club = models.ForeignKey(
         'Club',
         on_delete=models.DO_NOTHING,
-        db_column='id_clubs',
+        db_column=db_constants.COL_ID_CLUBS,
         blank=True,
         null=True,
         related_name='members',
@@ -45,7 +33,7 @@ class AppUser(models.Model):
     created_at = models.DateTimeField(blank=True, null=True)
 
     class Meta:
-        db_table = 'users'
+        db_table = db_constants.TABLE_USER
         managed = False
 
     @property
@@ -82,6 +70,7 @@ class CulturalContent(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
+        db_table = db_constants.TABLE_CULTURAL_CONTENT
         ordering = ['-updated_at']
 
     def __str__(self):
@@ -89,54 +78,31 @@ class CulturalContent(models.Model):
 
 
 class Club(models.Model):
-    id = models.AutoField(primary_key=True, db_column='id_clubs')
+    id = models.AutoField(primary_key=True, db_column=db_constants.COL_ID_CLUBS)
     name = models.CharField(max_length=100)
     description = models.TextField(blank=True, null=True)
     mission = models.TextField(blank=True, null=True)
+    image = models.CharField(max_length=500, blank=True, null=True, default='')
     is_active = models.BooleanField(default=True)
     enable_registrations = models.BooleanField(blank=True, null=True, default=False)
     created_at = models.DateTimeField(blank=True, null=True)
 
     class Meta:
-        db_table = 'clubs'
+        db_table = db_constants.TABLE_CLUB
         managed = False
         ordering = ['name']
 
     def __str__(self):
         return self.name
 
-    @property
-    def image(self) -> str:
-        cached_value = getattr(self, '_club_image_cache', None)
-        if cached_value is not None:
-            return cached_value
-
-        if not _has_table_column('clubs', 'image'):
-            self._club_image_cache = ''
-            return ''
-
-        with connection.cursor() as cursor:
-            cursor.execute(
-                'SELECT image FROM clubs WHERE id_clubs = %s LIMIT 1',
-                [self.id],
-            )
-            row = cursor.fetchone()
-
-        self._club_image_cache = str(row[0]) if row and row[0] is not None else ''
-        return self._club_image_cache
-
-    @image.setter
-    def image(self, value: str) -> None:
-        self._club_image_cache = value or ''
-
 
 class NewsStatus(models.Model):
-    id = models.AutoField(primary_key=True, db_column='id_nstatus')
+    id = models.AutoField(primary_key=True, db_column=db_constants.COL_ID_NSTATUS)
     name = models.CharField(max_length=100)
     description = models.TextField()
 
     class Meta:
-        db_table = 'nstatus'
+        db_table = db_constants.TABLE_NEWS_STATUS
         managed = False
         ordering = ['name']
 
@@ -145,14 +111,14 @@ class NewsStatus(models.Model):
 
 
 class News(models.Model):
-    id = models.AutoField(primary_key=True, db_column='id_news')
+    id = models.AutoField(primary_key=True, db_column=db_constants.COL_ID_NEWS)
     title = models.CharField(max_length=255)
     summary = models.TextField()
     image = models.CharField(max_length=500)
     news_status = models.ForeignKey(
         NewsStatus,
         on_delete=models.DO_NOTHING,
-        db_column='id_nstatus',
+        db_column=db_constants.COL_ID_NSTATUS,
         related_name='news_items',
     )
     published_at = models.DateTimeField(blank=True, null=True)
@@ -161,7 +127,7 @@ class News(models.Model):
     club = models.ForeignKey(
         Club,
         on_delete=models.SET_NULL,
-        db_column='id_clubs',
+        db_column=db_constants.COL_ID_CLUBS,
         blank=True,
         null=True,
         related_name='news_items',
@@ -169,7 +135,7 @@ class News(models.Model):
     content = models.TextField()
 
     class Meta:
-        db_table = 'news'
+        db_table = db_constants.TABLE_NEWS
         managed = False
         ordering = ['-published_at', '-created_at', '-id']
 
@@ -178,7 +144,7 @@ class News(models.Model):
 
 
 class Book(models.Model):
-    id = models.AutoField(primary_key=True, db_column='id_books')
+    id = models.AutoField(primary_key=True, db_column=db_constants.COL_ID_BOOKS)
     title = models.CharField(max_length=255)
     author = models.CharField(max_length=255)
     publisher = models.CharField(max_length=255, blank=True, default='')
@@ -190,14 +156,14 @@ class Book(models.Model):
     club = models.ForeignKey(
         Club,
         on_delete=models.SET_NULL,
-        db_column='id_club',
+        db_column=db_constants.COL_CLUB_ID,
         blank=True,
         null=True,
         related_name='books',
     )
 
     class Meta:
-        db_table = 'books'
+        db_table = db_constants.TABLE_BOOK
         managed = False
         ordering = ['-is_featured', 'title', '-id']
 
@@ -206,19 +172,28 @@ class Book(models.Model):
 
 
 class Session(models.Model):
-    id = models.AutoField(primary_key=True, db_column='id_sessions')
+    STATUS_CHOICES = [
+        ('active', 'Ativo'),
+        ('completed', 'Concluido'),
+        ('cancelled', 'Cancelado'),
+    ]
+
+    id = models.AutoField(primary_key=True, db_column=db_constants.COL_ID_SESSIONS)
     name = models.CharField(max_length=150)
     title = models.CharField(max_length=255)
     description = models.TextField()
     session_date = models.DateField()
-    start_date = models.DateTimeField()
-    end_date = models.DateTimeField()
-    created_at = models.DateTimeField(blank=True, null=True)
-    updated_at = models.DateTimeField(blank=True, null=True)
+    start_date = models.DateTimeField(db_column=db_constants.COL_START_DATE)
+    end_date = models.DateTimeField(db_column=db_constants.COL_END_DATE)
+    status = models.CharField(max_length=16, choices=STATUS_CHOICES, default='active')
+    enable_registrations = models.BooleanField(default=False)
+    registration_capacity = models.IntegerField(blank=True, null=True)
+    created_at = models.DateTimeField(blank=True, null=True, db_column=db_constants.COL_CREATED_AT)
+    updated_at = models.DateTimeField(blank=True, null=True, db_column=db_constants.COL_UPDATED_AT)
     club = models.ForeignKey(
         Club,
         on_delete=models.SET_NULL,
-        db_column='id_club',
+        db_column=db_constants.COL_CLUB_ID,
         blank=True,
         null=True,
         related_name='sessions',
@@ -230,71 +205,23 @@ class Session(models.Model):
     )
 
     class Meta:
-        db_table = 'sessions'
+        db_table = db_constants.TABLE_SESSION
         managed = False
         ordering = ['session_date', 'start_date', '-id']
-
-    @property
-    def enable_registrations(self) -> bool:
-        cached_value = getattr(self, '_session_enable_registrations_cache', None)
-        if cached_value is not None:
-            return bool(cached_value)
-
-        if not _has_table_column('sessions', 'enable_registrations'):
-            self._session_enable_registrations_cache = False
-            return False
-
-        with connection.cursor() as cursor:
-            cursor.execute(
-                'SELECT enable_registrations FROM sessions WHERE id_sessions = %s LIMIT 1',
-                [self.id],
-            )
-            row = cursor.fetchone()
-
-        self._session_enable_registrations_cache = bool(row[0]) if row and row[0] is not None else False
-        return self._session_enable_registrations_cache
-
-    @enable_registrations.setter
-    def enable_registrations(self, value: bool) -> None:
-        self._session_enable_registrations_cache = bool(value)
-
-    @property
-    def registration_capacity(self) -> int | None:
-        cached_value = getattr(self, '_session_registration_capacity_cache', None)
-        if cached_value is not None:
-            return cached_value
-
-        if not _has_table_column('sessions', 'registration_capacity'):
-            self._session_registration_capacity_cache = None
-            return None
-
-        with connection.cursor() as cursor:
-            cursor.execute(
-                'SELECT registration_capacity FROM sessions WHERE id_sessions = %s LIMIT 1',
-                [self.id],
-            )
-            row = cursor.fetchone()
-
-        self._session_registration_capacity_cache = int(row[0]) if row and row[0] is not None else None
-        return self._session_registration_capacity_cache
-
-    @registration_capacity.setter
-    def registration_capacity(self, value: int | None) -> None:
-        self._session_registration_capacity_cache = value if value is None else int(value)
 
     def __str__(self):
         return self.title
 
 
 class Category(models.Model):
-    id = models.AutoField(primary_key=True, db_column='id_category')
+    id = models.AutoField(primary_key=True, db_column=db_constants.COL_ID_CATEGORY)
     name = models.CharField(max_length=120)
     description = models.TextField()
     created_at = models.DateTimeField(blank=True, null=True)
     updated_at = models.DateTimeField(blank=True, null=True)
 
     class Meta:
-        db_table = 'category'
+        db_table = db_constants.TABLE_CATEGORY
         managed = False
         ordering = ['name']
 
@@ -303,25 +230,37 @@ class Category(models.Model):
 
 
 class Event(models.Model):
-    id = models.AutoField(primary_key=True, db_column='id_event')
+    STATUS_CHOICES = [
+        ('draft', 'Rascunho'),
+        ('review', 'Em Revisao'),
+        ('published', 'Publicado'),
+        ('active', 'Ativo'),
+        ('completed', 'Concluido'),
+        ('cancelled', 'Cancelado'),
+        ('archived', 'Arquivado'),
+    ]
+
+    id = models.AutoField(primary_key=True, db_column=db_constants.COL_ID_EVENT)
     title = models.CharField(max_length=255)
     description = models.TextField()
     event_date = models.DateField()
-    start_date = models.DateTimeField()
-    end_date = models.DateTimeField()
+    start_date = models.DateTimeField(db_column=db_constants.COL_START_DATE)
+    end_date = models.DateTimeField(db_column=db_constants.COL_END_DATE)
     image = models.CharField(max_length=500, blank=True, default='')
     is_external = models.BooleanField(default=False)
-    status = models.CharField(max_length=50)
+    enable_registrations = models.BooleanField(default=False)
+    registration_capacity = models.IntegerField(blank=True, null=True)
+    status = models.CharField(max_length=16, choices=STATUS_CHOICES, default='draft')
     user = models.ForeignKey(
         AppUser,
         on_delete=models.SET_NULL,
-        db_column='user_id',
+        db_column=db_constants.COL_USER_ID,
         blank=True,
         null=True,
         related_name='events',
     )
-    created_at = models.DateTimeField(blank=True, null=True)
-    updated_at = models.DateTimeField(blank=True, null=True)
+    created_at = models.DateTimeField(blank=True, null=True, db_column=db_constants.COL_CREATED_AT)
+    updated_at = models.DateTimeField(blank=True, null=True, db_column=db_constants.COL_UPDATED_AT)
     city = models.CharField(max_length=120, blank=True, default='')
     location = models.CharField(max_length=255, blank=True, default='')
     categories = models.ManyToManyField(
@@ -336,57 +275,9 @@ class Event(models.Model):
     )
 
     class Meta:
-        db_table = 'event'
+        db_table = db_constants.TABLE_EVENT
         managed = False
         ordering = ['event_date', 'start_date', '-id']
-
-    @property
-    def enable_registrations(self) -> bool:
-        cached_value = getattr(self, '_event_enable_registrations_cache', None)
-        if cached_value is not None:
-            return bool(cached_value)
-
-        if not _has_table_column('event', 'enable_registrations'):
-            self._event_enable_registrations_cache = False
-            return False
-
-        with connection.cursor() as cursor:
-            cursor.execute(
-                'SELECT enable_registrations FROM event WHERE id_event = %s LIMIT 1',
-                [self.id],
-            )
-            row = cursor.fetchone()
-
-        self._event_enable_registrations_cache = bool(row[0]) if row and row[0] is not None else False
-        return self._event_enable_registrations_cache
-
-    @enable_registrations.setter
-    def enable_registrations(self, value: bool) -> None:
-        self._event_enable_registrations_cache = bool(value)
-
-    @property
-    def registration_capacity(self) -> int | None:
-        cached_value = getattr(self, '_event_registration_capacity_cache', None)
-        if cached_value is not None:
-            return cached_value
-
-        if not _has_table_column('event', 'registration_capacity'):
-            self._event_registration_capacity_cache = None
-            return None
-
-        with connection.cursor() as cursor:
-            cursor.execute(
-                'SELECT registration_capacity FROM event WHERE id_event = %s LIMIT 1',
-                [self.id],
-            )
-            row = cursor.fetchone()
-
-        self._event_registration_capacity_cache = int(row[0]) if row and row[0] is not None else None
-        return self._event_registration_capacity_cache
-
-    @registration_capacity.setter
-    def registration_capacity(self, value: int | None) -> None:
-        self._event_registration_capacity_cache = value if value is None else int(value)
 
     @property
     def club_id(self):
@@ -404,18 +295,18 @@ class EventCategory(models.Model):
     event = models.ForeignKey(
         Event,
         on_delete=models.DO_NOTHING,
-        db_column='id_event',
+        db_column=db_constants.COL_ID_EVENT,
         related_name='event_category_links',
     )
     category = models.ForeignKey(
         Category,
         on_delete=models.DO_NOTHING,
-        db_column='id_category',
+        db_column=db_constants.COL_ID_CATEGORY,
         related_name='event_category_links',
     )
 
     class Meta:
-        db_table = 'event_category'
+        db_table = db_constants.TABLE_EVENT_CATEGORY
         managed = False
         unique_together = ('event', 'category')
 
@@ -424,31 +315,31 @@ class EventRegistration(models.Model):
     event = models.ForeignKey(
         Event,
         on_delete=models.DO_NOTHING,
-        db_column='id_event',
+        db_column=db_constants.COL_ID_EVENT,
         related_name='registration_links',
     )
     registration = models.ForeignKey(
         'Registration',
         on_delete=models.DO_NOTHING,
-        db_column='id_registrations',
+        db_column=db_constants.COL_ID_REGISTRATIONS,
         related_name='event_links',
     )
     created_at = models.DateTimeField(blank=True, null=True)
     reminder_sent_at = models.DateTimeField(blank=True, null=True)
 
     class Meta:
-        db_table = 'event_registrations'
+        db_table = db_constants.TABLE_EVENT_REGISTRATION
         managed = False
         unique_together = ('event', 'registration')
 
 
 class RegistrationStatus(models.Model):
-    id = models.AutoField(primary_key=True, db_column='id_rstatus')
+    id = models.AutoField(primary_key=True, db_column=db_constants.COL_ID_RSTATUS)
     name = models.CharField(max_length=100)
     description = models.TextField()
 
     class Meta:
-        db_table = 'rstatus'
+        db_table = db_constants.TABLE_REGISTRATION_STATUS
         managed = False
         ordering = ['name']
 
@@ -457,9 +348,9 @@ class RegistrationStatus(models.Model):
 
 
 class Registration(models.Model):
-    id = models.AutoField(primary_key=True, db_column='id_registrations')
+    id = models.AutoField(primary_key=True, db_column=db_constants.COL_ID_REGISTRATIONS)
     name = models.CharField(max_length=100)
-    email = models.EmailField(max_length=150)
+    email = models.EmailField(max_length=150, db_index=True)
     phone = models.CharField(max_length=20, blank=True, null=True)
     message = models.TextField(blank=True, null=True)
     status = models.CharField(max_length=50, default='pending')
@@ -467,14 +358,14 @@ class Registration(models.Model):
     registration_status = models.ForeignKey(
         RegistrationStatus,
         on_delete=models.DO_NOTHING,
-        db_column='id_rstatus',
+        db_column=db_constants.COL_ID_RSTATUS,
         blank=True,
         null=True,
         related_name='registrations',
     )
 
     class Meta:
-        db_table = 'registrations'
+        db_table = db_constants.TABLE_REGISTRATION
         managed = False
         ordering = ['-created_at', '-id']
 
@@ -486,19 +377,96 @@ class SessionRegistration(models.Model):
     session = models.ForeignKey(
         Session,
         on_delete=models.DO_NOTHING,
-        db_column='id_sessions',
+        db_column=db_constants.COL_ID_SESSIONS,
         related_name='registration_links',
     )
     registration = models.ForeignKey(
         Registration,
         on_delete=models.DO_NOTHING,
-        db_column='id_registrations',
+        db_column=db_constants.COL_ID_REGISTRATIONS,
         related_name='session_links',
     )
     created_at = models.DateTimeField(blank=True, null=True)
     reminder_sent_at = models.DateTimeField(blank=True, null=True)
 
     class Meta:
-        db_table = 'session_registrations'
+        db_table = db_constants.TABLE_SESSION_REGISTRATION
         managed = False
         unique_together = ('session', 'registration')
+
+
+class ClubRegistration(models.Model):
+    club = models.ForeignKey(
+        Club,
+        on_delete=models.DO_NOTHING,
+        db_column=db_constants.COL_ID_CLUBS,
+        related_name='club_registration_links',
+    )
+    registration = models.ForeignKey(
+        Registration,
+        on_delete=models.DO_NOTHING,
+        db_column=db_constants.COL_ID_REGISTRATIONS,
+        related_name='club_links',
+    )
+
+    class Meta:
+        db_table = db_constants.TABLE_CLUB_REGISTRATION
+        managed = False
+        unique_together = ('club', 'registration')
+
+
+class EditorialAction(models.Model):
+    content_type = models.CharField(max_length=32)
+    object_id = models.IntegerField()
+    from_status = models.CharField(max_length=50, blank=True, null=True)
+    to_status = models.CharField(max_length=50)
+    actor_user = models.ForeignKey(
+        AppUser,
+        on_delete=models.SET_NULL,
+        db_column='actor_user_id',
+        blank=True,
+        null=True,
+    )
+    actor_name = models.CharField(max_length=150)
+    club = models.ForeignKey(
+        Club,
+        on_delete=models.SET_NULL,
+        db_column='club_id',
+        blank=True,
+        null=True,
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = db_constants.TABLE_EDITORIAL_ACTION
+        managed = False
+        ordering = ['-created_at']
+
+
+class AdminAuditLog(models.Model):
+    action = models.CharField(max_length=32)
+    content_type = models.CharField(max_length=32)
+    object_id = models.IntegerField(blank=True, null=True)
+    summary = models.CharField(max_length=255)
+    actor_user = models.ForeignKey(
+        AppUser,
+        on_delete=models.SET_NULL,
+        db_column='actor_user_id',
+        blank=True,
+        null=True,
+    )
+    actor_name = models.CharField(max_length=150)
+    club = models.ForeignKey(
+        Club,
+        on_delete=models.SET_NULL,
+        db_column='club_id',
+        blank=True,
+        null=True,
+    )
+    metadata_json = models.TextField(blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = db_constants.TABLE_ADMIN_AUDIT_LOG
+        managed = False
+        ordering = ['-created_at']

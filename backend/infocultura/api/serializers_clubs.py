@@ -1,0 +1,45 @@
+from rest_framework import serializers
+
+from ..models import AppUser, Club
+
+
+class ClubSerializer(serializers.ModelSerializer):
+    image = serializers.CharField(required=False, allow_blank=True)
+
+    class Meta:
+        model = Club
+        fields = [
+            'id',
+            'name',
+            'description',
+            'mission',
+            'image',
+            'is_active',
+            'enable_registrations',
+            'created_at',
+        ]
+
+    def create(self, validated_data):
+        return Club.objects.create(**validated_data)
+
+    def update(self, instance, validated_data):
+        for field, value in validated_data.items():
+            setattr(instance, field, value)
+        instance.save()
+        return instance
+
+
+class ClubMemberAssignSerializer(serializers.Serializer):
+    user_id = serializers.PrimaryKeyRelatedField(
+        queryset=AppUser.objects.select_related('role', 'club').all(),
+        source='user',
+    )
+
+    def validate_user(self, user):
+        if not user.is_active:
+            raise serializers.ValidationError('O utilizador tem de estar ativo.')
+
+        if user.club_id:
+            raise serializers.ValidationError('O utilizador ja pertence a um clube.')
+
+        return user
