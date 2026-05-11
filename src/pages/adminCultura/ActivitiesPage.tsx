@@ -43,7 +43,7 @@ import {
 
 type AdminHeroStat = { label: string; value: string | number };
 
-type ActivitiesPageProps = {
+export type ActivitiesPageProps = {
   activitySectionLabel: string;
   activitySectionDescription: string;
   activityOverviewStats: AdminHeroStat[];

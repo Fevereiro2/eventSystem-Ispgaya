@@ -1,29 +1,27 @@
 from __future__ import annotations
 
-from datetime import datetime, timedelta, timezone as dt_timezone
+from datetime import datetime, timezone as dt_timezone
 from functools import lru_cache
 import json
 from urllib.parse import quote
+from typing import Any
 
 from django.conf import settings
 from django.core.cache import cache
 from django.core.mail import send_mail
-from django.db import connection, transaction, models
-from django.db.models import Q, Count, Case, When, Value, CharField, F
+from django.db import connection, transaction
 from django.utils import timezone
 
+from .database import constants as db_constants
 from .models import (
     AppUser,
     Book,
     Club,
     Event,
-    EventRegistration,
     News,
     Registration,
     RegistrationStatus,
     Session,
-    SessionRegistration,
-    ClubRegistration,
 )
 from .service_types import (
     ActivityRegistrationError,
@@ -139,6 +137,18 @@ def _get_allowed_club_id(user) -> int | None:
     return None
 
 
+def _fetch_all_dict_rows(sql: str, params: tuple[Any, ...] | list[Any] = ()) -> list[dict[str, Any]]:
+    with connection.cursor() as cursor:
+        cursor.execute(sql, params)
+        columns = [column[0] for column in cursor.description or []]
+        return [dict(zip(columns, row)) for row in cursor.fetchall()]
+
+
+def _execute_sql(sql: str, params: tuple[Any, ...] | list[Any] = ()) -> None:
+    with connection.cursor() as cursor:
+        cursor.execute(sql, params)
+
+
 def _registration_rate_limit_key(*, club_id: int, client_ip: str) -> str:
     return f"infocultura:club_registration:{club_id}:{client_ip}"
 
@@ -206,26 +216,44 @@ def enforce_activity_registration_rate_limit(
 
 def club_registration_exists(*, club_id: int, email: str) -> bool:
     normalized_email = _normalized_email(email)
-    return ClubRegistration.objects.filter(
-        club_id=club_id,
-        registration__email__iexact=normalized_email
-    ).exists()
+    sql = f"""
+        SELECT 1
+        FROM {db_constants.TABLE_CLUB_REGISTRATION} cr
+        INNER JOIN {db_constants.TABLE_REGISTRATION} r
+            ON r.{db_constants.COL_ID_REGISTRATIONS} = cr.{db_constants.COL_ID_REGISTRATIONS}
+        WHERE cr.{db_constants.COL_ID_CLUBS} = %s
+          AND LOWER(r.email) = %s
+        LIMIT 1
+    """
+    return bool(_fetch_all_dict_rows(sql, (club_id, normalized_email)))
 
 
 def event_registration_exists(*, event_id: int, email: str) -> bool:
     normalized_email = _normalized_email(email)
-    return EventRegistration.objects.filter(
-        event_id=event_id,
-        registration__email__iexact=normalized_email
-    ).exists()
+    sql = f"""
+        SELECT 1
+        FROM {db_constants.TABLE_EVENT_REGISTRATION} er
+        INNER JOIN {db_constants.TABLE_REGISTRATION} r
+            ON r.{db_constants.COL_ID_REGISTRATIONS} = er.{db_constants.COL_ID_REGISTRATIONS}
+        WHERE er.{db_constants.COL_ID_EVENT} = %s
+          AND LOWER(r.email) = %s
+        LIMIT 1
+    """
+    return bool(_fetch_all_dict_rows(sql, (event_id, normalized_email)))
 
 
 def session_registration_exists(*, session_id: int, email: str) -> bool:
     normalized_email = _normalized_email(email)
-    return SessionRegistration.objects.filter(
-        session_id=session_id,
-        registration__email__iexact=normalized_email
-    ).exists()
+    sql = f"""
+        SELECT 1
+        FROM {db_constants.TABLE_SESSION_REGISTRATION} sr
+        INNER JOIN {db_constants.TABLE_REGISTRATION} r
+            ON r.{db_constants.COL_ID_REGISTRATIONS} = sr.{db_constants.COL_ID_REGISTRATIONS}
+        WHERE sr.{db_constants.COL_ID_SESSIONS} = %s
+          AND LOWER(r.email) = %s
+        LIMIT 1
+    """
+    return bool(_fetch_all_dict_rows(sql, (session_id, normalized_email)))
 
 
 def _normalize_capacity(value: int | None) -> int | None:
@@ -236,21 +264,24 @@ def _normalize_capacity(value: int | None) -> int | None:
 
 def _build_activity_registration_summary(
     *,
-    link_model: type[models.Model],
+    link_table: str,
     activity_id_field: str,
     activity_id: int,
     capacity: int | None,
     registrations_enabled: bool,
     is_open_by_date: bool,
 ) -> ActivityRegistrationSummary:
-    # Use ORM aggregation to count registrations by status
-    stats = link_model.objects.filter(**{activity_id_field: activity_id}).annotate(
-        resolved_status=Case(
-            When(registration__registration_status__isnull=False, then=F('registration__registration_status__name')),
-            default=F('registration__status'),
-            output_field=CharField(),
-        )
-    ).values('resolved_status').annotate(count=Count('id'))
+    sql = f"""
+        SELECT LOWER(COALESCE(rs.name, r.status)) AS resolved_status, COUNT(*) AS total_count
+        FROM {link_table} link
+        INNER JOIN {db_constants.TABLE_REGISTRATION} r
+            ON r.{db_constants.COL_ID_REGISTRATIONS} = link.{db_constants.COL_ID_REGISTRATIONS}
+        LEFT JOIN {db_constants.TABLE_REGISTRATION_STATUS} rs
+            ON rs.{db_constants.COL_ID_RSTATUS} = r.{db_constants.COL_ID_RSTATUS}
+        WHERE link.{activity_id_field} = %s
+        GROUP BY LOWER(COALESCE(rs.name, r.status))
+    """
+    stats = _fetch_all_dict_rows(sql, (activity_id,))
 
     confirmed_count = 0
     waitlist_count = 0
@@ -258,9 +289,9 @@ def _build_activity_registration_summary(
     for entry in stats:
         normalized_status = _clean_status(entry['resolved_status'])
         if normalized_status in {"confirmed", "approved"}:
-            confirmed_count += entry['count']
+            confirmed_count += int(entry["total_count"])
         elif normalized_status == "waitlist":
-            waitlist_count += entry['count']
+            waitlist_count += int(entry["total_count"])
 
     normalized_capacity = _normalize_capacity(capacity)
     remaining_slots = None if normalized_capacity is None else max(0, normalized_capacity - confirmed_count)
@@ -282,8 +313,8 @@ def _build_activity_registration_summary(
 
 def get_event_registration_summary(*, event: Event) -> ActivityRegistrationSummary:
     return _build_activity_registration_summary(
-        link_model=EventRegistration,
-        activity_id_field="event_id",
+        link_table=db_constants.TABLE_EVENT_REGISTRATION,
+        activity_id_field=db_constants.COL_ID_EVENT,
         activity_id=event.id,
         capacity=event.registration_capacity,
         registrations_enabled=bool(event.enable_registrations),
@@ -293,8 +324,8 @@ def get_event_registration_summary(*, event: Event) -> ActivityRegistrationSumma
 
 def get_session_registration_summary(*, session: Session) -> ActivityRegistrationSummary:
     return _build_activity_registration_summary(
-        link_model=SessionRegistration,
-        activity_id_field="session_id",
+        link_table=db_constants.TABLE_SESSION_REGISTRATION,
+        activity_id_field=db_constants.COL_ID_SESSIONS,
         activity_id=session.id,
         capacity=session.registration_capacity,
         registrations_enabled=bool(session.enable_registrations),
@@ -324,7 +355,15 @@ def create_club_registration(
             status="pending",
             created_at=timezone.now(),
         )
-        ClubRegistration.objects.create(club=club, registration=registration)
+        _execute_sql(
+            f"""
+                INSERT INTO {db_constants.TABLE_CLUB_REGISTRATION} (
+                    {db_constants.COL_ID_CLUBS},
+                    {db_constants.COL_ID_REGISTRATIONS}
+                ) VALUES (%s, %s)
+            """,
+            (club.id, registration.id),
+        )
 
     notify_new_club_registration(club=club, registration=registration)
     return registration
@@ -471,8 +510,6 @@ def _create_activity_registration(
     client_ip: str | None,
     exists_fn,
     summary_fn,
-    link_model,
-    link_field: str,
 ) -> Registration:
     if not registrations_enabled or not is_open_by_date:
         raise ActivityRegistrationError("As inscricoes para esta atividade estao encerradas.")
@@ -504,12 +541,22 @@ def _create_activity_registration(
             created_at=timezone.now(),
         )
 
-        link_model.objects.create(
-            **{
-                link_field: activity_id,
-                "registration": registration,
-                "created_at": timezone.now(),
-            }
+        if activity_type == "event":
+            link_table = db_constants.TABLE_EVENT_REGISTRATION
+            activity_column = db_constants.COL_ID_EVENT
+        else:
+            link_table = db_constants.TABLE_SESSION_REGISTRATION
+            activity_column = db_constants.COL_ID_SESSIONS
+
+        _execute_sql(
+            f"""
+                INSERT INTO {link_table} (
+                    {activity_column},
+                    {db_constants.COL_ID_REGISTRATIONS},
+                    created_at
+                ) VALUES (%s, %s, %s)
+            """,
+            (activity_id, registration.id, timezone.now()),
         )
 
     send_activity_registration_email(
@@ -553,8 +600,6 @@ def create_event_registration(
         client_ip=client_ip,
         exists_fn=lambda activity_id, email: event_registration_exists(event_id=activity_id, email=email),
         summary_fn=lambda: get_event_registration_summary(event=event),
-        link_model=EventRegistration,
-        link_field="event_id",
     )
 
 
@@ -580,8 +625,6 @@ def create_session_registration(
         client_ip=client_ip,
         exists_fn=lambda activity_id, email: session_registration_exists(session_id=activity_id, email=email),
         summary_fn=lambda: get_session_registration_summary(session=session),
-        link_model=SessionRegistration,
-        link_field="session_id",
     )
 
 
@@ -598,64 +641,92 @@ def list_admin_club_registrations(
     ordering: str | None = None,
     export_all: bool = False,
 ) -> AdminClubRegistrationPage:
-    queryset = ClubRegistration.objects.select_related('club', 'registration', 'registration__registration_status').all()
+    joins = "\n".join(
+        [
+            f"FROM {db_constants.TABLE_CLUB_REGISTRATION} cr",
+            f"INNER JOIN {db_constants.TABLE_REGISTRATION} r ON r.{db_constants.COL_ID_REGISTRATIONS} = cr.{db_constants.COL_ID_REGISTRATIONS}",
+            f"INNER JOIN {db_constants.TABLE_CLUB} c ON c.{db_constants.COL_ID_CLUBS} = cr.{db_constants.COL_ID_CLUBS}",
+            f"LEFT JOIN {db_constants.TABLE_REGISTRATION_STATUS} rs ON rs.{db_constants.COL_ID_RSTATUS} = r.{db_constants.COL_ID_RSTATUS}",
+        ]
+    )
+    filters = ["1=1"]
+    params: list[Any] = []
 
     if allowed_club_id is not None:
-        queryset = queryset.filter(club_id=allowed_club_id)
+        filters.append(f"cr.{db_constants.COL_ID_CLUBS} = %s")
+        params.append(allowed_club_id)
     if club_id is not None:
-        queryset = queryset.filter(club_id=club_id)
+        filters.append(f"cr.{db_constants.COL_ID_CLUBS} = %s")
+        params.append(club_id)
     if status:
-        queryset = queryset.filter(
-            Q(registration__registration_status__name__iexact=status) | 
-            Q(registration__status__iexact=status)
-        )
+        filters.append("LOWER(COALESCE(rs.name, r.status)) = LOWER(%s)")
+        params.append(status)
     if search:
-        queryset = queryset.filter(
-            Q(registration__name__icontains=search) | 
-            Q(registration__email__icontains=search)
-        )
+        filters.append("(LOWER(r.name) LIKE %s OR LOWER(r.email) LIKE %s)")
+        search_term = f"%{search.lower()}%"
+        params.extend([search_term, search_term])
     if date_from:
-        queryset = queryset.filter(registration__created_at__date__gte=date_from)
+        filters.append("DATE(r.created_at) >= %s")
+        params.append(date_from)
     if date_to:
-        queryset = queryset.filter(registration__created_at__date__lte=date_to)
+        filters.append("DATE(r.created_at) <= %s")
+        params.append(date_to)
 
-    # Ordering
     ordering_map = {
-        "newest": "-registration__created_at",
-        "oldest": "registration__created_at",
-        "name_asc": "registration__name",
-        "name_desc": "-registration__name",
-        "email_asc": "registration__email",
-        "email_desc": "-registration__email",
-        "club_asc": "club__name",
-        "club_desc": "-club__name",
+        "newest": "r.created_at DESC",
+        "oldest": "r.created_at ASC",
+        "name_asc": "r.name ASC",
+        "name_desc": "r.name DESC",
+        "email_asc": "r.email ASC",
+        "email_desc": "r.email DESC",
+        "club_asc": "c.name ASC",
+        "club_desc": "c.name DESC",
     }
-    order_by = ordering_map.get(ordering, "-registration__created_at")
-    queryset = queryset.order_by(order_by)
+    order_by = ordering_map.get(ordering, "r.created_at DESC")
+    where_sql = "WHERE " + " AND ".join(filters)
+    count_sql = f"SELECT COUNT(*) AS total_count {joins}\n{where_sql}"
+    total_rows = _fetch_all_dict_rows(count_sql, params)
+    total = int(total_rows[0]["total_count"]) if total_rows else 0
 
-    total = queryset.count()
-    
+    select_sql = f"""
+        SELECT
+            r.{db_constants.COL_ID_REGISTRATIONS} AS registration_id,
+            cr.{db_constants.COL_ID_CLUBS} AS club_id,
+            c.name AS club_name,
+            r.name,
+            r.email,
+            r.phone,
+            r.message,
+            COALESCE(rs.name, r.status) AS status,
+            r.created_at
+        {joins}
+        {where_sql}
+        ORDER BY {order_by}
+    """
+    query_params = list(params)
     if not export_all:
         offset = (page - 1) * page_size
-        queryset = queryset[offset:offset + page_size]
+        select_sql += " LIMIT %s OFFSET %s"
+        query_params.extend([page_size, offset])
 
-    items = []
-    for link in queryset:
-        reg = link.registration
-        items.append(AdminClubRegistrationRecord(
-            registration_id=reg.id,
-            club_id=link.club_id,
-            club_name=link.club.name,
-            name=reg.name,
-            email=reg.email,
-            phone=reg.phone,
-            message=reg.message,
-            status=reg.registration_status.name if reg.registration_status else reg.status,
-            created_at=reg.created_at
-        ))
+    rows = _fetch_all_dict_rows(select_sql, tuple(query_params))
+    items = [
+        AdminClubRegistrationRecord(
+            registration_id=row["registration_id"],
+            club_id=row["club_id"],
+            club_name=row["club_name"],
+            name=row["name"],
+            email=row["email"],
+            phone=row["phone"],
+            message=row["message"],
+            status=row["status"],
+            created_at=row["created_at"],
+        )
+        for row in rows
+    ]
 
     total_pages = (total + page_size - 1) // page_size if page_size and not export_all else 1
-    
+
     return AdminClubRegistrationPage(
         items=items,
         total=total,
@@ -670,27 +741,46 @@ def get_admin_club_registration(
     registration_id: int,
     allowed_club_id: int | None = None,
 ) -> AdminClubRegistrationRecord | None:
-    try:
-        link = ClubRegistration.objects.select_related('club', 'registration', 'registration__registration_status').get(
-            registration_id=registration_id
-        )
-        if allowed_club_id is not None and link.club_id != allowed_club_id:
-            return None
-            
-        reg = link.registration
-        return AdminClubRegistrationRecord(
-            registration_id=reg.id,
-            club_id=link.club_id,
-            club_name=link.club.name,
-            name=reg.name,
-            email=reg.email,
-            phone=reg.phone,
-            message=reg.message,
-            status=reg.registration_status.name if reg.registration_status else reg.status,
-            created_at=reg.created_at
-        )
-    except ClubRegistration.DoesNotExist:
+    sql = f"""
+        SELECT
+            r.{db_constants.COL_ID_REGISTRATIONS} AS registration_id,
+            cr.{db_constants.COL_ID_CLUBS} AS club_id,
+            c.name AS club_name,
+            r.name,
+            r.email,
+            r.phone,
+            r.message,
+            COALESCE(rs.name, r.status) AS status,
+            r.created_at
+        FROM {db_constants.TABLE_CLUB_REGISTRATION} cr
+        INNER JOIN {db_constants.TABLE_REGISTRATION} r
+            ON r.{db_constants.COL_ID_REGISTRATIONS} = cr.{db_constants.COL_ID_REGISTRATIONS}
+        INNER JOIN {db_constants.TABLE_CLUB} c
+            ON c.{db_constants.COL_ID_CLUBS} = cr.{db_constants.COL_ID_CLUBS}
+        LEFT JOIN {db_constants.TABLE_REGISTRATION_STATUS} rs
+            ON rs.{db_constants.COL_ID_RSTATUS} = r.{db_constants.COL_ID_RSTATUS}
+        WHERE r.{db_constants.COL_ID_REGISTRATIONS} = %s
+    """
+    params: list[Any] = [registration_id]
+    if allowed_club_id is not None:
+        sql += f" AND cr.{db_constants.COL_ID_CLUBS} = %s"
+        params.append(allowed_club_id)
+
+    rows = _fetch_all_dict_rows(sql, tuple(params))
+    if not rows:
         return None
+    row = rows[0]
+    return AdminClubRegistrationRecord(
+        registration_id=row["registration_id"],
+        club_id=row["club_id"],
+        club_name=row["club_name"],
+        name=row["name"],
+        email=row["email"],
+        phone=row["phone"],
+        message=row["message"],
+        status=row["status"],
+        created_at=row["created_at"],
+    )
 
 
 def _build_registration_status_email_subject(status: str, club_name: str) -> str:
@@ -725,31 +815,31 @@ def update_admin_club_registration_status(
     registration_status: str,
     allowed_club_id: int | None = None,
 ) -> AdminClubRegistrationRecord | None:
-    try:
-        link = ClubRegistration.objects.select_related('club', 'registration').get(
-            registration_id=registration_id
-        )
-        if allowed_club_id is not None and link.club_id != allowed_club_id:
-            return None
-
-        reg = link.registration
-        reg.status = registration_status
-        # If there's a corresponding RegistrationStatus, update it too
-        rstatus = RegistrationStatus.objects.filter(name__iexact=registration_status).first()
-        if rstatus:
-            reg.registration_status = rstatus
-        reg.save()
-
-        record = get_admin_club_registration(registration_id=registration_id)
-        if record:
-            _send_mail_message(
-                subject=_build_registration_status_email_subject(registration_status, link.club.name),
-                body=_build_registration_status_email_body(record),
-                recipient_list=[reg.email],
-            )
-        return record
-    except ClubRegistration.DoesNotExist:
+    record = get_admin_club_registration(
+        registration_id=registration_id,
+        allowed_club_id=allowed_club_id,
+    )
+    if record is None:
         return None
+
+    rstatus = RegistrationStatus.objects.filter(name__iexact=registration_status).first()
+    update_kwargs = {"status": registration_status}
+    if rstatus:
+        update_kwargs["registration_status"] = rstatus
+
+    Registration.objects.filter(id=registration_id).update(**update_kwargs)
+
+    updated_record = get_admin_club_registration(
+        registration_id=registration_id,
+        allowed_club_id=allowed_club_id,
+    )
+    if updated_record:
+        _send_mail_message(
+            subject=_build_registration_status_email_subject(registration_status, updated_record.club_name),
+            body=_build_registration_status_email_body(updated_record),
+            recipient_list=[updated_record.email],
+        )
+    return updated_record
 
 
 def record_admin_audit_action(

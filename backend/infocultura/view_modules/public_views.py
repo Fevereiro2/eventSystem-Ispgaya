@@ -20,13 +20,8 @@ from ..api.serializers import (
     SessionRegistrationCreateSerializer,
     SessionSerializer,
 )
-from ..models import Book, Category, Club, CulturalContent, Event, News, Session
-from ..services import (
-    build_activity_calendar_payload,
-    filter_activities_by_range,
-    get_past_activities,
-    get_upcoming_activities,
-)
+from ..models import Book, Category, Club, CulturalContent, Event, News, NewsStatus, Session
+from ..services import filter_activities_by_range, get_past_activities, get_upcoming_activities
 
 
 class PublicContentListView(generics.ListAPIView):
@@ -84,7 +79,7 @@ class PublicNewsStatusListView(generics.ListAPIView):
     permission_classes = [permissions.AllowAny]
 
     def get_queryset(self):
-        return NewsStatusSerializer.Meta.model.objects.all().order_by("name")
+        return NewsStatus.objects.all().order_by("name")
 
 
 class PublicNewsListView(generics.ListAPIView):
@@ -194,20 +189,13 @@ class PublicSessionCalendarView(APIView):
         if not session:
             return Response({"message": "Sessao nao encontrada."}, status=404)
 
-        payload = build_activity_calendar_payload(
+        return build_calendar_ics_response(
+            uid_prefix=f"session-{session.id}@infocultura",
             title=session.title,
             description=session.description,
             start_date=session.start_date,
             end_date=session.end_date,
             location=session.title,
-        )
-        return build_calendar_ics_response(
-            uid_prefix=f"session-{session.id}@infocultura",
-            title=payload["title"],
-            description=payload["description"],
-            start_date=session.start_date,
-            end_date=session.end_date,
-            location=payload["location"],
             filename=f"sessao-{session.id}.ics",
         )
 
@@ -310,19 +298,12 @@ class PublicEventCalendarView(APIView):
         if not event:
             return Response({"message": "Evento nao encontrado."}, status=404)
 
-        payload = build_activity_calendar_payload(
+        return build_calendar_ics_response(
+            uid_prefix=f"event-{event.id}@infocultura",
             title=event.title,
             description=event.description,
             start_date=event.start_date,
             end_date=event.end_date,
             location=event.location or event.city or "Local por definir",
-        )
-        return build_calendar_ics_response(
-            uid_prefix=f"event-{event.id}@infocultura",
-            title=payload["title"],
-            description=payload["description"],
-            start_date=event.start_date,
-            end_date=event.end_date,
-            location=payload["location"],
             filename=f"evento-{event.id}.ics",
         )
