@@ -8,12 +8,10 @@ import {
 } from 'react';
 import {
   Bell,
-  Building2,
   BookOpen,
   CalendarClock,
   FilePlus2,
   FolderKanban,
-  Inbox,
   LayoutDashboard,
   Newspaper,
   Sparkles,
@@ -32,7 +30,6 @@ import {
   adminField,
   adminFieldSpaced,
   adminFormGridSpaced,
-  adminHeaderRow,
   adminInfo,
   adminInput,
   adminLabel,
@@ -58,15 +55,8 @@ import {
   adminPortalSidebarTitle,
   adminStatCard,
   adminStatLabel,
-  adminStatsGrid,
   adminStatValue,
   adminTextarea,
-  adminUserEmail,
-  adminUserItem,
-  adminUserList,
-  adminUserMeta,
-  adminUserName,
-  adminUserStatus,
   adminUserStatusActive,
   adminUserStatusInactive,
   blockText,
@@ -173,7 +163,6 @@ import {
   logoutInfoCultura,
   NewsPayload,
   removeUserFromClub,
-  resolveInfoCulturaAssetUrl,
   SessionPayload,
   uploadAdminImage,
   updateAdminBook,
@@ -187,6 +176,11 @@ import {
   updateAdminUser,
 } from '../api/infoculturaApi';
 import AdminPageHero from './adminCultura/AdminPageHero';
+import ActivitiesPage from './adminCultura/ActivitiesPage';
+import ClubsPage from './adminCultura/ClubsPage';
+import NewsPage from './adminCultura/NewsPage';
+import RegistrationsPage from './adminCultura/RegistrationsPage';
+import UsersPage from './adminCultura/UsersPage';
 import {
   ACTIVITY_PAGE_SIZE,
   activityTabBySection,
@@ -248,20 +242,6 @@ import {
   toDateInputValue,
   toDateTimeLocalValue
 } from './adminCultura/utils';
-
-function getRegistrationStatusBadge(status: string): string {
-  const normalized = status.trim().toLowerCase();
-
-  if (normalized === 'approved') {
-    return `${adminUserStatus} ${adminUserStatusActive}`;
-  }
-
-  if (normalized === 'rejected' || normalized === 'cancelled') {
-    return `${adminUserStatus} ${adminUserStatusInactive}`;
-  }
-
-  return `${adminUserStatus} bg-amber-100 text-amber-700`;
-}
 
 function AdminCultura() {
   const location = useLocation();
@@ -3561,2840 +3541,280 @@ function AdminCultura() {
             </div>
           ) : null}
 
-          {activeSection === 'utilizadores' && userPage?.mode === 'list' ? (
-            <div className="space-y-6">
-              <AdminPageHero
-                icon={Users}
-                title="Utilizadores"
-                description="Gestao e consulta dos acessos administrativos do InfoCultura."
-                tone="slate"
-                stats={userOverviewStats}
-                actions={
-                  canManageUsers ? (
-                    <>
-                      <NavLink to="/infocultura/utilizadores/novo" className={adminBtnPrimary}>
-                        Criar utilizador
-                      </NavLink>
-                      <button
-                        type="button"
-                        className={adminBtnSecondary}
-                        disabled={isExportingUsers}
-                        onClick={() => void handleExportUsersCsv()}
-                      >
-                        {isExportingUsers ? 'A exportar...' : 'Exportar CSV'}
-                      </button>
-                    </>
-                  ) : undefined
-                }
-              />
-
-              <section className={adminPanelCard}>
-              <div className={adminFormGridSpaced}>
-                <div className={adminField}>
-                  <label className={adminLabel} htmlFor="user-date-from">
-                    Criados desde
-                  </label>
-                  <input
-                    id="user-date-from"
-                    type="date"
-                    className={adminInput}
-                    value={userDateFrom}
-                    onChange={(event) => setUserDateFrom(event.target.value)}
-                  />
-                </div>
-                <div className={adminField}>
-                  <label className={adminLabel} htmlFor="user-date-to">
-                    Criados ate
-                  </label>
-                  <input
-                    id="user-date-to"
-                    type="date"
-                    className={adminInput}
-                    value={userDateTo}
-                    onChange={(event) => setUserDateTo(event.target.value)}
-                  />
-                </div>
-                <div className={adminField}>
-                  <label className={adminLabel} htmlFor="user-order">
-                    Ordenar por
-                  </label>
-                  <select
-                    id="user-order"
-                    className={adminInput}
-                    value={userOrder}
-                    onChange={(event) => setUserOrder(event.target.value)}
-                  >
-                    <option value="active_name">Ativos primeiro</option>
-                    <option value="newest">Mais recentes</option>
-                    <option value="oldest">Mais antigos</option>
-                    <option value="name_asc">Nome A-Z</option>
-                    <option value="name_desc">Nome Z-A</option>
-                    <option value="email_asc">Email A-Z</option>
-                    <option value="email_desc">Email Z-A</option>
-                  </select>
-                </div>
-              </div>
-
-              {canManageUsers ? null : (
-                <p className={adminInfo}>
-                  Apenas o superadmin pode criar, editar e desativar utilizadores.
-                </p>
-              )}
-
-              <div className={adminUserList}>
-                {isLoadingUsers ? <p className={adminInfo}>A carregar utilizadores...</p> : null}
-                {!isLoadingUsers && filteredUsers.length === 0 ? (
-                  <p className={adminInfo}>Nao existem utilizadores para mostrar.</p>
-                ) : null}
-                {filteredUsers.map((user) => (
-                  <article key={user.id} className={adminUserItem}>
-                    <div>
-                      <h3 className={adminUserName}>{user.name}</h3>
-                      <p className={adminUserEmail}>{user.email}</p>
-                      <p className={adminUserMeta}>
-                        {user.role}
-                        {currentUser?.id === user.id ? ' · sessao atual' : ''}
-                      </p>
-                      <p className={adminUserMeta}>
-                        Criado em: {formatAdminDateTime(user.created_at || '')}
-                      </p>
-                    </div>
-                    <div className={adminListTools}>
-                      <span
-                        className={`${adminUserStatus} ${
-                          user.is_active ? adminUserStatusActive : adminUserStatusInactive
-                        }`}
-                      >
-                        {user.is_active ? 'Ativo' : 'Inativo'}
-                      </span>
-                      {canManageUsers ? (
-                        <>
-                          <NavLink
-                            to={`/infocultura/utilizadores/${user.id}/editar`}
-                            className={adminBtnEdit}
-                          >
-                            Editar
-                          </NavLink>
-                          {user.is_active && currentUser?.id !== user.id ? (
-                            <NavLink
-                              to={`/infocultura/utilizadores/${user.id}/desativar`}
-                              className={adminBtnDanger}
-                            >
-                              Desativar
-                            </NavLink>
-                          ) : null}
-                        </>
-                      ) : null}
-                    </div>
-                  </article>
-                ))}
-              </div>
-            </section>
-            </div>
-          ) : null}
-
-          {activeSection === 'utilizadores' &&
-          (userPage?.mode === 'create' || userPage?.mode === 'edit') ? (
-            <div className="space-y-6">
-              <AdminPageHero
-                icon={Users}
-                title={userPage.mode === 'create' ? 'Criar Utilizador' : 'Editar Utilizador'}
-                description={
-                  userPage.mode === 'create'
-                    ? 'Criacao de novos acessos administrativos no InfoCultura.'
-                    : 'Atualizacao dos dados e permissoes do utilizador selecionado.'
-                }
-                tone="slate"
-                actions={
-                  <NavLink to="/infocultura/utilizadores" className={adminBtnSecondary}>
-                    Voltar aos utilizadores
-                  </NavLink>
-                }
-              />
-
-              <section className={adminPanelCard}>
-
-              {!canManageUsers ? (
-                <p className={adminError}>
-                  Apenas o superadmin pode aceder a esta pagina.
-                </p>
-              ) : userPage.mode === 'edit' && !selectedUser ? (
-                <p className={adminInfo}>
-                  {isLoadingUsers ? 'A carregar utilizador...' : 'Utilizador nao encontrado.'}
-                </p>
-              ) : (
-                <form onSubmit={handleSaveUser} className={adminPanelForm}>
-                  <div className={adminFormGridSpaced}>
-                    <div className={adminField}>
-                      <label className={adminLabel} htmlFor="user-name">
-                        Nome
-                      </label>
-                      <input
-                        id="user-name"
-                        className={adminInput}
-                        value={userForm.name}
-                        onChange={(event) =>
-                          setUserForm((prev) => ({ ...prev, name: event.target.value }))
-                        }
-                      />
-                    </div>
-
-                    <div className={adminField}>
-                      <label className={adminLabel} htmlFor="user-email">
-                        Email
-                      </label>
-                      <input
-                        id="user-email"
-                        type="email"
-                        className={adminInput}
-                        value={userForm.email}
-                        onChange={(event) =>
-                          setUserForm((prev) => ({ ...prev, email: event.target.value }))
-                        }
-                      />
-                    </div>
-
-                    <div className={adminField}>
-                      <label className={adminLabel} htmlFor="user-role">
-                        Role
-                      </label>
-                      <select
-                        id="user-role"
-                        className={adminInput}
-                        value={userForm.role}
-                        onChange={(event) =>
-                          setUserForm((prev) => ({ ...prev, role: event.target.value }))
-                        }
-                      >
-                        {isLoadingRoles ? <option>A carregar roles...</option> : null}
-                        {!isLoadingRoles && roles.length === 0 ? (
-                          <option value="">Sem roles disponiveis</option>
-                        ) : null}
-                        {roles.map((role) => (
-                          <option key={role.id} value={role.name}>
-                            {role.name}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-
-                    <div className={adminField}>
-                      <label className={adminLabel} htmlFor="user-password">
-                        {userPage.mode === 'create'
-                          ? 'Password'
-                          : 'Nova password (opcional)'}
-                      </label>
-                      <input
-                        id="user-password"
-                        type="password"
-                        className={adminInput}
-                        value={userForm.password}
-                        onChange={(event) =>
-                          setUserForm((prev) => ({ ...prev, password: event.target.value }))
-                        }
-                      />
-                    </div>
-                  </div>
-
-                  {userFormError ? <p className={adminError}>{userFormError}</p> : null}
-
-                  <div className={adminActions}>
-                    <button
-                      type="submit"
-                      className={adminBtnPrimary}
-                      disabled={isSavingUser || isLoadingRoles || roles.length === 0}
-                    >
-                      {isSavingUser
-                        ? 'A guardar...'
-                        : userPage.mode === 'create'
-                          ? 'Criar utilizador'
-                          : 'Guardar alteracoes'}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => resetUserForm()}
-                      className={adminBtnSecondary}
-                    >
-                      Limpar
-                    </button>
-                  </div>
-                </form>
-              )}
-            </section>
-            </div>
-          ) : null}
-
-          {activeSection === 'utilizadores' && userPage?.mode === 'deactivate' ? (
-            <div className="space-y-6">
-              <AdminPageHero
-                icon={Users}
-                title="Desativar Utilizador"
-                description="Confirma a desativacao do utilizador selecionado antes de remover o acesso."
-                tone="rose"
-                actions={
-                  <NavLink to="/infocultura/utilizadores" className={adminBtnSecondary}>
-                    Voltar aos utilizadores
-                  </NavLink>
-                }
-              />
-
-              <section className={adminPanelCard}>
-
-              {!canManageUsers ? (
-                <p className={adminError}>
-                  Apenas o superadmin pode aceder a esta pagina.
-                </p>
-              ) : !selectedUser ? (
-                <p className={adminInfo}>
-                  {isLoadingUsers ? 'A carregar utilizador...' : 'Utilizador nao encontrado.'}
-                </p>
-              ) : (
-                <form onSubmit={handleDeactivateUser} className={adminPanelForm}>
-                  <div className={adminUserItem}>
-                    <div>
-                      <h3 className={adminUserName}>{selectedUser.name}</h3>
-                      <p className={adminUserEmail}>{selectedUser.email}</p>
-                      <p className={adminUserMeta}>{selectedUser.role}</p>
-                    </div>
-                    <span
-                      className={`${adminUserStatus} ${
-                        selectedUser.is_active
-                          ? adminUserStatusActive
-                          : adminUserStatusInactive
-                      }`}
-                    >
-                      {selectedUser.is_active ? 'Ativo' : 'Inativo'}
-                    </span>
-                  </div>
-
-                  {userFormError ? <p className={adminError}>{userFormError}</p> : null}
-
-                  <div className={adminActions}>
-                    <button
-                      type="submit"
-                      className={adminBtnDanger}
-                      disabled={isDeactivatingUser || !selectedUser.is_active}
-                    >
-                      {isDeactivatingUser ? 'A desativar...' : 'Confirmar desativacao'}
-                    </button>
-                  </div>
-                </form>
-              )}
-            </section>
-            </div>
+          {activeSection === 'utilizadores' ? (
+            <UsersPage
+              userPage={userPage}
+              canManageUsers={canManageUsers}
+              isExportingUsers={isExportingUsers}
+              handleExportUsersCsv={handleExportUsersCsv}
+              userOverviewStats={userOverviewStats}
+              isLoadingUsers={isLoadingUsers}
+              filteredUsers={filteredUsers}
+              currentUser={currentUser}
+              userDateFrom={userDateFrom}
+              userDateTo={userDateTo}
+              userOrder={userOrder}
+              setUserDateFrom={setUserDateFrom}
+              setUserDateTo={setUserDateTo}
+              setUserOrder={setUserOrder}
+              isSavingUser={isSavingUser}
+              isLoadingRoles={isLoadingRoles}
+              roles={roles}
+              userForm={userForm}
+              setUserForm={setUserForm}
+              userFormError={userFormError}
+              handleSaveUser={handleSaveUser}
+              resetUserForm={resetUserForm}
+              selectedUser={selectedUser}
+              isDeactivatingUser={isDeactivatingUser}
+              handleDeactivateUser={handleDeactivateUser}
+            />
           ) : null}
 
           {activeSection === 'clubes' ? (
-            <div className="space-y-6">
-              <AdminPageHero
-                icon={Building2}
-                title="Clubes"
-                description="Estrutura interna dos clubes, estados de atividade e configuracao de inscricoes."
-                tone="amber"
-                stats={clubsOverviewStats}
-                actions={
-                  <button
-                    type="button"
-                    className={adminBtnSecondary}
-                    disabled={isExportingClubs}
-                    onClick={() => void handleExportClubsCsv()}
-                  >
-                    {isExportingClubs ? 'A exportar...' : 'Exportar CSV'}
-                  </button>
-                }
-              />
-
-              <form onSubmit={handleSaveClub} className={adminPanelForm}>
-                <h2 className={blockTitle}>
-                  {editingClubId ? 'Editar Clube' : 'Novo Clube'}
-                </h2>
-                <p className={blockText}>
-                  Cria clubes para organizar a estrutura do InfoCultura. Esta secao e reservada
-                  ao superadmin.
-                </p>
-
-                <div className={adminFormGridSpaced}>
-                  <div className={adminField}>
-                    <label className={adminLabel} htmlFor="club-name">
-                      Nome do clube
-                    </label>
-                    <input
-                      id="club-name"
-                      className={adminInput}
-                      value={clubForm.name}
-                      onChange={(event) =>
-                        setClubForm((prev) => ({ ...prev, name: event.target.value }))
-                      }
-                      />
-                    </div>
-
-                  <div className={adminField}>
-                    <label className={adminLabel} htmlFor="club-image">
-                      Imagem do clube
-                    </label>
-                    <input
-                      id="club-image"
-                      key={clubImageFileKey}
-                      type="file"
-                      accept="image/*"
-                      className={adminInput}
-                      onChange={(event) => {
-                        const file = event.target.files?.[0] || null;
-                        void handleUploadClubImage(file);
-                      }}
-                    />
-                    <p className={blockText}>
-                      {isUploadingClubImage
-                        ? 'A carregar imagem...'
-                        : clubForm.image
-                          ? 'Imagem carregada com sucesso.'
-                          : 'Seleciona uma imagem do computador ou telemovel.'}
-                    </p>
-                    {clubForm.image ? (
-                      <img
-                        src={resolveInfoCulturaAssetUrl(clubForm.image)}
-                        alt="Preview do clube"
-                        className="mt-3 h-40 w-full rounded-xl object-cover"
-                      />
-                    ) : null}
-                  </div>
-
-                  <div className={adminField}>
-                    <label className={adminLabel} htmlFor="club-mission">
-                      Missao
-                    </label>
-                    <textarea
-                      id="club-mission"
-                      rows={3}
-                      className={adminTextarea}
-                      value={clubForm.mission}
-                      onChange={(event) =>
-                        setClubForm((prev) => ({
-                          ...prev,
-                          mission: event.target.value
-                        }))
-                      }
-                    />
-                  </div>
-
-                  <div className={adminField}>
-                    <label className={adminLabel} htmlFor="club-status">
-                      Estado
-                    </label>
-                    <select
-                      id="club-status"
-                      className={adminInput}
-                      value={clubForm.is_active ? 'ativo' : 'inativo'}
-                      onChange={(event) =>
-                        setClubForm((prev) => ({
-                          ...prev,
-                          is_active: event.target.value === 'ativo'
-                        }))
-                      }
-                    >
-                      <option value="ativo">Ativo</option>
-                      <option value="inativo">Inativo</option>
-                    </select>
-                  </div>
-
-                  <div className={adminField}>
-                    <label className={adminLabel} htmlFor="club-registrations">
-                      Permitir inscricoes
-                    </label>
-                    <select
-                      id="club-registrations"
-                      className={adminInput}
-                      value={clubForm.enable_registrations ? 'sim' : 'nao'}
-                      onChange={(event) =>
-                        setClubForm((prev) => ({
-                          ...prev,
-                          enable_registrations: event.target.value === 'sim'
-                        }))
-                      }
-                    >
-                      <option value="sim">Sim</option>
-                      <option value="nao">Nao</option>
-                    </select>
-                  </div>
-                </div>
-
-                <div className={adminFieldSpaced}>
-                  <label className={adminLabel} htmlFor="club-description">
-                    Descricao
-                  </label>
-                  <textarea
-                    id="club-description"
-                    rows={4}
-                    className={adminTextarea}
-                    value={clubForm.description}
-                    onChange={(event) =>
-                      setClubForm((prev) => ({
-                        ...prev,
-                        description: event.target.value
-                      }))
-                    }
-                  />
-                </div>
-
-                {clubFormError ? <p className={adminError}>{clubFormError}</p> : null}
-
-                <div className={adminActions}>
-                  <button
-                    type="submit"
-                    className={adminBtnPrimary}
-                    disabled={isSavingClub}
-                  >
-                    {isSavingClub
-                      ? 'A guardar...'
-                      : editingClubId
-                        ? 'Guardar alteracoes'
-                        : 'Criar clube'}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={resetClubForm}
-                    className={adminBtnSecondary}
-                  >
-                    Limpar
-                  </button>
-                </div>
-
-                {editingClubId ? (
-                  <div className={adminFieldSpaced}>
-                    <label className={adminLabel} htmlFor="club-user-select">
-                      Associar utilizador sem clube
-                    </label>
-                    <div className={adminActions}>
-                      <select
-                        id="club-user-select"
-                        className={adminInput}
-                        value={selectedClubUserId}
-                        onChange={(event) => setSelectedClubUserId(event.target.value)}
-                      >
-                        <option value="">Seleciona um utilizador</option>
-                        {usersWithoutClub.map((user) => (
-                          <option key={user.id} value={user.id}>
-                            {user.name} · {user.email}
-                          </option>
-                        ))}
-                      </select>
-                      <button
-                        type="button"
-                        className={adminBtnPrimary}
-                        disabled={!selectedClubUserId || isAssigningClubUser}
-                        onClick={handleAssignUserToClub}
-                      >
-                        {isAssigningClubUser ? 'A associar...' : 'Associar ao clube'}
-                      </button>
-                    </div>
-                    {usersWithoutClub.length === 0 ? (
-                      <p className={adminInfo}>Nao existem utilizadores ativos sem clube.</p>
-                    ) : null}
-                  </div>
-                ) : (
-                  <p className={adminInfo}>
-                    Guarda o clube primeiro para poderes associar utilizadores.
-                  </p>
-                )}
-              </form>
-
-              <section className={adminPanelCard}>
-                <h2 className={blockTitle}>Clubes registados</h2>
-                <p className={blockText}>
-                  Lista de clubes disponiveis para futura associacao a utilizadores e conteudos.
-                </p>
-
-                <div className={adminStatsGrid}>
-                  <div className={adminStatCard}>
-                    <p className={adminStatValue}>{filteredClubs.length}</p>
-                    <p className={adminStatLabel}>Total</p>
-                  </div>
-                  <div className={adminStatCard}>
-                    <p className={adminStatValue}>{filteredClubs.filter((club) => club.is_active).length}</p>
-                    <p className={adminStatLabel}>Ativos</p>
-                  </div>
-                  <div className={adminStatCard}>
-                    <p className={adminStatValue}>
-                      {filteredClubs.filter((club) => !club.is_active).length}
-                    </p>
-                    <p className={adminStatLabel}>Inativos</p>
-                  </div>
-                </div>
-
-                <div className={adminFormGridSpaced}>
-                  <div className={adminField}>
-                    <label className={adminLabel} htmlFor="club-date-from">
-                      Criados desde
-                    </label>
-                    <input
-                      id="club-date-from"
-                      type="date"
-                      className={adminInput}
-                      value={clubDateFrom}
-                      onChange={(event) => setClubDateFrom(event.target.value)}
-                    />
-                  </div>
-                  <div className={adminField}>
-                    <label className={adminLabel} htmlFor="club-date-to">
-                      Criados ate
-                    </label>
-                    <input
-                      id="club-date-to"
-                      type="date"
-                      className={adminInput}
-                      value={clubDateTo}
-                      onChange={(event) => setClubDateTo(event.target.value)}
-                    />
-                  </div>
-                  <div className={adminField}>
-                    <label className={adminLabel} htmlFor="club-order">
-                      Ordenar por
-                    </label>
-                    <select
-                      id="club-order"
-                      className={adminInput}
-                      value={clubOrder}
-                      onChange={(event) => setClubOrder(event.target.value)}
-                    >
-                      <option value="active_name">Ativos primeiro</option>
-                      <option value="newest">Mais recentes</option>
-                      <option value="oldest">Mais antigos</option>
-                      <option value="name_asc">Nome A-Z</option>
-                      <option value="name_desc">Nome Z-A</option>
-                      <option value="registrations_open">Inscricoes abertas primeiro</option>
-                    </select>
-                  </div>
-                  <div className="flex items-end">
-                    <button
-                      type="button"
-                      className={adminBtnSecondary}
-                      disabled={isExportingClubs}
-                      onClick={() => void handleExportClubsCsv()}
-                    >
-                      {isExportingClubs ? 'A exportar...' : 'Exportar CSV'}
-                    </button>
-                  </div>
-                </div>
-
-                <div className={adminUserList}>
-                  {isLoadingClubs ? <p className={adminInfo}>A carregar clubes...</p> : null}
-                  {!isLoadingClubs && filteredClubs.length === 0 ? (
-                    <p className={adminInfo}>Nao existem clubes registados.</p>
-                  ) : null}
-                  {filteredClubs.map((club) => (
-                    <article key={club.id} className={adminUserItem}>
-                      <div>
-                        {club.image ? (
-                          <img
-                            src={resolveInfoCulturaAssetUrl(club.image)}
-                            alt={club.name}
-                            className="mb-4 h-32 w-full rounded-xl object-cover"
-                          />
-                        ) : null}
-                        <h3 className={adminUserName}>{club.name}</h3>
-                        <p className={adminUserEmail}>
-                          {club.mission || 'Sem missao definida'}
-                        </p>
-                        <p className={adminUserMeta}>
-                          {club.description || 'Sem descricao'}
-                        </p>
-                        <p className={adminUserMeta}>
-                          Inscricoes: {club.enable_registrations ? 'Permitidas' : 'Desativadas'}
-                        </p>
-                        <p className={adminUserMeta}>
-                          Criado em: {formatAdminDateTime(club.created_at || '')}
-                        </p>
-                      </div>
-                      <div className={adminListTools}>
-                        <span
-                          className={`${adminUserStatus} ${
-                            club.is_active
-                              ? adminUserStatusActive
-                              : adminUserStatusInactive
-                          }`}
-                        >
-                          {club.is_active ? 'Ativo' : 'Inativo'}
-                        </span>
-                        <button
-                          type="button"
-                          className={adminBtnEdit}
-                          onClick={() => handleEditClub(club)}
-                        >
-                          Editar
-                        </button>
-                        <button
-                          type="button"
-                          className={adminBtnDanger}
-                          disabled={deletingClubId === club.id}
-                          onClick={() => handleDeleteClub(club.id)}
-                        >
-                          {deletingClubId === club.id ? 'A apagar...' : 'Apagar'}
-                        </button>
-                      </div>
-                    </article>
-                  ))}
-                </div>
-              </section>
-
-              {editingClubId ? (
-                <section className={adminPanelCard}>
-                  <h2 className={blockTitle}>Utilizadores deste clube</h2>
-                  <p className={blockText}>
-                    Aqui podes ver quem pertence ao clube em edicao e remover a associacao se
-                    necessario.
-                  </p>
-
-                  <div className={adminUserList}>
-                    {clubMembers.length === 0 ? (
-                      <p className={adminInfo}>Ainda nao existem utilizadores associados.</p>
-                    ) : null}
-                    {clubMembers.map((user) => (
-                      <article key={user.id} className={adminUserItem}>
-                        <div>
-                          <h3 className={adminUserName}>{user.name}</h3>
-                          <p className={adminUserEmail}>{user.email}</p>
-                          <p className={adminUserMeta}>{user.role}</p>
-                        </div>
-                        <div className={adminListTools}>
-                          <button
-                            type="button"
-                            className={adminBtnDanger}
-                            disabled={removingClubUserId === user.id}
-                            onClick={() => handleRemoveUserFromClub(user.id)}
-                          >
-                            {removingClubUserId === user.id
-                              ? 'A remover...'
-                              : 'Remover do clube'}
-                          </button>
-                        </div>
-                      </article>
-                    ))}
-                  </div>
-                </section>
-              ) : null}
-            </div>
+            <ClubsPage
+              clubsOverviewStats={clubsOverviewStats}
+              isExportingClubs={isExportingClubs}
+              handleExportClubsCsv={handleExportClubsCsv}
+              handleSaveClub={handleSaveClub}
+              clubForm={clubForm}
+              setClubForm={setClubForm}
+              clubImageFileKey={clubImageFileKey}
+              isUploadingClubImage={isUploadingClubImage}
+              handleUploadClubImage={handleUploadClubImage}
+              clubFormError={clubFormError}
+              isSavingClub={isSavingClub}
+              editingClubId={editingClubId}
+              resetClubForm={resetClubForm}
+              selectedClubUserId={selectedClubUserId}
+              setSelectedClubUserId={setSelectedClubUserId}
+              usersWithoutClub={usersWithoutClub}
+              isAssigningClubUser={isAssigningClubUser}
+              handleAssignUserToClub={handleAssignUserToClub}
+              clubDateFrom={clubDateFrom}
+              clubDateTo={clubDateTo}
+              clubOrder={clubOrder}
+              setClubDateFrom={setClubDateFrom}
+              setClubDateTo={setClubDateTo}
+              setClubOrder={setClubOrder}
+              filteredClubs={filteredClubs}
+              isLoadingClubs={isLoadingClubs}
+              deletingClubId={deletingClubId}
+              handleEditClub={handleEditClub}
+              handleDeleteClub={handleDeleteClub}
+              clubMembers={clubMembers}
+              removingClubUserId={removingClubUserId}
+              handleRemoveUserFromClub={handleRemoveUserFromClub}
+            />
           ) : null}
 
           {activeSection === 'noticias' ? (
-            <div className="space-y-6">
-                <AdminPageHero
-                  icon={Newspaper}
-                  title="Noticias"
-                  description="Workflow editorial, publicacao e acompanhamento das noticias por clube."
-                  tone="blue"
-                  stats={newsOverviewStats}
-                  actions={
-                    <button
-                      type="button"
-                      className={adminBtnSecondary}
-                      disabled={isExportingNews}
-                      onClick={() => void handleExportNewsCsv()}
-                    >
-                      {isExportingNews ? 'A exportar...' : 'Exportar CSV'}
-                    </button>
-                  }
-                />
-
-              {showNewsForm ? (
-              <form id="news-form" onSubmit={handleSaveNews} className={adminPanelForm}>
-                <h2 className={blockTitle}>
-                  {editingNewsId ? 'Editar Noticia' : 'Nova Noticia'}
-                </h2>
-                <p className={blockText}>
-                  Publica novidades de cada clube e controla o respetivo estado.
-                </p>
-
-                <div className={adminFormGridSpaced}>
-                  {canManageUsers ? (
-                    <div className={adminField}>
-                      <label className={adminLabel} htmlFor="news-club-id">
-                        Clube
-                      </label>
-                      <select
-                        id="news-club-id"
-                        className={adminInput}
-                        value={newsForm.club_id}
-                        onChange={(event) =>
-                          setNewsForm((prev) => ({ ...prev, club_id: event.target.value }))
-                        }
-                      >
-                        <option value="">Seleciona um clube</option>
-                        {clubs.map((club) => (
-                          <option key={club.id} value={club.id}>
-                            {club.name}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                  ) : null}
-
-                  <div className={adminField}>
-                    <label className={adminLabel} htmlFor="news-title">
-                      Titulo
-                    </label>
-                    <input
-                      id="news-title"
-                      className={adminInput}
-                      value={newsForm.title}
-                      onChange={(event) =>
-                        setNewsForm((prev) => ({ ...prev, title: event.target.value }))
-                      }
-                    />
-                  </div>
-
-                  <div className={adminField}>
-                    <label className={adminLabel} htmlFor="news-status">
-                      Estado
-                    </label>
-                    <select
-                      id="news-status"
-                      className={adminInput}
-                      value={newsForm.news_status}
-                      onChange={(event) =>
-                        setNewsForm((prev) => ({
-                          ...prev,
-                          news_status: normalizeWorkflowStatus(event.target.value)
-                        }))
-                      }
-                    >
-                      {isLoadingNewsStatuses ? (
-                        <option value="">A carregar estados...</option>
-                      ) : null}
-                      {availableNewsStatuses.map((status) => (
-                        <option key={status.id} value={status.name}>
-                          {getWorkflowStatusLabel(status.name)}
-                        </option>
-                      ))}
-                    </select>
-                    <p className={blockText}>
-                      {canManageUsers
-                        ? 'O superadmin pode publicar ou arquivar diretamente.'
-                        : 'O club_admin trabalha em rascunho ou envia para revisao.'}
-                    </p>
-                  </div>
-
-                  <div className={adminField}>
-                    <label className={adminLabel} htmlFor="news-published-at">
-                      Publicado em
-                    </label>
-                    <input
-                      id="news-published-at"
-                      type="datetime-local"
-                      className={adminInput}
-                      value={newsForm.published_at}
-                      disabled={
-                        !canManageUsers &&
-                        !['published', 'archived'].includes(normalizeWorkflowStatus(newsForm.news_status))
-                      }
-                      onChange={(event) =>
-                        setNewsForm((prev) => ({ ...prev, published_at: event.target.value }))
-                      }
-                    />
-                  </div>
-                </div>
-
-                <div className={adminFieldSpaced}>
-                  <label className={adminLabel} htmlFor="news-summary">
-                    Resumo
-                  </label>
-                  <textarea
-                    id="news-summary"
-                    rows={3}
-                    className={adminTextarea}
-                    value={newsForm.summary}
-                    onChange={(event) =>
-                      setNewsForm((prev) => ({ ...prev, summary: event.target.value }))
-                    }
-                  />
-                </div>
-
-                <div className={adminFieldSpaced}>
-                  <label className={adminLabel} htmlFor="news-image">
-                    Imagem
-                  </label>
-                  <input
-                    id="news-image"
-                    key={newsImageFileKey}
-                    type="file"
-                    accept="image/*"
-                    className={adminInput}
-                    onChange={(event) => {
-                      const file = event.target.files?.[0] || null;
-                      void handleUploadNewsImage(file);
-                    }}
-                  />
-                  <p className={blockText}>
-                    {isUploadingNewsImage
-                      ? 'A carregar imagem...'
-                      : newsForm.image
-                        ? 'Imagem carregada com sucesso.'
-                        : 'Seleciona uma imagem para a noticia.'}
-                  </p>
-                  {newsForm.image ? (
-                    <img
-                      src={resolveInfoCulturaAssetUrl(newsForm.image)}
-                      alt="Preview da noticia"
-                      className="mt-3 h-40 w-full rounded-xl object-cover"
-                    />
-                  ) : null}
-                </div>
-
-                <div className={adminFieldSpaced}>
-                  <label className={adminLabel} htmlFor="news-content">
-                    Conteudo
-                  </label>
-                  <textarea
-                    id="news-content"
-                    rows={6}
-                    className={adminTextarea}
-                    value={newsForm.content}
-                    onChange={(event) =>
-                      setNewsForm((prev) => ({ ...prev, content: event.target.value }))
-                    }
-                  />
-                </div>
-
-                {newsFormError ? <p className={adminError}>{newsFormError}</p> : null}
-
-                <div className={adminActions}>
-                  <button type="submit" className={adminBtnPrimary} disabled={isSavingNews}>
-                    {isSavingNews ? 'A guardar...' : editingNewsId ? 'Atualizar' : 'Criar'}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={resetNewsForm}
-                    className={adminBtnSecondary}
-                  >
-                    Limpar
-                  </button>
-                </div>
-              </form>
-              ) : null}
-
-              {showNewsList ? (
-              <section id="news-list" className={adminPanelCard}>
-                <div className={adminHeaderRow}>
-                  <div>
-                    <h2 className={blockTitle}>Noticias registadas</h2>
-                    <p className={blockText}>
-                      Lista das noticias criadas no InfoCultura.
-                    </p>
-                  </div>
-                  {canManageUsers ? (
-                    <div className={adminField}>
-                      <label className={adminLabel} htmlFor="news-club-filter">
-                        Filtrar por clube
-                      </label>
-                      <select
-                        id="news-club-filter"
-                        className={adminInput}
-                        value={newsClubFilter}
-                        onChange={(event) => setNewsClubFilter(event.target.value)}
-                      >
-                        <option value="all">Todos os clubes</option>
-                        {clubs.map((club) => (
-                          <option key={club.id} value={club.id}>
-                            {club.name}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                  ) : null}
-                  <div className={adminField}>
-                    <label className={adminLabel} htmlFor="news-status-filter">
-                      Estado editorial
-                    </label>
-                    <select
-                      id="news-status-filter"
-                      className={adminInput}
-                      value={newsStatusFilter}
-                      onChange={(event) => setNewsStatusFilter(event.target.value)}
-                    >
-                      <option value="all">Todos os estados</option>
-                      {newsStatuses.map((status) => (
-                        <option key={status.id} value={normalizeWorkflowStatus(status.name)}>
-                          {getWorkflowStatusLabel(status.name)}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
-
-                {newsError ? <p className={adminError}>{newsError}</p> : null}
-
-                <div className={`${adminFormGridSpaced} mt-6`}>
-                  <form onSubmit={handleApplyNewsSearch} className={adminPanelForm}>
-                    <div className={adminField}>
-                      <label className={adminLabel} htmlFor="news-search">
-                        Pesquisar noticias
-                      </label>
-                      <input
-                        id="news-search"
-                        className={adminInput}
-                        value={newsSearchInput}
-                        onChange={(event) => setNewsSearchInput(event.target.value)}
-                        placeholder="Titulo, resumo, conteudo ou clube"
-                      />
-                    </div>
-                    <div className={adminActions}>
-                      <button type="submit" className={adminBtnPrimary}>
-                        Pesquisar
-                      </button>
-                      <button
-                        type="button"
-                        className={adminBtnSecondary}
-                        onClick={() => {
-                          setNewsSearchInput('');
-                          setNewsSearch('');
-                          setNewsPage(1);
-                        }}
-                      >
-                        Limpar
-                      </button>
-                    </div>
-                  </form>
-
-                  <div className={adminActions}>
-                    <button
-                      type="button"
-                      className={adminBtnSecondary}
-                      disabled={isExportingNews}
-                      onClick={() => void handleExportNewsCsv()}
-                    >
-                      {isExportingNews ? 'A exportar...' : 'Exportar CSV'}
-                    </button>
-                  </div>
-                </div>
-
-                <div className={adminFormGridSpaced}>
-                  <div className={adminField}>
-                    <label className={adminLabel} htmlFor="news-date-from">
-                      Criadas desde
-                    </label>
-                    <input
-                      id="news-date-from"
-                      type="date"
-                      className={adminInput}
-                      value={newsDateFrom}
-                      onChange={(event) => setNewsDateFrom(event.target.value)}
-                    />
-                  </div>
-                  <div className={adminField}>
-                    <label className={adminLabel} htmlFor="news-date-to">
-                      Criadas ate
-                    </label>
-                    <input
-                      id="news-date-to"
-                      type="date"
-                      className={adminInput}
-                      value={newsDateTo}
-                      onChange={(event) => setNewsDateTo(event.target.value)}
-                    />
-                  </div>
-                  <div className={adminField}>
-                    <label className={adminLabel} htmlFor="news-order">
-                      Ordenar por
-                    </label>
-                    <select
-                      id="news-order"
-                      className={adminInput}
-                      value={newsOrder}
-                      onChange={(event) => setNewsOrder(event.target.value)}
-                    >
-                      <option value="newest">Mais recentes</option>
-                      <option value="oldest">Mais antigas</option>
-                      <option value="title_asc">Titulo A-Z</option>
-                      <option value="title_desc">Titulo Z-A</option>
-                      <option value="club_asc">Clube A-Z</option>
-                      <option value="club_desc">Clube Z-A</option>
-                      <option value="status_asc">Estado A-Z</option>
-                      <option value="status_desc">Estado Z-A</option>
-                    </select>
-                  </div>
-                </div>
-
-                <div className={adminActions}>
-                  <button
-                    type="button"
-                    className={adminBtnSecondary}
-                    onClick={() =>
-                      setSelectedNewsIds(
-                        selectedNewsIds.length === sortedNews.length
-                          ? []
-                          : sortedNews.map((item) => item.id)
-                      )
-                    }
-                    disabled={sortedNews.length === 0}
-                  >
-                    {selectedNewsIds.length === sortedNews.length && sortedNews.length > 0
-                      ? 'Limpar selecao'
-                      : 'Selecionar pagina'}
-                  </button>
-                  <select
-                    className={adminInput}
-                    value={bulkNewsStatus}
-                    onChange={(event) => setBulkNewsStatus(event.target.value)}
-                  >
-                    {availableNewsStatuses.map((status) => (
-                      <option key={status.id} value={normalizeWorkflowStatus(status.name)}>
-                        {getWorkflowStatusLabel(status.name)}
-                      </option>
-                    ))}
-                  </select>
-                  <button
-                    type="button"
-                    className={adminBtnPrimary}
-                    disabled={selectedNewsIds.length === 0 || isApplyingBulkNews}
-                    onClick={() => void handleApplyBulkNewsStatus()}
-                  >
-                    {isApplyingBulkNews ? 'A aplicar...' : 'Aplicar em lote'}
-                  </button>
-                  <button
-                    type="button"
-                    className={adminBtnDanger}
-                    disabled={selectedNewsIds.length === 0 || isDeletingBulkNews}
-                    onClick={() => void handleBulkDeleteNews()}
-                  >
-                    {isDeletingBulkNews ? 'A apagar...' : 'Apagar selecionadas'}
-                  </button>
-                </div>
-
-                <div className={adminList}>
-                  {isLoadingNews ? <p className={adminInfo}>A carregar noticias...</p> : null}
-                  {!isLoadingNews && sortedNews.length === 0 ? (
-                    <p className={adminInfo}>Nao existem noticias para o filtro atual.</p>
-                  ) : null}
-                  {sortedNews.map((item) => (
-                    <article key={item.id} className={adminListItem}>
-                      <div className={adminListTop}>
-                        <label className="mr-4 flex items-center gap-2 text-sm text-slate-600">
-                          <input
-                            type="checkbox"
-                            checked={selectedNewsIds.includes(item.id)}
-                            onChange={() => toggleSelectedId(setSelectedNewsIds, item.id)}
-                          />
-                          Selecionar
-                        </label>
-                        <div>
-                            <h3 className={adminListTitle}>{item.title}</h3>
-                            <p className={adminListMeta}>
-                              {item.club_name} · {getWorkflowStatusLabel(item.news_status_name)} ·{' '}
-                              {formatAdminDateTime(item.published_at || item.created_at)}
-                            </p>
-                        </div>
-                      </div>
-                      <p className={adminListDesc}>{item.summary}</p>
-                      {item.editorial_history && item.editorial_history.length > 0 ? (
-                        <div className="mt-3 space-y-1">
-                          {item.editorial_history.slice(0, 3).map((history, index) => (
-                            <p key={`${item.id}-${index}`} className={adminListMeta}>
-                              {history.actor_name} ·{' '}
-                              {history.from_status
-                                ? `${getWorkflowStatusLabel(history.from_status)} -> `
-                                : ''}
-                              {getWorkflowStatusLabel(history.to_status)} ·{' '}
-                              {formatAdminDateTime(history.created_at || '')}
-                            </p>
-                          ))}
-                        </div>
-                      ) : null}
-                      <div className={adminListTools}>
-                        <button
-                          type="button"
-                          className={adminBtnEdit}
-                          onClick={() => handleEditNews(item)}
-                        >
-                          Editar
-                        </button>
-                        <button
-                          type="button"
-                          className={adminBtnDanger}
-                          disabled={deletingNewsId === item.id}
-                          onClick={() => handleDeleteNews(item.id)}
-                        >
-                          {deletingNewsId === item.id ? 'A apagar...' : 'Apagar'}
-                        </button>
-                      </div>
-                    </article>
-                  ))}
-                </div>
-
-                {!isLoadingNews ? (
-                  <div className={`${adminActions} mt-6`}>
-                    <p className={adminInfo}>
-                      {newsTotal} noticia(s) · pagina {newsPage} de {newsTotalPages || 1}
-                    </p>
-                    <button
-                      type="button"
-                      className={adminBtnSecondary}
-                      disabled={newsPage <= 1}
-                      onClick={() => setNewsPage((prev) => Math.max(1, prev - 1))}
-                    >
-                      Anterior
-                    </button>
-                    <button
-                      type="button"
-                      className={adminBtnSecondary}
-                      disabled={newsTotalPages === 0 || newsPage >= newsTotalPages}
-                      onClick={() => setNewsPage((prev) => prev + 1)}
-                    >
-                      Seguinte
-                    </button>
-                  </div>
-                ) : null}
-              </section>
-              ) : null}
-            </div>
+            <NewsPage
+              canManageUsers={canManageUsers}
+              newsOverviewStats={newsOverviewStats}
+              isExportingNews={isExportingNews}
+              handleExportNewsCsv={handleExportNewsCsv}
+              showNewsForm={showNewsForm}
+              showNewsList={showNewsList}
+              handleSaveNews={handleSaveNews}
+              editingNewsId={editingNewsId}
+              newsForm={newsForm}
+              setNewsForm={setNewsForm}
+              clubs={clubs}
+              isLoadingNewsStatuses={isLoadingNewsStatuses}
+              availableNewsStatuses={availableNewsStatuses}
+              newsFormError={newsFormError}
+              isSavingNews={isSavingNews}
+              resetNewsForm={resetNewsForm}
+              newsImageFileKey={newsImageFileKey}
+              isUploadingNewsImage={isUploadingNewsImage}
+              handleUploadNewsImage={handleUploadNewsImage}
+              newsError={newsError}
+              handleApplyNewsSearch={handleApplyNewsSearch}
+              newsSearchInput={newsSearchInput}
+              setNewsSearchInput={setNewsSearchInput}
+              setNewsSearch={setNewsSearch}
+              setNewsPage={setNewsPage}
+              newsClubFilter={newsClubFilter}
+              setNewsClubFilter={setNewsClubFilter}
+              newsStatusFilter={newsStatusFilter}
+              setNewsStatusFilter={setNewsStatusFilter}
+              newsStatuses={newsStatuses}
+              newsDateFrom={newsDateFrom}
+              setNewsDateFrom={setNewsDateFrom}
+              newsDateTo={newsDateTo}
+              setNewsDateTo={setNewsDateTo}
+              newsOrder={newsOrder}
+              setNewsOrder={setNewsOrder}
+              selectedNewsIds={selectedNewsIds}
+              setSelectedNewsIds={setSelectedNewsIds}
+              sortedNews={sortedNews}
+              bulkNewsStatus={bulkNewsStatus}
+              setBulkNewsStatus={setBulkNewsStatus}
+              isApplyingBulkNews={isApplyingBulkNews}
+              handleApplyBulkNewsStatus={handleApplyBulkNewsStatus}
+              isDeletingBulkNews={isDeletingBulkNews}
+              handleBulkDeleteNews={handleBulkDeleteNews}
+              deletingNewsId={deletingNewsId}
+              handleDeleteNews={handleDeleteNews}
+              handleEditNews={handleEditNews}
+              newsTotal={newsTotal}
+              newsPage={newsPage}
+              newsTotalPages={newsTotalPages}
+              isLoadingNews={isLoadingNews}
+              toggleSelectedId={toggleSelectedId}
+            />
           ) : null}
 
           {(activeSection === 'atividades' ||
             activeSection === 'livros' ||
             activeSection === 'sessoes' ||
             activeSection === 'eventos') ? (
-            <div className="space-y-6">
-                <AdminPageHero
-                  icon={CalendarClock}
-                  title={activitySectionLabel}
-                  description={activitySectionDescription}
-                  tone="blue"
-                  stats={activityOverviewStats}
-                  actions={
-                    <button
-                      type="button"
-                      className={adminBtnSecondary}
-                      disabled={isExportingActivities}
-                      onClick={() => void handleExportActivitiesCsv()}
-                    >
-                      {isExportingActivities ? 'A exportar...' : 'Exportar CSV'}
-                    </button>
-                  }
-                />
-
-              {showActivityFiltersAndList ? (
-              <section className={adminPanelCard}>
-                <div className={adminHeaderRow}>
-                  <div>
-                    <h2 className={blockTitle}>{activitySectionLabel}</h2>
-                    <p className={blockText}>{activitySectionDescription}</p>
-                  </div>
-                  <div className="flex flex-wrap gap-4">
-                    {canManageUsers ? (
-                      <div className={adminField}>
-                        <label className={adminLabel} htmlFor="activity-club-filter">
-                          Filtrar por clube
-                        </label>
-                        <select
-                          id="activity-club-filter"
-                          className={adminInput}
-                          value={activityClubFilter}
-                          onChange={(event) => setActivityClubFilter(event.target.value)}
-                        >
-                          <option value="all">Todos os clubes</option>
-                          {clubs.map((club) => (
-                            <option key={club.id} value={club.id}>
-                              {club.name}
-                            </option>
-                          ))}
-                        </select>
-                      </div>
-                    ) : null}
-                    {activityTab === 'events' ? (
-                      <div className={adminField}>
-                        <label className={adminLabel} htmlFor="activity-category-filter">
-                          Filtrar por categoria
-                        </label>
-                        <select
-                          id="activity-category-filter"
-                          className={adminInput}
-                          value={activityCategoryFilter}
-                          onChange={(event) => setActivityCategoryFilter(event.target.value)}
-                        >
-                          <option value="all">Todas as categorias</option>
-                          {sortedCategories.map((category) => (
-                            <option key={category.id} value={category.id}>
-                              {category.name}
-                            </option>
-                          ))}
-                        </select>
-                      </div>
-                    ) : null}
-                    {activityTab === 'events' ? (
-                      <div className={adminField}>
-                        <label className={adminLabel} htmlFor="activity-status-filter">
-                          Estado editorial
-                        </label>
-                        <select
-                          id="activity-status-filter"
-                          className={adminInput}
-                          value={activityStatusFilter}
-                          onChange={(event) => setActivityStatusFilter(event.target.value)}
-                        >
-                          <option value="all">Todos os estados</option>
-                          {EVENT_WORKFLOW_ORDER.map((status) => (
-                            <option key={status} value={status}>
-                              {getWorkflowStatusLabel(status)}
-                            </option>
-                          ))}
-                        </select>
-                      </div>
-                    ) : null}
-                  </div>
-                </div>
-
-                {activityError ? <p className={adminError}>{activityError}</p> : null}
-
-                <div className={`${adminFormGridSpaced} mt-6`}>
-                  <form onSubmit={handleApplyActivitySearch} className={adminPanelForm}>
-                    <div className={adminField}>
-                      <label className={adminLabel} htmlFor="activity-search">
-                        Pesquisar {activityTab === 'books' ? 'livros' : activityTab === 'sessions' ? 'sessoes' : 'eventos'}
-                      </label>
-                      <input
-                        id="activity-search"
-                        className={adminInput}
-                        value={activitySearchInput}
-                        onChange={(event) => setActivitySearchInput(event.target.value)}
-                        placeholder={
-                          activityTab === 'books'
-                            ? 'Titulo, autor, editora ou clube'
-                            : activityTab === 'sessions'
-                              ? 'Nome, titulo, descricao ou clube'
-                              : 'Titulo, descricao, local ou clube'
-                        }
-                      />
-                    </div>
-                    <div className={adminActions}>
-                      <button type="submit" className={adminBtnPrimary}>
-                        Pesquisar
-                      </button>
-                      <button
-                        type="button"
-                        className={adminBtnSecondary}
-                        onClick={() => {
-                          setActivitySearchInput('');
-                          setActivitySearch('');
-                          setActivityPage(1);
-                        }}
-                      >
-                        Limpar
-                      </button>
-                    </div>
-                  </form>
-
-                  <div className={adminActions}>
-                    <button
-                      type="button"
-                      className={adminBtnSecondary}
-                      disabled={isExportingActivities}
-                      onClick={() => void handleExportActivitiesCsv()}
-                    >
-                      {isExportingActivities ? 'A exportar...' : 'Exportar CSV'}
-                    </button>
-                  </div>
-                </div>
-
-                <div className={adminFormGridSpaced}>
-                  <div className={adminField}>
-                    <label className={adminLabel} htmlFor="activity-date-from">
-                      Data desde
-                    </label>
-                    <input
-                      id="activity-date-from"
-                      type="date"
-                      className={adminInput}
-                      value={activityDateFrom}
-                      onChange={(event) => setActivityDateFrom(event.target.value)}
-                    />
-                  </div>
-                  <div className={adminField}>
-                    <label className={adminLabel} htmlFor="activity-date-to">
-                      Data ate
-                    </label>
-                    <input
-                      id="activity-date-to"
-                      type="date"
-                      className={adminInput}
-                      value={activityDateTo}
-                      onChange={(event) => setActivityDateTo(event.target.value)}
-                    />
-                  </div>
-                  <div className={adminField}>
-                    <label className={adminLabel} htmlFor="activity-order">
-                      Ordenar por
-                    </label>
-                    <select
-                      id="activity-order"
-                      className={adminInput}
-                      value={activityOrder}
-                      onChange={(event) => setActivityOrder(event.target.value)}
-                    >
-                      {activityTab === 'books' ? (
-                        <>
-                          <option value="featured">Destaque primeiro</option>
-                          <option value="newest">Mais recentes</option>
-                          <option value="oldest">Mais antigos</option>
-                          <option value="title_asc">Titulo A-Z</option>
-                          <option value="title_desc">Titulo Z-A</option>
-                          <option value="year_desc">Ano mais recente</option>
-                          <option value="year_asc">Ano mais antigo</option>
-                          <option value="club_asc">Clube A-Z</option>
-                          <option value="club_desc">Clube Z-A</option>
-                        </>
-                      ) : activityTab === 'sessions' ? (
-                        <>
-                          <option value="date_asc">Data mais proxima</option>
-                          <option value="date_desc">Data mais distante</option>
-                          <option value="newest">Mais recentes</option>
-                          <option value="oldest">Mais antigas</option>
-                          <option value="title_asc">Titulo A-Z</option>
-                          <option value="title_desc">Titulo Z-A</option>
-                          <option value="club_asc">Clube A-Z</option>
-                          <option value="club_desc">Clube Z-A</option>
-                        </>
-                      ) : (
-                        <>
-                          <option value="date_asc">Data mais proxima</option>
-                          <option value="date_desc">Data mais distante</option>
-                          <option value="newest">Mais recentes</option>
-                          <option value="oldest">Mais antigos</option>
-                          <option value="title_asc">Titulo A-Z</option>
-                          <option value="title_desc">Titulo Z-A</option>
-                          <option value="club_asc">Clube A-Z</option>
-                          <option value="club_desc">Clube Z-A</option>
-                          <option value="status_asc">Estado A-Z</option>
-                          <option value="status_desc">Estado Z-A</option>
-                        </>
-                      )}
-                    </select>
-                  </div>
-                </div>
-
-                {activityTab === 'books' ? (
-                  <div className={adminActions}>
-                    <button
-                      type="button"
-                      className={adminBtnSecondary}
-                      onClick={() =>
-                        setSelectedBookIds(
-                          selectedBookIds.length === sortedBooks.length
-                            ? []
-                            : sortedBooks.map((item) => item.id)
-                        )
-                      }
-                      disabled={sortedBooks.length === 0}
-                    >
-                      {selectedBookIds.length === sortedBooks.length && sortedBooks.length > 0
-                        ? 'Limpar selecao'
-                        : 'Selecionar pagina'}
-                    </button>
-                    <button
-                      type="button"
-                      className={adminBtnDanger}
-                      disabled={selectedBookIds.length === 0 || isDeletingBulkBooks}
-                      onClick={() => void handleBulkDeleteBooks()}
-                    >
-                      {isDeletingBulkBooks ? 'A apagar...' : 'Apagar selecionados'}
-                    </button>
-                  </div>
-                ) : null}
-
-                {activityTab === 'events' ? (
-                  <div className={adminActions}>
-                    <button
-                      type="button"
-                      className={adminBtnSecondary}
-                      onClick={() =>
-                        setSelectedEventIds(
-                          selectedEventIds.length === sortedEvents.length
-                            ? []
-                            : sortedEvents.map((item) => item.id)
-                        )
-                      }
-                      disabled={sortedEvents.length === 0}
-                    >
-                      {selectedEventIds.length === sortedEvents.length && sortedEvents.length > 0
-                        ? 'Limpar selecao'
-                        : 'Selecionar pagina'}
-                    </button>
-                    <select
-                      className={adminInput}
-                      value={bulkEventStatus}
-                      onChange={(event) => setBulkEventStatus(event.target.value)}
-                    >
-                      {availableEventStatuses.map((status) => (
-                        <option key={status} value={status}>
-                          {getWorkflowStatusLabel(status)}
-                        </option>
-                      ))}
-                    </select>
-                    <button
-                      type="button"
-                      className={adminBtnPrimary}
-                      disabled={selectedEventIds.length === 0 || isApplyingBulkEvents}
-                      onClick={() => void handleApplyBulkEventStatus()}
-                    >
-                      {isApplyingBulkEvents ? 'A aplicar...' : 'Aplicar em lote'}
-                    </button>
-                    <button
-                      type="button"
-                      className={adminBtnDanger}
-                      disabled={selectedEventIds.length === 0 || isDeletingBulkEvents}
-                      onClick={() => void handleBulkDeleteEvents()}
-                    >
-                      {isDeletingBulkEvents ? 'A apagar...' : 'Apagar selecionados'}
-                    </button>
-                  </div>
-                ) : null}
-              </section>
-              ) : null}
-
-              {activityTab === 'books' ? (
-                <>
-                  {showActivityForm ? (
-                  <form id="activity-form" onSubmit={handleSaveBook} className={adminPanelForm}>
-                    <h2 className={blockTitle}>
-                      {editingBookId ? 'Editar Livro' : 'Novo Livro'}
-                    </h2>
-
-                    <div className={adminFormGridSpaced}>
-                      {canManageUsers ? (
-                        <div className={adminField}>
-                          <label className={adminLabel} htmlFor="book-club-id">
-                            Clube
-                          </label>
-                          <select
-                            id="book-club-id"
-                            className={adminInput}
-                            value={bookForm.club_id}
-                            onChange={(event) =>
-                              setBookForm((prev) => ({ ...prev, club_id: event.target.value }))
-                            }
-                          >
-                            <option value="">Seleciona um clube</option>
-                            {clubs.map((club) => (
-                              <option key={club.id} value={club.id}>
-                                {club.name}
-                              </option>
-                            ))}
-                          </select>
-                        </div>
-                      ) : null}
-
-                      <div className={adminField}>
-                        <label className={adminLabel} htmlFor="book-title">
-                          Titulo
-                        </label>
-                        <input
-                          id="book-title"
-                          className={adminInput}
-                          value={bookForm.title}
-                          onChange={(event) =>
-                            setBookForm((prev) => ({ ...prev, title: event.target.value }))
-                          }
-                        />
-                      </div>
-
-                      <div className={adminField}>
-                        <label className={adminLabel} htmlFor="book-author">
-                          Autor
-                        </label>
-                        <input
-                          id="book-author"
-                          className={adminInput}
-                          value={bookForm.author}
-                          onChange={(event) =>
-                            setBookForm((prev) => ({ ...prev, author: event.target.value }))
-                          }
-                        />
-                      </div>
-
-                      <div className={adminField}>
-                        <label className={adminLabel} htmlFor="book-year">
-                          Ano
-                        </label>
-                        <input
-                          id="book-year"
-                          type="number"
-                          className={adminInput}
-                          value={bookForm.publication_year}
-                          onChange={(event) =>
-                            setBookForm((prev) => ({
-                              ...prev,
-                              publication_year: event.target.value
-                            }))
-                          }
-                        />
-                      </div>
-                    </div>
-
-                    <div className={adminFormGridSpaced}>
-                      <div className={adminField}>
-                        <label className={adminLabel} htmlFor="book-publisher">
-                          Editora
-                        </label>
-                        <input
-                          id="book-publisher"
-                          className={adminInput}
-                          value={bookForm.publisher}
-                          onChange={(event) =>
-                            setBookForm((prev) => ({ ...prev, publisher: event.target.value }))
-                          }
-                        />
-                      </div>
-
-                      <div className={adminField}>
-                        <label className={adminLabel} htmlFor="book-cover">
-                          Capa
-                        </label>
-                        <input
-                          id="book-cover"
-                          key={bookImageFileKey}
-                          type="file"
-                          accept="image/*"
-                          className={adminInput}
-                          onChange={(event) => {
-                            const file = event.target.files?.[0] || null;
-                            void handleUploadBookImage(file);
-                          }}
-                        />
-                        <p className={blockText}>
-                          {isUploadingBookImage
-                            ? 'A carregar capa...'
-                            : bookForm.cover_image
-                              ? 'Capa carregada com sucesso.'
-                              : 'Seleciona uma imagem do computador ou telemovel.'}
-                        </p>
-                        {bookForm.cover_image ? (
-                          <img
-                            src={resolveInfoCulturaAssetUrl(bookForm.cover_image)}
-                            alt="Preview da capa"
-                            className="mt-3 h-40 w-full rounded-xl object-cover"
-                          />
-                        ) : null}
-                      </div>
-
-                      <div className={adminField}>
-                        <label className={adminLabel} htmlFor="book-featured">
-                          Destaque
-                        </label>
-                        <select
-                          id="book-featured"
-                          className={adminInput}
-                          value={bookForm.is_featured ? 'sim' : 'nao'}
-                          onChange={(event) =>
-                            setBookForm((prev) => ({
-                              ...prev,
-                              is_featured: event.target.value === 'sim'
-                            }))
-                          }
-                        >
-                          <option value="nao">Nao</option>
-                          <option value="sim">Sim</option>
-                        </select>
-                      </div>
-                    </div>
-
-                    <div className={adminFieldSpaced}>
-                      <label className={adminLabel} htmlFor="book-summary">
-                        Resumo
-                      </label>
-                      <textarea
-                        id="book-summary"
-                        rows={5}
-                        className={adminTextarea}
-                        value={bookForm.summary}
-                        onChange={(event) =>
-                          setBookForm((prev) => ({ ...prev, summary: event.target.value }))
-                        }
-                      />
-                    </div>
-
-                    {bookFormError ? <p className={adminError}>{bookFormError}</p> : null}
-
-                    <div className={adminActions}>
-                      <button type="submit" className={adminBtnPrimary} disabled={isSavingBook}>
-                        {isSavingBook ? 'A guardar...' : editingBookId ? 'Atualizar' : 'Criar'}
-                      </button>
-                      <button type="button" onClick={resetBookForm} className={adminBtnSecondary}>
-                        Limpar
-                      </button>
-                    </div>
-                  </form>
-                  ) : null}
-
-                  {showActivityFiltersAndList ? (
-                  <div id="activity-list" className={adminList}>
-                    {isLoadingActivities ? <p className={adminInfo}>A carregar livros...</p> : null}
-                    {!isLoadingActivities && sortedBooks.length === 0 ? (
-                      <p className={adminInfo}>Nao existem livros para o filtro atual.</p>
-                    ) : null}
-                    {sortedBooks.map((item) => (
-                      <article key={item.id} className={adminListItem}>
-                        <div className={adminListTop}>
-                          <label className="mr-4 flex items-center gap-2 text-sm text-slate-600">
-                            <input
-                              type="checkbox"
-                              checked={selectedBookIds.includes(item.id)}
-                              onChange={() => toggleSelectedId(setSelectedBookIds, item.id)}
-                            />
-                            Selecionar
-                          </label>
-                          <div>
-                            <h3 className={adminListTitle}>{item.title}</h3>
-                            <p className={adminListMeta}>
-                              {item.club_name} · {item.author} · {item.publication_year}
-                            </p>
-                          </div>
-                        </div>
-                        <p className={adminListDesc}>{item.summary}</p>
-                        <div className={adminListTools}>
-                          <button
-                            type="button"
-                            className={adminBtnEdit}
-                            onClick={() => handleEditBook(item)}
-                          >
-                            Editar
-                          </button>
-                          <button
-                            type="button"
-                            className={adminBtnDanger}
-                            disabled={deletingBookId === item.id}
-                            onClick={() => handleDeleteBook(item.id)}
-                          >
-                            {deletingBookId === item.id ? 'A apagar...' : 'Apagar'}
-                          </button>
-                        </div>
-                      </article>
-                    ))}
-                  </div>
-                  ) : null}
-                  {showActivityFiltersAndList && !isLoadingActivities ? (
-                    <div className={`${adminActions} mt-6`}>
-                      <p className={adminInfo}>
-                        {activityTotal} livro(s) · pagina {activityPage} de {activityTotalPages || 1}
-                      </p>
-                      <button
-                        type="button"
-                        className={adminBtnSecondary}
-                        disabled={activityPage <= 1}
-                        onClick={() => setActivityPage((prev) => Math.max(1, prev - 1))}
-                      >
-                        Anterior
-                      </button>
-                      <button
-                        type="button"
-                        className={adminBtnSecondary}
-                        disabled={activityTotalPages === 0 || activityPage >= activityTotalPages}
-                        onClick={() => setActivityPage((prev) => prev + 1)}
-                      >
-                        Seguinte
-                      </button>
-                    </div>
-                  ) : null}
-                </>
-              ) : null}
-
-              {activityTab === 'sessions' ? (
-                <>
-                  {showActivityForm ? (
-                  <form id="activity-form" onSubmit={handleSaveSession} className={adminPanelForm}>
-                    <h2 className={blockTitle}>
-                      {editingSessionId ? 'Editar Sessao' : 'Nova Sessao'}
-                    </h2>
-
-                    <div className={adminFormGridSpaced}>
-                      {canManageUsers ? (
-                        <div className={adminField}>
-                          <label className={adminLabel} htmlFor="session-club-id">
-                            Clube
-                          </label>
-                          <select
-                            id="session-club-id"
-                            className={adminInput}
-                            value={sessionForm.club_id}
-                            onChange={(event) =>
-                              setSessionForm((prev) => ({ ...prev, club_id: event.target.value }))
-                            }
-                          >
-                            <option value="">Seleciona um clube</option>
-                            {clubs.map((club) => (
-                              <option key={club.id} value={club.id}>
-                                {club.name}
-                              </option>
-                            ))}
-                          </select>
-                        </div>
-                      ) : null}
-
-                      <div className={adminField}>
-                        <label className={adminLabel} htmlFor="session-name">
-                          Nome curto
-                        </label>
-                        <input
-                          id="session-name"
-                          className={adminInput}
-                          value={sessionForm.name}
-                          onChange={(event) =>
-                            setSessionForm((prev) => ({ ...prev, name: event.target.value }))
-                          }
-                        />
-                      </div>
-
-                      <div className={adminField}>
-                        <label className={adminLabel} htmlFor="session-title">
-                          Titulo
-                        </label>
-                        <input
-                          id="session-title"
-                          className={adminInput}
-                          value={sessionForm.title}
-                          onChange={(event) =>
-                            setSessionForm((prev) => ({ ...prev, title: event.target.value }))
-                          }
-                        />
-                      </div>
-
-                      <div className={adminField}>
-                        <label className={adminLabel} htmlFor="session-date">
-                          Data
-                        </label>
-                        <input
-                          id="session-date"
-                          type="date"
-                          className={adminInput}
-                          value={sessionForm.session_date}
-                          onChange={(event) =>
-                            setSessionForm((prev) => ({
-                              ...prev,
-                              session_date: event.target.value
-                            }))
-                          }
-                        />
-                      </div>
-                    </div>
-
-                    <div className={adminFormGridSpaced}>
-                      <div className={adminField}>
-                        <label className={adminLabel} htmlFor="session-start">
-                          Inicio
-                        </label>
-                        <input
-                          id="session-start"
-                          type="datetime-local"
-                          className={adminInput}
-                          value={sessionForm.start_date}
-                          onChange={(event) =>
-                            setSessionForm((prev) => ({
-                              ...prev,
-                              start_date: event.target.value
-                            }))
-                          }
-                        />
-                      </div>
-
-                      <div className={adminField}>
-                        <label className={adminLabel} htmlFor="session-end">
-                          Fim
-                        </label>
-                        <input
-                          id="session-end"
-                          type="datetime-local"
-                          className={adminInput}
-                          value={sessionForm.end_date}
-                          onChange={(event) =>
-                            setSessionForm((prev) => ({ ...prev, end_date: event.target.value }))
-                          }
-                        />
-                      </div>
-
-                      <div className={adminField}>
-                        <label className={adminLabel} htmlFor="session-registrations-enabled">
-                          Inscricoes
-                        </label>
-                        <select
-                          id="session-registrations-enabled"
-                          className={adminInput}
-                          value={sessionForm.enable_registrations ? 'sim' : 'nao'}
-                          onChange={(event) =>
-                            setSessionForm((prev) => ({
-                              ...prev,
-                              enable_registrations: event.target.value === 'sim'
-                            }))
-                          }
-                        >
-                          <option value="nao">Fechadas</option>
-                          <option value="sim">Abertas</option>
-                        </select>
-                      </div>
-
-                      <div className={adminField}>
-                        <label className={adminLabel} htmlFor="session-registration-capacity">
-                          Lotacao
-                        </label>
-                        <input
-                          id="session-registration-capacity"
-                          type="number"
-                          min="1"
-                          className={adminInput}
-                          value={sessionForm.registration_capacity}
-                          onChange={(event) =>
-                            setSessionForm((prev) => ({
-                              ...prev,
-                              registration_capacity: event.target.value
-                            }))
-                          }
-                        />
-                        <p className={blockText}>
-                          Define o numero maximo de lugares antes de ativar lista de espera.
-                        </p>
-                      </div>
-                    </div>
-
-                    <div className={adminFieldSpaced}>
-                      <label className={adminLabel} htmlFor="session-description">
-                        Descricao
-                      </label>
-                      <textarea
-                        id="session-description"
-                        rows={5}
-                        className={adminTextarea}
-                        value={sessionForm.description}
-                        onChange={(event) =>
-                          setSessionForm((prev) => ({
-                            ...prev,
-                            description: event.target.value
-                          }))
-                        }
-                      />
-                    </div>
-
-                    {sessionFormError ? <p className={adminError}>{sessionFormError}</p> : null}
-
-                    <div className={adminActions}>
-                      <button
-                        type="submit"
-                        className={adminBtnPrimary}
-                        disabled={isSavingSession}
-                      >
-                        {isSavingSession ? 'A guardar...' : editingSessionId ? 'Atualizar' : 'Criar'}
-                      </button>
-                      <button
-                        type="button"
-                        onClick={resetSessionForm}
-                        className={adminBtnSecondary}
-                      >
-                        Limpar
-                      </button>
-                    </div>
-                  </form>
-                  ) : null}
-
-                  {showActivityFiltersAndList ? (
-                  <div id="activity-list" className={adminList}>
-                    {isLoadingActivities ? <p className={adminInfo}>A carregar sessoes...</p> : null}
-                    {!isLoadingActivities && sortedSessions.length === 0 ? (
-                      <p className={adminInfo}>Nao existem sessoes para o filtro atual.</p>
-                    ) : null}
-                    {sortedSessions.map((item) => (
-                      <article key={item.id} className={adminListItem}>
-                        <div className={adminListTop}>
-                          <div>
-                            <h3 className={adminListTitle}>{item.title}</h3>
-                            <p className={adminListMeta}>
-                              {item.club_name} · {formatAdminDateTime(item.start_date)}
-                            </p>
-                          </div>
-                        </div>
-                        <p className={adminListDesc}>{item.description}</p>
-                        <p className={adminListMeta}>
-                          Inscricoes {item.enable_registrations ? 'abertas' : 'fechadas'} ·
-                          Confirmadas {item.confirmed_registrations} · Espera{' '}
-                          {item.waitlist_registrations}
-                          {item.registration_capacity !== null &&
-                          item.registration_capacity !== undefined
-                            ? ` · Lotacao ${item.registration_capacity}`
-                            : ''}
-                        </p>
-                        <div className={adminListTools}>
-                          <button
-                            type="button"
-                            className={adminBtnEdit}
-                            onClick={() => handleEditSession(item)}
-                          >
-                            Editar
-                          </button>
-                          <button
-                            type="button"
-                            className={adminBtnDanger}
-                            disabled={deletingSessionId === item.id}
-                            onClick={() => handleDeleteSession(item.id)}
-                          >
-                            {deletingSessionId === item.id ? 'A apagar...' : 'Apagar'}
-                          </button>
-                        </div>
-                      </article>
-                    ))}
-                  </div>
-                  ) : null}
-                  {showActivityFiltersAndList && !isLoadingActivities ? (
-                    <div className={`${adminActions} mt-6`}>
-                      <p className={adminInfo}>
-                        {activityTotal} sessao(oes) · pagina {activityPage} de {activityTotalPages || 1}
-                      </p>
-                      <button
-                        type="button"
-                        className={adminBtnSecondary}
-                        disabled={activityPage <= 1}
-                        onClick={() => setActivityPage((prev) => Math.max(1, prev - 1))}
-                      >
-                        Anterior
-                      </button>
-                      <button
-                        type="button"
-                        className={adminBtnSecondary}
-                        disabled={activityTotalPages === 0 || activityPage >= activityTotalPages}
-                        onClick={() => setActivityPage((prev) => prev + 1)}
-                      >
-                        Seguinte
-                      </button>
-                    </div>
-                  ) : null}
-                </>
-              ) : null}
-
-              {activityTab === 'events' ? (
-                <>
-                  {showActivityForm ? (
-                  <form id="activity-form" onSubmit={handleSaveEvent} className={adminPanelForm}>
-                    <h2 className={blockTitle}>
-                      {editingEventId ? 'Editar Evento' : 'Novo Evento'}
-                    </h2>
-
-                    <div className={adminFormGridSpaced}>
-                      {canManageUsers ? (
-                        <div className={adminField}>
-                          <label className={adminLabel} htmlFor="event-club-id">
-                            Clube
-                          </label>
-                          <select
-                            id="event-club-id"
-                            className={adminInput}
-                            value={eventForm.club_id}
-                            onChange={(event) =>
-                              setEventForm((prev) => ({ ...prev, club_id: event.target.value }))
-                            }
-                          >
-                            <option value="">Seleciona um clube</option>
-                            {clubs.map((club) => (
-                              <option key={club.id} value={club.id}>
-                                {club.name}
-                              </option>
-                            ))}
-                          </select>
-                        </div>
-                      ) : null}
-
-                      <div className={adminField}>
-                        <label className={adminLabel} htmlFor="event-title">
-                          Titulo
-                        </label>
-                        <input
-                          id="event-title"
-                          className={adminInput}
-                          value={eventForm.title}
-                          onChange={(event) =>
-                            setEventForm((prev) => ({ ...prev, title: event.target.value }))
-                          }
-                        />
-                      </div>
-
-                      <div className={adminField}>
-                        <label className={adminLabel} htmlFor="event-status">
-                          Estado
-                        </label>
-                        <select
-                          id="event-status"
-                          className={adminInput}
-                          value={eventForm.status}
-                          onChange={(event) =>
-                            setEventForm((prev) => ({
-                              ...prev,
-                              status: normalizeWorkflowStatus(event.target.value)
-                            }))
-                          }
-                        >
-                          {availableEventStatuses.map((status) => (
-                            <option key={status} value={status}>
-                              {getWorkflowStatusLabel(status)}
-                            </option>
-                          ))}
-                        </select>
-                        <p className={blockText}>
-                          {canManageUsers
-                            ? 'Podes rever, publicar ou arquivar o evento.'
-                            : 'O evento pode ficar em rascunho ou seguir para revisao.'}
-                        </p>
-                      </div>
-
-                      <div className={adminField}>
-                        <label className={adminLabel} htmlFor="event-categories">
-                          Categorias
-                        </label>
-                        <select
-                          id="event-categories"
-                          multiple
-                          className={adminInput}
-                          value={eventForm.category_ids}
-                          onChange={(event) =>
-                            setEventForm((prev) => ({
-                              ...prev,
-                              category_ids: Array.from(event.target.selectedOptions).map(
-                                (option) => option.value
-                              )
-                            }))
-                          }
-                        >
-                          {sortedCategories.map((category) => (
-                            <option key={category.id} value={category.id}>
-                              {category.name}
-                            </option>
-                          ))}
-                        </select>
-                      </div>
-
-                      <div className={adminField}>
-                        <label className={adminLabel} htmlFor="event-date">
-                          Data
-                        </label>
-                        <input
-                          id="event-date"
-                          type="date"
-                          className={adminInput}
-                          value={eventForm.event_date}
-                          onChange={(event) =>
-                            setEventForm((prev) => ({ ...prev, event_date: event.target.value }))
-                          }
-                        />
-                      </div>
-                    </div>
-
-                    <div className={adminFormGridSpaced}>
-                      <div className={adminField}>
-                        <label className={adminLabel} htmlFor="event-start">
-                          Inicio
-                        </label>
-                        <input
-                          id="event-start"
-                          type="datetime-local"
-                          className={adminInput}
-                          value={eventForm.start_date}
-                          onChange={(event) =>
-                            setEventForm((prev) => ({ ...prev, start_date: event.target.value }))
-                          }
-                        />
-                      </div>
-
-                      <div className={adminField}>
-                        <label className={adminLabel} htmlFor="event-end">
-                          Fim
-                        </label>
-                        <input
-                          id="event-end"
-                          type="datetime-local"
-                          className={adminInput}
-                          value={eventForm.end_date}
-                          onChange={(event) =>
-                            setEventForm((prev) => ({ ...prev, end_date: event.target.value }))
-                          }
-                        />
-                      </div>
-
-                      <div className={adminField}>
-                        <label className={adminLabel} htmlFor="event-external">
-                          Externo
-                        </label>
-                        <select
-                          id="event-external"
-                          className={adminInput}
-                          value={eventForm.is_external ? 'sim' : 'nao'}
-                          onChange={(event) =>
-                            setEventForm((prev) => ({
-                              ...prev,
-                              is_external: event.target.value === 'sim'
-                            }))
-                          }
-                        >
-                          <option value="nao">Nao</option>
-                          <option value="sim">Sim</option>
-                        </select>
-                      </div>
-
-                      <div className={adminField}>
-                        <label className={adminLabel} htmlFor="event-registrations-enabled">
-                          Inscricoes
-                        </label>
-                        <select
-                          id="event-registrations-enabled"
-                          className={adminInput}
-                          value={eventForm.enable_registrations ? 'sim' : 'nao'}
-                          onChange={(event) =>
-                            setEventForm((prev) => ({
-                              ...prev,
-                              enable_registrations: event.target.value === 'sim'
-                            }))
-                          }
-                        >
-                          <option value="nao">Fechadas</option>
-                          <option value="sim">Abertas</option>
-                        </select>
-                      </div>
-                    </div>
-
-                    <div className={adminFormGridSpaced}>
-                      <div className={adminField}>
-                        <label className={adminLabel} htmlFor="event-city">
-                          Cidade
-                        </label>
-                        <input
-                          id="event-city"
-                          className={adminInput}
-                          value={eventForm.city}
-                          onChange={(event) =>
-                            setEventForm((prev) => ({ ...prev, city: event.target.value }))
-                          }
-                        />
-                      </div>
-
-                      <div className={adminField}>
-                        <label className={adminLabel} htmlFor="event-location">
-                          Local
-                        </label>
-                        <input
-                          id="event-location"
-                          className={adminInput}
-                          value={eventForm.location}
-                          onChange={(event) =>
-                            setEventForm((prev) => ({ ...prev, location: event.target.value }))
-                          }
-                        />
-                      </div>
-
-                      <div className={adminField}>
-                        <label className={adminLabel} htmlFor="event-registration-capacity">
-                          Lotacao
-                        </label>
-                        <input
-                          id="event-registration-capacity"
-                          type="number"
-                          min="1"
-                          className={adminInput}
-                          value={eventForm.registration_capacity}
-                          onChange={(event) =>
-                            setEventForm((prev) => ({
-                              ...prev,
-                              registration_capacity: event.target.value
-                            }))
-                          }
-                        />
-                        <p className={blockText}>
-                          Quando a lotacao for atingida, novas inscricoes passam para espera.
-                        </p>
-                      </div>
-
-                      <div className={adminField}>
-                        <label className={adminLabel} htmlFor="event-image">
-                          Imagem
-                        </label>
-                        <input
-                          id="event-image"
-                          key={eventImageFileKey}
-                          type="file"
-                          accept="image/*"
-                          className={adminInput}
-                          onChange={(event) => {
-                            const file = event.target.files?.[0] || null;
-                            void handleUploadEventImage(file);
-                          }}
-                        />
-                        <p className={blockText}>
-                          {isUploadingEventImage
-                            ? 'A carregar imagem...'
-                            : eventForm.image
-                              ? 'Imagem carregada com sucesso.'
-                              : 'Seleciona uma imagem para o evento.'}
-                        </p>
-                        {eventForm.image ? (
-                          <img
-                            src={resolveInfoCulturaAssetUrl(eventForm.image)}
-                            alt="Preview do evento"
-                            className="mt-3 h-40 w-full rounded-xl object-cover"
-                          />
-                        ) : null}
-                      </div>
-                    </div>
-
-                    <div className={adminFieldSpaced}>
-                      <label className={adminLabel} htmlFor="event-description">
-                        Descricao
-                      </label>
-                      <textarea
-                        id="event-description"
-                        rows={5}
-                        className={adminTextarea}
-                        value={eventForm.description}
-                        onChange={(event) =>
-                          setEventForm((prev) => ({
-                            ...prev,
-                            description: event.target.value
-                          }))
-                        }
-                      />
-                    </div>
-
-                    {eventFormError ? <p className={adminError}>{eventFormError}</p> : null}
-
-                    <div className={adminActions}>
-                      <button type="submit" className={adminBtnPrimary} disabled={isSavingEvent}>
-                        {isSavingEvent ? 'A guardar...' : editingEventId ? 'Atualizar' : 'Criar'}
-                      </button>
-                      <button type="button" onClick={resetEventForm} className={adminBtnSecondary}>
-                        Limpar
-                      </button>
-                    </div>
-                  </form>
-                  ) : null}
-
-                  {showActivityFiltersAndList ? (
-                  <div id="activity-list" className={adminList}>
-                    {isLoadingActivities ? <p className={adminInfo}>A carregar eventos...</p> : null}
-                    {!isLoadingActivities && sortedEvents.length === 0 ? (
-                      <p className={adminInfo}>Nao existem eventos para o filtro atual.</p>
-                    ) : null}
-                    {sortedEvents.map((item) => (
-                      <article key={item.id} className={adminListItem}>
-                        <div className={adminListTop}>
-                          <label className="mr-4 flex items-center gap-2 text-sm text-slate-600">
-                            <input
-                              type="checkbox"
-                              checked={selectedEventIds.includes(item.id)}
-                              onChange={() => toggleSelectedId(setSelectedEventIds, item.id)}
-                            />
-                            Selecionar
-                          </label>
-                          <div>
-                            <h3 className={adminListTitle}>{item.title}</h3>
-                            <p className={adminListMeta}>
-                              {item.club_name || 'Sem clube'} · {getWorkflowStatusLabel(item.status)} ·{' '}
-                              {formatAdminDateTime(item.start_date)}
-                            </p>
-                          </div>
-                        </div>
-                        <p className={adminListDesc}>{item.description}</p>
-                        <p className={adminListMeta}>
-                          Inscricoes {item.enable_registrations ? 'abertas' : 'fechadas'} ·
-                          Confirmadas {item.confirmed_registrations} · Espera{' '}
-                          {item.waitlist_registrations}
-                          {item.registration_capacity !== null &&
-                          item.registration_capacity !== undefined
-                            ? ` · Lotacao ${item.registration_capacity}`
-                            : ''}
-                        </p>
-                        {item.categories.length > 0 ? (
-                          <p className={adminListMeta}>
-                            Categorias: {item.categories.map((category) => category.name).join(', ')}
-                          </p>
-                        ) : null}
-                        {item.editorial_history && item.editorial_history.length > 0 ? (
-                          <div className="mt-3 space-y-1">
-                            {item.editorial_history.slice(0, 3).map((history, index) => (
-                              <p key={`${item.id}-${index}`} className={adminListMeta}>
-                                {history.actor_name} ·{' '}
-                                {history.from_status
-                                  ? `${getWorkflowStatusLabel(history.from_status)} -> `
-                                  : ''}
-                                {getWorkflowStatusLabel(history.to_status)} ·{' '}
-                                {formatAdminDateTime(history.created_at || '')}
-                              </p>
-                            ))}
-                          </div>
-                        ) : null}
-                        <div className={adminListTools}>
-                          <button
-                            type="button"
-                            className={adminBtnEdit}
-                            onClick={() => handleEditEvent(item)}
-                          >
-                            Editar
-                          </button>
-                          <button
-                            type="button"
-                            className={adminBtnDanger}
-                            disabled={deletingEventId === item.id}
-                            onClick={() => handleDeleteEvent(item.id)}
-                          >
-                            {deletingEventId === item.id ? 'A apagar...' : 'Apagar'}
-                          </button>
-                        </div>
-                      </article>
-                    ))}
-                  </div>
-                  ) : null}
-                  {showActivityFiltersAndList && !isLoadingActivities ? (
-                    <div className={`${adminActions} mt-6`}>
-                      <p className={adminInfo}>
-                        {activityTotal} evento(s) · pagina {activityPage} de {activityTotalPages || 1}
-                      </p>
-                      <button
-                        type="button"
-                        className={adminBtnSecondary}
-                        disabled={activityPage <= 1}
-                        onClick={() => setActivityPage((prev) => Math.max(1, prev - 1))}
-                      >
-                        Anterior
-                      </button>
-                      <button
-                        type="button"
-                        className={adminBtnSecondary}
-                        disabled={activityTotalPages === 0 || activityPage >= activityTotalPages}
-                        onClick={() => setActivityPage((prev) => prev + 1)}
-                      >
-                        Seguinte
-                      </button>
-                    </div>
-                  ) : null}
-                </>
-              ) : null}
-
-              {showEventCategories ? (
-                <section id="event-categories" className={adminPanelCard}>
-                  <h2 className={blockTitle}>Categorias de eventos</h2>
-                  <p className={blockText}>
-                    Cria categorias para classificar eventos e usar filtros no painel e no publico.
-                  </p>
-
-                  <form onSubmit={handleSaveCategory} className={adminPanelForm}>
-                    <div className={adminFormGridSpaced}>
-                      <div className={adminField}>
-                        <label className={adminLabel} htmlFor="category-name">
-                          Nome
-                        </label>
-                        <input
-                          id="category-name"
-                          className={adminInput}
-                          value={categoryForm.name}
-                          onChange={(event) =>
-                            setCategoryForm((prev) => ({ ...prev, name: event.target.value }))
-                          }
-                        />
-                      </div>
-
-                      <div className={adminField}>
-                        <label className={adminLabel} htmlFor="category-description">
-                          Descricao
-                        </label>
-                        <textarea
-                          id="category-description"
-                          rows={3}
-                          className={adminTextarea}
-                          value={categoryForm.description}
-                          onChange={(event) =>
-                            setCategoryForm((prev) => ({
-                              ...prev,
-                              description: event.target.value
-                            }))
-                          }
-                        />
-                      </div>
-                    </div>
-
-                    {categoryFormError ? <p className={adminError}>{categoryFormError}</p> : null}
-
-                    <div className={adminActions}>
-                      <button type="submit" className={adminBtnPrimary} disabled={isSavingCategory}>
-                        {isSavingCategory
-                          ? 'A guardar...'
-                          : editingCategoryId
-                            ? 'Atualizar categoria'
-                            : 'Criar categoria'}
-                      </button>
-                      <button
-                        type="button"
-                        onClick={resetCategoryForm}
-                        className={adminBtnSecondary}
-                      >
-                        Limpar
-                      </button>
-                    </div>
-                  </form>
-
-                  <div className={adminList}>
-                    {isLoadingCategories ? <p className={adminInfo}>A carregar categorias...</p> : null}
-                    {!isLoadingCategories && sortedCategories.length === 0 ? (
-                      <p className={adminInfo}>Nao existem categorias registadas.</p>
-                    ) : null}
-                    {sortedCategories.map((category) => (
-                      <article key={category.id} className={adminListItem}>
-                        <div className={adminListTop}>
-                          <div>
-                            <h3 className={adminListTitle}>{category.name}</h3>
-                            <p className={adminListMeta}>{category.description}</p>
-                          </div>
-                        </div>
-                        <div className={adminListTools}>
-                          <button
-                            type="button"
-                            className={adminBtnEdit}
-                            onClick={() => handleEditCategory(category)}
-                          >
-                            Editar
-                          </button>
-                          <button
-                            type="button"
-                            className={adminBtnDanger}
-                            disabled={deletingCategoryId === category.id}
-                            onClick={() => handleDeleteCategory(category.id)}
-                          >
-                            {deletingCategoryId === category.id ? 'A apagar...' : 'Apagar'}
-                          </button>
-                        </div>
-                      </article>
-                    ))}
-                  </div>
-                </section>
-              ) : null}
-            </div>
+            <ActivitiesPage
+              activitySectionLabel={activitySectionLabel}
+              activitySectionDescription={activitySectionDescription}
+              activityOverviewStats={activityOverviewStats}
+              isExportingActivities={isExportingActivities}
+              handleExportActivitiesCsv={handleExportActivitiesCsv}
+              showActivityFiltersAndList={showActivityFiltersAndList}
+              canManageUsers={canManageUsers}
+              clubs={clubs}
+              activityClubFilter={activityClubFilter}
+              setActivityClubFilter={setActivityClubFilter}
+              activityCategoryFilter={activityCategoryFilter}
+              setActivityCategoryFilter={setActivityCategoryFilter}
+              activityStatusFilter={activityStatusFilter}
+              setActivityStatusFilter={setActivityStatusFilter}
+              activityError={activityError}
+              handleApplyActivitySearch={handleApplyActivitySearch}
+              activitySearchInput={activitySearchInput}
+              setActivitySearchInput={setActivitySearchInput}
+              setActivitySearch={setActivitySearch}
+              setActivityPage={setActivityPage}
+              activityDateFrom={activityDateFrom}
+              setActivityDateFrom={setActivityDateFrom}
+              activityDateTo={activityDateTo}
+              setActivityDateTo={setActivityDateTo}
+              activityOrder={activityOrder}
+              setActivityOrder={setActivityOrder}
+              activityTab={activityTab}
+              selectedBookIds={selectedBookIds}
+              setSelectedBookIds={setSelectedBookIds}
+              sortedBooks={sortedBooks}
+              isDeletingBulkBooks={isDeletingBulkBooks}
+              handleBulkDeleteBooks={handleBulkDeleteBooks}
+              selectedEventIds={selectedEventIds}
+              setSelectedEventIds={setSelectedEventIds}
+              sortedEvents={sortedEvents}
+              bulkEventStatus={bulkEventStatus}
+              setBulkEventStatus={setBulkEventStatus}
+              availableEventStatuses={availableEventStatuses}
+              isApplyingBulkEvents={isApplyingBulkEvents}
+              handleApplyBulkEventStatus={handleApplyBulkEventStatus}
+              isDeletingBulkEvents={isDeletingBulkEvents}
+              handleBulkDeleteEvents={handleBulkDeleteEvents}
+              showActivityForm={showActivityForm}
+              handleSaveBook={handleSaveBook}
+              editingBookId={editingBookId}
+              bookForm={bookForm}
+              setBookForm={setBookForm}
+              bookImageFileKey={bookImageFileKey}
+              isUploadingBookImage={isUploadingBookImage}
+              handleUploadBookImage={handleUploadBookImage}
+              bookFormError={bookFormError}
+              isSavingBook={isSavingBook}
+              resetBookForm={resetBookForm}
+              handleEditBook={handleEditBook}
+              deletingBookId={deletingBookId}
+              handleDeleteBook={handleDeleteBook}
+              isLoadingActivities={isLoadingActivities}
+              activityTotal={activityTotal}
+              activityPage={activityPage}
+              activityTotalPages={activityTotalPages}
+              handleSaveSession={handleSaveSession}
+              editingSessionId={editingSessionId}
+              sessionForm={sessionForm}
+              setSessionForm={setSessionForm}
+              sessionFormError={sessionFormError}
+              isSavingSession={isSavingSession}
+              resetSessionForm={resetSessionForm}
+              handleEditSession={handleEditSession}
+              deletingSessionId={deletingSessionId}
+              handleDeleteSession={handleDeleteSession}
+              sortedSessions={sortedSessions}
+              handleSaveEvent={handleSaveEvent}
+              editingEventId={editingEventId}
+              eventForm={eventForm}
+              setEventForm={setEventForm}
+              eventImageFileKey={eventImageFileKey}
+              isUploadingEventImage={isUploadingEventImage}
+              handleUploadEventImage={handleUploadEventImage}
+              eventFormError={eventFormError}
+              isSavingEvent={isSavingEvent}
+              resetEventForm={resetEventForm}
+              handleEditEvent={handleEditEvent}
+              deletingEventId={deletingEventId}
+              handleDeleteEvent={handleDeleteEvent}
+              showEventCategories={showEventCategories}
+              handleSaveCategory={handleSaveCategory}
+              categoryForm={categoryForm}
+              setCategoryForm={setCategoryForm}
+              categoryFormError={categoryFormError}
+              isSavingCategory={isSavingCategory}
+              editingCategoryId={editingCategoryId}
+              resetCategoryForm={resetCategoryForm}
+              sortedCategories={sortedCategories}
+              isLoadingCategories={isLoadingCategories}
+              handleEditCategory={handleEditCategory}
+              deletingCategoryId={deletingCategoryId}
+              handleDeleteCategory={handleDeleteCategory}
+              toggleSelectedId={toggleSelectedId}
+            />
           ) : null}
 
           {activeSection === 'inscricoes' ? (
-            <div className="space-y-6">
-              <AdminPageHero
-                icon={Inbox}
-                title="Inscricoes"
-                description="Consulta, triagem e validacao dos pedidos submetidos pelos clubes."
-                tone="rose"
-                stats={registrationOverviewStats}
-                actions={
-                  <button
-                    type="button"
-                    className={adminBtnSecondary}
-                    disabled={isExportingRegistrations}
-                    onClick={() => void handleExportRegistrationsCsv()}
-                  >
-                    {isExportingRegistrations ? 'A exportar...' : 'Exportar CSV'}
-                  </button>
-                }
-              />
-
-              <section className={adminPanelCard}>
-                <h2 className={blockTitle}>Inscricoes</h2>
-                <p className={blockText}>
-                  Consulta os pedidos submetidos pelos clubes e atualiza o respetivo estado.
-                </p>
-
-                <div className={adminStatsGrid}>
-                  <div className={adminStatCard}>
-                    <p className={adminStatValue}>{registrationTotal}</p>
-                    <p className={adminStatLabel}>Total filtrado</p>
-                  </div>
-                  <div className={adminStatCard}>
-                    <p className={adminStatValue}>{pendingRegistrations}</p>
-                    <p className={adminStatLabel}>Pendentes na pagina</p>
-                  </div>
-                  <div className={adminStatCard}>
-                    <p className={adminStatValue}>{approvedRegistrations}</p>
-                    <p className={adminStatLabel}>Aprovadas na pagina</p>
-                  </div>
-                  <div className={adminStatCard}>
-                    <p className={adminStatValue}>{rejectedRegistrations}</p>
-                    <p className={adminStatLabel}>Rejeitadas na pagina</p>
-                  </div>
-                </div>
-
-                <div className={adminFormGridSpaced}>
-                  {canManageUsers ? (
-                    <div className={adminField}>
-                      <label className={adminLabel} htmlFor="registration-club-filter">
-                        Clube
-                      </label>
-                      <select
-                        id="registration-club-filter"
-                        className={adminInput}
-                        value={registrationClubFilter}
-                        onChange={(event) => {
-                          setRegistrationClubFilter(event.target.value);
-                          setRegistrationPage(1);
-                        }}
-                      >
-                        <option value="all">Todos os clubes</option>
-                        {clubs.map((club) => (
-                          <option key={club.id} value={club.id}>
-                            {club.name}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                  ) : null}
-
-                  <div className={adminField}>
-                    <label className={adminLabel} htmlFor="registration-status-filter">
-                      Estado
-                    </label>
-                    <select
-                      id="registration-status-filter"
-                      className={adminInput}
-                      value={registrationStatusFilter}
-                      onChange={(event) => {
-                        setRegistrationStatusFilter(event.target.value);
-                        setRegistrationPage(1);
-                      }}
-                    >
-                      <option value="all">Todos</option>
-                      {isLoadingRegistrationStatuses ? (
-                        <option value="">A carregar estados...</option>
-                      ) : null}
-                      {registrationStatuses.map((status) => (
-                        <option key={status.id} value={status.name}>
-                          {status.name}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                  <div className={adminField}>
-                    <label className={adminLabel} htmlFor="registration-date-from">
-                      Submetidas desde
-                    </label>
-                    <input
-                      id="registration-date-from"
-                      type="date"
-                      className={adminInput}
-                      value={registrationDateFrom}
-                      onChange={(event) => setRegistrationDateFrom(event.target.value)}
-                    />
-                  </div>
-                  <div className={adminField}>
-                    <label className={adminLabel} htmlFor="registration-date-to">
-                      Submetidas ate
-                    </label>
-                    <input
-                      id="registration-date-to"
-                      type="date"
-                      className={adminInput}
-                      value={registrationDateTo}
-                      onChange={(event) => setRegistrationDateTo(event.target.value)}
-                    />
-                  </div>
-                </div>
-
-                <form onSubmit={handleRegistrationSearchSubmit} className={adminFieldSpaced}>
-                  <label className={adminLabel} htmlFor="registration-search">
-                    Pesquisar por nome ou email
-                  </label>
-                  <div className={adminActions}>
-                    <input
-                      id="registration-search"
-                      className={adminInput}
-                      value={registrationSearchInput}
-                      onChange={(event) => setRegistrationSearchInput(event.target.value)}
-                      placeholder="Ex.: maria ou maria@email.pt"
-                    />
-                    <button type="submit" className={adminBtnPrimary}>
-                      Pesquisar
-                    </button>
-                    <button
-                      type="button"
-                      className={adminBtnSecondary}
-                      onClick={() => {
-                        setRegistrationSearchInput('');
-                        setRegistrationSearch('');
-                        setRegistrationPage(1);
-                      }}
-                    >
-                      Limpar
-                    </button>
-                    <button
-                      type="button"
-                      className={adminBtnSecondary}
-                      disabled={isExportingRegistrations}
-                      onClick={() => void handleExportRegistrationsCsv()}
-                    >
-                      {isExportingRegistrations ? 'A exportar...' : 'Exportar CSV'}
-                    </button>
-                  </div>
-                </form>
-
-                {registrationError ? <p className={adminError}>{registrationError}</p> : null}
-
-                <div className={adminActions}>
-                  <select
-                    className={adminInput}
-                    value={registrationOrder}
-                    onChange={(event) => setRegistrationOrder(event.target.value)}
-                  >
-                    <option value="newest">Mais recentes</option>
-                    <option value="oldest">Mais antigas</option>
-                    <option value="name_asc">Nome A-Z</option>
-                    <option value="name_desc">Nome Z-A</option>
-                    <option value="email_asc">Email A-Z</option>
-                    <option value="email_desc">Email Z-A</option>
-                    <option value="club_asc">Clube A-Z</option>
-                    <option value="club_desc">Clube Z-A</option>
-                    <option value="status_asc">Estado A-Z</option>
-                    <option value="status_desc">Estado Z-A</option>
-                  </select>
-                  <button
-                    type="button"
-                    className={adminBtnSecondary}
-                    onClick={() =>
-                      setSelectedRegistrationIds(
-                        selectedRegistrationIds.length === registrations.length
-                          ? []
-                          : registrations.map((item) => item.id)
-                      )
-                    }
-                    disabled={registrations.length === 0}
-                  >
-                    {selectedRegistrationIds.length === registrations.length && registrations.length > 0
-                      ? 'Limpar selecao'
-                      : 'Selecionar pagina'}
-                  </button>
-                  <select
-                    className={adminInput}
-                    value={bulkRegistrationStatus}
-                    onChange={(event) => setBulkRegistrationStatus(event.target.value)}
-                  >
-                    {registrationStatuses.map((status) => (
-                      <option key={status.id} value={status.name}>
-                        {status.name}
-                      </option>
-                    ))}
-                  </select>
-                  <button
-                    type="button"
-                    className={adminBtnPrimary}
-                    disabled={selectedRegistrationIds.length === 0 || isApplyingBulkRegistrations}
-                    onClick={() => void handleApplyBulkRegistrationStatus()}
-                  >
-                    {isApplyingBulkRegistrations ? 'A aplicar...' : 'Aplicar em lote'}
-                  </button>
-                </div>
-
-                {!isLoadingRegistrations ? (
-                  <div className={adminHeaderRow}>
-                    <p className={blockText}>
-                      Pagina {registrationPage}
-                      {registrationTotalPages > 0 ? ` de ${registrationTotalPages}` : ''} ·{' '}
-                      {registrationTotal} resultado{registrationTotal === 1 ? '' : 's'}
-                    </p>
-                    <div className={adminActions}>
-                      <button
-                        type="button"
-                        className={adminBtnSecondary}
-                        disabled={registrationPage <= 1}
-                        onClick={() => setRegistrationPage((prev) => Math.max(1, prev - 1))}
-                      >
-                        Anterior
-                      </button>
-                      <button
-                        type="button"
-                        className={adminBtnSecondary}
-                        disabled={
-                          registrationTotalPages === 0 || registrationPage >= registrationTotalPages
-                        }
-                        onClick={() =>
-                          setRegistrationPage((prev) =>
-                            registrationTotalPages === 0
-                              ? prev
-                              : Math.min(registrationTotalPages, prev + 1)
-                          )
-                        }
-                      >
-                        Seguinte
-                      </button>
-                    </div>
-                  </div>
-                ) : null}
-
-                <div className={adminUserList}>
-                  {isLoadingRegistrations ? (
-                    <p className={adminInfo}>A carregar inscricoes...</p>
-                  ) : null}
-                  {!isLoadingRegistrations && registrations.length === 0 ? (
-                    <p className={adminInfo}>Nao existem inscricoes para os filtros atuais.</p>
-                  ) : null}
-                  {registrations.map((registration) => (
-                    <article key={registration.id} className={adminUserItem}>
-                      <div>
-                        <label className="mb-2 flex items-center gap-2 text-sm text-slate-600">
-                          <input
-                            type="checkbox"
-                            checked={selectedRegistrationIds.includes(registration.id)}
-                            onChange={() =>
-                              toggleSelectedId(setSelectedRegistrationIds, registration.id)
-                            }
-                          />
-                          Selecionar
-                        </label>
-                        <h3 className={adminUserName}>{registration.name}</h3>
-                        <p className={adminUserEmail}>{registration.email}</p>
-                        <p className={adminUserMeta}>
-                          {registration.club_name} · {formatAdminDateTime(registration.created_at)}
-                        </p>
-                        {registration.phone ? (
-                          <p className={adminUserMeta}>Telefone: {registration.phone}</p>
-                        ) : null}
-                        <p className={adminUserMeta}>
-                          {registration.message || 'Sem mensagem adicional.'}
-                        </p>
-                      </div>
-                      <div className={adminListTools}>
-                        <span className={getRegistrationStatusBadge(registration.status)}>
-                          {registration.status}
-                        </span>
-                        <button
-                          type="button"
-                          className={adminBtnEdit}
-                          disabled={
-                            updatingRegistrationId === registration.id ||
-                            registration.status === 'approved'
-                          }
-                          onClick={() =>
-                            handleUpdateRegistrationStatus(registration.id, 'approved')
-                          }
-                        >
-                          {updatingRegistrationId === registration.id ? 'A atualizar...' : 'Aprovar'}
-                        </button>
-                        <button
-                          type="button"
-                          className={adminBtnDanger}
-                          disabled={
-                            updatingRegistrationId === registration.id ||
-                            registration.status === 'rejected'
-                          }
-                          onClick={() =>
-                            handleUpdateRegistrationStatus(registration.id, 'rejected')
-                          }
-                        >
-                          {updatingRegistrationId === registration.id ? 'A atualizar...' : 'Rejeitar'}
-                        </button>
-                        <button
-                          type="button"
-                          className={adminBtnSecondary}
-                          disabled={
-                            updatingRegistrationId === registration.id ||
-                            registration.status === 'pending'
-                          }
-                          onClick={() =>
-                            handleUpdateRegistrationStatus(registration.id, 'pending')
-                          }
-                        >
-                          {updatingRegistrationId === registration.id ? 'A atualizar...' : 'Pendente'}
-                        </button>
-                      </div>
-                    </article>
-                  ))}
-                </div>
-              </section>
-            </div>
+            <RegistrationsPage
+              registrationOverviewStats={registrationOverviewStats}
+              isExportingRegistrations={isExportingRegistrations}
+              handleExportRegistrationsCsv={handleExportRegistrationsCsv}
+              registrationTotal={registrationTotal}
+              pendingRegistrations={pendingRegistrations}
+              approvedRegistrations={approvedRegistrations}
+              rejectedRegistrations={rejectedRegistrations}
+              canManageUsers={canManageUsers}
+              clubs={clubs}
+              registrationClubFilter={registrationClubFilter}
+              setRegistrationClubFilter={setRegistrationClubFilter}
+              registrationStatusFilter={registrationStatusFilter}
+              setRegistrationStatusFilter={setRegistrationStatusFilter}
+              isLoadingRegistrationStatuses={isLoadingRegistrationStatuses}
+              registrationStatuses={registrationStatuses}
+              registrationDateFrom={registrationDateFrom}
+              setRegistrationDateFrom={setRegistrationDateFrom}
+              registrationDateTo={registrationDateTo}
+              setRegistrationDateTo={setRegistrationDateTo}
+              handleRegistrationSearchSubmit={handleRegistrationSearchSubmit}
+              registrationSearchInput={registrationSearchInput}
+              setRegistrationSearchInput={setRegistrationSearchInput}
+              setRegistrationSearch={setRegistrationSearch}
+              setRegistrationPage={setRegistrationPage}
+              registrationError={registrationError}
+              registrationOrder={registrationOrder}
+              setRegistrationOrder={setRegistrationOrder}
+              selectedRegistrationIds={selectedRegistrationIds}
+              setSelectedRegistrationIds={setSelectedRegistrationIds}
+              bulkRegistrationStatus={bulkRegistrationStatus}
+              setBulkRegistrationStatus={setBulkRegistrationStatus}
+              isApplyingBulkRegistrations={isApplyingBulkRegistrations}
+              handleApplyBulkRegistrationStatus={handleApplyBulkRegistrationStatus}
+              isLoadingRegistrations={isLoadingRegistrations}
+              registrationPage={registrationPage}
+              registrationTotalPages={registrationTotalPages}
+              registrations={registrations}
+              updatingRegistrationId={updatingRegistrationId}
+              handleUpdateRegistrationStatus={handleUpdateRegistrationStatus}
+              toggleSelectedId={toggleSelectedId}
+            />
           ) : null}
 
           {activeSection === 'conteudos' ? (
