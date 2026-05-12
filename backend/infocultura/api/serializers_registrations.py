@@ -2,6 +2,7 @@ from rest_framework import serializers
 
 from ..core.utils import get_client_ip
 from ..models import RegistrationStatus
+from .serializers_shared import ContactRegistrationSerializer
 from ..service_types import (
     ActivityRegistrationError,
     ActivityRegistrationRateLimitError,
@@ -25,12 +26,7 @@ class RegistrationStatusSerializer(serializers.ModelSerializer):
         fields = ['id', 'name', 'description']
 
 
-class ClubRegistrationCreateSerializer(serializers.Serializer):
-    name = serializers.CharField(max_length=100)
-    email = serializers.EmailField(max_length=150)
-    phone = serializers.CharField(max_length=20, required=False, allow_blank=True)
-    message = serializers.CharField(required=False, allow_blank=True)
-
+class ClubRegistrationCreateSerializer(ContactRegistrationSerializer):
     def validate(self, attrs):
         club = self.context.get('club')
         if not club:
@@ -63,12 +59,7 @@ class ClubRegistrationCreateSerializer(serializers.Serializer):
             raise serializers.ValidationError({'message': str(error)})
 
 
-class EventRegistrationCreateSerializer(serializers.Serializer):
-    name = serializers.CharField(max_length=100)
-    email = serializers.EmailField(max_length=150)
-    phone = serializers.CharField(max_length=20, required=False, allow_blank=True)
-    message = serializers.CharField(required=False, allow_blank=True)
-
+class EventRegistrationCreateSerializer(ContactRegistrationSerializer):
     def validate(self, attrs):
         event = self.context.get('event')
         if not event:
@@ -102,12 +93,7 @@ class EventRegistrationCreateSerializer(serializers.Serializer):
             raise serializers.ValidationError({'message': str(error)})
 
 
-class SessionRegistrationCreateSerializer(serializers.Serializer):
-    name = serializers.CharField(max_length=100)
-    email = serializers.EmailField(max_length=150)
-    phone = serializers.CharField(max_length=20, required=False, allow_blank=True)
-    message = serializers.CharField(required=False, allow_blank=True)
-
+class SessionRegistrationCreateSerializer(ContactRegistrationSerializer):
     def validate(self, attrs):
         session = self.context.get('session')
         if not session:

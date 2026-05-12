@@ -3,6 +3,7 @@ from rest_framework import serializers
 
 from ..models import Club, News, NewsStatus
 from ..services import list_editorial_history, notify_news_workflow_status, record_editorial_action
+from .serializers_shared import ClubScopedWriteMixin
 from .serializers_workflow import (
     NEWS_WORKFLOW_STATUS_ORDER,
     get_role_allowed_workflow_statuses,
@@ -61,7 +62,7 @@ class AdminNewsReadSerializer(NewsSerializer):
         return EditorialHistorySerializer(history, many=True).data
 
 
-class AdminNewsWriteSerializer(serializers.ModelSerializer):
+class AdminNewsWriteSerializer(ClubScopedWriteMixin, serializers.ModelSerializer):
     news_status = serializers.SlugRelatedField(
         slug_field='name',
         queryset=NewsStatus.objects.all(),
@@ -90,18 +91,7 @@ class AdminNewsWriteSerializer(serializers.ModelSerializer):
         request = self.context['request']
         user = request.user
         role_name = getattr(getattr(user, 'role', None), 'name', None)
-
-        if role_name == 'club_admin':
-            if not user.club_id:
-                raise serializers.ValidationError(
-                    {'club_id': 'O club_admin tem de ter um clube associado.'}
-                )
-
-            attrs['club'] = user.club
-
-        club = attrs.get('club') or getattr(self.instance, 'club', None)
-        if club is None:
-            raise serializers.ValidationError({'club_id': 'O clube e obrigatorio.'})
+        self.resolve_club_scope(attrs)
 
         news_status = attrs.get('news_status') or getattr(self.instance, 'news_status', None)
         next_status = normalize_workflow_status(getattr(news_status, 'name', None))
