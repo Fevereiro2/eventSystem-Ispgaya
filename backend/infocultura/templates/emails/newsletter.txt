@@ -1,0 +1,6 @@
+{{ subject }}
+
+{{ body }}
+
+---
+Enviado por {{ from_name }} <{{ from_email }}>
