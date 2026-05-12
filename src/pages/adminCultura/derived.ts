@@ -17,7 +17,15 @@ import {
   activityTabBySection,
 } from './constants.js';
 import type { ActivityTab, AdminContextLink, AdminSection } from './types.js';
-import { formatAdminDateTime, getWorkflowStatusLabel, normalizeWorkflowStatus } from './utils.js';
+import {
+  formatAdminDateTime,
+  getActivityRoute,
+  getContentRoute,
+  getNewsRoute,
+  getWorkflowStatusLabel,
+  normalizeWorkflowStatus,
+  getAdminSectionHref,
+} from './utils.js';
 
 export type AdminOverviewStat = { label: string; value: string | number };
 
@@ -99,8 +107,8 @@ export function getActivitySectionCopy(activityTab: ActivityTab) {
 
 export function getNewsPageLinks(editingNewsId: number | null): AdminContextLink[] {
   return [
-    { label: editingNewsId ? 'Editar Noticia' : 'Nova Noticia', href: '/infocultura/noticias/nova' },
-    { label: 'Noticias Registadas', href: '/infocultura/noticias/registadas' },
+    { label: editingNewsId ? 'Editar Noticia' : 'Nova Noticia', href: getNewsRoute('form') },
+    { label: 'Noticias Registadas', href: getNewsRoute('list') },
   ];
 }
 
@@ -112,29 +120,29 @@ export function getActivityPageLinks(
 ): AdminContextLink[] {
   if (activityTab === 'books') {
     return [
-      { label: editingBookId ? 'Editar Livro' : 'Novo Livro', href: '/infocultura/livros/novo' },
-      { label: 'Livros Registados', href: '/infocultura/livros/registados' },
+      { label: editingBookId ? 'Editar Livro' : 'Novo Livro', href: getActivityRoute(activityTab, 'form') },
+      { label: 'Livros Registados', href: getActivityRoute(activityTab, 'list') },
     ];
   }
 
   if (activityTab === 'sessions') {
     return [
-      { label: editingSessionId ? 'Editar Sessao' : 'Nova Sessao', href: '/infocultura/sessoes/novo' },
-      { label: 'Sessoes Registadas', href: '/infocultura/sessoes/registados' },
+      { label: editingSessionId ? 'Editar Sessao' : 'Nova Sessao', href: getActivityRoute(activityTab, 'form') },
+      { label: 'Sessoes Registadas', href: getActivityRoute(activityTab, 'list') },
     ];
   }
 
   return [
-    { label: editingEventId ? 'Editar Evento' : 'Novo Evento', href: '/infocultura/eventos/novo' },
-    { label: 'Eventos Registados', href: '/infocultura/eventos/registados' },
-    { label: 'Categorias de Eventos', href: '/infocultura/eventos/categorias' },
+    { label: editingEventId ? 'Editar Evento' : 'Novo Evento', href: getActivityRoute(activityTab, 'form') },
+    { label: 'Eventos Registados', href: getActivityRoute(activityTab, 'list') },
+    { label: 'Categorias de Eventos', href: getActivityRoute(activityTab, 'categories') },
   ];
 }
 
 export function getContentPageLinks(editingId: string | null): AdminContextLink[] {
   return [
-    { label: editingId ? 'Editar Conteudo' : 'Novo Conteudo', href: '/infocultura/conteudos/novo' },
-    { label: 'Conteudos Registados', href: '/infocultura/conteudos/registados' },
+    { label: editingId ? 'Editar Conteudo' : 'Novo Conteudo', href: getContentRoute('form') },
+    { label: 'Conteudos Registados', href: getContentRoute('list') },
   ];
 }
 
@@ -248,7 +256,7 @@ export function buildDashboardAlerts(
       id: 'editorial-review',
       title: 'Revisao editorial',
       detail: `${dashboardStats?.news_review ?? 0} noticias e ${dashboardStats?.events_review ?? 0} eventos aguardam revisao.`,
-      href: '/infocultura/noticias',
+      href: getNewsRoute('list'),
       level: 'warning',
       is_read: false,
       created_at: null,
@@ -257,7 +265,7 @@ export function buildDashboardAlerts(
       id: 'registrations-pending',
       title: 'Inscricoes por validar',
       detail: `${dashboardStats?.registrations_pending ?? pendingRegistrations} inscricoes pendentes de decisao.`,
-      href: '/infocultura/inscricoes',
+      href: getAdminSectionHref('inscricoes'),
       level: 'warning',
       is_read: false,
       created_at: null,
@@ -266,7 +274,7 @@ export function buildDashboardAlerts(
       id: 'clubs-open',
       title: 'Clubes com atividade aberta',
       detail: `${dashboardStats?.clubs_with_registrations_open ?? 0} clubes com inscricoes atualmente ativas.`,
-      href: '/infocultura/clubes',
+      href: getAdminSectionHref('clubes'),
       level: 'info',
       is_read: false,
       created_at: null,
@@ -286,7 +294,7 @@ export function buildDashboardAgenda(dashboardStats: InfoCulturaDashboardStats |
               : 'Sem estado'
           }`,
           date: formatAdminDateTime(dashboardStats.latest_news.date || ''),
-          href: '/infocultura/noticias',
+          href: getNewsRoute('list'),
         }
       : null,
     dashboardStats?.next_session
@@ -295,7 +303,7 @@ export function buildDashboardAgenda(dashboardStats: InfoCulturaDashboardStats |
           title: dashboardStats.next_session.title,
           meta: dashboardStats.next_session.club_name || 'Sem clube',
           date: formatAdminDateTime(dashboardStats.next_session.date || ''),
-          href: '/infocultura/sessoes',
+          href: getActivityRoute('sessions', 'list'),
         }
       : null,
     dashboardStats?.next_event
@@ -306,7 +314,7 @@ export function buildDashboardAgenda(dashboardStats: InfoCulturaDashboardStats |
             dashboardStats.next_event.status ? ` · ${getWorkflowStatusLabel(dashboardStats.next_event.status)}` : ''
           }`,
           date: formatAdminDateTime(dashboardStats.next_event.date || ''),
-          href: '/infocultura/eventos',
+          href: getActivityRoute('events', 'list'),
         }
       : null,
   ].filter(Boolean) as DashboardAgendaEntry[];
@@ -320,7 +328,7 @@ export function buildDashboardQuickActions(
     {
       label: 'Nova noticia',
       hint: 'Abrir publicacao editorial',
-      href: '/infocultura/noticias',
+      href: getNewsRoute('list'),
       icon: Newspaper,
     },
     {
@@ -332,13 +340,13 @@ export function buildDashboardQuickActions(
     {
       label: 'Conteudos culturais',
       hint: 'Atualizar Tuna, Leitura e Teatro',
-      href: '/infocultura/conteudos',
+      href: getAdminSectionHref('conteudos'),
       icon: FilePlus2,
     },
     {
       label: 'Inscricoes',
       hint: 'Validar pedidos pendentes',
-      href: '/infocultura/inscricoes',
+      href: getAdminSectionHref('inscricoes'),
       icon: Bell,
     },
   ];
@@ -347,7 +355,7 @@ export function buildDashboardQuickActions(
     actions.unshift({
       label: 'Utilizadores',
       hint: 'Criar ou editar acessos',
-      href: '/infocultura/utilizadores',
+      href: getAdminSectionHref('utilizadores'),
       icon: Users,
     });
   }
