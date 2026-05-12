@@ -1,5 +1,6 @@
 import { jsx as _jsx, jsxs as _jsxs } from "react/jsx-runtime";
 import { container, topBar, topBarGroup, topBarInner, topBarLink, topBarLocaleActive, topBarLocale, topBarLocaleWrap, topBarRightGroup, topBarRightLinks } from '../../styles/ui';
+import { useLocale, getLocaleText } from '../../i18n/locale.js';
 const leftLinks = [
     {
         label: 'Inforestudante',
@@ -49,6 +50,7 @@ const rightLinks = [
     }
 ];
 function TopBar({ transparent = false }) {
+    const { locale, setLocale } = useLocale();
     const rootClassName = transparent
         ? 'hidden xl:block bg-transparent text-white'
         : topBar;
@@ -62,6 +64,7 @@ function TopBar({ transparent = false }) {
         ? 'text-white/80 transition-colors hover:text-white'
         : topBarLocale;
     const dividerClassName = transparent ? 'border-white/10' : 'border-slate-200';
-    return (_jsxs("div", { className: rootClassName, children: [_jsxs("div", { className: `${container} ${topBarInner}`, children: [_jsx("div", { className: topBarGroup, children: leftLinks.map((item) => (_jsx("a", { href: item.href, target: item.target, rel: item.rel, className: linkClassName, children: item.label }, item.label))) }), _jsxs("div", { className: topBarRightGroup, children: [_jsx("div", { className: topBarRightLinks, children: rightLinks.map((item) => (_jsx("a", { href: item.href, target: item.target, rel: item.rel, className: linkClassName, children: item.label }, item.label))) }), _jsxs("span", { className: topBarLocaleWrap, children: [_jsx("a", { href: "https://ispgaya.pt/pt/investigacao/publicacoes-cientificas", title: "pt", rel: "alternate", hrefLang: "pt", className: localeActiveClassName, children: "PT" }), _jsx("a", { href: "https://ispgaya.pt/en/investigacao/publicacoes-cientificas", title: "en", rel: "alternate", hrefLang: "en", className: localeClassName, children: "EN" })] })] })] }), _jsx("hr", { className: dividerClassName })] }));
+    const localeLabel = getLocaleText(locale, 'Idioma', 'Language');
+    return (_jsxs("div", { className: rootClassName, children: [_jsxs("div", { className: `${container} ${topBarInner}`, children: [_jsx("div", { className: topBarGroup, children: leftLinks.map((item) => (_jsx("a", { href: item.href, target: item.target, rel: item.rel, className: linkClassName, children: item.label }, item.label))) }), _jsxs("div", { className: topBarRightGroup, children: [_jsx("div", { className: topBarRightLinks, children: rightLinks.map((item) => (_jsx("a", { href: item.href, target: item.target, rel: item.rel, className: linkClassName, children: item.label }, item.label))) }), _jsxs("span", { className: topBarLocaleWrap, children: [_jsx("button", { type: "button", title: localeLabel, "aria-pressed": locale === 'pt', className: locale === 'pt' ? localeActiveClassName : localeClassName, onClick: () => setLocale('pt'), children: "PT" }), _jsx("button", { type: "button", title: localeLabel, "aria-pressed": locale === 'en', className: locale === 'en' ? localeActiveClassName : localeClassName, onClick: () => setLocale('en'), children: "EN" })] })] })] }), _jsx("hr", { className: dividerClassName })] }));
 }
 export default TopBar;
