@@ -28,11 +28,6 @@ import { downloadBlobFile, escapeCsvValue, formatAdminDateTime, getActivityRoute
 function AdminCultura() {
     const location = useLocation();
     const navigate = useNavigate();
-    const [isDesktopViewport, setIsDesktopViewport] = useState(() => {
-        if (typeof window === 'undefined')
-            return true;
-        return window.innerWidth >= 1024;
-    });
     const [authUser, setAuthUser] = useState('');
     const [authPass, setAuthPass] = useState('');
     const [authError, setAuthError] = useState('');
@@ -182,18 +177,6 @@ function AdminCultura() {
     const [categoryFormError, setCategoryFormError] = useState('');
     const [sessionFormError, setSessionFormError] = useState('');
     const [eventFormError, setEventFormError] = useState('');
-    useEffect(() => {
-        if (typeof window === 'undefined')
-            return;
-        const updateViewport = () => {
-            setIsDesktopViewport(window.innerWidth >= 1024);
-        };
-        updateViewport();
-        window.addEventListener('resize', updateViewport);
-        return () => {
-            window.removeEventListener('resize', updateViewport);
-        };
-    }, []);
     const activeSection = getAdminSection(location.pathname);
     const activeNewsSubpage = useMemo(() => getNewsSubpage(location.pathname), [location.pathname]);
     const activeActivitySubpage = useMemo(() => getActivitySubpage(location.pathname), [location.pathname]);
@@ -1775,9 +1758,6 @@ function AdminCultura() {
     }
     if (location.pathname === '/infocultura' || location.pathname === '/infocultura/') {
         return _jsx(Navigate, { to: "/infocultura/resumo", replace: true });
-    }
-    if (!isDesktopViewport) {
-        return (_jsxs("div", { className: infoLegacyLoginStage, children: [_jsx("img", { src: infoCulturaBg, alt: "", className: infoLegacyBackdropImage }), _jsx("div", { className: infoLegacyBackdropOverlay }), _jsxs("div", { className: infoLegacyChrome, children: [_jsx("header", { className: infoLegacyHeader, children: _jsxs("div", { className: infoLegacyHeaderInner, children: [_jsxs("div", { className: infoLegacyBrandWrap, children: [_jsx("img", { src: ispgayaLogo, alt: "ISPGAYA", className: infoLegacyBrandLogo }), _jsxs("div", { children: [_jsx("p", { className: infoLegacyBrandText, children: "InfoCultura" }), _jsx("p", { className: infoLegacyBrandSub, children: "Gestao cultural interna" })] })] }), _jsx("p", { className: infoLegacyLang, children: "PT | EN" })] }) }), _jsx("main", { className: infoLegacyCenter, children: _jsxs("div", { className: "w-full max-w-xl rounded-xl border border-white/20 bg-white/95 p-6 shadow-2xl backdrop-blur", children: [_jsx("h2", { className: infoLegacyLoginTitle, children: "Acesso apenas em computador" }), _jsx("p", { className: "mt-3 text-sm leading-6 text-slate-700", children: "O portal InfoCultura esta disponivel apenas em ecras de desktop. Para continuar, acede a partir de um computador." }), _jsx("p", { className: infoLegacyMeta, children: "Dispositivos moveis e tablets nao suportam esta area administrativa." })] }) })] })] }));
     }
     if (!activeSection) {
         return _jsx(Navigate, { to: "/infocultura/resumo", replace: true });
