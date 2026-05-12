@@ -51,6 +51,7 @@ from ..service_modules.dashboard import get_admin_dashboard_metrics, get_admin_n
 from ..service_modules.registrations import list_admin_club_registrations, update_admin_club_registration_status
 from ..service_modules.workflow import notify_event_workflow_status, notify_news_workflow_status
 from .admin_common import AdminAuditDestroyMixin, AdminAuditMixin, get_allowed_club_id, get_allowed_registration_club_id
+from .admin_list_helpers import empty_admin_page_response, read_admin_list_params
 
 
 class AdminImageUploadView(APIView):
@@ -122,55 +123,37 @@ class AdminRegistrationListView(APIView):
     permission_classes = [permissions.IsAuthenticated, IsClubAdmin]
 
     def get(self, request):
-        club_id_raw = request.query_params.get('club_id')
-        status = request.query_params.get('status')
-        search = request.query_params.get('search')
-        ordering = (request.query_params.get('ordering') or '').strip() or None
-        date_from = (request.query_params.get('date_from') or '').strip() or None
-        date_to = (request.query_params.get('date_to') or '').strip() or None
-        page_raw = request.query_params.get('page', '1')
-        page_size_raw = request.query_params.get('page_size', '10')
+        params = read_admin_list_params(request.query_params)
         role_name = getattr(getattr(request.user, 'role', None), 'name', None)
-        page = int(page_raw) if page_raw.isdigit() else 1
-        page_size = int(page_size_raw) if page_size_raw.isdigit() else 10
 
         if role_name == 'club_admin' and not request.user.club_id:
-            return Response(
-                {
-                    'items': [],
-                    'total': 0,
-                    'page': page,
-                    'page_size': page_size,
-                    'total_pages': 0,
-                },
-                status=200,
-            )
+            return empty_admin_page_response(page=params.page, page_size=params.page_size)
 
         if role_name == 'club_admin':
             club_id = request.user.club_id
         else:
-            club_id = int(club_id_raw) if club_id_raw and club_id_raw.isdigit() else None
+            club_id = params.club_id
 
         registration_page = list_admin_club_registrations(
             club_id=club_id,
-            status=status if status and status != 'all' else None,
-            search=search,
-            ordering=ordering,
-            date_from=date_from,
-            date_to=date_to,
+            status=params.status,
+            search=params.search,
+            ordering=params.ordering,
+            date_from=params.date_from,
+            date_to=params.date_to,
             allowed_club_id=get_allowed_registration_club_id(request.user),
-            page=page,
-            page_size=page_size,
+            page=params.page,
+            page_size=params.page_size,
         )
 
         if request.query_params.get('export') == 'csv':
             export_page = list_admin_club_registrations(
                 club_id=club_id,
-                status=status if status and status != 'all' else None,
-                search=search,
-                ordering=ordering,
-                date_from=date_from,
-                date_to=date_to,
+                status=params.status,
+                search=params.search,
+                ordering=params.ordering,
+                date_from=params.date_from,
+                date_to=params.date_to,
                 allowed_club_id=get_allowed_registration_club_id(request.user),
                 export_all=True,
             )
@@ -320,23 +303,21 @@ class AdminNewsListCreateView(AdminAuditMixin, generics.ListCreateAPIView):
     def get_queryset(self):
         queryset = News.objects.select_related('news_status', 'club')
         role_name = getattr(getattr(self.request.user, 'role', None), 'name', None)
-        club_id = self.request.query_params.get('club_id')
-        status = (self.request.query_params.get('status') or '').strip().lower()
-        search = (self.request.query_params.get('search') or '').strip()
+        params = read_admin_list_params(self.request.query_params)
 
         if role_name == 'club_admin':
             queryset = queryset.filter(club_id=self.request.user.club_id)
-        elif club_id and club_id.isdigit():
-            queryset = queryset.filter(club_id=int(club_id))
+        elif params.club_id is not None:
+            queryset = queryset.filter(club_id=params.club_id)
 
-        if status and status != 'all':
-            queryset = queryset.filter(news_status__name__iexact=status)
-        if search:
+        if params.status:
+            queryset = queryset.filter(news_status__name__iexact=params.status)
+        if params.search:
             queryset = queryset.filter(
-                Q(title__icontains=search)
-                | Q(summary__icontains=search)
-                | Q(content__icontains=search)
-                | Q(club__name__icontains=search)
+                Q(title__icontains=params.search)
+                | Q(summary__icontains=params.search)
+                | Q(content__icontains=params.search)
+                | Q(club__name__icontains=params.search)
             )
 
         queryset = apply_date_range_filters(queryset, self.request, date_field='created_at__date')
@@ -514,21 +495,20 @@ class AdminBookListCreateView(AdminAuditMixin, generics.ListCreateAPIView):
 
     def get_queryset(self):
         queryset = Book.objects.select_related('club')
+        params = read_admin_list_params(self.request.query_params)
         allowed_club_id = get_allowed_club_id(self.request.user)
-        club_id = self.request.query_params.get('club_id')
-        search = (self.request.query_params.get('search') or '').strip()
 
         if allowed_club_id is not None:
             queryset = queryset.filter(club_id=allowed_club_id)
-        elif club_id and club_id.isdigit():
-            queryset = queryset.filter(club_id=int(club_id))
-        if search:
+        elif params.club_id is not None:
+            queryset = queryset.filter(club_id=params.club_id)
+        if params.search:
             queryset = queryset.filter(
-                Q(title__icontains=search)
-                | Q(author__icontains=search)
-                | Q(summary__icontains=search)
-                | Q(publisher__icontains=search)
-                | Q(club__name__icontains=search)
+                Q(title__icontains=params.search)
+                | Q(author__icontains=params.search)
+                | Q(summary__icontains=params.search)
+                | Q(publisher__icontains=params.search)
+                | Q(club__name__icontains=params.search)
             )
 
         queryset = apply_date_range_filters(queryset, self.request, date_field='created_at__date')
@@ -635,20 +615,19 @@ class AdminSessionListCreateView(AdminAuditMixin, generics.ListCreateAPIView):
 
     def get_queryset(self):
         queryset = Session.objects.select_related('club')
+        params = read_admin_list_params(self.request.query_params)
         allowed_club_id = get_allowed_club_id(self.request.user)
-        club_id = self.request.query_params.get('club_id')
-        search = (self.request.query_params.get('search') or '').strip()
 
         if allowed_club_id is not None:
             queryset = queryset.filter(club_id=allowed_club_id)
-        elif club_id and club_id.isdigit():
-            queryset = queryset.filter(club_id=int(club_id))
-        if search:
+        elif params.club_id is not None:
+            queryset = queryset.filter(club_id=params.club_id)
+        if params.search:
             queryset = queryset.filter(
-                Q(name__icontains=search)
-                | Q(title__icontains=search)
-                | Q(description__icontains=search)
-                | Q(club__name__icontains=search)
+                Q(name__icontains=params.search)
+                | Q(title__icontains=params.search)
+                | Q(description__icontains=params.search)
+                | Q(club__name__icontains=params.search)
             )
 
         queryset = apply_date_range_filters(queryset, self.request, date_field='session_date')
@@ -732,28 +711,26 @@ class AdminEventListCreateView(AdminAuditMixin, generics.ListCreateAPIView):
 
     def get_queryset(self):
         queryset = Event.objects.select_related('user__club').prefetch_related('categories')
+        params = read_admin_list_params(self.request.query_params)
         allowed_club_id = get_allowed_club_id(self.request.user)
-        club_id = self.request.query_params.get('club_id')
         category_id = self.request.query_params.get('category_id')
-        status = (self.request.query_params.get('status') or '').strip().lower()
-        search = (self.request.query_params.get('search') or '').strip()
 
         if allowed_club_id is not None:
             queryset = queryset.filter(user__club_id=allowed_club_id)
-        elif club_id and club_id.isdigit():
-            queryset = queryset.filter(user__club_id=int(club_id))
+        elif params.club_id is not None:
+            queryset = queryset.filter(user__club_id=params.club_id)
 
         if category_id and category_id.isdigit():
             queryset = queryset.filter(categories__id=int(category_id))
-        if status and status != 'all':
-            queryset = queryset.filter(status__iexact=status)
-        if search:
+        if params.status:
+            queryset = queryset.filter(status__iexact=params.status)
+        if params.search:
             queryset = queryset.filter(
-                Q(title__icontains=search)
-                | Q(description__icontains=search)
-                | Q(city__icontains=search)
-                | Q(location__icontains=search)
-                | Q(user__club__name__icontains=search)
+                Q(title__icontains=params.search)
+                | Q(description__icontains=params.search)
+                | Q(city__icontains=params.search)
+                | Q(location__icontains=params.search)
+                | Q(user__club__name__icontains=params.search)
             )
 
         queryset = apply_date_range_filters(queryset, self.request, date_field='event_date')
@@ -939,13 +916,13 @@ class AdminClubListCreateView(AdminAuditMixin, generics.ListCreateAPIView):
 
     def get_queryset(self):
         queryset = Club.objects.all()
-        search = (self.request.query_params.get('search') or '').strip()
+        params = read_admin_list_params(self.request.query_params)
 
-        if search:
+        if params.search:
             queryset = queryset.filter(
-                Q(name__icontains=search)
-                | Q(description__icontains=search)
-                | Q(mission__icontains=search)
+                Q(name__icontains=params.search)
+                | Q(description__icontains=params.search)
+                | Q(mission__icontains=params.search)
             )
 
         queryset = apply_date_range_filters(queryset, self.request, date_field='created_at__date')
