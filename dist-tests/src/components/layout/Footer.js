@@ -19,6 +19,7 @@ const ensinoLinks = [
 const hubLinks = [
     'Inforestudante',
     'Infordocente',
+    'Infocultura',
     'Email',
     'Wi-Fi',
     'Password',

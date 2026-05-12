@@ -24,7 +24,8 @@ export const initialUserForm = {
     name: '',
     email: '',
     role: 'club_admin',
-    password: ''
+    password: '',
+    generate_password: true
 };
 export const initialClubForm = {
     name: '',
