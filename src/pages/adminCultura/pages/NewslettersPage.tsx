@@ -1,7 +1,7 @@
 import { FormEvent, useEffect, useMemo, useState } from 'react';
 import { Mail, SendHorizonal, Users, Pencil, Trash2, Plus, RotateCcw } from 'lucide-react';
 
-import AdminPageHero from '../AdminPageHero.js';
+import AdminPageHero from '../components/AdminPageHero.js';
 import {
   adminActions,
   adminBtnDanger,

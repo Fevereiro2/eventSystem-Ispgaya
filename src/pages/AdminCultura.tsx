@@ -90,7 +90,7 @@ import {
   CulturalItem,
   getAreaLabel,
 } from '../data/culturalContent';
-import AdminPageHero from './adminCultura/AdminPageHero';
+import AdminPageHero from './adminCultura/components/AdminPageHero.js';
 import {
   bulkDeleteAdminBooks,
   bulkDeleteAdminEvents,
