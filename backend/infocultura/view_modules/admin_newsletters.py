@@ -13,7 +13,7 @@ from ..service_modules.audit import record_admin_audit_action
 from ..service_modules.newsletters import list_active_newsletter_subscriber_emails, send_newsletter_email
 from ..core.permissions import IsClubAdmin
 from django.db.models import Q
-from .admin_common import AdminAuditDestroyMixin, AdminAuditMixin
+from .admin.common import AdminAuditDestroyMixin, AdminAuditMixin
 
 
 class AdminNewsletterListCreateView(AdminAuditMixin, generics.ListCreateAPIView):

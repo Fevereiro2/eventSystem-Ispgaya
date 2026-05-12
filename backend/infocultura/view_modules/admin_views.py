@@ -4,7 +4,6 @@ from pathlib import Path
 from uuid import uuid4
 
 from django.core.files.storage import default_storage
-from django.db import DatabaseError
 from django.db.models import Q
 from django.utils import timezone
 from rest_framework import generics, permissions
@@ -28,20 +27,17 @@ from ..api.serializers import (
     AdminSessionWriteSerializer,
     BookSerializer,
     CategorySerializer,
-    ClubMemberAssignSerializer,
-    ClubSerializer,
     CulturalContentSerializer,
     NewsStatusSerializer,
     RegistrationStatusSerializer,
     SessionSerializer,
-    UserSerializer,
     EVENT_WORKFLOW_STATUS_ORDER,
     NEWS_WORKFLOW_STATUS_ORDER,
     get_role_allowed_workflow_statuses,
     normalize_workflow_status,
 )
 from ..core.permissions import IsClubAdmin, IsSuperAdmin
-from ..models import AppUser, Book, Category, Club, CulturalContent, Event, News, NewsStatus, RegistrationStatus, Session
+from ..models import Book, Category, CulturalContent, Event, News, NewsStatus, RegistrationStatus, Session
 from ..service_modules.audit import (
     list_admin_audit_logs,
     record_admin_audit_action,
@@ -50,8 +46,9 @@ from ..service_modules.audit import (
 from ..service_modules.dashboard import get_admin_dashboard_metrics, get_admin_notifications
 from ..service_modules.registrations import list_admin_club_registrations, update_admin_club_registration_status
 from ..service_modules.workflow import notify_event_workflow_status, notify_news_workflow_status
-from .admin_common import AdminAuditDestroyMixin, AdminAuditMixin, get_allowed_club_id, get_allowed_registration_club_id
-from .admin_list_helpers import empty_admin_page_response, read_admin_list_params
+from .admin.common import AdminAuditDestroyMixin, AdminAuditMixin, get_allowed_club_id, get_allowed_registration_club_id
+from .admin.clubs import AdminClubDetailView, AdminClubListCreateView, AdminClubMemberAssignView, AdminClubMemberRemoveView
+from .admin.list_helpers import empty_admin_page_response, read_admin_list_params
 
 
 class AdminImageUploadView(APIView):
@@ -907,141 +904,3 @@ class AdminCategoryDetailView(AdminAuditDestroyMixin, generics.RetrieveUpdateDes
         if self.request.method == 'GET':
             return CategorySerializer
         return AdminCategoryWriteSerializer
-
-
-class AdminClubListCreateView(AdminAuditMixin, generics.ListCreateAPIView):
-    serializer_class = ClubSerializer
-    permission_classes = [permissions.IsAuthenticated, IsSuperAdmin]
-    audit_content_type = 'club'
-
-    def get_queryset(self):
-        queryset = Club.objects.all()
-        params = read_admin_list_params(self.request.query_params)
-
-        if params.search:
-            queryset = queryset.filter(
-                Q(name__icontains=params.search)
-                | Q(description__icontains=params.search)
-                | Q(mission__icontains=params.search)
-            )
-
-        queryset = apply_date_range_filters(queryset, self.request, date_field='created_at__date')
-        return queryset.order_by('name')
-
-    def list(self, request, *args, **kwargs):
-        queryset = self.filter_queryset(self.get_queryset())
-
-        if request.query_params.get('export') == 'csv':
-            rows = [
-                [
-                    item.id,
-                    item.name,
-                    item.description or '',
-                    item.mission or '',
-                    'sim' if item.is_active else 'nao',
-                    'sim' if item.enable_registrations else 'nao',
-                    item.created_at.isoformat() if item.created_at else '',
-                ]
-                for item in queryset
-            ]
-            return build_csv_response(
-                rows=rows,
-                headers=[
-                    'id',
-                    'name',
-                    'description',
-                    'mission',
-                    'is_active',
-                    'enable_registrations',
-                    'created_at',
-                ],
-                filename='infocultura_clubs.csv',
-            )
-
-        serializer = self.get_serializer(queryset, many=True)
-        return Response(serializer.data)
-
-
-class AdminClubDetailView(AdminAuditDestroyMixin, generics.RetrieveUpdateDestroyAPIView):
-    queryset = Club.objects.all()
-    serializer_class = ClubSerializer
-    permission_classes = [permissions.IsAuthenticated, IsSuperAdmin]
-    audit_content_type = 'club'
-
-    def destroy(self, request, *args, **kwargs):
-        club = self.get_object()
-        if AppUser.objects.filter(club=club).exists():
-            return Response(
-                {'message': 'Nao podes apagar um clube com utilizadores associados.'},
-                status=400,
-            )
-
-        try:
-            return super().destroy(request, *args, **kwargs)
-        except DatabaseError:
-            return Response(
-                {
-                    'message':
-                        'Erro ao apagar o clube. Verifica se existem dependências na base de dados e tenta novamente.'
-                },
-                status=400,
-            )
-
-
-class AdminClubMemberAssignView(APIView):
-    permission_classes = [permissions.IsAuthenticated, IsSuperAdmin]
-
-    def post(self, request, pk):
-        club = Club.objects.filter(pk=pk).first()
-        if not club:
-            return Response({'message': 'Clube nao encontrado.'}, status=404)
-
-        serializer = ClubMemberAssignSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-
-        user = serializer.validated_data['user']
-        user.club = club
-        user.save(update_fields=['club'])
-        record_admin_audit_action(
-            action='assign_member',
-            content_type='club',
-            object_id=club.id,
-            summary=club.name,
-            actor_user=request.user,
-            club_id=club.id,
-            metadata={'user_id': user.id, 'user_email': user.email},
-        )
-
-        return Response({'user': UserSerializer(user).data, 'club': ClubSerializer(club).data})
-
-
-class AdminClubMemberRemoveView(APIView):
-    permission_classes = [permissions.IsAuthenticated, IsSuperAdmin]
-
-    def delete(self, request, pk, user_pk):
-        club = Club.objects.filter(pk=pk).first()
-        if not club:
-            return Response({'message': 'Clube nao encontrado.'}, status=404)
-
-        user = AppUser.objects.select_related('role', 'club').filter(pk=user_pk).first()
-        if not user:
-            return Response({'message': 'Utilizador nao encontrado.'}, status=404)
-
-        if user.club_id != club.id:
-            return Response(
-                {'message': 'O utilizador nao pertence a este clube.'},
-                status=400,
-            )
-
-        user.club = None
-        user.save(update_fields=['club'])
-        record_admin_audit_action(
-            action='remove_member',
-            content_type='club',
-            object_id=club.id,
-            summary=club.name,
-            actor_user=request.user,
-            club_id=club.id,
-            metadata={'user_id': user.id, 'user_email': user.email},
-        )
-        return Response({'user': UserSerializer(user).data})

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from ..service_modules.audit import record_admin_audit_action
+from ...service_modules.audit import record_admin_audit_action
 
 
 def describe_audit_target(instance) -> str:
