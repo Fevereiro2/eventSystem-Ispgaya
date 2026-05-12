@@ -220,6 +220,13 @@ export type InfoCulturaAdminNotification = {
   created_at?: string | null;
 };
 
+export type UniversitySearchResult = {
+  name: string;
+  country: string;
+  domains: string[];
+  web_pages: string[];
+};
+
 export type InfoCulturaRegistrationPage = {
   items: InfoCulturaRegistration[];
   total: number;
@@ -241,6 +248,7 @@ export type UserPayload = {
   email: string;
   role: string;
   password?: string;
+  generate_password?: boolean;
   is_active?: boolean;
 };
 
