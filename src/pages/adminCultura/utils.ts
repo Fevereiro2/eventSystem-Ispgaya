@@ -1,10 +1,10 @@
-import { InfoCulturaClub, InfoCulturaUser } from '../../api/infoculturaApi';
+import { InfoCulturaClub, InfoCulturaUser } from '../../api/infoculturaApi.js';
 import {
   activitySectionByTab,
   allActivityTabs,
   NOTIFICATION_READ_KEY,
   WORKFLOW_LABELS
-} from './constants';
+} from './constants.js';
 import {
   ActivitySection,
   ActivitySubpage,
@@ -13,7 +13,7 @@ import {
   ContentSubpage,
   NewsSubpage,
   UserPage
-} from './types';
+} from './types.js';
 
 export function getDefaultActivityOrdering(tab: ActivityTab): string {
   if (tab === 'books') return 'featured';
@@ -183,6 +183,10 @@ export function getAdminSection(pathname: string): AdminSection | null {
 
   if (pathname === '/infocultura/notificacoes') {
     return 'notificacoes';
+  }
+
+  if (pathname === '/infocultura/newsletters' || pathname.startsWith('/infocultura/newsletters/')) {
+    return 'newsletters';
   }
 
   if (pathname === '/infocultura/livros' || pathname.startsWith('/infocultura/livros/')) {
