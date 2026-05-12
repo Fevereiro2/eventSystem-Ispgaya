@@ -6,14 +6,7 @@ import {
   useMemo,
   useState,
 } from 'react';
-import {
-  Bell,
-  CalendarClock,
-  FilePlus2,
-  FolderKanban,
-  Newspaper,
-  Users,
-} from 'lucide-react';
+import { Bell, FolderKanban } from 'lucide-react';
 import { NavLink, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import infoCulturaBg from '../assets/19825874_uqliU.jpeg';
 import ispgayaLogo from '../assets/ispgaya-logo.svg';
@@ -159,6 +152,27 @@ import ClubsPage from './adminCultura/pages/ClubsPage';
 import EventsPage from './adminCultura/pages/EventsPage';
 import NewsPage from './adminCultura/pages/NewsPage';
 import NewslettersPage from './adminCultura/pages/NewslettersPage';
+import {
+  buildActivityOverviewStats,
+  buildContentOverviewStats,
+  buildDashboardAgenda,
+  buildDashboardAlerts,
+  buildDashboardCards,
+  buildDashboardHighlights,
+  buildDashboardQuickActions,
+  buildClubOverviewStats,
+  buildNewsOverviewStats,
+  buildNotificationOverviewStats,
+  buildRegistrationOverviewStats,
+  buildUserOverviewStats,
+  buildSidebarContextNav,
+  getActivityPageLinks,
+  getActivitySectionCopy,
+  getContentPageLinks,
+  getNewsPageLinks,
+  getVisibleSectionGroups,
+  getVisibleSections,
+} from './adminCultura/derived.js';
 import { useAdminActivities } from './adminCultura/hooks/useAdminActivities';
 import { useAdminAuth } from './adminCultura/hooks/useAdminAuth';
 import { useAdminNews } from './adminCultura/hooks/useAdminNews';
@@ -170,8 +184,6 @@ import UsersPage from './adminCultura/pages/UsersPage';
 import {
   ACTIVITY_PAGE_SIZE,
   activityTabBySection,
-  adminSectionGroups,
-  adminSections,
   EVENT_WORKFLOW_ORDER,
   initialBookForm,
   initialCategoryForm,
@@ -189,8 +201,6 @@ import {
 } from './adminCultura/constants';
 import {
   ActivityTab,
-  AdminContextLink,
-  AdminSection,
   BookFormState,
   CategoryFormState,
   ClubFormState,
@@ -198,7 +208,7 @@ import {
   FormState,
   NewsFormState,
   SessionFormState,
-  UserFormState
+  UserFormState,
 } from './adminCultura/types';
 import {
   downloadBlobFile,
@@ -216,7 +226,6 @@ import {
   getNewsSubpage,
   getStoredReadNotificationIds,
   getUserPage,
-  getWorkflowStatusLabel,
   getWorkflowStatusOptions,
   isWithinDateRange,
   normalizeWorkflowStatus,
@@ -427,31 +436,8 @@ function AdminCultura() {
     () => getActivityRoute(defaultActivityTab, 'list'),
     [defaultActivityTab]
   );
-  const visibleSections = useMemo(
-    () =>
-      adminSections.filter((section) => {
-        if (section.id === 'clubes') {
-          return canManageUsers;
-        }
-
-        if (section.id === 'livros' || section.id === 'sessoes' || section.id === 'eventos') {
-          return allowedActivityTabs.includes(activityTabBySection[section.id]);
-        }
-
-        return true;
-      }),
-    [allowedActivityTabs, canManageUsers]
-  );
-  const visibleSectionGroups = useMemo(
-    () =>
-      adminSectionGroups
-        .map((group) => ({
-          ...group,
-          sections: visibleSections.filter((section) => group.ids.includes(section.id)),
-        }))
-        .filter((group) => group.sections.length > 0),
-    [visibleSections]
-  );
+  const visibleSections = getVisibleSections(canManageUsers, allowedActivityTabs);
+  const visibleSectionGroups = getVisibleSectionGroups(visibleSections);
   const sortedItems = useMemo(
     () => [...items].sort((a, b) => (a.updatedAt < b.updatedAt ? 1 : -1)),
     [items]
@@ -532,62 +518,16 @@ function AdminCultura() {
       ).length,
     [registrations]
   );
-  const dashboardCards = useMemo(
-    () =>
-      dashboardStats
-        ? [
-            { label: 'Utilizadores ativos', value: dashboardStats.active_users },
-            { label: 'Noticias publicadas', value: dashboardStats.news_published },
-            { label: 'Noticias em revisao', value: dashboardStats.news_review },
-            { label: 'Eventos em revisao', value: dashboardStats.events_review },
-            { label: 'Livros em destaque', value: dashboardStats.featured_books },
-            { label: 'Sessoes proximas', value: dashboardStats.upcoming_sessions },
-            { label: 'Inscricoes pendentes', value: dashboardStats.registrations_pending },
-            {
-              label: 'Clubes com inscricoes abertas',
-              value: dashboardStats.clubs_with_registrations_open
-            }
-          ]
-        : [],
-    [dashboardStats]
+  const dashboardCards = buildDashboardCards(dashboardStats);
+  const dashboardHighlights = buildDashboardHighlights(
+    dashboardStats,
+    activeUsers,
+    publishedItems,
+    pendingRegistrations,
+    sessions.length
   );
-  const dashboardHighlights = useMemo(
-    () => [
-      {
-        label: 'Utilizadores ativos',
-        value: dashboardStats?.active_users ?? activeUsers,
-        tone: 'slate',
-        icon: Users,
-      },
-      {
-        label: 'Noticias publicadas',
-        value: dashboardStats?.news_published ?? publishedItems,
-        tone: 'amber',
-        icon: Newspaper,
-      },
-      {
-        label: 'Sessoes proximas',
-        value: dashboardStats?.upcoming_sessions ?? sessions.length,
-        tone: 'blue',
-        icon: CalendarClock,
-      },
-      {
-        label: 'Inscricoes pendentes',
-        value: dashboardStats?.registrations_pending ?? pendingRegistrations,
-        tone: 'rose',
-        icon: Bell,
-      },
-    ],
-    [activeUsers, dashboardStats, pendingRegistrations, publishedItems, sessions.length]
-  );
-  const activitySectionLabel =
-    activityTab === 'books' ? 'Livros' : activityTab === 'sessions' ? 'Sessoes' : 'Eventos';
-  const activitySectionDescription =
-    activityTab === 'books'
-      ? 'Gestao editorial dos livros associados aos clubes.'
-      : activityTab === 'sessions'
-        ? 'Planeamento e acompanhamento das sessoes de cada clube.'
-        : 'Programacao e workflow editorial dos eventos culturais.';
+  const { label: activitySectionLabel, description: activitySectionDescription } =
+    getActivitySectionCopy(activityTab);
   const newsPageHref = activeNewsSubpage ? getNewsRoute(activeNewsSubpage) : null;
   const activityPageHref = activeActivitySubpage
     ? getActivityRoute(activityTab, activeActivitySubpage)
@@ -600,73 +540,22 @@ function AdminCultura() {
   const showEventCategories = activityTab === 'events' && activeActivitySubpage === 'categories';
   const showContentForm = activeContentSubpage === 'form';
   const showContentList = activeContentSubpage === 'list';
-  const newsPageLinks = useMemo<AdminContextLink[]>(
-    () => [
-      { label: editingNewsId ? 'Editar Noticia' : 'Nova Noticia', href: getNewsRoute('form') },
-      { label: 'Noticias Registadas', href: getNewsRoute('list') },
-    ],
-    [editingNewsId]
+  const newsPageLinks = getNewsPageLinks(editingNewsId);
+  const activityPageLinks = getActivityPageLinks(
+    activityTab,
+    editingBookId,
+    editingSessionId,
+    editingEventId
   );
-  const activityPageLinks = useMemo<AdminContextLink[]>(
-    () =>
-      activityTab === 'books'
-        ? [
-            { label: editingBookId ? 'Editar Livro' : 'Novo Livro', href: getActivityRoute(activityTab, 'form') },
-            { label: 'Livros Registados', href: getActivityRoute(activityTab, 'list') },
-          ]
-        : activityTab === 'sessions'
-          ? [
-              { label: editingSessionId ? 'Editar Sessao' : 'Nova Sessao', href: getActivityRoute(activityTab, 'form') },
-              { label: 'Sessoes Registadas', href: getActivityRoute(activityTab, 'list') },
-            ]
-          : [
-              { label: editingEventId ? 'Editar Evento' : 'Novo Evento', href: getActivityRoute(activityTab, 'form') },
-              { label: 'Eventos Registados', href: getActivityRoute(activityTab, 'list') },
-              { label: 'Categorias de Eventos', href: getActivityRoute(activityTab, 'categories') },
-            ],
-    [activityTab, editingBookId, editingEventId, editingSessionId]
-  );
-  const contentPageLinks = useMemo<AdminContextLink[]>(
-    () => [
-      { label: editingId ? 'Editar Conteudo' : 'Novo Conteudo', href: getContentRoute('form') },
-      { label: 'Conteudos Registados', href: getContentRoute('list') },
-    ],
-    [editingId]
-  );
-  const sidebarContextNavBySection = useMemo<
-    Partial<Record<AdminSection, { links: AdminContextLink[]; activeHref?: string | null }>>
-  >(
-    () => ({
-      noticias: {
-        links: newsPageLinks,
-        activeHref: newsPageHref,
-      },
-      livros: {
-        links: activityTab === 'books' ? activityPageLinks : [],
-        activeHref: activityTab === 'books' ? activityPageHref : null,
-      },
-      sessoes: {
-        links: activityTab === 'sessions' ? activityPageLinks : [],
-        activeHref: activityTab === 'sessions' ? activityPageHref : null,
-      },
-      eventos: {
-        links: activityTab === 'events' ? activityPageLinks : [],
-        activeHref: activityTab === 'events' ? activityPageHref : null,
-      },
-      conteudos: {
-        links: contentPageLinks,
-        activeHref: contentPageHref,
-      },
-    }),
-    [
-      activityPageHref,
-      activityPageLinks,
-      activityTab,
-      contentPageHref,
-      contentPageLinks,
-      newsPageHref,
-      newsPageLinks,
-    ]
+  const contentPageLinks = getContentPageLinks(editingId);
+  const sidebarContextNavBySection = buildSidebarContextNav(
+    activityTab,
+    newsPageLinks,
+    activityPageLinks,
+    contentPageLinks,
+    newsPageHref,
+    activityPageHref,
+    contentPageHref
   );
   const readNotificationIdSet = useMemo(
     () => new Set(readNotificationIds),
@@ -676,48 +565,11 @@ function AdminCultura() {
     () => notifications.filter((notification) => !readNotificationIdSet.has(notification.id)),
     [notifications, readNotificationIdSet]
   );
-  const dashboardAlerts = useMemo(
-    () =>
-      notifications.length > 0
-        ? notifications.slice(0, 4).map((notification) => ({
-            id: notification.id,
-            title: notification.title,
-            detail: notification.message,
-            href: notification.href,
-            level: notification.level,
-            is_read: readNotificationIdSet.has(notification.id),
-            created_at: notification.created_at || null,
-          }))
-        : [
-            {
-              id: 'editorial-review',
-              title: 'Revisao editorial',
-              detail: `${dashboardStats?.news_review ?? 0} noticias e ${dashboardStats?.events_review ?? 0} eventos aguardam revisao.`,
-              href: '/infocultura/noticias',
-              level: 'warning',
-              is_read: false,
-              created_at: null,
-            },
-            {
-              id: 'registrations-pending',
-              title: 'Inscricoes por validar',
-              detail: `${dashboardStats?.registrations_pending ?? pendingRegistrations} inscricoes pendentes de decisao.`,
-              href: '/infocultura/inscricoes',
-              level: 'warning',
-              is_read: false,
-              created_at: null,
-            },
-            {
-              id: 'clubs-open',
-              title: 'Clubes com atividade aberta',
-              detail: `${dashboardStats?.clubs_with_registrations_open ?? 0} clubes com inscricoes atualmente ativas.`,
-              href: '/infocultura/clubes',
-              level: 'info',
-              is_read: false,
-              created_at: null,
-            },
-        ],
-    [dashboardStats, notifications, pendingRegistrations, readNotificationIdSet]
+  const dashboardAlerts = buildDashboardAlerts(
+    notifications,
+    readNotificationIdSet,
+    dashboardStats,
+    pendingRegistrations
   );
   function openDashboardNotification(notification: {
     id: string;
@@ -737,95 +589,8 @@ function AdminCultura() {
       created_at: notification.created_at,
     });
   }
-  const dashboardAgenda = useMemo(
-    () =>
-      [
-        dashboardStats?.latest_news
-          ? {
-              label: 'Ultima noticia',
-              title: dashboardStats.latest_news.title,
-              meta: `${dashboardStats.latest_news.club_name || 'Sem clube'} · ${
-                dashboardStats.latest_news.status
-                  ? getWorkflowStatusLabel(dashboardStats.latest_news.status)
-                  : 'Sem estado'
-              }`,
-              date: formatAdminDateTime(dashboardStats.latest_news.date || ''),
-              href: '/infocultura/noticias',
-            }
-          : null,
-        dashboardStats?.next_session
-          ? {
-              label: 'Proxima sessao',
-              title: dashboardStats.next_session.title,
-              meta: dashboardStats.next_session.club_name || 'Sem clube',
-              date: formatAdminDateTime(dashboardStats.next_session.date || ''),
-              href: '/infocultura/sessoes',
-            }
-          : null,
-        dashboardStats?.next_event
-          ? {
-              label: 'Proximo evento',
-              title: dashboardStats.next_event.title,
-              meta: `${dashboardStats.next_event.club_name || 'Sem clube'}${
-                dashboardStats.next_event.status
-                  ? ` · ${getWorkflowStatusLabel(dashboardStats.next_event.status)}`
-                  : ''
-              }`,
-              date: formatAdminDateTime(dashboardStats.next_event.date || ''),
-              href: '/infocultura/eventos',
-            }
-          : null,
-      ].filter(Boolean) as Array<{
-        label: string;
-        title: string;
-        meta: string;
-        date: string;
-        href: string;
-      }>,
-    [dashboardStats]
-  );
-  const dashboardQuickActions = useMemo(
-    () => {
-      const actions = [
-        {
-          label: 'Nova noticia',
-          hint: 'Abrir publicacao editorial',
-          href: '/infocultura/noticias',
-          icon: Newspaper,
-        },
-        {
-          label: 'Nova atividade',
-          hint: 'Gerir livros, sessoes e eventos',
-          href: defaultActivityHref,
-          icon: CalendarClock,
-        },
-        {
-          label: 'Conteudos culturais',
-          hint: 'Atualizar Tuna, Leitura e Teatro',
-          href: '/infocultura/conteudos',
-          icon: FilePlus2,
-        },
-        {
-          label: 'Inscricoes',
-          hint: 'Validar pedidos pendentes',
-          href: '/infocultura/inscricoes',
-          icon: Bell,
-        },
-      ];
-
-      if (canManageUsers) {
-        actions.unshift({
-          label: 'Utilizadores',
-          hint: 'Criar ou editar acessos',
-          href: '/infocultura/utilizadores',
-          icon: Users,
-        });
-      }
-
-      return actions;
-    },
-    [canManageUsers, defaultActivityHref]
-  );
+  const dashboardAgenda = buildDashboardAgenda(dashboardStats);
+  const dashboardQuickActions = buildDashboardQuickActions(canManageUsers, defaultActivityHref);
   const latestNotifications = useMemo(
     () =>
       notifications.map((notification) => ({
@@ -834,157 +599,35 @@ function AdminCultura() {
       })),
     [notifications, readNotificationIdSet]
   );
-  const notificationOverviewStats = useMemo(
-    () => [
-      { label: 'Total', value: notifications.length },
-      { label: 'Por ler', value: unreadNotifications.length },
-      {
-        label: 'Editoriais',
-        value: notifications.filter((notification) => notification.kind === 'editorial').length,
-      },
-      {
-        label: 'Agenda',
-        value: notifications.filter((notification) => notification.kind === 'schedule').length,
-      },
-    ],
-    [notifications, unreadNotifications.length]
+  const notificationOverviewStats = buildNotificationOverviewStats(
+    notifications,
+    unreadNotifications.length
   );
-  const userOverviewStats = useMemo(
-    () => [
-      { label: 'Total', value: filteredUsers.length },
-      {
-        label: 'Ativos',
-        value: filteredUsers.filter((user) => user.is_active).length,
-      },
-      {
-        label: 'Inativos',
-        value: filteredUsers.filter((user) => !user.is_active).length,
-      },
-      {
-        label: 'Club admins',
-        value: filteredUsers.filter((user) => user.role === 'club_admin').length,
-      },
-    ],
-    [filteredUsers]
+  const userOverviewStats = buildUserOverviewStats(filteredUsers);
+  const clubsOverviewStats = buildClubOverviewStats(filteredClubs);
+  const newsOverviewStats = buildNewsOverviewStats(
+    newsTotal,
+    dashboardStats,
+    selectedNewsIds,
+    sortedNews
   );
-  const clubsOverviewStats = useMemo(
-    () => [
-      { label: 'Total', value: filteredClubs.length },
-      {
-        label: 'Ativos',
-        value: filteredClubs.filter((club) => club.is_active).length,
-      },
-      {
-        label: 'Inscricoes abertas',
-        value: filteredClubs.filter((club) => club.enable_registrations).length,
-      },
-      {
-        label: 'Com imagem',
-        value: filteredClubs.filter((club) => Boolean(club.image)).length,
-      },
-    ],
-    [filteredClubs]
-  );
-  const newsOverviewStats = useMemo(
-    () => [
-      { label: 'Total filtrado', value: newsTotal },
-      {
-        label: 'Em revisao',
-        value:
-          dashboardStats?.news_review ??
-          sortedNews.filter(
-            (item) => normalizeWorkflowStatus(item.news_status_name) === 'review'
-          ).length,
-      },
-      { label: 'Selecionadas', value: selectedNewsIds.length },
-      {
-        label: 'Publicadas',
-        value:
-          dashboardStats?.news_published ??
-          sortedNews.filter(
-            (item) => normalizeWorkflowStatus(item.news_status_name) === 'published'
-          ).length,
-      },
-    ],
-    [dashboardStats, newsTotal, selectedNewsIds.length, sortedNews]
-  );
-  const activityOverviewStats = useMemo(() => {
-    if (activityTab === 'books') {
-      return [
-        { label: 'Total filtrado', value: activityTotal },
-        {
-          label: 'Em destaque',
-          value: sortedBooks.filter((item) => item.is_featured).length,
-        },
-        { label: 'Selecionados', value: selectedBookIds.length },
-        {
-          label: 'Clubes na pagina',
-          value: new Set(sortedBooks.map((item) => item.club_id)).size,
-        },
-      ];
-    }
-
-    if (activityTab === 'sessions') {
-      return [
-        { label: 'Total filtrado', value: activityTotal },
-        {
-          label: 'Proximas',
-          value: sortedSessions.filter(
-            (item) => new Date(item.start_date).getTime() >= Date.now()
-          ).length,
-        },
-        {
-          label: 'Inscricoes abertas',
-          value: sortedSessions.filter((item) => item.enable_registrations).length,
-        },
-        {
-          label: 'Clubes na pagina',
-          value: new Set(sortedSessions.map((item) => item.club_id)).size,
-        },
-      ];
-    }
-
-    return [
-      { label: 'Total filtrado', value: activityTotal },
-      {
-        label: 'Em revisao',
-        value: sortedEvents.filter((item) => normalizeWorkflowStatus(item.status) === 'review')
-          .length,
-      },
-      { label: 'Selecionados', value: selectedEventIds.length },
-      { label: 'Categorias', value: sortedCategories.length },
-    ];
-  }, [
+  const activityOverviewStats = buildActivityOverviewStats(
     activityTab,
     activityTotal,
-    selectedBookIds.length,
-    selectedEventIds.length,
+    selectedBookIds,
+    selectedEventIds,
     sortedBooks,
-    sortedCategories.length,
+    sortedCategories,
     sortedEvents,
-    sortedSessions,
-  ]);
-  const registrationOverviewStats = useMemo(
-    () => [
-      { label: 'Total filtrado', value: registrationTotal },
-      { label: 'Pendentes', value: pendingRegistrations },
-      { label: 'Aprovadas', value: approvedRegistrations },
-      { label: 'Rejeitadas', value: rejectedRegistrations },
-    ],
-    [approvedRegistrations, pendingRegistrations, registrationTotal, rejectedRegistrations]
+    sortedSessions
   );
-  const contentOverviewStats = useMemo(
-    () => [
-      { label: 'Total', value: sortedItems.length },
-      { label: 'Publicados', value: publishedItems },
-      { label: 'Rascunhos', value: Math.max(0, sortedItems.length - publishedItems) },
-      {
-        label: 'Areas',
-        value: new Set(sortedItems.map((item) => item.area)).size,
-      },
-    ],
-    [publishedItems, sortedItems]
+  const registrationOverviewStats = buildRegistrationOverviewStats(
+    registrationTotal,
+    pendingRegistrations,
+    approvedRegistrations,
+    rejectedRegistrations
   );
+  const contentOverviewStats = buildContentOverviewStats(sortedItems, publishedItems);
   const clubMembers = useMemo(() => {
     if (!editingClubId) return [];
 
