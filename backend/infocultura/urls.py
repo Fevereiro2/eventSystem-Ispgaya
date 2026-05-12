@@ -61,6 +61,7 @@ from .views import (
     PublicSessionListView,
     PublicSessionRegistrationCreateView,
     RefreshTokenView,
+    UniversitySearchView,
 )
 
 urlpatterns = [
@@ -110,6 +111,7 @@ urlpatterns = [
         name='events-public-calendar',
     ),
     path('content/', PublicContentListView.as_view(), name='content-public-list'),
+    path('universities/search/', UniversitySearchView.as_view(), name='universities-search'),
     path('content/admin/', AdminContentListCreateView.as_view(), name='content-admin-list-create'),
     path('content/admin/<uuid:pk>/', AdminContentDetailView.as_view(), name='content-admin-detail'),
     path('uploads/images/', AdminImageUploadView.as_view(), name='uploads-image-create'),

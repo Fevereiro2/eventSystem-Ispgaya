@@ -71,6 +71,7 @@ from .view_modules.public_views import (
     PublicSessionListView,
     PublicSessionRegistrationCreateView,
 )
+from .view_modules.university_views import UniversitySearchView
 
 __all__ = [
     'AdminAuditLogListView',
@@ -134,6 +135,7 @@ __all__ = [
     'PublicSessionListView',
     'PublicSessionRegistrationCreateView',
     'RefreshTokenView',
+    'UniversitySearchView',
 ]
 
 """
