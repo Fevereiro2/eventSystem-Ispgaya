@@ -1,6 +1,8 @@
-from .admin_views import (
+from .admin.content import (
     AdminContentDetailView,
     AdminContentListCreateView,
+)
+from .admin.news import (
     AdminNewsBulkDeleteView,
     AdminNewsBulkStatusUpdateView,
     AdminNewsDetailView,
