@@ -1,4 +1,4 @@
-import { CulturalArea } from '../../data/culturalContent';
+import { CulturalArea } from '../../data/culturalContent.js';
 
 export type FormState = {
   area: CulturalArea;
@@ -85,6 +85,7 @@ export type ActivitySection = 'livros' | 'sessoes' | 'eventos';
 export type AdminSection =
   | 'resumo'
   | 'notificacoes'
+  | 'newsletters'
   | 'utilizadores'
   | 'conteudos'
   | 'noticias'

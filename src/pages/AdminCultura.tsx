@@ -158,6 +158,7 @@ import ActivitiesPage from './adminCultura/ActivitiesPage';
 import ClubsPage from './adminCultura/pages/ClubsPage';
 import EventsPage from './adminCultura/pages/EventsPage';
 import NewsPage from './adminCultura/pages/NewsPage';
+import NewslettersPage from './adminCultura/pages/NewslettersPage';
 import { useAdminActivities } from './adminCultura/hooks/useAdminActivities';
 import { useAdminAuth } from './adminCultura/hooks/useAdminAuth';
 import { useAdminNews } from './adminCultura/hooks/useAdminNews';
@@ -3029,6 +3030,8 @@ function AdminCultura() {
               </section>
             </div>
           ) : null}
+
+          {activeSection === 'newsletters' ? <NewslettersPage /> : null}
 
           {activeSection === 'utilizadores' ? (
             <UsersPage

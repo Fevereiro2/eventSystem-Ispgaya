@@ -1,4 +1,4 @@
-import { CulturalArea, CulturalItem } from '../data/culturalContent';
+import { CulturalArea, CulturalItem } from '../data/culturalContent.js';
 
 export type { CulturalArea, CulturalItem };
 
@@ -68,6 +68,25 @@ export type InfoCulturaNews = {
   club_id: number;
   club_name: string;
   editorial_history?: InfoCulturaEditorialHistory[];
+};
+
+export type InfoCulturaNewsletter = {
+  id: number;
+  title: string;
+  subject: string;
+  content: string;
+  status: string;
+  sent_at: string | null;
+  created_at: string;
+  user_id: number | null;
+  user_name: string | null;
+};
+
+export type InfoCulturaNewsletterSubscriber = {
+  id: number;
+  email: string;
+  is_active: boolean;
+  subscribed_at: string;
 };
 
 export type InfoCulturaBook = {
@@ -242,6 +261,19 @@ export type NewsPayload = {
   news_status: string;
   published_at?: string | null;
   club_id?: number;
+};
+
+export type NewsletterPayload = {
+  title: string;
+  subject: string;
+  content: string;
+  status: string;
+  sent_at?: string | null;
+};
+
+export type NewsletterSubscriberPayload = {
+  email: string;
+  is_active: boolean;
 };
 
 export type BookPayload = {

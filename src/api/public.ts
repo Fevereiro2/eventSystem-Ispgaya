@@ -1,4 +1,4 @@
-import { CulturalArea, CulturalItem } from '../data/culturalContent';
+import { CulturalArea, CulturalItem } from '../data/culturalContent.js';
 import {
   InfoCulturaBook,
   InfoCulturaCategory,
@@ -8,13 +8,13 @@ import {
   InfoCulturaNewsStatus,
   InfoCulturaSession,
   ClubRegistrationPayload,
-} from './types';
+} from './types.js';
 import {
   normalizeItemsResponse,
   request,
   requestBlob,
   ApiPublicRegistrationResponse,
-} from './client';
+} from './client.js';
 
 export async function fetchPublicContent(area: CulturalArea): Promise<CulturalItem[]> {
   const data = await request<{ items: CulturalItem[] } | CulturalItem[]>(`/content/?area=${area}`);
