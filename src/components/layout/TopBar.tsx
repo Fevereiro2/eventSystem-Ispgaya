@@ -10,6 +10,7 @@ import {
   topBarRightGroup,
   topBarRightLinks
 } from '../../styles/ui';
+import { useLocale, getLocaleText } from '../../i18n/locale.js';
 
 const leftLinks = [
   {
@@ -66,6 +67,7 @@ type TopBarProps = {
 };
 
 function TopBar({ transparent = false }: TopBarProps) {
+  const { locale, setLocale } = useLocale();
   const rootClassName = transparent
     ? 'hidden xl:block bg-transparent text-white'
     : topBar;
@@ -79,6 +81,7 @@ function TopBar({ transparent = false }: TopBarProps) {
     ? 'text-white/80 transition-colors hover:text-white'
     : topBarLocale;
   const dividerClassName = transparent ? 'border-white/10' : 'border-slate-200';
+  const localeLabel = getLocaleText(locale, 'Idioma', 'Language');
 
   return (
     <div className={rootClassName}>
@@ -112,24 +115,24 @@ function TopBar({ transparent = false }: TopBarProps) {
             ))}
           </div>
           <span className={topBarLocaleWrap}>
-            <a
-              href="https://ispgaya.pt/pt/investigacao/publicacoes-cientificas"
-              title="pt"
-              rel="alternate"
-              hrefLang="pt"
-              className={localeActiveClassName}
+            <button
+              type="button"
+              title={localeLabel}
+              aria-pressed={locale === 'pt'}
+              className={locale === 'pt' ? localeActiveClassName : localeClassName}
+              onClick={() => setLocale('pt')}
             >
               PT
-            </a>
-            <a
-              href="https://ispgaya.pt/en/investigacao/publicacoes-cientificas"
-              title="en"
-              rel="alternate"
-              hrefLang="en"
-              className={localeClassName}
+            </button>
+            <button
+              type="button"
+              title={localeLabel}
+              aria-pressed={locale === 'en'}
+              className={locale === 'en' ? localeActiveClassName : localeClassName}
+              onClick={() => setLocale('en')}
             >
               EN
-            </a>
+            </button>
           </span>
         </div>
       </div>

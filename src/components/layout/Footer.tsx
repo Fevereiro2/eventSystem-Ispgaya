@@ -38,6 +38,7 @@ import iso21001 from '../../assets/ISO-21001.svg';
 import iso9001 from '../../assets/ISO-9001.svg';
 import gaiaSkyline from '../../assets/gaia-skyline.webp';
 import logoNegative from '../../assets/ispgaya-logo-negative.svg';
+import { useLocale, getLocaleText } from '../../i18n/locale.js';
 
 const ensinoLinks = [
   'CTeSP',
@@ -69,13 +70,29 @@ const interesseLinks = [
 ];
 
 function Footer() {
+  const { locale } = useLocale();
+  const text = {
+    follow: getLocaleText(locale, 'Segue-nos', 'Follow us'),
+    ensino: getLocaleText(locale, 'Ensino', 'Study'),
+    interest: getLocaleText(locale, 'Links de Interesse', 'Useful Links'),
+    contacts: getLocaleText(locale, 'Contactos', 'Contacts'),
+    callHint: getLocaleText(
+      locale,
+      'O valor da chamada corresponde ao valor de uma chamada para a rede fixa, em funcao do seu plano tarifario.',
+      'Call charges depend on your tariff plan and are billed as a fixed-line call.'
+    ),
+    updated: getLocaleText(locale, 'Atualizado em 02/03/2026 - 12:28', 'Updated on 02/03/2026 - 12:28'),
+    terms: getLocaleText(locale, 'Termos e Condicoes', 'Terms and Conditions'),
+    privacy: getLocaleText(locale, 'Politica de Privacidade', 'Privacy Policy')
+  };
+
   return (
     <footer className={footerWrap}>
       <section className={footerSection}>
         <div className={footerGrid}>
           <div className={footerBrand}>
             <img src={logoNegative} width={175} height={54} className={footerLogo} alt="ISPGAYA" />
-            <p className={footerFollowTitle}>Segue-nos</p>
+            <p className={footerFollowTitle}>{text.follow}</p>
             <div className={footerSocialLinks}>
               <a href="#" className={footerSocialLink}>
                 <span className={footerSrOnly}>ISPGAYA Facebook</span>
@@ -93,7 +110,7 @@ function Footer() {
           </div>
 
           <div className={footerCol}>
-            <p className={footerTitle}>Ensino</p>
+            <p className={footerTitle}>{text.ensino}</p>
             <ul className={footerList}>
               {ensinoLinks.map((item) => (
                 <li key={item} className={footerListItem}>
@@ -119,7 +136,7 @@ function Footer() {
           </div>
 
           <div className={footerCol}>
-            <p className={footerSubTitle}>Links de Interesse</p>
+            <p className={footerSubTitle}>{text.interest}</p>
             <ul className={footerList}>
               {interesseLinks.map((item) => (
                 <li key={item} className={footerListItem}>
@@ -132,12 +149,12 @@ function Footer() {
           </div>
 
           <div className={footerCol}>
-            <p className={footerTitle}>Contactos</p>
+            <p className={footerTitle}>{text.contacts}</p>
             <address className={footerContactAddress}>
               <p className={footerContactStrong}>Av. dos Descobrimentos, 333</p>
               <p className={footerContactStrong}>4400-103 Santa Marinha - V.N.Gaia</p>
               <p className={footerContactPhone}>
-                (+351) 223 745 730 <span className={footerContactHint}>O valor da chamada corresponde ao valor de uma chamada para a rede fixa, em funcao do seu plano tarifario.</span>
+                (+351) 223 745 730 <span className={footerContactHint}>{text.callHint}</span>
               </p>
               <p className={footerContactEmail}>info@ispgaya.pt</p>
             </address>
@@ -154,16 +171,16 @@ function Footer() {
           <div className={footerBottomInner}>
             <div className={footerBottomText}>
               <span className={footerBottomCopyright}>© 2026 Instituto Superior Politecnico Gaya</span>
-              <span className={footerBottomUpdated}>Atualizado em 02/03/2026 - 12:28</span>
+              <span className={footerBottomUpdated}>{text.updated}</span>
             </div>
 
             <div className={footerBottomLinks}>
               <a href="#" className={footerBottomLink}>
-                Termos e Condicoes
+                {text.terms}
               </a>
               <span className={footerBottomSeparator}>/</span>
               <a href="#" className={footerBottomLink}>
-                Politica de Privacidade
+                {text.privacy}
               </a>
             </div>
           </div>

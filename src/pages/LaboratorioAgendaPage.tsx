@@ -25,6 +25,7 @@ import {
   labResearchLink,
   mainContent
 } from '../styles/ui';
+import { getLocaleText, useLocale } from '../i18n/locale.js';
 
 function normalizeLabel(value: string): string {
   return value
@@ -44,15 +45,15 @@ function getEventTimeState(item: InfoCulturaEvent): 'upcoming' | 'ongoing' | 'pa
   return 'ongoing';
 }
 
-function formatMonthLabel(date: Date): string {
-  return new Intl.DateTimeFormat('pt-PT', {
+function formatMonthLabel(date: Date, locale: 'pt' | 'en'): string {
+  return new Intl.DateTimeFormat(locale === 'en' ? 'en-GB' : 'pt-PT', {
     month: 'long',
     year: 'numeric'
   }).format(date);
 }
 
-function formatDateLabel(value: string): string {
-  return new Intl.DateTimeFormat('pt-PT', {
+function formatDateLabel(value: string, locale: 'pt' | 'en'): string {
+  return new Intl.DateTimeFormat(locale === 'en' ? 'en-GB' : 'pt-PT', {
     day: '2-digit',
     month: 'long',
     year: 'numeric'
@@ -65,6 +66,7 @@ function getClubNameById(clubs: InfoCulturaClub[], clubId?: number | null): stri
 }
 
 function LaboratorioAgendaPage() {
+  const { locale } = useLocale();
   const [clubs, setClubs] = useState<InfoCulturaClub[]>([]);
   const [categories, setCategories] = useState<InfoCulturaCategory[]>([]);
   const [events, setEvents] = useState<InfoCulturaEvent[]>([]);
@@ -100,7 +102,7 @@ function LaboratorioAgendaPage() {
       } catch (error) {
         if (!active) return;
         const message =
-          error instanceof Error ? error.message : 'Não foi possível carregar a agenda.';
+          error instanceof Error ? error.message : getLocaleText(locale, 'Não foi possível carregar a agenda.', 'Unable to load the agenda.');
         setLoadError(message);
       } finally {
         if (active) {
@@ -201,18 +203,18 @@ function LaboratorioAgendaPage() {
       <TopBar />
       <HeaderNav />
       <Breadcrumbs
-        title="Agenda Cultural"
-        description="Consulta a agenda geral do Laboratório Cultural, filtra eventos e percorre o calendário de forma visual."
-        parentLabel="Laboratorio Cultural"
+        title={getLocaleText(locale, 'Agenda Cultural', 'Cultural Agenda')}
+        description={getLocaleText(locale, 'Consulta a agenda geral do Laboratório Cultural, filtra eventos e percorre o calendário de forma visual.', 'Browse the Cultural Lab agenda, filter events and move through the calendar visually.')}
+        parentLabel={getLocaleText(locale, 'Laboratorio Cultural', 'Cultural Lab')}
         parentHref="/laboratorio-cultural"
-        currentLabel="Agenda"
+        currentLabel={getLocaleText(locale, 'Agenda', 'Agenda')}
         currentHref="/laboratorio-cultural/agenda"
       />
 
       <main className={mainContent}>
         <section className="py-12 md:py-14">
           <div className={container}>
-            {isLoading ? <p className={contentEmpty}>A carregar agenda...</p> : null}
+            {isLoading ? <p className={contentEmpty}>{getLocaleText(locale, 'A carregar agenda...', 'Loading agenda...')}</p> : null}
             {loadError ? <p className={contentEmpty}>{loadError}</p> : null}
 
             {!isLoading && !loadError ? (
@@ -221,18 +223,17 @@ function LaboratorioAgendaPage() {
                   <div className="flex flex-wrap items-start justify-between gap-4">
                     <div>
                       <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#dd8609]">
-                        Explorar agenda
+                        {getLocaleText(locale, 'Explorar agenda', 'Explore agenda')}
                       </p>
                       <h2 className="mt-3 font-heading text-3xl font-semibold text-slate-900">
-                        Vê todos os eventos por filtro
+                        {getLocaleText(locale, 'Vê todos os eventos por filtro', 'See all events by filter')}
                       </h2>
                       <p className="mt-3 max-w-3xl text-base leading-8 text-slate-700">
-                        Filtra por clube, categoria, cidade e estado. Depois navega no calendário
-                        para perceber rapidamente o que acontece em cada data.
+                        {getLocaleText(locale, 'Filtra por clube, categoria, cidade e estado. Depois navega no calendário para perceber rapidamente o que acontece em cada data.', 'Filter by club, category, city and status. Then browse the calendar to quickly understand what happens on each date.')}
                       </p>
                     </div>
                     <Link to="/laboratorio-cultural" className={adminBtnSecondary}>
-                      Voltar ao laboratório
+                      {getLocaleText(locale, 'Voltar ao laboratório', 'Back to laboratory')}
                     </Link>
                   </div>
                 </section>
@@ -241,7 +242,7 @@ function LaboratorioAgendaPage() {
                   <div className={adminFormGridSpaced}>
                     <div className={adminField}>
                       <label className={adminLabel} htmlFor="agenda-event-club-filter">
-                        Clube
+                        {getLocaleText(locale, 'Clube', 'Club')}
                       </label>
                       <select
                         id="agenda-event-club-filter"
@@ -249,7 +250,7 @@ function LaboratorioAgendaPage() {
                         value={eventClubFilter}
                         onChange={(event) => setEventClubFilter(event.target.value)}
                       >
-                        <option value="all">Todos</option>
+                        <option value="all">{getLocaleText(locale, 'Todos', 'All')}</option>
                         {clubs.map((club) => (
                           <option key={club.id} value={club.id}>
                             {club.name}
@@ -260,7 +261,7 @@ function LaboratorioAgendaPage() {
 
                     <div className={adminField}>
                       <label className={adminLabel} htmlFor="agenda-event-category-filter">
-                        Categoria
+                        {getLocaleText(locale, 'Categoria', 'Category')}
                       </label>
                       <select
                         id="agenda-event-category-filter"
@@ -268,7 +269,7 @@ function LaboratorioAgendaPage() {
                         value={eventCategoryFilter}
                         onChange={(event) => setEventCategoryFilter(event.target.value)}
                       >
-                        <option value="all">Todas</option>
+                        <option value="all">{getLocaleText(locale, 'Todas', 'All')}</option>
                         {categories.map((category) => (
                           <option key={category.id} value={category.id}>
                             {category.name}
@@ -279,7 +280,7 @@ function LaboratorioAgendaPage() {
 
                     <div className={adminField}>
                       <label className={adminLabel} htmlFor="agenda-event-city-filter">
-                        Cidade
+                        {getLocaleText(locale, 'Cidade', 'City')}
                       </label>
                       <select
                         id="agenda-event-city-filter"
@@ -287,7 +288,7 @@ function LaboratorioAgendaPage() {
                         value={eventCityFilter}
                         onChange={(event) => setEventCityFilter(event.target.value)}
                       >
-                        <option value="all">Todas</option>
+                        <option value="all">{getLocaleText(locale, 'Todas', 'All')}</option>
                         {eventCities.map((city) => (
                           <option key={city} value={city}>
                             {city}
@@ -298,7 +299,7 @@ function LaboratorioAgendaPage() {
 
                     <div className={adminField}>
                       <label className={adminLabel} htmlFor="agenda-event-state-filter">
-                        Estado
+                        {getLocaleText(locale, 'Estado', 'Status')}
                       </label>
                       <select
                         id="agenda-event-state-filter"
@@ -310,10 +311,10 @@ function LaboratorioAgendaPage() {
                           )
                         }
                       >
-                        <option value="all">Todos</option>
-                        <option value="upcoming">Próximos</option>
-                        <option value="ongoing">A decorrer</option>
-                        <option value="past">Concluídos</option>
+                        <option value="all">{getLocaleText(locale, 'Todos', 'All')}</option>
+                        <option value="upcoming">{getLocaleText(locale, 'Próximos', 'Upcoming')}</option>
+                        <option value="ongoing">{getLocaleText(locale, 'A decorrer', 'Ongoing')}</option>
+                        <option value="past">{getLocaleText(locale, 'Concluídos', 'Past')}</option>
                       </select>
                     </div>
                   </div>
@@ -330,7 +331,7 @@ function LaboratorioAgendaPage() {
                         setSelectedDate('');
                       }}
                     >
-                      Limpar filtros
+                      {getLocaleText(locale, 'Limpar filtros', 'Clear filters')}
                     </button>
                     {selectedDate ? (
                       <button
@@ -338,7 +339,7 @@ function LaboratorioAgendaPage() {
                         className={adminBtnSecondary}
                         onClick={() => setSelectedDate('')}
                       >
-                        Limpar data
+                        {getLocaleText(locale, 'Limpar data', 'Clear date')}
                       </button>
                     ) : null}
                   </div>
@@ -359,7 +360,7 @@ function LaboratorioAgendaPage() {
                         <ChevronLeft className="h-5 w-5" />
                       </button>
                       <h2 className="font-heading text-2xl font-semibold capitalize text-slate-900">
-                        {formatMonthLabel(visibleMonth)}
+                        {formatMonthLabel(visibleMonth, locale)}
                       </h2>
                       <button
                         type="button"
@@ -375,7 +376,10 @@ function LaboratorioAgendaPage() {
                     </div>
 
                     <div className="grid grid-cols-7 gap-2 text-center text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">
-                      {['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom'].map((day) => (
+                      {(locale === 'en'
+                        ? ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
+                        : ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom']
+                      ).map((day) => (
                         <div key={day} className="py-2">
                           {day}
                         </div>
@@ -404,7 +408,7 @@ function LaboratorioAgendaPage() {
                             <span className="block text-sm font-semibold">{date.getDate()}</span>
                             {items.length > 0 ? (
                               <span className="mt-2 block text-xs text-slate-600">
-                                {items.length} evento(s)
+                                {items.length} {getLocaleText(locale, 'evento(s)', 'event(s)')}
                               </span>
                             ) : null}
                           </button>
@@ -417,19 +421,19 @@ function LaboratorioAgendaPage() {
                     <div className="flex items-start justify-between gap-4">
                       <div>
                         <h2 className="font-heading text-2xl font-semibold text-slate-900">
-                          {selectedDate ? `Eventos em ${formatDateLabel(selectedDate)}` : 'Visão geral filtrada'}
+                          {selectedDate ? `${getLocaleText(locale, 'Eventos em', 'Events on')} ${formatDateLabel(selectedDate, locale)}` : getLocaleText(locale, 'Visão geral filtrada', 'Filtered overview')}
                         </h2>
                         <p className="mt-2 text-sm leading-6 text-slate-600">
                           {selectedDate
-                            ? 'Selecionaste um dia específico no calendário.'
-                            : 'Seleciona uma data para reduzir a agenda a um dia.'}
+                            ? getLocaleText(locale, 'Selecionaste um dia específico no calendário.', 'You selected a specific day in the calendar.')
+                            : getLocaleText(locale, 'Seleciona uma data para reduzir a agenda a um dia.', 'Select a date to narrow the agenda to one day.')}
                         </p>
                       </div>
                     </div>
 
                     <div className="mt-6 space-y-4">
                       {filteredEvents.length === 0 ? (
-                        <p className={contentEmpty}>Não existem eventos para os filtros atuais.</p>
+                        <p className={contentEmpty}>{getLocaleText(locale, 'Não existem eventos para os filtros atuais.', 'There are no events for the current filters.')}</p>
                       ) : (
                         filteredEvents.map((item) => (
                           <article
@@ -448,19 +452,19 @@ function LaboratorioAgendaPage() {
                                 <h3 className="text-lg font-semibold text-slate-900">{item.title}</h3>
                                 <span className="rounded-full bg-white px-3 py-1 text-xs font-medium text-slate-600">
                                   {getEventTimeState(item) === 'upcoming'
-                                    ? 'Próximo'
+                                    ? getLocaleText(locale, 'Próximo', 'Upcoming')
                                     : getEventTimeState(item) === 'ongoing'
-                                      ? 'A decorrer'
-                                      : 'Concluído'}
+                                      ? getLocaleText(locale, 'A decorrer', 'Ongoing')
+                                      : getLocaleText(locale, 'Concluído', 'Past')}
                                 </span>
                               </div>
                               <p className="mt-2 text-sm text-slate-500">
-                                {getClubNameById(clubs, item.club_id)} · {formatDateLabel(item.event_date)}
+                                {getClubNameById(clubs, item.club_id)} · {formatDateLabel(item.event_date, locale)}
                               </p>
                               <p className="mt-3 text-sm leading-6 text-slate-700">{item.description}</p>
                               <div className="mt-4">
                                 <Link to={`/laboratorio-cultural/eventos/${item.id}`} className={labResearchLink}>
-                                  Ver detalhe
+                                  {getLocaleText(locale, 'Ver detalhe', 'View details')}
                                 </Link>
                               </div>
                             </div>

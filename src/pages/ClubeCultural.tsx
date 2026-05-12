@@ -45,6 +45,7 @@ import {
   contentSection,
   mainContent
 } from '../styles/ui';
+import { getLocaleText, useLocale } from '../i18n/locale.js';
 
 type ClubeCulturalProps = {
   pageTitle?: string;
@@ -91,6 +92,7 @@ function ClubeCultural({
   routePath,
   clubSearchTerms
 }: ClubeCulturalProps) {
+  const { locale } = useLocale();
   const { clubId } = useParams();
   const [club, setClub] = useState<InfoCulturaClub | null>(null);
   const [newsItems, setNewsItems] = useState<InfoCulturaNews[]>([]);
@@ -117,13 +119,13 @@ function ClubeCultural({
       }
 
       if (!clubSearchTerms || clubSearchTerms.length === 0) {
-        throw new Error('Clube invalido.');
+        throw new Error(getLocaleText(locale, 'Clube invalido.', 'Invalid club.'));
       }
 
       const clubs = await fetchPublicClubs();
       const matchedClub = clubs.find((item) => matchesClubTerms(item.name, clubSearchTerms));
       if (!matchedClub) {
-        throw new Error('Clube nao encontrado.');
+        throw new Error(getLocaleText(locale, 'Clube nao encontrado.', 'Club not found.'));
       }
 
       return matchedClub.id;
@@ -152,7 +154,7 @@ function ClubeCultural({
       } catch (error) {
         if (!active) return;
         const message =
-          error instanceof Error ? error.message : 'Nao foi possivel carregar o clube.';
+          error instanceof Error ? error.message : getLocaleText(locale, 'Nao foi possivel carregar o clube.', 'Unable to load the club.');
         setLoadError(message);
       } finally {
         if (active) {
@@ -207,11 +209,17 @@ function ClubeCultural({
 
     try {
       await createClubRegistration(club.id, data);
-      setRegistrationFeedback('Inscricao enviada com sucesso. Aguarda validacao pelo clube.');
+      setRegistrationFeedback(
+        getLocaleText(
+          locale,
+          'Inscricao enviada com sucesso. Aguarda validacao pelo clube.',
+          'Registration sent successfully. Wait for club validation.'
+        )
+      );
       setIsRegistrationModalOpen(false);
     } catch (error) {
       const message =
-        error instanceof Error ? error.message : 'Nao foi possivel enviar a inscricao.';
+        error instanceof Error ? error.message : getLocaleText(locale, 'Nao foi possivel enviar a inscricao.', 'Unable to submit the registration.');
       setRegistrationError(message);
     } finally {
       setIsSubmittingRegistration(false);
@@ -225,7 +233,7 @@ function ClubeCultural({
       <Breadcrumbs
         title={title}
         description={description}
-        parentLabel="Laboratorio Cultural"
+        parentLabel={getLocaleText(locale, 'Laboratorio Cultural', 'Cultural Lab')}
         parentHref="/laboratorio-cultural"
         currentLabel={title}
         currentHref={currentHref}
@@ -271,10 +279,10 @@ function ClubeCultural({
                       setIsRegistrationModalOpen(true);
                     }}
                   >
-                    Inscrever-me neste clube
+                    {getLocaleText(locale, 'Inscrever-me neste clube', 'Join this club')}
                   </button>
                   <p className="text-sm text-slate-600">
-                    O pedido sera enviado para validacao da equipa do clube.
+                    {getLocaleText(locale, 'O pedido sera enviado para validacao da equipa do clube.', 'The request will be sent to the club team for validation.')}
                   </p>
                 </div>
               ) : null}
@@ -289,7 +297,7 @@ function ClubeCultural({
                 <div className={`${adminFormGridSpaced} mt-12`}>
                   <div className={adminField}>
                     <label className={adminLabel} htmlFor="club-filter-date">
-                      Mostrar a partir de
+                      {getLocaleText(locale, 'Mostrar a partir de', 'Show from')}
                     </label>
                     <input
                       id="club-filter-date"
@@ -310,14 +318,14 @@ function ClubeCultural({
                       value={featuredOnly ? 'sim' : 'todos'}
                       onChange={(event) => setFeaturedOnly(event.target.value === 'sim')}
                     >
-                      <option value="todos">Todos</option>
-                      <option value="sim">Apenas destaque</option>
+                      <option value="todos">{getLocaleText(locale, 'Todos', 'All')}</option>
+                      <option value="sim">{getLocaleText(locale, 'Apenas destaque', 'Featured only')}</option>
                     </select>
                   </div>
 
                   <div className={adminField}>
                     <label className={adminLabel} htmlFor="club-filter-category">
-                      Categoria de evento
+                      {getLocaleText(locale, 'Categoria de evento', 'Event category')}
                     </label>
                     <select
                       id="club-filter-category"
@@ -325,7 +333,7 @@ function ClubeCultural({
                       value={eventCategoryFilter}
                       onChange={(event) => setEventCategoryFilter(event.target.value)}
                     >
-                      <option value="all">Todas</option>
+                      <option value="all">{getLocaleText(locale, 'Todas', 'All')}</option>
                       {categories.map((category) => (
                         <option key={category.id} value={category.id}>
                           {category.name}
@@ -344,14 +352,14 @@ function ClubeCultural({
                         setEventCategoryFilter('all');
                       }}
                     >
-                      Limpar filtros
+                      {getLocaleText(locale, 'Limpar filtros', 'Clear filters')}
                     </button>
                   </div>
                 </div>
               ) : null}
 
               {isLoading ? (
-                <p className={contentEmpty}>A carregar clube...</p>
+                <p className={contentEmpty}>{getLocaleText(locale, 'A carregar clube...', 'Loading club...')}</p>
               ) : loadError ? (
                 <p className={contentEmpty}>{loadError}</p>
               ) : (
@@ -361,13 +369,13 @@ function ClubeCultural({
                   filteredSessions.length === 0 &&
                   filteredEvents.length === 0 ? (
                     <p className={contentEmpty}>
-                      Ainda nao existem conteudos publicados para os filtros atuais.
+                      {getLocaleText(locale, 'Ainda nao existem conteudos publicados para os filtros atuais.', 'There are no published contents for the current filters.')}
                     </p>
                   ) : null}
 
                   {filteredNews.length > 0 ? (
                     <div className="mt-8">
-                      <h3 className={blockTitle}>Noticias</h3>
+                      <h3 className={blockTitle}>{getLocaleText(locale, 'Noticias', 'News')}</h3>
                       <div className={contentItems}>
                         {filteredNews.map((item) => (
                           <article key={item.id} className={contentItemCard}>
@@ -388,7 +396,7 @@ function ClubeCultural({
                               to={`/laboratorio-cultural/noticias/${item.id}`}
                               className={adminBtnSecondary}
                             >
-                              Ver detalhe
+                              {getLocaleText(locale, 'Ver detalhe', 'View details')}
                             </Link>
                           </article>
                         ))}
@@ -398,7 +406,7 @@ function ClubeCultural({
 
                   {filteredSessions.length > 0 ? (
                     <div className="mt-8">
-                      <h3 className={blockTitle}>Sessoes</h3>
+                      <h3 className={blockTitle}>{getLocaleText(locale, 'Sessoes', 'Sessions')}</h3>
                       <div className={contentItems}>
                         {filteredSessions.map((item) => (
                           <article key={item.id} className={contentItemCard}>
@@ -414,7 +422,7 @@ function ClubeCultural({
                               to={`/laboratorio-cultural/sessoes/${item.id}`}
                               className={adminBtnSecondary}
                             >
-                              Ver detalhe
+                              {getLocaleText(locale, 'Ver detalhe', 'View details')}
                             </Link>
                           </article>
                         ))}
@@ -424,7 +432,7 @@ function ClubeCultural({
 
                   {filteredEvents.length > 0 ? (
                     <div className="mt-8">
-                      <h3 className={blockTitle}>Eventos</h3>
+                      <h3 className={blockTitle}>{getLocaleText(locale, 'Eventos', 'Events')}</h3>
                       <div className={contentItems}>
                         {filteredEvents.map((item) => (
                           <article key={item.id} className={contentItemCard}>
@@ -441,7 +449,7 @@ function ClubeCultural({
                             </div>
                             <p className={contentItemDate}>
                               {formatDate(item.event_date)} ·{' '}
-                              {item.location || item.city || 'Local por definir'}
+                                {item.location || item.city || getLocaleText(locale, 'Local por definir', 'Location to be defined')}
                             </p>
                             <p className={contentItemDesc}>{item.description}</p>
                             {item.categories.length > 0 ? (
@@ -453,7 +461,7 @@ function ClubeCultural({
                               to={`/laboratorio-cultural/eventos/${item.id}`}
                               className={adminBtnSecondary}
                             >
-                              Ver detalhe
+                              {getLocaleText(locale, 'Ver detalhe', 'View details')}
                             </Link>
                           </article>
                         ))}
@@ -463,7 +471,7 @@ function ClubeCultural({
 
                   {filteredBooks.length > 0 ? (
                     <div className="mt-8">
-                      <h3 className={blockTitle}>Livros</h3>
+                      <h3 className={blockTitle}>{getLocaleText(locale, 'Livros', 'Books')}</h3>
                       <div className={contentItems}>
                         {filteredBooks.map((item) => (
                           <article key={item.id} className={contentItemCard}>
@@ -477,7 +485,7 @@ function ClubeCultural({
                             <div className={contentItemHeader}>
                               <h4 className={contentItemTitle}>{item.title}</h4>
                               <span className={contentItemStatus}>
-                                {item.is_featured ? 'Destaque' : 'Livro'}
+                                {item.is_featured ? getLocaleText(locale, 'Destaque', 'Featured') : getLocaleText(locale, 'Livro', 'Book')}
                               </span>
                             </div>
                             <p className={contentItemDate}>
@@ -488,7 +496,7 @@ function ClubeCultural({
                               to={`/laboratorio-cultural/livros/${item.id}`}
                               className={adminBtnSecondary}
                             >
-                              Ver detalhe
+                              {getLocaleText(locale, 'Ver detalhe', 'View details')}
                             </Link>
                           </article>
                         ))}

@@ -20,6 +20,9 @@ import {
   resolveInfoCulturaAssetUrl
 } from '../api/infoculturaApi';
 import { container, mainContent } from '../styles/ui';
+import { getLocaleText, useLocale } from '../i18n/locale.js';
+
+  
 
 type HeroSlide = {
   title: string;
@@ -169,6 +172,7 @@ function HomePage() {
   const testimonialTouchStartX = useRef<number | null>(null);
   const [homepageNewsHighlights, setHomepageNewsHighlights] = useState<NewsHighlightItem[]>([]);
   const [homepageEventHighlights, setHomepageEventHighlights] = useState<NewsHighlightItem[]>([]);
+  const { locale } = useLocale();
 
   useEffect(() => {
     const interval = window.setInterval(() => {
@@ -383,7 +387,7 @@ function HomePage() {
                     className={showStudyLinks ? '' : 'invisible pointer-events-none select-none'}
                     aria-hidden={!showStudyLinks}
                   >
-                    <p className="font-medium">Fica a conhecer a nossa oferta formativa:</p>
+                    <p className="font-medium">{getLocaleText(locale, 'Fica a conhecer a nossa oferta formativa:', 'Discover our training programs:')}</p>
                     <ul className="mt-1 divide-y-2 divide-white">
                       {studyLinks.map((item) => (
                         <li key={item.label}>
@@ -411,7 +415,7 @@ function HomePage() {
                       href="#content-start"
                       className="inline-flex items-center justify-end opacity-70 transition-opacity hover:opacity-100"
                     >
-                      <span className="text-sm font-bold uppercase tracking-tight">Descobre Mais</span>
+                      <span className="text-sm font-bold uppercase tracking-tight">{getLocaleText(locale, 'Descobre Mais', 'Find out more')}</span>
                       <span className="ml-4 flex h-10 w-10 items-center justify-center rounded-full border-2 border-white transition hover:scale-110 hover:border-dashed">
                         <ChevronRight className="h-5 w-5 rotate-90" />
                       </span>
@@ -442,7 +446,7 @@ function HomePage() {
         <section id="content-start" className="scroll-mt-36 bg-white pt-10 lg:pt-12 xl:pt-16 2xl:pt-20">
           <div className={`${container} text-center`}>
             <h2 className="font-heading text-3xl font-bold tracking-tight text-black xl:text-4xl 2xl:text-5xl">
-              Destaques
+                {getLocaleText(locale, 'Destaques', 'Highlights')}
             </h2>
           </div>
 
@@ -473,7 +477,7 @@ function HomePage() {
                 </div>
                 <div className="relative z-10 flex items-center px-6 py-6 text-white">
                   <ChevronRight className="h-7 w-7" />
-                  <p className="ml-3 font-medium">Fica a saber mais</p>
+                  <p className="ml-3 font-medium">{getLocaleText(locale, 'Fica a saber mais', 'Find out more')}</p>
                 </div>
               </a>
             ))}
@@ -486,7 +490,7 @@ function HomePage() {
               <div className="sticky top-36">
                 <img
                   src={aondefuturo}
-                  alt="Onde o Futuro Te Leva"
+                  alt={getLocaleText(locale, 'Onde o Futuro Te Leva', 'Where the Future Takes You')}
                   className="relative z-10 mx-auto block shadow-2xl lg:w-10/12 xl:w-auto"
                 />
               </div>
@@ -536,12 +540,10 @@ function HomePage() {
           <div className={`${container} grid grid-cols-2 gap-x-10 bg-white`}>
             <div className="relative z-10 col-span-2 bg-white py-6 lg:col-span-1">
               <h2 className="max-w-2xl font-heading text-3xl font-bold tracking-tight text-black xl:text-4xl 2xl:text-5xl">
-                Ainda queres saber mais? Nós podemos ajudar-te.
+                {getLocaleText(locale, 'Ainda queres saber mais? Nós podemos ajudar-te.', 'Do you still want to know more? We can help you')}
               </h2>
               <p className="mt-4">
-                A candidatura ao ensino superior é um passo muito importante. O ISPGAYA dispõe da
-                modalidade de acesso ideal para ti, quer tenhas terminado o ensino secundário ou já
-                estejas a trabalhar e queiras aperfeiçoar os teus conhecimentos.
+                {getLocaleText(locale, 'A candidatura ao ensino superior é um passo muito importante. O ISPGAYA dispõe da modalidade de acesso ideal para ti, quer tenhas terminado o ensino secundário ou já estejas a trabalhar e queiras aperfeiçoar os teus conhecimentos.', 'Applying for higher education is a very important step, it is the starting point for becoming a successful professional. ISPGAYA has the ideal access modality for you, whether you have finished secondary education or are already working and want to improve your knowledge.')}
               </p>
 
               <div className="mt-6 flex flex-col sm:flex-row sm:items-center">

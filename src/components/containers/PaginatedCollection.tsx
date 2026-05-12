@@ -2,7 +2,8 @@ import { ReactNode, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { ChevronRight } from 'lucide-react';
 
-import { contentEmpty } from '../../styles/ui';
+import { contentEmpty } from '../../styles/ui.js';
+import { useLocale, getLocaleText } from '../../i18n/locale.js';
 
 export type PageToken = number | 'ellipsis';
 
@@ -62,6 +63,7 @@ function PaginatedCollection<T>({
   itemsPerPage = DEFAULT_ITEMS_PER_PAGE,
   renderItem
 }: PaginatedCollectionProps<T>) {
+  const { locale } = useLocale();
   const [searchParams, setSearchParams] = useSearchParams();
   const totalPages = Math.max(1, Math.ceil(items.length / itemsPerPage));
   const requestedPage = Number(searchParams.get('page') || '1');
@@ -107,11 +109,11 @@ function PaginatedCollection<T>({
                 onClick={() => goToPage(currentPage - 1)}
                 className="relative inline-flex items-center rounded-sm border border-gray-300 bg-white px-4 py-2 text-sm font-medium leading-5 text-gray-700"
               >
-                Anterior
+                {getLocaleText(locale, 'Anterior', 'Previous')}
               </button>
             ) : (
               <span className="relative inline-flex cursor-default items-center rounded-sm border border-gray-300 bg-white px-4 py-2 text-sm font-medium leading-5 text-gray-500">
-                Anterior
+                {getLocaleText(locale, 'Anterior', 'Previous')}
               </span>
             )}
 
@@ -121,11 +123,11 @@ function PaginatedCollection<T>({
                 onClick={() => goToPage(currentPage + 1)}
                 className="relative ml-3 inline-flex items-center rounded-sm border border-gray-300 bg-white px-4 py-2 text-sm font-medium leading-5 text-gray-700"
               >
-                Próximo
+                {getLocaleText(locale, 'Próximo', 'Next')}
               </button>
             ) : (
               <span className="relative ml-3 inline-flex cursor-default items-center rounded-sm border border-gray-300 bg-white px-4 py-2 text-sm font-medium leading-5 text-gray-500">
-                Próximo
+                {getLocaleText(locale, 'Próximo', 'Next')}
               </span>
             )}
           </div>

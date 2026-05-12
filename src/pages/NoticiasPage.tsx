@@ -7,11 +7,13 @@ import {
   InfoCulturaNews,
   resolveInfoCulturaAssetUrl
 } from '../api/infoculturaApi';
+import { getLocaleText, useLocale } from '../i18n/locale.js';
 import { formatPublicDate } from '../utils/dateFormat';
 
 const ITEMS_PER_PAGE = 8;
 
 function NoticiasPage() {
+  const { locale } = useLocale();
   const [newsItems, setNewsItems] = useState<InfoCulturaNews[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState('');
@@ -26,7 +28,11 @@ function NoticiasPage() {
         setNewsItems(response);
       } catch (error) {
         if (!active) return;
-        setLoadError(error instanceof Error ? error.message : 'Não foi possível carregar as notícias.');
+        setLoadError(
+          error instanceof Error
+            ? error.message
+            : getLocaleText(locale, 'Não foi possível carregar as notícias.', 'Unable to load the news.')
+        );
       } finally {
         if (active) {
           setIsLoading(false);
@@ -53,19 +59,23 @@ function NoticiasPage() {
 
   return (
     <PublicPageContainer
-      title="Notícias"
-      description="Arquivo público de notícias."
-      parentLabel="Vida Académica"
+      title={getLocaleText(locale, 'Notícias', 'News')}
+      description={getLocaleText(locale, 'Arquivo público de notícias.', 'Public news archive.')}
+      parentLabel={getLocaleText(locale, 'Vida Académica', 'Academic Life')}
       parentHref="/vida-academica/noticias"
-      currentLabel="Notícias"
+      currentLabel={getLocaleText(locale, 'Notícias', 'News')}
       currentHref="/vida-academica/noticias"
     >
       <PaginatedCollection
         items={sortedNews}
         isLoading={isLoading}
         error={loadError}
-        loadingMessage="A carregar notícias..."
-        emptyMessage="Ainda não existem notícias publicadas."
+        loadingMessage={getLocaleText(locale, 'A carregar notícias...', 'Loading news...')}
+        emptyMessage={getLocaleText(
+          locale,
+          'Ainda não existem notícias publicadas.',
+          'There are no published news items yet.'
+        )}
         itemsPerPage={ITEMS_PER_PAGE}
         renderItem={(item) => {
           const itemDate = item.published_at || item.created_at;
@@ -77,7 +87,7 @@ function NoticiasPage() {
               imageUrl={resolveInfoCulturaAssetUrl(item.image)}
               imageAlt={item.title}
               dateTime={itemDate}
-              formattedDate={formatPublicDate(itemDate)}
+              formattedDate={formatPublicDate(itemDate, locale)}
               description={item.summary}
               tags={
                 item.club_name ? (

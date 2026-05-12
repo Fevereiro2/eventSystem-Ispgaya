@@ -1,6 +1,7 @@
 import { ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowRight } from 'lucide-react';
+import { useLocale, getLocaleText } from '../../i18n/locale.js';
 
 type PublicMediaListItemProps = {
   title: string;
@@ -23,6 +24,7 @@ function PublicMediaListItem({
   description,
   tags
 }: PublicMediaListItemProps) {
+  const { locale } = useLocale();
   return (
     <article>
       {tags ? <div className="space-x-2">{tags}</div> : null}
@@ -46,7 +48,7 @@ function PublicMediaListItem({
               to={href}
               className="flex items-center text-sm font-medium text-orange-400 underline-offset-2 hover:underline"
             >
-              <span>Ler Mais</span>
+              <span>{getLocaleText(locale, 'Ler Mais', 'Read More')}</span>
               <ArrowRight aria-hidden="true" className="ml-2 mt-0.5 h-5 w-5" strokeWidth={2} />
             </Link>
           </div>
