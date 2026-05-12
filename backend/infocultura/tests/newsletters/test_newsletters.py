@@ -4,7 +4,7 @@ from pathlib import Path
 from unittest import TestCase
 from unittest.mock import patch, MagicMock
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
+sys.path.insert(0, str(Path(__file__).resolve().parents[3]))
 
 import django
 
@@ -41,7 +41,7 @@ class NewsletterSerializerTests(TestCase):
 class NewsletterEmailTests(TestCase):
     def test_newsletter_html_template_renders_subject_and_body(self):
         html = render_to_string(
-            'emails/newsletter.html',
+            'emails/newsletters/newsletter.html',
             {
                 'subject': 'Boletim mensal',
                 'body': 'Linha 1\n\nLinha 2',
