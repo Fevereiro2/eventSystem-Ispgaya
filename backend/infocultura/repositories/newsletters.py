@@ -35,8 +35,8 @@ def send_newsletter_email(*, subject: str, body: str, recipient_list: list[str])
         'from_email': _extract_sender_email(from_email),
         'logo_cid': logo_cid,
     }
-    text_message = render_to_string('emails/newsletter.txt', context)
-    html_message = render_to_string('emails/newsletter.html', context)
+    text_message = render_to_string('emails/newsletters/newsletter.txt', context)
+    html_message = render_to_string('emails/newsletters/newsletter.html', context)
 
     message = EmailMultiAlternatives(
         subject=subject,

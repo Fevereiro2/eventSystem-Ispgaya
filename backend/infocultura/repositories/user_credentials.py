@@ -21,8 +21,8 @@ def send_user_credentials_email(*, recipient_email: str, recipient_name: str, pa
         'from_email': _extract_sender_email(from_email),
         'logo_cid': logo_cid,
     }
-    text_message = render_to_string('emails/user_credentials.txt', context)
-    html_message = render_to_string('emails/user_credentials.html', context)
+    text_message = render_to_string('emails/users/user_credentials.txt', context)
+    html_message = render_to_string('emails/users/user_credentials.html', context)
 
     message = EmailMultiAlternatives(
         subject='Acesso InfoCultura',
