@@ -1,7 +1,7 @@
 import { jsx as _jsx, jsxs as _jsxs } from "react/jsx-runtime";
 import { useEffect, useMemo, useState } from 'react';
 import { Mail, SendHorizonal, Users, Pencil, Trash2, Plus, RotateCcw } from 'lucide-react';
-import AdminPageHero from '../AdminPageHero.js';
+import AdminPageHero from '../components/AdminPageHero.js';
 import { adminActions, adminBtnDanger, adminBtnEdit, adminBtnPrimary, adminBtnSecondary, adminError, adminField, adminFieldSpaced, adminFormGridSpaced, adminInfo, adminInput, adminLabel, adminList, adminListDesc, adminListItem, adminListMeta, adminListTitle, adminListTools, adminListTop, adminPanelForm, adminTextarea, blockText, blockTitle, } from '../../../styles/ui.js';
 import { InfoCulturaApiError, createAdminNewsletter, createAdminNewsletterSubscriber, deleteAdminNewsletter, deleteAdminNewsletterSubscriber, fetchAdminNewsletterSubscribers, fetchAdminNewsletters, getStoredAccessToken, sendAdminNewsletter, updateAdminNewsletter, updateAdminNewsletterSubscriber, } from '../../../api/infoculturaApi.js';
 import { formatAdminDateTime } from '../utils.js';

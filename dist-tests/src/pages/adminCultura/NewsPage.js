@@ -1,6 +1,6 @@
 import { jsx as _jsx, jsxs as _jsxs } from "react/jsx-runtime";
 import { Newspaper } from 'lucide-react';
-import AdminPageHero from './AdminPageHero';
+import AdminPageHero from './components/AdminPageHero.js';
 import { formatAdminDateTime, getWorkflowStatusLabel, normalizeWorkflowStatus } from './utils';
 import { adminActions, adminBtnDanger, adminBtnEdit, adminBtnPrimary, adminBtnSecondary, adminError, adminField, adminFieldSpaced, adminFormGridSpaced, adminHeaderRow, adminInfo, adminInput, adminLabel, adminList, adminListDesc, adminListItem, adminListMeta, adminListTitle, adminListTools, adminListTop, adminPanelCard, adminPanelForm, adminTextarea, blockText, blockTitle, } from '../../styles/ui';
 import { resolveInfoCulturaAssetUrl, } from '../../api/infoculturaApi';

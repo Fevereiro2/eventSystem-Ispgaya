@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { MemoryRouter } from 'react-router-dom';
-import AdminPageHero from '../src/pages/adminCultura/AdminPageHero.js';
+import AdminPageHero from '../src/pages/adminCultura/components/AdminPageHero.js';
 import NewslettersPage from '../src/pages/adminCultura/pages/NewslettersPage.js';
 import PaginatedCollection from '../src/components/containers/PaginatedCollection.js';
 import PublicMediaListItem from '../src/components/containers/PublicMediaListItem.js';

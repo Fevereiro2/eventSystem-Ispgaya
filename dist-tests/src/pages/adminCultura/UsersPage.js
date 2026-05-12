@@ -1,10 +1,10 @@
 import { jsx as _jsx, Fragment as _Fragment, jsxs as _jsxs } from "react/jsx-runtime";
 import { NavLink } from 'react-router-dom';
 import { Users } from 'lucide-react';
-import AdminPageHero from './AdminPageHero';
+import AdminPageHero from './components/AdminPageHero.js';
 import { formatAdminDateTime } from './utils';
 import { adminActions, adminBtnDanger, adminBtnEdit, adminBtnPrimary, adminBtnSecondary, adminError, adminField, adminFormGridSpaced, adminInfo, adminInput, adminLabel, adminListTools, adminPanelCard, adminPanelForm, adminUserEmail, adminUserItem, adminUserList, adminUserMeta, adminUserName, adminUserStatus, adminUserStatusActive, adminUserStatusInactive, } from '../../styles/ui';
-import UserFormPanel from './UserFormPanel';
+import UserFormPanel from './components/UserFormPanel.js';
 function UsersPage({ userPage, canManageUsers, isExportingUsers, handleExportUsersCsv, userOverviewStats, isLoadingUsers, filteredUsers, currentUser, userDateFrom, userDateTo, userOrder, setUserDateFrom, setUserDateTo, setUserOrder, isSavingUser, isLoadingRoles, roles, userForm, setUserForm, userFormError, handleSaveUser, resetUserForm, selectedUser, isDeactivatingUser, handleDeactivateUser, }) {
     if (!userPage)
         return null;
