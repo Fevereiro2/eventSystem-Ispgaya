@@ -1,4 +1,4 @@
-import { normalizeItemsResponse, request, requestBlob, } from './client';
+import { normalizeItemsResponse, request, requestBlob, } from './client.js';
 export async function fetchPublicContent(area) {
     const data = await request(`/content/?area=${area}`);
     return normalizeItemsResponse(data);

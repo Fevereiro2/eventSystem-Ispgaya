@@ -1,4 +1,4 @@
-import { activitySectionByTab, allActivityTabs, NOTIFICATION_READ_KEY, WORKFLOW_LABELS } from './constants';
+import { activitySectionByTab, allActivityTabs, NOTIFICATION_READ_KEY, WORKFLOW_LABELS } from './constants.js';
 export function getDefaultActivityOrdering(tab) {
     if (tab === 'books')
         return 'featured';
@@ -149,6 +149,9 @@ export function getAdminSection(pathname) {
     }
     if (pathname === '/infocultura/notificacoes') {
         return 'notificacoes';
+    }
+    if (pathname === '/infocultura/newsletters' || pathname.startsWith('/infocultura/newsletters/')) {
+        return 'newsletters';
     }
     if (pathname === '/infocultura/livros' || pathname.startsWith('/infocultura/livros/')) {
         return 'livros';

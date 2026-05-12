@@ -1,4 +1,4 @@
-import { request, setStoredAccessToken } from './client';
+import { request, setStoredAccessToken } from './client.js';
 export async function loginInfoCultura(username, password) {
     const data = await request('/auth/login/', {
         method: 'POST',
