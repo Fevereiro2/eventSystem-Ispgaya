@@ -130,6 +130,34 @@ export function getActivityRoute(tab, page) {
 export function getContentRoute(page) {
     return page === 'form' ? '/infocultura/conteudos/novo' : '/infocultura/conteudos/registados';
 }
+export function getAdminSectionHref(section) {
+    switch (section) {
+        case 'resumo':
+            return '/infocultura/resumo';
+        case 'notificacoes':
+            return '/infocultura/notificacoes';
+        case 'newsletters':
+            return '/infocultura/newsletters';
+        case 'utilizadores':
+            return '/infocultura/utilizadores';
+        case 'conteudos':
+            return '/infocultura/conteudos';
+        case 'noticias':
+            return '/infocultura/noticias';
+        case 'livros':
+            return '/infocultura/livros';
+        case 'sessoes':
+            return '/infocultura/sessoes';
+        case 'eventos':
+            return '/infocultura/eventos';
+        case 'atividades':
+            return '/infocultura/atividades';
+        case 'inscricoes':
+            return '/infocultura/inscricoes';
+        case 'clubes':
+            return '/infocultura/clubes';
+    }
+}
 export function isActivitySection(section) {
     return section === 'livros' || section === 'sessoes' || section === 'eventos' || section === 'atividades';
 }
