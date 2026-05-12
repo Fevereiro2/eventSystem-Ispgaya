@@ -139,45 +139,42 @@ def enforce_activity_registration_rate_limit(
         cache.set(key, current_attempts + 1, timeout=window_seconds)
 
 
-def club_registration_exists(*, club_id: int, email: str) -> bool:
-    normalized_email = _normalized_email(email)
-    sql = f"""
+def _build_registration_exists_sql(*, link_table: str, activity_id_field: str) -> str:
+    return f"""
         SELECT 1
-        FROM {db_constants.TABLE_CLUB_REGISTRATION} cr
+        FROM {link_table} link
         INNER JOIN {db_constants.TABLE_REGISTRATION} r
-            ON r.{db_constants.COL_ID_REGISTRATIONS} = cr.{db_constants.COL_ID_REGISTRATIONS}
-        WHERE cr.{db_constants.COL_ID_CLUBS} = %s
+            ON r.{db_constants.COL_ID_REGISTRATIONS} = link.{db_constants.COL_ID_REGISTRATIONS}
+        WHERE link.{activity_id_field} = %s
           AND LOWER(r.email) = %s
         LIMIT 1
     """
+
+
+def club_registration_exists(*, club_id: int, email: str) -> bool:
+    normalized_email = _normalized_email(email)
+    sql = _build_registration_exists_sql(
+        link_table=db_constants.TABLE_CLUB_REGISTRATION,
+        activity_id_field=db_constants.COL_ID_CLUBS,
+    ).replace("link", "cr", 1)
     return bool(fetch_all_dict_rows(sql, (club_id, normalized_email)))
 
 
 def event_registration_exists(*, event_id: int, email: str) -> bool:
     normalized_email = _normalized_email(email)
-    sql = f"""
-        SELECT 1
-        FROM {db_constants.TABLE_EVENT_REGISTRATION} er
-        INNER JOIN {db_constants.TABLE_REGISTRATION} r
-            ON r.{db_constants.COL_ID_REGISTRATIONS} = er.{db_constants.COL_ID_REGISTRATIONS}
-        WHERE er.{db_constants.COL_ID_EVENT} = %s
-          AND LOWER(r.email) = %s
-        LIMIT 1
-    """
+    sql = _build_registration_exists_sql(
+        link_table=db_constants.TABLE_EVENT_REGISTRATION,
+        activity_id_field=db_constants.COL_ID_EVENT,
+    ).replace("link", "er", 1)
     return bool(fetch_all_dict_rows(sql, (event_id, normalized_email)))
 
 
 def session_registration_exists(*, session_id: int, email: str) -> bool:
     normalized_email = _normalized_email(email)
-    sql = f"""
-        SELECT 1
-        FROM {db_constants.TABLE_SESSION_REGISTRATION} sr
-        INNER JOIN {db_constants.TABLE_REGISTRATION} r
-            ON r.{db_constants.COL_ID_REGISTRATIONS} = sr.{db_constants.COL_ID_REGISTRATIONS}
-        WHERE sr.{db_constants.COL_ID_SESSIONS} = %s
-          AND LOWER(r.email) = %s
-        LIMIT 1
-    """
+    sql = _build_registration_exists_sql(
+        link_table=db_constants.TABLE_SESSION_REGISTRATION,
+        activity_id_field=db_constants.COL_ID_SESSIONS,
+    ).replace("link", "sr", 1)
     return bool(fetch_all_dict_rows(sql, (session_id, normalized_email)))
 
 
@@ -292,6 +289,49 @@ def create_club_registration(
 
     notify_new_club_registration(club=club, registration=registration)
     return registration
+
+
+def _admin_registration_joins() -> str:
+    return "\n".join(
+        [
+            f"FROM {db_constants.TABLE_CLUB_REGISTRATION} cr",
+            f"INNER JOIN {db_constants.TABLE_REGISTRATION} r ON r.{db_constants.COL_ID_REGISTRATIONS} = cr.{db_constants.COL_ID_REGISTRATIONS}",
+            f"INNER JOIN {db_constants.TABLE_CLUB} c ON c.{db_constants.COL_ID_CLUBS} = cr.{db_constants.COL_ID_CLUBS}",
+            f"LEFT JOIN {db_constants.TABLE_REGISTRATION_STATUS} rs ON rs.{db_constants.COL_ID_RSTATUS} = r.{db_constants.COL_ID_RSTATUS}",
+        ]
+    )
+
+
+def _build_admin_registration_select_sql(*, joins: str, where_sql: str, order_by: str) -> str:
+    return f"""
+        SELECT
+            r.{db_constants.COL_ID_REGISTRATIONS} AS registration_id,
+            cr.{db_constants.COL_ID_CLUBS} AS club_id,
+            c.name AS club_name,
+            r.name,
+            r.email,
+            r.phone,
+            r.message,
+            COALESCE(rs.name, r.status) AS status,
+            r.created_at
+        {joins}
+        {where_sql}
+        ORDER BY {order_by}
+    """
+
+
+def _row_to_admin_club_registration_record(row: dict[str, Any]) -> AdminClubRegistrationRecord:
+    return AdminClubRegistrationRecord(
+        registration_id=row["registration_id"],
+        club_id=row["club_id"],
+        club_name=row["club_name"],
+        name=row["name"],
+        email=row["email"],
+        phone=row["phone"],
+        message=row["message"],
+        status=row["status"],
+        created_at=row["created_at"],
+    )
 
 
 def _build_activity_registration_subject(*, label: str, activity_title: str, status: str) -> str:
@@ -566,14 +606,7 @@ def list_admin_club_registrations(
     ordering: str | None = None,
     export_all: bool = False,
 ) -> AdminClubRegistrationPage:
-    joins = "\n".join(
-        [
-            f"FROM {db_constants.TABLE_CLUB_REGISTRATION} cr",
-            f"INNER JOIN {db_constants.TABLE_REGISTRATION} r ON r.{db_constants.COL_ID_REGISTRATIONS} = cr.{db_constants.COL_ID_REGISTRATIONS}",
-            f"INNER JOIN {db_constants.TABLE_CLUB} c ON c.{db_constants.COL_ID_CLUBS} = cr.{db_constants.COL_ID_CLUBS}",
-            f"LEFT JOIN {db_constants.TABLE_REGISTRATION_STATUS} rs ON rs.{db_constants.COL_ID_RSTATUS} = r.{db_constants.COL_ID_RSTATUS}",
-        ]
-    )
+    joins = _admin_registration_joins()
     filters = ["1=1"]
     params: list[Any] = []
 
@@ -613,21 +646,7 @@ def list_admin_club_registrations(
     total_rows = fetch_all_dict_rows(count_sql, params)
     total = int(total_rows[0]["total_count"]) if total_rows else 0
 
-    select_sql = f"""
-        SELECT
-            r.{db_constants.COL_ID_REGISTRATIONS} AS registration_id,
-            cr.{db_constants.COL_ID_CLUBS} AS club_id,
-            c.name AS club_name,
-            r.name,
-            r.email,
-            r.phone,
-            r.message,
-            COALESCE(rs.name, r.status) AS status,
-            r.created_at
-        {joins}
-        {where_sql}
-        ORDER BY {order_by}
-    """
+    select_sql = _build_admin_registration_select_sql(joins=joins, where_sql=where_sql, order_by=order_by)
     query_params = list(params)
     if not export_all:
         offset = (page - 1) * page_size
@@ -636,17 +655,7 @@ def list_admin_club_registrations(
 
     rows = fetch_all_dict_rows(select_sql, tuple(query_params))
     items = [
-        AdminClubRegistrationRecord(
-            registration_id=row["registration_id"],
-            club_id=row["club_id"],
-            club_name=row["club_name"],
-            name=row["name"],
-            email=row["email"],
-            phone=row["phone"],
-            message=row["message"],
-            status=row["status"],
-            created_at=row["created_at"],
-        )
+        _row_to_admin_club_registration_record(row)
         for row in rows
     ]
 
@@ -666,46 +675,24 @@ def get_admin_club_registration(
     registration_id: int,
     allowed_club_id: int | None = None,
 ) -> AdminClubRegistrationRecord | None:
-    sql = f"""
-        SELECT
-            r.{db_constants.COL_ID_REGISTRATIONS} AS registration_id,
-            cr.{db_constants.COL_ID_CLUBS} AS club_id,
-            c.name AS club_name,
-            r.name,
-            r.email,
-            r.phone,
-            r.message,
-            COALESCE(rs.name, r.status) AS status,
-            r.created_at
-        FROM {db_constants.TABLE_CLUB_REGISTRATION} cr
-        INNER JOIN {db_constants.TABLE_REGISTRATION} r
-            ON r.{db_constants.COL_ID_REGISTRATIONS} = cr.{db_constants.COL_ID_REGISTRATIONS}
-        INNER JOIN {db_constants.TABLE_CLUB} c
-            ON c.{db_constants.COL_ID_CLUBS} = cr.{db_constants.COL_ID_CLUBS}
-        LEFT JOIN {db_constants.TABLE_REGISTRATION_STATUS} rs
-            ON rs.{db_constants.COL_ID_RSTATUS} = r.{db_constants.COL_ID_RSTATUS}
-        WHERE r.{db_constants.COL_ID_REGISTRATIONS} = %s
-    """
+    joins = _admin_registration_joins()
+    sql = _build_admin_registration_select_sql(
+        joins=joins,
+        where_sql=f"WHERE r.{db_constants.COL_ID_REGISTRATIONS} = %s",
+        order_by="r.created_at DESC",
+    )
     params: list[Any] = [registration_id]
     if allowed_club_id is not None:
-        sql += f" AND cr.{db_constants.COL_ID_CLUBS} = %s"
+        sql = sql.replace(
+            f"WHERE r.{db_constants.COL_ID_REGISTRATIONS} = %s",
+            f"WHERE r.{db_constants.COL_ID_REGISTRATIONS} = %s AND cr.{db_constants.COL_ID_CLUBS} = %s",
+        )
         params.append(allowed_club_id)
 
     rows = fetch_all_dict_rows(sql, tuple(params))
     if not rows:
         return None
-    row = rows[0]
-    return AdminClubRegistrationRecord(
-        registration_id=row["registration_id"],
-        club_id=row["club_id"],
-        club_name=row["club_name"],
-        name=row["name"],
-        email=row["email"],
-        phone=row["phone"],
-        message=row["message"],
-        status=row["status"],
-        created_at=row["created_at"],
-    )
+    return _row_to_admin_club_registration_record(rows[0])
 
 
 def update_admin_club_registration_status(
