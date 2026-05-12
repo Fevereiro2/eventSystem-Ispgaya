@@ -1,6 +1,6 @@
-import { Dispatch, FormEvent, SetStateAction } from 'react';
+import { Dispatch, FormEvent, SetStateAction, useEffect, useMemo, useState } from 'react';
 import { NavLink } from 'react-router-dom';
-import { Users } from 'lucide-react';
+import { Search, Users } from 'lucide-react';
 
 import AdminPageHero from './AdminPageHero';
 import { UserPage, UserFormState } from './types';
@@ -30,8 +30,32 @@ import {
   adminUserStatusInactive,
 } from '../../styles/ui';
 import { InfoCulturaRole, InfoCulturaUser } from '../../api/infoculturaApi';
+import { searchUniversities } from '../../api/public';
+import { UniversitySearchResult } from '../../api/types';
 
 type AdminHeroStat = { label: string; value: string | number };
+
+function getEmailDomain(value: string): string {
+  const trimmed = value.trim();
+  const atIndex = trimmed.lastIndexOf('@');
+  return atIndex >= 0 ? trimmed.slice(atIndex + 1).toLowerCase() : '';
+}
+
+function applyEmailDomain(value: string, domain: string): string {
+  const trimmed = value.trim();
+  const normalizedDomain = domain.trim();
+
+  if (!normalizedDomain) {
+    return trimmed;
+  }
+
+  const localPart = trimmed.includes('@') ? trimmed.split('@', 1)[0].trim() : trimmed;
+  if (!localPart) {
+    return trimmed;
+  }
+
+  return `${localPart}@${normalizedDomain}`;
+}
 
 type UsersPageProps = {
   userPage: UserPage | null;
@@ -88,6 +112,85 @@ function UsersPage({
   isDeactivatingUser,
   handleDeactivateUser,
 }: UsersPageProps) {
+  const [universityQuery, setUniversityQuery] = useState('');
+  const [universityCountry, setUniversityCountry] = useState('Portugal');
+  const [universityResults, setUniversityResults] = useState<UniversitySearchResult[]>([]);
+  const [selectedUniversityIndex, setSelectedUniversityIndex] = useState<number>(0);
+  const [selectedUniversityDomain, setSelectedUniversityDomain] = useState('');
+  const [isSearchingUniversities, setIsSearchingUniversities] = useState(false);
+  const [universityError, setUniversityError] = useState('');
+
+  const selectedUniversity = useMemo(
+    () => universityResults[selectedUniversityIndex] || null,
+    [selectedUniversityIndex, universityResults]
+  );
+
+  async function loadUniversities(query: string, country: string) {
+    setIsSearchingUniversities(true);
+    setUniversityError('');
+
+    try {
+      const items = await searchUniversities({
+        name: query,
+        country,
+        limit: 25,
+      });
+
+      setUniversityResults(items);
+      setSelectedUniversityIndex(0);
+      setSelectedUniversityDomain(items[0]?.domains[0] || '');
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : 'Nao foi possivel carregar as universidades.';
+      setUniversityError(message);
+      setUniversityResults([]);
+      setSelectedUniversityIndex(0);
+      setSelectedUniversityDomain('');
+    } finally {
+      setIsSearchingUniversities(false);
+    }
+  }
+
+  useEffect(() => {
+    if (!userPage || (userPage.mode !== 'create' && userPage.mode !== 'edit')) {
+      return;
+    }
+
+    void loadUniversities('', universityCountry);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [userPage?.mode, universityCountry]);
+
+  useEffect(() => {
+    if (!selectedUniversity) {
+      setSelectedUniversityDomain('');
+      return;
+    }
+
+    const currentEmailDomain = getEmailDomain(userForm.email);
+    const nextDomain =
+      (currentEmailDomain && selectedUniversity.domains.includes(currentEmailDomain)
+        ? currentEmailDomain
+        : '') || selectedUniversity.domains[0] || '';
+
+    setSelectedUniversityDomain(nextDomain);
+  }, [selectedUniversity?.name, userForm.email]);
+
+  const handleSelectUniversity = (index: number) => {
+    const university = universityResults[index];
+    if (!university) return;
+
+    setSelectedUniversityIndex(index);
+    const nextDomain = university.domains[0] || '';
+    setSelectedUniversityDomain(nextDomain);
+
+    if (nextDomain) {
+      setUserForm((current) => ({
+        ...current,
+        email: applyEmailDomain(current.email, nextDomain),
+      }));
+    }
+  };
+
   if (!userPage) return null;
 
   if (userPage.mode === 'list') {
@@ -276,10 +379,121 @@ function UsersPage({
                     type="email"
                     className={adminInput}
                     value={userForm.email}
-                    onChange={(event) =>
-                      setUserForm((prev) => ({ ...prev, email: event.target.value }))
-                    }
+                    onChange={(event) => {
+                      const inputValue = event.target.value;
+                      const nextEmail = selectedUniversityDomain
+                        ? applyEmailDomain(inputValue, selectedUniversityDomain)
+                        : inputValue;
+
+                      setUserForm((prev) => ({ ...prev, email: nextEmail }));
+                    }}
                   />
+                  <p className={adminInfo}>
+                    Selecione uma universidade portuguesa e o email fica preso ao dominio institucional.
+                  </p>
+                  <p className={adminInfo}>
+                    O dominio substitui apenas a parte depois do @ e nao pode ser trocado manualmente.
+                  </p>
+                </div>
+
+                <div className={adminField}>
+                  <label className={adminLabel} htmlFor="university-country">
+                    País
+                  </label>
+                  <select
+                    id="university-country"
+                    className={adminInput}
+                    value={universityCountry}
+                    onChange={(event) => setUniversityCountry(event.target.value)}
+                  >
+                    <option value="Portugal">Portugal</option>
+                    <option value="all">Todos os países</option>
+                  </select>
+                </div>
+
+                <div className={adminField}>
+                  <label className={adminLabel} htmlFor="university-search">
+                    Universidade
+                  </label>
+                  <div className="flex gap-2">
+                    <input
+                      id="university-search"
+                      className={adminInput}
+                      value={universityQuery}
+                      onChange={(event) => setUniversityQuery(event.target.value)}
+                      placeholder="Pesquisar universidade"
+                    />
+                    <button
+                      type="button"
+                      className={adminBtnSecondary}
+                      onClick={() => void loadUniversities(universityQuery, universityCountry)}
+                    >
+                      <span className="inline-flex items-center gap-2">
+                        <Search className="h-4 w-4" />
+                        Pesquisar
+                      </span>
+                    </button>
+                  </div>
+                  {universityError ? <p className={adminError}>{universityError}</p> : null}
+                  {isSearchingUniversities ? <p className={adminInfo}>A procurar universidades...</p> : null}
+                  {!isSearchingUniversities && universityResults.length > 0 ? (
+                    <div className="space-y-3 rounded-lg border border-slate-200 bg-slate-50 p-4">
+                      <div>
+                        <label className={adminLabel} htmlFor="university-result">
+                          Resultados
+                        </label>
+                        <select
+                          id="university-result"
+                          className={adminInput}
+                          value={selectedUniversityIndex}
+                          onChange={(event) => handleSelectUniversity(Number(event.target.value))}
+                        >
+                          {universityResults.map((university, index) => (
+                            <option key={`${university.name}-${university.country}-${index}`} value={index}>
+                              {university.name} · {university.country}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+
+                      {selectedUniversity ? (
+                        <div className="space-y-2">
+                          <p className={adminInfo}>
+                            Domínios disponíveis: {selectedUniversity.domains.join(', ') || 'Sem domínio'}
+                          </p>
+                          {selectedUniversity.domains.length > 0 ? (
+                            <div className="flex flex-wrap gap-2">
+                              <select
+                                className={adminInput}
+                                value={selectedUniversityDomain}
+                                onChange={(event) => {
+                                  const nextDomain = event.target.value;
+                                  setSelectedUniversityDomain(nextDomain);
+                                  if (nextDomain) {
+                                    setUserForm((current) => ({
+                                      ...current,
+                                      email: applyEmailDomain(current.email, nextDomain),
+                                    }));
+                                  }
+                                }}
+                              >
+                                {selectedUniversity.domains.map((domain) => (
+                                  <option key={domain} value={domain}>
+                                    {domain}
+                                  </option>
+                                ))}
+                              </select>
+                            </div>
+                          ) : null}
+                          {selectedUniversityDomain ? (
+                            <p className={adminInfo}>
+                              Domínio selecionado: {selectedUniversityDomain}
+                            </p>
+                          ) : null}
+                        </div>
+                      ) : null}
+                    </div>
+                  ) : null}
                 </div>
 
                 <div className={adminField}>
@@ -308,17 +522,41 @@ function UsersPage({
 
                 <div className={adminField}>
                   <label className={adminLabel} htmlFor="user-password">
-                    {userPage.mode === 'create' ? 'Password' : 'Nova password (opcional)'}
+                    {userPage.mode === 'create'
+                      ? 'Password manual'
+                      : 'Nova password manual (opcional)'}
+                  </label>
+                  <label className="flex items-center gap-2 text-sm font-medium text-slate-700">
+                    <input
+                      type="checkbox"
+                      checked={userForm.generate_password}
+                      onChange={(event) =>
+                        setUserForm((prev) => ({
+                          ...prev,
+                          generate_password: event.target.checked,
+                          ...(event.target.checked ? { password: '' } : {})
+                        }))
+                      }
+                    />
+                    {userPage.mode === 'create'
+                      ? 'Gerar password automaticamente e enviar por email'
+                      : 'Gerar nova password e enviar por email'}
                   </label>
                   <input
                     id="user-password"
                     type="password"
                     className={adminInput}
                     value={userForm.password}
+                    disabled={userForm.generate_password}
                     onChange={(event) =>
                       setUserForm((prev) => ({ ...prev, password: event.target.value }))
                     }
                   />
+                  <p className={adminInfo}>
+                    {userForm.generate_password
+                      ? 'A password sera criada automaticamente e enviada para o email institucional.'
+                      : 'A password escrita aqui sera usada no acesso do utilizador.'}
+                  </p>
                 </div>
               </div>
 

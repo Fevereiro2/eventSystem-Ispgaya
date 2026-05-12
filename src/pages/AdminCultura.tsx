@@ -1866,11 +1866,13 @@ function AdminCultura() {
 
     if (!token || !canManageUsers || !userPage) return;
 
+    const manualPassword = userForm.password.trim();
     const payload = {
       name: userForm.name.trim(),
       email: userForm.email.trim(),
       role: userForm.role,
-      ...(userForm.password.trim() ? { password: userForm.password.trim() } : {})
+      generate_password: userForm.generate_password,
+      ...(!userForm.generate_password && manualPassword ? { password: manualPassword } : {})
     };
 
     if (!payload.name || !payload.email || !payload.role) {
@@ -1878,8 +1880,8 @@ function AdminCultura() {
       return;
     }
 
-    if (userPage.mode === 'create' && !payload.password) {
-      setUserFormError('A password e obrigatoria para criar um utilizador.');
+    if (userPage.mode === 'create' && !userForm.generate_password && !manualPassword) {
+      setUserFormError('Ativa a geracao automatica ou indica uma password.');
       return;
     }
 
