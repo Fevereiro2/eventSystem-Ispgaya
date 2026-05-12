@@ -1,4 +1,6 @@
 from datetime import datetime, timedelta, timezone
+import secrets
+import string
 from uuid import uuid4
 
 import jwt
@@ -55,6 +57,21 @@ def validate_plaintext_password(value: str, *, min_length: int = 8) -> str:
 
 def hash_password(raw_password: str) -> str:
     return make_password(raw_password)
+
+
+def generate_temporary_password(length: int = 12) -> str:
+    if length < 8:
+        raise ValueError("A password temporaria deve ter pelo menos 8 caracteres.")
+
+    alphabet = string.ascii_letters + string.digits + "!@#$%&*+-_"
+    while True:
+        candidate = ''.join(secrets.choice(alphabet) for _ in range(length))
+        if (
+            any(char.islower() for char in candidate)
+            and any(char.isupper() for char in candidate)
+            and any(char.isdigit() for char in candidate)
+        ):
+            return candidate
 
 
 def check_password_hash(raw_password: str, stored_hash: str) -> bool:
