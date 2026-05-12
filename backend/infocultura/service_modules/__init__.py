@@ -3,5 +3,6 @@ from .auth import *  # noqa: F401,F403
 from .calendar import *  # noqa: F401,F403
 from .dashboard import *  # noqa: F401,F403
 from .newsletters import *  # noqa: F401,F403
+from .user_credentials import *  # noqa: F401,F403
 from .registrations import *  # noqa: F401,F403
 from .workflow import *  # noqa: F401,F403
