@@ -38,6 +38,13 @@ from .view_modules.admin_news import (
     AdminNewsListCreateView,
     AdminNewsStatusListView,
 )
+from .view_modules.admin_newsletters import (
+    AdminNewsletterDetailView,
+    AdminNewsletterListCreateView,
+    AdminNewsletterSendView,
+    AdminNewsletterSubscriberDetailView,
+    AdminNewsletterSubscriberListCreateView,
+)
 from .view_modules.admin_users import (
     AdminRoleListView,
     AdminUserDeactivateView,
@@ -90,6 +97,11 @@ __all__ = [
     'AdminNewsDetailView',
     'AdminNewsListCreateView',
     'AdminNewsStatusListView',
+    'AdminNewsletterDetailView',
+    'AdminNewsletterListCreateView',
+    'AdminNewsletterSendView',
+    'AdminNewsletterSubscriberDetailView',
+    'AdminNewsletterSubscriberListCreateView',
     'AdminRegistrationBulkStatusUpdateView',
     'AdminRegistrationListView',
     'AdminRegistrationStatusListView',

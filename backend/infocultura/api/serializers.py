@@ -27,6 +27,7 @@ from .serializers_news import (
     NewsSerializer,
     NewsStatusSerializer,
 )
+from .serializers_newsletters import NewsletterSerializer, NewsletterSubscriberSerializer
 from .serializers_registrations import (
     ClubRegistrationCreateSerializer,
     EventRegistrationCreateSerializer,
@@ -68,6 +69,8 @@ __all__ = [
     'LoginSerializer',
     'NewsSerializer',
     'NewsStatusSerializer',
+    'NewsletterSerializer',
+    'NewsletterSubscriberSerializer',
     'RegistrationStatusSerializer',
     'RoleSerializer',
     'SessionRegistrationCreateSerializer',

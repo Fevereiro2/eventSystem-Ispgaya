@@ -1,5 +1,6 @@
 import uuid
 from django.db import models
+from django.utils import timezone
 from .database import constants as db_constants
 
 class Role(models.Model):
@@ -289,6 +290,54 @@ class Event(models.Model):
 
     def __str__(self):
         return self.title
+
+
+class Newsletter(models.Model):
+    STATUS_CHOICES = [
+        ('draft', 'Rascunho'),
+        ('scheduled', 'Agendada'),
+        ('sent', 'Enviada'),
+        ('cancelled', 'Cancelada'),
+    ]
+
+    id = models.AutoField(primary_key=True, db_column=db_constants.COL_ID_NEWSLETTER)
+    title = models.CharField(max_length=255)
+    subject = models.CharField(max_length=255)
+    content = models.TextField()
+    status = models.CharField(max_length=50, choices=STATUS_CHOICES, default='draft')
+    sent_at = models.DateTimeField(blank=True, null=True)
+    user = models.ForeignKey(
+        AppUser,
+        on_delete=models.SET_NULL,
+        db_column=db_constants.COL_USER_ID,
+        blank=True,
+        null=True,
+        related_name='newsletters',
+    )
+    created_at = models.DateTimeField(default=timezone.now, db_column=db_constants.COL_CREATED_AT)
+
+    class Meta:
+        db_table = db_constants.TABLE_NEWSLETTER
+        managed = False
+        ordering = ['-created_at', '-id']
+
+    def __str__(self):
+        return self.title
+
+
+class NewsletterSubscriber(models.Model):
+    id = models.AutoField(primary_key=True, db_column=db_constants.COL_ID_NEWSLETTER_SUB)
+    email = models.EmailField(max_length=255, unique=True)
+    is_active = models.BooleanField(default=True)
+    subscribed_at = models.DateTimeField(default=timezone.now)
+
+    class Meta:
+        db_table = db_constants.TABLE_NEWSLETTER_SUBSCRIBER
+        managed = False
+        ordering = ['-subscribed_at', '-id']
+
+    def __str__(self):
+        return self.email
 
 
 class EventCategory(models.Model):

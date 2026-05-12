@@ -48,12 +48,14 @@ class NewsletterEmailTests(TestCase):
                 'preview_text': 'Linha 1 Linha 2',
                 'from_name': 'InfoCultura',
                 'from_email': 'noreply@ispgaya.pt',
+                'logo_cid': 'ispgaya-logo',
             },
         )
 
         self.assertIn('Boletim mensal', html)
         self.assertIn('Linha 1', html)
         self.assertIn('Linha 2', html)
+        self.assertIn('cid:ispgaya-logo', html)
 
     @patch('infocultura.repositories.newsletters.EmailMultiAlternatives')
     def test_send_newsletter_email_uses_multipart_message(self, message_cls):
