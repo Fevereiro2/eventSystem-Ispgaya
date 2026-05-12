@@ -2,7 +2,7 @@ import { Dispatch, FormEvent, SetStateAction } from 'react';
 import { NavLink } from 'react-router-dom';
 import { Users } from 'lucide-react';
 
-import AdminPageHero from './AdminPageHero';
+import AdminPageHero from './components/AdminPageHero.js';
 import { UserPage, UserFormState } from './types';
 import { formatAdminDateTime } from './utils';
 import {
@@ -30,7 +30,7 @@ import {
   adminUserStatusInactive,
 } from '../../styles/ui';
 import { InfoCulturaRole, InfoCulturaUser } from '../../api/infoculturaApi';
-import UserFormPanel from './UserFormPanel';
+import UserFormPanel from './components/UserFormPanel.js';
 
 type AdminHeroStat = { label: string; value: string | number };
 

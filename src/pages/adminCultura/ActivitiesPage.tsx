@@ -1,7 +1,7 @@
 import { Dispatch, FormEvent, SetStateAction } from 'react';
 import { CalendarClock } from 'lucide-react';
 
-import AdminPageHero from './AdminPageHero';
+import AdminPageHero from './components/AdminPageHero.js';
 import { ActivityTab, BookFormState, CategoryFormState, EventFormState, SessionFormState } from './types';
 import { formatAdminDateTime, getWorkflowStatusLabel, normalizeWorkflowStatus } from './utils';
 import { EVENT_WORKFLOW_ORDER } from './constants';
