@@ -22,6 +22,7 @@ from ..service_types import (
     DuplicateActivityRegistrationError,
     DuplicateClubRegistrationError,
 )
+from .audit import record_admin_audit_action
 from .sql import execute_sql, fetch_all_dict_rows
 
 
@@ -288,6 +289,19 @@ def create_club_registration(
         )
 
     notify_new_club_registration(club=club, registration=registration)
+    record_admin_audit_action(
+        action='create',
+        content_type='registration',
+        object_id=registration.id,
+        summary=f'Nova inscricao no clube {club.name}',
+        actor_user=None,
+        actor_name='Visitante',
+        club_id=club.id,
+        metadata={
+            'registration_type': 'club',
+            'email': registration.email,
+        },
+    )
     return registration
 
 
@@ -539,6 +553,22 @@ def _create_activity_registration(
         activity_label=activity_label,
         activity_title=activity_title,
         registration=registration,
+    )
+    record_admin_audit_action(
+        action='create',
+        content_type='registration',
+        object_id=registration.id,
+        summary=f'Nova inscricao em {activity_label.lower()}: {activity_title}',
+        actor_user=None,
+        actor_name='Visitante',
+        club_id=club_id,
+        metadata={
+            'registration_type': activity_type,
+            'activity_label': activity_label,
+            'activity_title': activity_title,
+            'status': registration_status,
+            'email': registration.email,
+        },
     )
     return registration
 
