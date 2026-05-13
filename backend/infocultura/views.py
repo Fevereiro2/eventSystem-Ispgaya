@@ -29,6 +29,8 @@ from .view_modules.admin_events import (
     AdminSessionDetailView,
     AdminSessionListCreateView,
 )
+from .view_modules.admin.logs import AdminActivityLogListView
+from .view_modules.admin.metrics import AdminMetricsOverviewView
 from .view_modules.admin_news import (
     AdminContentDetailView,
     AdminContentListCreateView,
@@ -38,12 +40,20 @@ from .view_modules.admin_news import (
     AdminNewsListCreateView,
     AdminNewsStatusListView,
 )
+from .view_modules.admin_newsletters import (
+    AdminNewsletterDetailView,
+    AdminNewsletterListCreateView,
+    AdminNewsletterSendView,
+    AdminNewsletterSubscriberDetailView,
+    AdminNewsletterSubscriberListCreateView,
+)
 from .view_modules.admin_users import (
     AdminRoleListView,
     AdminUserDeactivateView,
     AdminUserDetailView,
     AdminUserListCreateView,
 )
+from .view_modules.metrics_views import TrackMetricView
 from .view_modules.public_views import (
     PublicBookDetailView,
     PublicBookListView,
@@ -64,9 +74,11 @@ from .view_modules.public_views import (
     PublicSessionListView,
     PublicSessionRegistrationCreateView,
 )
+from .view_modules.university_views import UniversitySearchView
 
 __all__ = [
     'AdminAuditLogListView',
+    'AdminActivityLogListView',
     'AdminBookBulkDeleteView',
     'AdminBookDetailView',
     'AdminBookListCreateView',
@@ -85,11 +97,17 @@ __all__ = [
     'AdminEventDetailView',
     'AdminEventListCreateView',
     'AdminImageUploadView',
+    'AdminMetricsOverviewView',
     'AdminNewsBulkDeleteView',
     'AdminNewsBulkStatusUpdateView',
     'AdminNewsDetailView',
     'AdminNewsListCreateView',
     'AdminNewsStatusListView',
+    'AdminNewsletterDetailView',
+    'AdminNewsletterListCreateView',
+    'AdminNewsletterSendView',
+    'AdminNewsletterSubscriberDetailView',
+    'AdminNewsletterSubscriberListCreateView',
     'AdminRegistrationBulkStatusUpdateView',
     'AdminRegistrationListView',
     'AdminRegistrationStatusListView',
@@ -122,6 +140,8 @@ __all__ = [
     'PublicSessionListView',
     'PublicSessionRegistrationCreateView',
     'RefreshTokenView',
+    'TrackMetricView',
+    'UniversitySearchView',
 ]
 
 """

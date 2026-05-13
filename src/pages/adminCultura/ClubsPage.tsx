@@ -1,7 +1,7 @@
 import { Dispatch, FormEvent, SetStateAction } from 'react';
 import { Building2 } from 'lucide-react';
 
-import AdminPageHero from './AdminPageHero';
+import AdminPageHero from './components/AdminPageHero.js';
 import { ClubFormState } from './types';
 import { formatAdminDateTime } from './utils';
 import {

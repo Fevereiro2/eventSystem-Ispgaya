@@ -35,6 +35,7 @@ import {
   contentSection,
   mainContent
 } from '../styles/ui';
+import { getLocaleText, useLocale } from '../i18n/locale.js';
 
 type EntryKind = 'news' | 'session' | 'event' | 'book';
 
@@ -74,6 +75,7 @@ function estimateReadingTime(text: string): string {
 }
 
 function CulturalEntryDetail({ kind }: CulturalEntryDetailProps) {
+  const { locale } = useLocale();
   const params = useParams();
   const itemId =
     kind === 'news'
@@ -101,7 +103,7 @@ function CulturalEntryDetail({ kind }: CulturalEntryDetailProps) {
 
     async function loadEntry() {
       if (!itemId) {
-        setLoadError('Conteudo invalido.');
+        setLoadError(getLocaleText(locale, 'Conteudo invalido.', 'Invalid content.'));
         setIsLoading(false);
         return;
       }
@@ -122,7 +124,7 @@ function CulturalEntryDetail({ kind }: CulturalEntryDetailProps) {
       } catch (error) {
         if (!active) return;
         const message =
-          error instanceof Error ? error.message : 'Nao foi possivel carregar o detalhe.';
+          error instanceof Error ? error.message : getLocaleText(locale, 'Nao foi possivel carregar o detalhe.', 'Unable to load the details.');
         setLoadError(message);
       } finally {
         if (active) {
@@ -268,13 +270,13 @@ function CulturalEntryDetail({ kind }: CulturalEntryDetailProps) {
           : await createSessionRegistration(entry.id, data);
       setRegistrationFeedback(
         response.status === 'waitlist'
-          ? 'Inscricao enviada. Ficaste em lista de espera e vais receber confirmacao por email.'
-          : 'Inscricao enviada com sucesso. Vais receber confirmacao por email.'
+          ? getLocaleText(locale, 'Inscricao enviada. Ficaste em lista de espera e vais receber confirmacao por email.', 'Registration sent. You are on the waiting list and will receive confirmation by email.')
+          : getLocaleText(locale, 'Inscricao enviada com sucesso. Vais receber confirmacao por email.', 'Registration sent successfully. You will receive confirmation by email.')
       );
       setIsRegistrationModalOpen(false);
     } catch (error) {
       const message =
-        error instanceof Error ? error.message : 'Nao foi possivel enviar a inscricao.';
+        error instanceof Error ? error.message : getLocaleText(locale, 'Nao foi possivel enviar a inscricao.', 'Unable to submit the registration.');
       setRegistrationError(message);
     } finally {
       setIsSubmittingRegistration(false);
@@ -293,7 +295,7 @@ function CulturalEntryDetail({ kind }: CulturalEntryDetailProps) {
       downloadBlob(blob, `${kind === 'event' ? 'evento' : 'sessao'}-${entry.id}.ics`);
     } catch (error) {
       setRegistrationError(
-        error instanceof Error ? error.message : 'Nao foi possivel descarregar o calendario.'
+        error instanceof Error ? error.message : getLocaleText(locale, 'Nao foi possivel descarregar o calendario.', 'Unable to download the calendar.')
       );
     } finally {
       setIsDownloadingCalendar(false);
@@ -328,8 +330,8 @@ function CulturalEntryDetail({ kind }: CulturalEntryDetailProps) {
       <HeaderNav />
       <Breadcrumbs
         title={title}
-        description="Detalhe publico do conteudo cultural."
-        parentLabel="Laboratorio Cultural"
+        description={getLocaleText(locale, 'Detalhe publico do conteudo cultural.', 'Public detail of the cultural content.')}
+        parentLabel={getLocaleText(locale, 'Laboratorio Cultural', 'Cultural Lab')}
         parentHref="/laboratorio-cultural"
         currentLabel={title}
         currentHref="#"
@@ -338,7 +340,7 @@ function CulturalEntryDetail({ kind }: CulturalEntryDetailProps) {
       <main className={mainContent}>
         <section className={contentSection}>
           <div className={container}>
-            {isLoading ? <p className={contentEmpty}>A carregar detalhe...</p> : null}
+            {isLoading ? <p className={contentEmpty}>{getLocaleText(locale, 'A carregar detalhe...', 'Loading details...')}</p> : null}
             {loadError ? <p className={contentEmpty}>{loadError}</p> : null}
 
             {!isLoading && !loadError && eventEntry ? (
@@ -357,7 +359,7 @@ function CulturalEntryDetail({ kind }: CulturalEntryDetailProps) {
                   >
                     <path strokeLinecap="round" strokeLinejoin="round" d="M7 16l-4-4m0 0l4-4m-4 4h18" />
                   </svg>
-                  <span className="ml-2">Voltar</span>
+                  <span className="ml-2">{getLocaleText(locale, 'Voltar', 'Back')}</span>
                 </Link>
 
                 <article>
@@ -433,7 +435,7 @@ function CulturalEntryDetail({ kind }: CulturalEntryDetailProps) {
                   <div className="mt-6 flex flex-wrap items-start justify-between gap-4 lg:flex-nowrap">
                     <div>
                       <p className="text-sm font-semibold uppercase tracking-tight text-gray-500">
-                        Partilha
+                        {getLocaleText(locale, 'Partilha', 'Share')}
                       </p>
                       <div className="mt-3 flex items-end gap-4">
                         <a
@@ -486,7 +488,7 @@ function CulturalEntryDetail({ kind }: CulturalEntryDetailProps) {
                         onClick={() => void handleDownloadCalendar()}
                         disabled={isDownloadingCalendar}
                       >
-                        {isDownloadingCalendar ? 'A descarregar...' : 'Descarregar .ics'}
+                        {isDownloadingCalendar ? getLocaleText(locale, 'A descarregar...', 'Downloading...') : getLocaleText(locale, 'Descarregar .ics', 'Download .ics')}
                       </button>
                       {canRegister && registrationState !== 'closed' ? (
                         <button
@@ -498,7 +500,9 @@ function CulturalEntryDetail({ kind }: CulturalEntryDetailProps) {
                             setIsRegistrationModalOpen(true);
                           }}
                         >
-                          {registrationState === 'waitlist' ? 'Entrar em lista de espera' : 'Inscrever-me'}
+                          {registrationState === 'waitlist'
+                            ? getLocaleText(locale, 'Entrar em lista de espera', 'Join waitlist')
+                            : getLocaleText(locale, 'Inscrever-me', 'Register')}
                         </button>
                       ) : null}
                     </div>
@@ -506,16 +510,16 @@ function CulturalEntryDetail({ kind }: CulturalEntryDetailProps) {
 
                   {(kind === 'event' || kind === 'session') && registrationSummary ? (
                     <div className="mt-6 rounded-xl border border-slate-200 bg-slate-50 p-4">
-                      <h3 className="text-lg font-semibold text-slate-900">Participação</h3>
+                      <h3 className="text-lg font-semibold text-slate-900">{getLocaleText(locale, 'Participação', 'Participation')}</h3>
                       <p className="mt-2 text-sm text-slate-600">
-                        Confirmadas: {registrationSummary.confirmed} · Lista de espera: {registrationSummary.waitlist}
-                        {registrationSummary.remaining !== null ? ` · Vagas restantes: ${registrationSummary.remaining}` : ''}
+                        {getLocaleText(locale, 'Confirmadas', 'Confirmed')}: {registrationSummary.confirmed} · {getLocaleText(locale, 'Lista de espera', 'Waiting list')}: {registrationSummary.waitlist}
+                        {registrationSummary.remaining !== null ? ` · ${getLocaleText(locale, 'Vagas restantes', 'Remaining slots')}: ${registrationSummary.remaining}` : ''}
                       </p>
                       <p className="mt-2 text-sm text-slate-600">
-                        Estado das inscrições: {registrationState === 'open' ? 'Abertas' : registrationState === 'waitlist' ? 'Lista de espera' : 'Encerradas'}
+                        {getLocaleText(locale, 'Estado das inscrições', 'Registration status')}: {registrationState === 'open' ? getLocaleText(locale, 'Abertas', 'Open') : registrationState === 'waitlist' ? getLocaleText(locale, 'Lista de espera', 'Waiting list') : getLocaleText(locale, 'Encerradas', 'Closed')}
                       </p>
                       <p className="mt-2 text-sm text-slate-600">
-                        Local: {eventEntry.location || eventEntry.city || 'Local por definir'}
+                        {getLocaleText(locale, 'Local', 'Location')}: {eventEntry.location || eventEntry.city || getLocaleText(locale, 'Local por definir', 'Location to be defined')}
                       </p>
                     </div>
                   ) : null}
@@ -528,7 +532,7 @@ function CulturalEntryDetail({ kind }: CulturalEntryDetailProps) {
 
                   {relatedEvents.length > 0 ? (
                     <div className="mt-10">
-                      <h3 className="font-heading text-2xl font-bold">Relacionados</h3>
+                      <h3 className="font-heading text-2xl font-bold">{getLocaleText(locale, 'Relacionados', 'Related')}</h3>
                       <div className="mt-3 flex flex-wrap justify-between gap-5 md:flex-nowrap">
                         {relatedEvents.map((item) => (
                           <div key={item.id} className="basis-full md:basis-1/3">
@@ -543,7 +547,7 @@ function CulturalEntryDetail({ kind }: CulturalEntryDetailProps) {
                             </div>
                             <h4 className="mt-4 text-xl font-bold hover:underline underline-offset-2">
                               <Link to={`/vida-academica/eventos/${item.id}`}>
-                                {item.title.length > 52 ? `${item.title.slice(0, 52)}...` : item.title}
+                              {item.title.length > 52 ? `${item.title.slice(0, 52)}...` : item.title}
                               </Link>
                             </h4>
                             <time className="mt-2 inline-block text-sm font-medium capitalize text-gray-500" dateTime={item.start_date || item.event_date}>
@@ -574,7 +578,7 @@ function CulturalEntryDetail({ kind }: CulturalEntryDetailProps) {
                   >
                     <path strokeLinecap="round" strokeLinejoin="round" d="M7 16l-4-4m0 0l4-4m-4 4h18" />
                   </svg>
-                  <span className="ml-2">Voltar</span>
+                  <span className="ml-2">{getLocaleText(locale, 'Voltar', 'Back')}</span>
                 </Link>
 
                 <article>
@@ -688,7 +692,7 @@ function CulturalEntryDetail({ kind }: CulturalEntryDetailProps) {
 
                   {relatedNews.length > 0 ? (
                     <div className="mt-10">
-                      <h3 className="font-heading text-2xl font-bold">Relacionados</h3>
+                      <h3 className="font-heading text-2xl font-bold">{getLocaleText(locale, 'Relacionados', 'Related')}</h3>
                       <div className="mt-3 flex flex-wrap justify-between gap-5 md:flex-nowrap">
                         {relatedNews.map((item) => (
                           <div key={item.id} className="basis-full md:basis-1/3">
@@ -738,24 +742,24 @@ function CulturalEntryDetail({ kind }: CulturalEntryDetailProps) {
                       ? formatDate(entry.start_date)
                       : formatDate(entry.start_date)}
                 </p>
-                {'author' in entry && entry.publisher ? <p className={blockText}>Editora: {entry.publisher}</p> : null}
+                {'author' in entry && entry.publisher ? <p className={blockText}>{getLocaleText(locale, 'Editora', 'Publisher')}: {entry.publisher}</p> : null}
                 {'summary' in entry ? <p className={blockText}>{entry.summary}</p> : null}
                 {'description' in entry ? <p className={blockText}>{entry.description}</p> : null}
                 {'content' in entry ? <div className="mt-6 whitespace-pre-wrap text-slate-700">{entry.content}</div> : null}
                 {'categories' in entry && entry.categories.length > 0 ? (
-                  <p className={blockText}>Categorias: {entry.categories.map((category) => category.name).join(', ')}</p>
+                  <p className={blockText}>{getLocaleText(locale, 'Categorias', 'Categories')}: {entry.categories.map((category) => category.name).join(', ')}</p>
                 ) : null}
                 {'location' in entry ? (
-                  <p className={blockText}>Local: {entry.location || entry.city || 'Local por definir'}</p>
+                  <p className={blockText}>{getLocaleText(locale, 'Local', 'Location')}: {entry.location || entry.city || getLocaleText(locale, 'Local por definir', 'Location to be defined')}</p>
                 ) : null}
                 <div className="mt-8 flex flex-wrap gap-3">
                   {clubId ? (
                     <Link to={`/laboratorio-cultural/clubes/${clubId}`} className={adminBtnSecondary}>
-                      Ver clube
+                      {getLocaleText(locale, 'Ver clube', 'View club')}
                     </Link>
                   ) : null}
                   <Link to="/laboratorio-cultural" className={adminBtnSecondary}>
-                    Voltar ao laboratorio
+                    {getLocaleText(locale, 'Voltar ao laboratorio', 'Back to laboratory')}
                   </Link>
                 </div>
               </div>

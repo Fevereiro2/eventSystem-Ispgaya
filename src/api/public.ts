@@ -1,4 +1,4 @@
-import { CulturalArea, CulturalItem } from '../data/culturalContent';
+import { CulturalArea, CulturalItem } from '../data/culturalContent.js';
 import {
   InfoCulturaBook,
   InfoCulturaCategory,
@@ -7,14 +7,16 @@ import {
   InfoCulturaNews,
   InfoCulturaNewsStatus,
   InfoCulturaSession,
+  UniversitySearchResult,
   ClubRegistrationPayload,
-} from './types';
+  MetricViewPayload,
+} from './types.js';
 import {
   normalizeItemsResponse,
   request,
   requestBlob,
   ApiPublicRegistrationResponse,
-} from './client';
+} from './client.js';
 
 export async function fetchPublicContent(area: CulturalArea): Promise<CulturalItem[]> {
   const data = await request<{ items: CulturalItem[] } | CulturalItem[]>(`/content/?area=${area}`);
@@ -135,4 +137,49 @@ export async function downloadSessionCalendar(sessionId: number): Promise<Blob> 
 
 export async function downloadEventCalendar(eventId: number): Promise<Blob> {
   return requestBlob(`/events/${eventId}/calendar/`);
+}
+
+export async function searchUniversities(filters?: {
+  name?: string;
+  country?: string;
+  limit?: number;
+  offset?: number;
+}): Promise<UniversitySearchResult[]> {
+  const search = new URLSearchParams();
+
+  if (filters?.name?.trim()) {
+    search.set('name', filters.name.trim());
+  }
+  if (filters?.country?.trim()) {
+    search.set('country', filters.country.trim());
+  }
+  if (typeof filters?.limit === 'number' && filters.limit > 0) {
+    search.set('limit', String(filters.limit));
+  }
+  if (typeof filters?.offset === 'number' && filters.offset > 0) {
+    search.set('offset', String(filters.offset));
+  }
+
+  const query = search.toString();
+  const response = await request<{ items?: UniversitySearchResult[] } | UniversitySearchResult[]>(
+    `/universities/search/${query ? `?${query}` : ''}`
+  );
+
+  return Array.isArray(response) ? response : response.items || [];
+}
+
+export async function trackInfoCulturaView(payload: MetricViewPayload): Promise<void> {
+  try {
+    await request<void>(
+      '/metrics/view/',
+      {
+        method: 'POST',
+        body: JSON.stringify(payload)
+      },
+      undefined,
+      false
+    );
+  } catch {
+    // tracking should never block the user flow
+  }
 }

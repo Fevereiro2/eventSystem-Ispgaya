@@ -52,20 +52,20 @@ export const breadcrumbsItemCurrent =
   'items-center md:flex font-semibold text-black';
 export const breadcrumbsSlash = 'ml-1 flex-shrink-0 md:ml-2';
 export const breadcrumbsAnchor = 'text-sm';
-export const heroIntroWrap = 'mt-6 xl:max-w-3xl 2xl:max-w-4xl';
+export const heroIntroWrap = 'mt-6 max-w-3xl xl:max-w-3xl 2xl:max-w-4xl';
 export const heroIntroTitle =
-  'mb-2 2xl:mb-2 font-heading text-4xl font-semibold text-slate-900';
+  'mb-2 2xl:mb-2 font-heading text-3xl font-semibold text-slate-900 sm:text-4xl';
 export const heroIntroText =
-  'mt-0 leading-normal 2xl:mt-0 text-[17px] text-slate-700';
+  'mt-0 text-[15px] leading-normal text-slate-700 sm:text-[17px] 2xl:mt-0';
 
 export const mainContent = 'bg-white';
 export const heroWrap = 'border-b border-slate-100 py-10 md:py-12';
 export const heroContent = '';
-export const pageTitle = 'font-heading text-4xl font-semibold text-slate-900 md:text-5xl';
-export const leadText = 'mt-5 max-w-3xl text-[16px] leading-8 text-slate-600 md:text-lg';
+export const pageTitle = 'font-heading text-3xl font-semibold text-slate-900 sm:text-4xl md:text-5xl';
+export const leadText = 'mt-5 max-w-3xl text-[15px] leading-7 text-slate-600 sm:text-[16px] md:text-lg';
 
-export const blockTitle = 'font-heading text-[32px] font-semibold text-slate-900';
-export const blockText = 'mt-4 max-w-3xl text-base leading-7 text-slate-600';
+export const blockTitle = 'font-heading text-2xl font-semibold text-slate-900 sm:text-[32px]';
+export const blockText = 'mt-4 max-w-3xl text-sm leading-7 text-slate-600 sm:text-base';
 export const contentSection = 'py-12 md:py-14';
 export const contentCard =
   'max-w-4xl rounded-xl border border-slate-200 bg-white p-6 shadow-sm';
@@ -85,10 +85,10 @@ export const contentEmpty =
 export const labIntroSection = 'border-b border-slate-100 bg-white py-10 md:py-14';
 export const labKicker =
   'inline-flex items-center rounded-full bg-orange-100 px-3 py-1 text-xs font-semibold uppercase tracking-[0.12em] text-orange-700';
-export const labHeadline = 'mt-4 font-heading text-4xl font-semibold text-slate-900 md:text-5xl';
+export const labHeadline = 'mt-4 font-heading text-3xl font-semibold text-slate-900 sm:text-4xl md:text-5xl';
 export const labLead = 'mt-4 max-w-4xl text-base leading-8 text-slate-600 md:text-lg';
 export const labHighlightStrip =
-  'mt-8 grid grid-cols-2 gap-3 md:grid-cols-4';
+  'mt-8 grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-4';
 export const labHighlightCard =
   'rounded-xl border border-slate-200 bg-slate-50 px-4 py-4 text-center';
 export const labHighlightValue = 'text-xl font-semibold text-slate-900 md:text-2xl';

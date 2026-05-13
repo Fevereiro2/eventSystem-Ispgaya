@@ -16,10 +16,12 @@ import SessaoCultural from './pages/SessaoCultural';
 import Teatro from './pages/Teatro';
 import TunaAcademica from './pages/TunaAcademica';
 import { appRoot } from './styles/ui';
+import InfoCulturaRouteTracker from './components/layout/InfoCulturaRouteTracker';
 
 function App() {
   return (
     <BrowserRouter>
+      <InfoCulturaRouteTracker />
       <div className={appRoot}>
         <Routes>
           <Route path="/" element={<HomePage />} />

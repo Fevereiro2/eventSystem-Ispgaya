@@ -5,6 +5,7 @@ import HeaderNav from '../components/layout/HeaderNav';
 import PieChartHero from '../components/ui/PieChartHero';
 import StatCard from '../components/ui/StatCard';
 import TopBar from '../components/layout/TopBar';
+import { getLocaleText, useLocale } from '../i18n/locale.js';
 import {
   blockText,
   blockTitle,
@@ -33,23 +34,30 @@ const document = {
 };
 
 function PublicacoesCientificas() {
+  const { locale } = useLocale();
   return (
     <>
       <TopBar />
       <HeaderNav />
       <Breadcrumbs
-        title="Publicacoes Cientificas"
-        description="O ISPGAYA desenvolve investigacao cientifica nas diversas areas em que oferece formacao, resultando em publicacoes, livros, capitulos e artigos cientificos."
+        title={getLocaleText(locale, 'Publicacoes Cientificas', 'Scientific Publications')}
+        description={getLocaleText(
+          locale,
+          'O ISPGAYA desenvolve investigacao cientifica nas diversas areas em que oferece formacao, resultando em publicacoes, livros, capitulos e artigos cientificos.',
+          'ISPGAYA develops scientific research across the areas in which it teaches, resulting in publications, books, chapters and scientific articles.'
+        )}
       />
 
       <main className={mainContent}>
         <section className={statsSection}>
           <div className={container}>
-            <h2 className={blockTitle}>Research at ISPGAYA</h2>
+            <h2 className={blockTitle}>{getLocaleText(locale, 'Research at ISPGAYA', 'Research at ISPGAYA')}</h2>
             <p className={blockText}>
-              A producao cientifica institucional tem registado crescimento
-              sustentado, refletindo colaboracao nacional e internacional em
-              diferentes areas de conhecimento.
+              {getLocaleText(
+                locale,
+                'A producao cientifica institucional tem registado crescimento sustentado, refletindo colaboracao nacional e internacional em diferentes areas de conhecimento.',
+                'Institutional scientific output has shown sustained growth, reflecting national and international collaboration across different fields of knowledge.'
+              )}
             </p>
             <div className={statsGrid}>
               {stats.map((item) => (
@@ -67,7 +75,7 @@ function PublicacoesCientificas() {
 
         <section className={docsSection}>
           <div className={`${container} ${sectionSpace}`}>
-            <h2 className={blockTitle}>Documentos</h2>
+            <h2 className={blockTitle}>{getLocaleText(locale, 'Documentos', 'Documents')}</h2>
             <div className={docsList}>
               <DocumentRow name={document.name} meta={document.meta} href={document.href} />
             </div>

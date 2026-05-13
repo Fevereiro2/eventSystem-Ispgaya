@@ -9,6 +9,7 @@ import {
   docRow,
   docTop
 } from '../../styles/ui';
+import { useLocale, getLocaleText } from '../../i18n/locale.js';
 
 type DocumentRowProps = {
   name: string;
@@ -17,6 +18,7 @@ type DocumentRowProps = {
 };
 
 function DocumentRow({ name, meta, href }: DocumentRowProps) {
+  const { locale } = useLocale();
   return (
     <article className={docRow}>
       <span className={docBadge}>PDF</span>
@@ -28,7 +30,11 @@ function DocumentRow({ name, meta, href }: DocumentRowProps) {
         <p className={docMeta}>{meta}</p>
       </div>
 
-      <a href={href} className={docDownloadAction} aria-label={`Download ${name}`}>
+      <a
+        href={href}
+        className={docDownloadAction}
+        aria-label={getLocaleText(locale, `Descarregar ${name}`, `Download ${name}`)}
+      >
         <Download className={docDownloadIcon} />
       </a>
     </article>

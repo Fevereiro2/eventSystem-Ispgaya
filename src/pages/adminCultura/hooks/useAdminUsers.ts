@@ -12,7 +12,7 @@ import {
   fetchInfoCulturaMe,
 } from '../../../api/infoculturaApi';
 import { sortClubs } from '../utils';
-import { UserPage } from '../types';
+import { UserPage, UserFormState } from '../types';
 
 type UseAdminUsersOptions = {
   token: string;
@@ -34,7 +34,7 @@ type UseAdminUsersOptions = {
   handleAuthError: (error: unknown) => boolean;
   resetUserForm: () => void;
   resetClubForm: () => void;
-  setUserForm: (value: { name: string; email: string; role: string; password: string }) => void;
+  setUserForm: (value: UserFormState) => void;
   setUserFormError: (value: string) => void;
 };
 
@@ -181,6 +181,7 @@ export function useAdminUsers({
         email: selectedUser.email,
         role: selectedUser.role,
         password: '',
+        generate_password: false,
       });
       setUserFormError('');
     }

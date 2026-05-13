@@ -2,7 +2,7 @@ import { Dispatch, FormEvent, SetStateAction } from 'react';
 import { NavLink } from 'react-router-dom';
 import { Users } from 'lucide-react';
 
-import AdminPageHero from './AdminPageHero';
+import AdminPageHero from './components/AdminPageHero.js';
 import { UserPage, UserFormState } from './types';
 import { formatAdminDateTime } from './utils';
 import {
@@ -30,6 +30,7 @@ import {
   adminUserStatusInactive,
 } from '../../styles/ui';
 import { InfoCulturaRole, InfoCulturaUser } from '../../api/infoculturaApi';
+import UserFormPanel from './components/UserFormPanel.js';
 
 type AdminHeroStat = { label: string; value: string | number };
 
@@ -226,128 +227,20 @@ function UsersPage({
 
   if (userPage.mode === 'create' || userPage.mode === 'edit') {
     return (
-      <div className="space-y-6">
-        <AdminPageHero
-          icon={Users}
-          title={userPage.mode === 'create' ? 'Criar Utilizador' : 'Editar Utilizador'}
-          description={
-            userPage.mode === 'create'
-              ? 'Criacao de novos acessos administrativos no InfoCultura.'
-              : 'Atualizacao dos dados e permissoes do utilizador selecionado.'
-          }
-          tone="slate"
-          actions={
-            <NavLink to="/infocultura/utilizadores" className={adminBtnSecondary}>
-              Voltar aos utilizadores
-            </NavLink>
-          }
-        />
-
-        <section className={adminPanelCard}>
-          {!canManageUsers ? (
-            <p className={adminError}>Apenas o superadmin pode aceder a esta pagina.</p>
-          ) : userPage.mode === 'edit' && !selectedUser ? (
-            <p className={adminInfo}>
-              {isLoadingUsers ? 'A carregar utilizador...' : 'Utilizador nao encontrado.'}
-            </p>
-          ) : (
-            <form onSubmit={handleSaveUser} className={adminPanelForm}>
-              <div className={adminFormGridSpaced}>
-                <div className={adminField}>
-                  <label className={adminLabel} htmlFor="user-name">
-                    Nome
-                  </label>
-                  <input
-                    id="user-name"
-                    className={adminInput}
-                    value={userForm.name}
-                    onChange={(event) =>
-                      setUserForm((prev) => ({ ...prev, name: event.target.value }))
-                    }
-                  />
-                </div>
-
-                <div className={adminField}>
-                  <label className={adminLabel} htmlFor="user-email">
-                    Email
-                  </label>
-                  <input
-                    id="user-email"
-                    type="email"
-                    className={adminInput}
-                    value={userForm.email}
-                    onChange={(event) =>
-                      setUserForm((prev) => ({ ...prev, email: event.target.value }))
-                    }
-                  />
-                </div>
-
-                <div className={adminField}>
-                  <label className={adminLabel} htmlFor="user-role">
-                    Role
-                  </label>
-                  <select
-                    id="user-role"
-                    className={adminInput}
-                    value={userForm.role}
-                    onChange={(event) =>
-                      setUserForm((prev) => ({ ...prev, role: event.target.value }))
-                    }
-                  >
-                    {isLoadingRoles ? <option>A carregar roles...</option> : null}
-                    {!isLoadingRoles && roles.length === 0 ? (
-                      <option value="">Sem roles disponiveis</option>
-                    ) : null}
-                    {roles.map((role) => (
-                      <option key={role.id} value={role.name}>
-                        {role.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                <div className={adminField}>
-                  <label className={adminLabel} htmlFor="user-password">
-                    {userPage.mode === 'create' ? 'Password' : 'Nova password (opcional)'}
-                  </label>
-                  <input
-                    id="user-password"
-                    type="password"
-                    className={adminInput}
-                    value={userForm.password}
-                    onChange={(event) =>
-                      setUserForm((prev) => ({ ...prev, password: event.target.value }))
-                    }
-                  />
-                </div>
-              </div>
-
-              {userFormError ? <p className={adminError}>{userFormError}</p> : null}
-
-              <div className={adminActions}>
-                <button
-                  type="submit"
-                  className={adminBtnPrimary}
-                  disabled={isSavingUser || isLoadingRoles || roles.length === 0}
-                >
-                  {isSavingUser
-                    ? 'A guardar...'
-                    : userPage.mode === 'create'
-                      ? 'Criar utilizador'
-                      : 'Guardar alteracoes'}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => resetUserForm()}
-                  className={adminBtnSecondary}
-                >
-                  Limpar
-                </button>
-              </div>
-            </form>
-          )}
-        </section>
-      </div>
+      <UserFormPanel
+        userPage={userPage}
+        canManageUsers={canManageUsers}
+        isLoadingUsers={isLoadingUsers}
+        isSavingUser={isSavingUser}
+        isLoadingRoles={isLoadingRoles}
+        roles={roles}
+        userForm={userForm}
+        setUserForm={setUserForm}
+        userFormError={userFormError}
+        handleSaveUser={handleSaveUser}
+        resetUserForm={resetUserForm}
+        selectedUser={selectedUser}
+      />
     );
   }
 
