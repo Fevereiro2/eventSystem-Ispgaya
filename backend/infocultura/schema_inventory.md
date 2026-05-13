@@ -39,6 +39,7 @@ Objetivo:
 | `infocultura_culturalcontent` | `id` | `id` (UUID), `area`, `title`, `description`, `date`, `status`, `updated_at`, `created_at` | table de conteudo cultural publico | ORM managed |
 | `newsletters` | `id_newsletter` | `id_newsletter`, `title`, `subject`, `content`, `status`, `sent_at`, `user_id`, `created_at` | `user_id -> users.id` | ORM managed |
 | `news_letter_subscribers` | `id_newsletter_sub` | `id_newsletter_sub`, `email`, `is_active`, `subscribed_at` | unique on `email` | ORM managed |
+| `metric_views` | `id_metric_view` | `id_metric_view`, `kind`, `section`, `content_type`, `object_id`, `title`, `page_path`, `locale`, `referrer`, `user_agent`, `visitor_key`, `club_id`, `viewed_at`, `created_at` | `club_id -> clubs.id_clubs` | ORM managed |
 
 ## Tabelas legacy que o repositorio ainda conhece, mas que nao estao espelhadas nos DDLs com a mesma clareza
 
@@ -58,3 +59,4 @@ Objetivo:
 - `users` usa `role_id` para a FK, nao `id_role`.
 - `clubs_registrations`, `event_registrations` e `session_registrations` nao tem PK singular `id`; a chave real e composta.
 - Os fluxos de inscricao usam SQL direto nestas tabelas compostas para evitar o ORM inferir uma coluna que nao existe.
+- `metric_views` e uma tabela nova para tracking de visualizacoes; as metricas do painel agregam por `viewed_at`, `page_path` e `section`.
