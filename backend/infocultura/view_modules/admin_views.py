@@ -7,3 +7,4 @@ from .admin.list_helpers import *  # noqa: F401,F403
 from .admin.news import *  # noqa: F401,F403
 from .admin.registrations import *  # noqa: F401,F403
 from .admin.sessions import *  # noqa: F401,F403
+from .admin.metrics import *  # noqa: F401,F403
