@@ -6,6 +6,7 @@ import {
   EventPayload,
   InfoCulturaAdminCollectionPage,
   InfoCulturaAdminNotification,
+  InfoCulturaActivityLog,
   InfoCulturaBook,
   InfoCulturaCategory,
   InfoCulturaClub,
@@ -19,6 +20,7 @@ import {
   InfoCulturaRegistrationPage,
   InfoCulturaRegistrationStatus,
   InfoCulturaSession,
+  InfoCulturaMetricsOverview,
   NewsPayload,
   NewsletterPayload,
   NewsletterSubscriberPayload,
@@ -140,6 +142,68 @@ export async function fetchAdminDashboard(token: string): Promise<InfoCulturaDas
 
 export async function fetchAdminNotifications(token: string): Promise<InfoCulturaAdminNotification[]> {
   return request<InfoCulturaAdminNotification[]>('/dashboard/admin/notifications/', {}, token);
+}
+
+export async function fetchAdminActivityLogs(
+  token: string,
+  filters?: {
+    source?: 'audit' | 'editorial';
+    action?: string;
+    contentType?: string;
+    search?: string;
+    clubId?: number;
+    limit?: number;
+  }
+): Promise<{ items: InfoCulturaActivityLog[]; total: number }> {
+  const search = new URLSearchParams();
+  if (filters?.source) {
+    search.set('source', filters.source);
+  }
+  if (filters?.action?.trim()) {
+    search.set('action', filters.action.trim());
+  }
+  if (filters?.contentType?.trim()) {
+    search.set('content_type', filters.contentType.trim());
+  }
+  if (filters?.search?.trim()) {
+    search.set('search', filters.search.trim());
+  }
+  if (typeof filters?.clubId === 'number') {
+    search.set('club_id', String(filters.clubId));
+  }
+  if (typeof filters?.limit === 'number' && filters.limit > 0) {
+    search.set('limit', String(filters.limit));
+  }
+
+  const query = search.toString();
+  return request<{ items: InfoCulturaActivityLog[]; total: number }>(
+    `/dashboard/admin/logs/${query ? `?${query}` : ''}`,
+    {},
+    token
+  );
+}
+
+export async function fetchAdminMetricsOverview(
+  token: string,
+  filters?: {
+    period?: 'day' | 'week' | 'month';
+    limit?: number;
+  }
+): Promise<InfoCulturaMetricsOverview> {
+  const search = new URLSearchParams();
+  if (filters?.period) {
+    search.set('period', filters.period);
+  }
+  if (typeof filters?.limit === 'number' && filters.limit > 0) {
+    search.set('limit', String(filters.limit));
+  }
+
+  const query = search.toString();
+  return request<InfoCulturaMetricsOverview>(
+    `/metrics/admin/${query ? `?${query}` : ''}`,
+    {},
+    token
+  );
 }
 
 export async function fetchAdminNewsStatuses(token: string): Promise<InfoCulturaNewsStatus[]> {

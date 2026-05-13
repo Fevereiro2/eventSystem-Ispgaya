@@ -9,6 +9,7 @@ import {
   InfoCulturaSession,
   UniversitySearchResult,
   ClubRegistrationPayload,
+  MetricViewPayload,
 } from './types.js';
 import {
   normalizeItemsResponse,
@@ -165,4 +166,20 @@ export async function searchUniversities(filters?: {
   );
 
   return Array.isArray(response) ? response : response.items || [];
+}
+
+export async function trackInfoCulturaView(payload: MetricViewPayload): Promise<void> {
+  try {
+    await request<void>(
+      '/metrics/view/',
+      {
+        method: 'POST',
+        body: JSON.stringify(payload)
+      },
+      undefined,
+      false
+    );
+  } catch {
+    // tracking should never block the user flow
+  }
 }
