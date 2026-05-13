@@ -53,11 +53,21 @@ function formatMonthLabel(date: Date, locale: 'pt' | 'en'): string {
 }
 
 function formatDateLabel(value: string, locale: 'pt' | 'en'): string {
+  const safeDate = value.length === 10 ? new Date(`${value}T12:00:00`) : new Date(value);
+
   return new Intl.DateTimeFormat(locale === 'en' ? 'en-GB' : 'pt-PT', {
     day: '2-digit',
     month: 'long',
     year: 'numeric'
-  }).format(new Date(value));
+  }).format(safeDate);
+}
+
+function getDateKey(date: Date): string {
+  return [
+    date.getFullYear(),
+    String(date.getMonth() + 1).padStart(2, '0'),
+    String(date.getDate()).padStart(2, '0')
+  ].join('-');
 }
 
 function getClubNameById(clubs: InfoCulturaClub[], clubId?: number | null): string {
@@ -375,7 +385,7 @@ function LaboratorioAgendaPage() {
                       </button>
                     </div>
 
-                    <div className="grid grid-cols-7 gap-2 text-center text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">
+                    <div className="grid grid-cols-7 gap-1 text-center text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-500 sm:gap-2 sm:text-xs">
                       {(locale === 'en'
                         ? ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
                         : ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom']
@@ -386,9 +396,9 @@ function LaboratorioAgendaPage() {
                       ))}
                     </div>
 
-                    <div className="mt-2 grid grid-cols-7 gap-2">
+                    <div className="mt-2 grid grid-cols-7 gap-1 sm:gap-2">
                       {calendarDays.map(({ date, inMonth }) => {
-                        const dateKey = date.toISOString().slice(0, 10);
+                        const dateKey = getDateKey(date);
                         const items = calendarEventsByDate.get(dateKey) || [];
                         const isSelected = selectedDate === dateKey;
 
@@ -397,7 +407,7 @@ function LaboratorioAgendaPage() {
                             key={dateKey}
                             type="button"
                             onClick={() => setSelectedDate(isSelected ? '' : dateKey)}
-                            className={`min-h-[88px] rounded-2xl border p-2 text-left transition ${
+                            className={`min-h-[72px] rounded-2xl border p-2 text-left transition sm:min-h-[88px] ${
                               isSelected
                                 ? 'border-[#dd8609] bg-orange-50'
                                 : inMonth
@@ -407,7 +417,7 @@ function LaboratorioAgendaPage() {
                           >
                             <span className="block text-sm font-semibold">{date.getDate()}</span>
                             {items.length > 0 ? (
-                              <span className="mt-2 block text-xs text-slate-600">
+                              <span className="mt-2 block text-[10px] text-slate-600 sm:text-xs">
                                 {items.length} {getLocaleText(locale, 'evento(s)', 'event(s)')}
                               </span>
                             ) : null}
@@ -444,7 +454,7 @@ function LaboratorioAgendaPage() {
                               <img
                                 src={resolveInfoCulturaAssetUrl(item.image)}
                                 alt={item.title}
-                                className="h-40 w-full object-cover"
+                                className="h-32 w-full object-cover sm:h-40"
                               />
                             ) : null}
                             <div className="p-5">

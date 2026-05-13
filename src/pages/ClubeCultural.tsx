@@ -6,6 +6,7 @@ import ClubRegistrationModal, {
 } from '../components/ui/ClubRegistrationModal';
 import Footer from '../components/layout/Footer';
 import HeaderNav from '../components/layout/HeaderNav';
+import BestBooksSection from '../components/sections/BestBooksSection.js';
 import TopBar from '../components/layout/TopBar';
 import {
   createClubRegistration,
@@ -469,40 +470,17 @@ function ClubeCultural({
                     </div>
                   ) : null}
 
-                  {filteredBooks.length > 0 ? (
-                    <div className="mt-8">
-                      <h3 className={blockTitle}>{getLocaleText(locale, 'Livros', 'Books')}</h3>
-                      <div className={contentItems}>
-                        {filteredBooks.map((item) => (
-                          <article key={item.id} className={contentItemCard}>
-                            {item.cover_image ? (
-                              <img
-                                src={resolveInfoCulturaAssetUrl(item.cover_image)}
-                                alt={item.title}
-                                className="mb-4 h-44 w-full rounded-xl object-cover"
-                              />
-                            ) : null}
-                            <div className={contentItemHeader}>
-                              <h4 className={contentItemTitle}>{item.title}</h4>
-                              <span className={contentItemStatus}>
-                                {item.is_featured ? getLocaleText(locale, 'Destaque', 'Featured') : getLocaleText(locale, 'Livro', 'Book')}
-                              </span>
-                            </div>
-                            <p className={contentItemDate}>
-                              {item.author} · {item.publication_year}
-                            </p>
-                            <p className={contentItemDesc}>{item.summary}</p>
-                            <Link
-                              to={`/laboratorio-cultural/livros/${item.id}`}
-                              className={adminBtnSecondary}
-                            >
-                              {getLocaleText(locale, 'Ver detalhe', 'View details')}
-                            </Link>
-                          </article>
-                        ))}
-                      </div>
-                    </div>
-                  ) : null}
+                  <BestBooksSection
+                    books={filteredBooks}
+                    locale={locale}
+                    title={getLocaleText(locale, 'Livros', 'Books')}
+                    description={getLocaleText(
+                      locale,
+                      'Livros filtrados e ordenados por destaque.',
+                      'Books filtered and sorted by relevance.'
+                    )}
+                    detailBaseHref="/laboratorio-cultural/livros"
+                  />
                 </>
               )}
             </div>
