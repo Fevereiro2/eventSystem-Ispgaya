@@ -4,6 +4,7 @@ import { renderToStaticMarkup } from 'react-dom/server';
 import { MemoryRouter } from 'react-router-dom';
 
 import AdminPageHero from '../src/pages/adminCultura/components/AdminPageHero.js';
+import MetricsPage from '../src/pages/adminCultura/pages/MetricsPage.js';
 import NewslettersPage from '../src/pages/adminCultura/pages/NewslettersPage.js';
 import PaginatedCollection from '../src/components/containers/PaginatedCollection.js';
 import PublicMediaListItem from '../src/components/containers/PublicMediaListItem.js';
@@ -75,4 +76,12 @@ test('NewslettersPage renders the newsletters dashboard shell', () => {
 
   assert.match(output, /Newsletters/);
   assert.match(output, /Subscritores/);
+});
+
+test('MetricsPage renders the metrics dashboard shell', () => {
+  const output = renderToStaticMarkup(<MetricsPage />);
+
+  assert.match(output, /Métricas/);
+  assert.match(output, /Visualizações totais/);
+  assert.match(output, /Top páginas/);
 });
