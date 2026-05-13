@@ -26,6 +26,19 @@ class AdminAuditLogSerializer(serializers.Serializer):
     created_at = serializers.DateTimeField(allow_null=True)
 
 
+class AdminActivityLogSerializer(serializers.Serializer):
+    source = serializers.CharField()
+    action = serializers.CharField()
+    content_type = serializers.CharField()
+    object_id = serializers.IntegerField(allow_null=True)
+    summary = serializers.CharField()
+    actor_user_id = serializers.IntegerField(allow_null=True)
+    actor_name = serializers.CharField()
+    club_id = serializers.IntegerField(allow_null=True)
+    metadata_json = serializers.CharField(allow_null=True)
+    created_at = serializers.DateTimeField(allow_null=True)
+
+
 class AdminBulkStatusUpdateSerializer(serializers.Serializer):
     ids = serializers.ListField(
         child=serializers.IntegerField(min_value=1),

@@ -1,6 +1,6 @@
 import { jsx as _jsx, jsxs as _jsxs } from "react/jsx-runtime";
 import { Building2 } from 'lucide-react';
-import AdminPageHero from './AdminPageHero';
+import AdminPageHero from './components/AdminPageHero.js';
 import { formatAdminDateTime } from './utils';
 import { adminActions, adminBtnDanger, adminBtnEdit, adminBtnPrimary, adminBtnSecondary, adminError, adminField, adminFieldSpaced, adminFormGridSpaced, adminInfo, adminInput, adminLabel, adminListTools, adminPanelCard, adminPanelForm, adminStatCard, adminStatLabel, adminStatValue, adminStatsGrid, adminTextarea, adminUserEmail, adminUserItem, adminUserList, adminUserMeta, adminUserName, adminUserStatus, adminUserStatusActive, adminUserStatusInactive, blockText, blockTitle, } from '../../styles/ui';
 import { resolveInfoCulturaAssetUrl, } from '../../api/infoculturaApi';

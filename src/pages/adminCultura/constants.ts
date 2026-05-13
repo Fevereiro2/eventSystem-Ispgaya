@@ -10,7 +10,7 @@ import {
   NewsFormState,
   SessionFormState,
   UserFormState
-} from './types';
+} from './types.js';
 
 export const TOKEN_KEY = 'ispgaya_cultura_token';
 export const NOTIFICATION_READ_KEY = 'ispgaya_cultura_notifications_read';
@@ -41,7 +41,8 @@ export const initialUserForm: UserFormState = {
   name: '',
   email: '',
   role: 'club_admin',
-  password: ''
+  password: '',
+  generate_password: true
 };
 
 export const initialClubForm: ClubFormState = {
@@ -124,7 +125,10 @@ export const allActivityTabs: ActivityTab[] = ['books', 'sessions', 'events'];
 
 export const adminSections: { id: AdminSection; label: string; href: string }[] = [
   { id: 'resumo', label: 'Resumo', href: '/infocultura/resumo' },
+  { id: 'metricas', label: 'Metricas', href: '/infocultura/metricas' },
+  { id: 'logs', label: 'Logs', href: '/infocultura/logs' },
   { id: 'notificacoes', label: 'Notificacoes', href: '/infocultura/notificacoes' },
+  { id: 'newsletters', label: 'Newsletters', href: '/infocultura/newsletters' },
   { id: 'utilizadores', label: 'Utilizadores', href: '/infocultura/utilizadores' },
   { id: 'noticias', label: 'Noticias', href: '/infocultura/noticias' },
   { id: 'livros', label: 'Livros', href: '/infocultura/livros' },
@@ -139,7 +143,7 @@ export const adminSectionGroups: {
   title: string;
   ids: AdminSection[];
 }[] = [
-  { title: 'Painel', ids: ['resumo', 'notificacoes'] },
-  { title: 'Gestao', ids: ['utilizadores', 'clubes', 'inscricoes'] },
+  { title: 'Painel', ids: ['resumo', 'metricas', 'logs', 'notificacoes'] },
+  { title: 'Gestao', ids: ['newsletters', 'utilizadores', 'clubes', 'inscricoes'] },
   { title: 'Conteudos', ids: ['noticias', 'livros', 'sessoes', 'eventos', 'conteudos'] }
 ];

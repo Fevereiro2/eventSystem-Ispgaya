@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import date, datetime
 
 
 class ClubRegistrationError(Exception):
@@ -113,3 +113,54 @@ class AdminAuditLogRecord:
     club_id: int | None
     metadata_json: str | None
     created_at: datetime | None
+
+
+@dataclass(frozen=True, slots=True)
+class AdminActivityLogRecord:
+    source: str
+    action: str
+    content_type: str
+    object_id: int | None
+    summary: str
+    actor_user_id: int | None
+    actor_name: str
+    club_id: int | None
+    metadata_json: str | None
+    created_at: datetime | None
+
+
+@dataclass(frozen=True, slots=True)
+class MetricSeriesPoint:
+    label: str
+    value: int
+    period_start: date | datetime | None
+    period_end: date | datetime | None
+
+
+@dataclass(frozen=True, slots=True)
+class MetricTopPageRecord:
+    title: str
+    page_path: str
+    section: str
+    views: int
+    unique_visitors: int
+    last_viewed_at: date | datetime | None
+
+
+@dataclass(frozen=True, slots=True)
+class MetricSectionBreakdownRecord:
+    section: str
+    views: int
+
+
+@dataclass(frozen=True, slots=True)
+class AdminMetricsOverview:
+    period: str
+    total_views: int
+    unique_pages: int
+    unique_visitors: int
+    clubs_created: int
+    news_created: int
+    top_pages: list[MetricTopPageRecord]
+    section_breakdown: list[MetricSectionBreakdownRecord]
+    series: list[MetricSeriesPoint]

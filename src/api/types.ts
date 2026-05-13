@@ -1,4 +1,4 @@
-import { CulturalArea, CulturalItem } from '../data/culturalContent';
+import { CulturalArea, CulturalItem } from '../data/culturalContent.js';
 
 export type { CulturalArea, CulturalItem };
 
@@ -68,6 +68,25 @@ export type InfoCulturaNews = {
   club_id: number;
   club_name: string;
   editorial_history?: InfoCulturaEditorialHistory[];
+};
+
+export type InfoCulturaNewsletter = {
+  id: number;
+  title: string;
+  subject: string;
+  content: string;
+  status: string;
+  sent_at: string | null;
+  created_at: string;
+  user_id: number | null;
+  user_name: string | null;
+};
+
+export type InfoCulturaNewsletterSubscriber = {
+  id: number;
+  email: string;
+  is_active: boolean;
+  subscribed_at: string;
 };
 
 export type InfoCulturaBook = {
@@ -191,6 +210,39 @@ export type InfoCulturaDashboardStats = {
   next_event?: InfoCulturaDashboardRecord | null;
 };
 
+export type InfoCulturaMetricSeriesPoint = {
+  label: string;
+  value: number;
+  period_start: string | null;
+  period_end: string | null;
+};
+
+export type InfoCulturaMetricTopPage = {
+  title: string;
+  page_path: string;
+  section: string;
+  views: number;
+  unique_visitors: number;
+  last_viewed_at: string | null;
+};
+
+export type InfoCulturaMetricSectionBreakdown = {
+  section: string;
+  views: number;
+};
+
+export type InfoCulturaMetricsOverview = {
+  period: string;
+  total_views: number;
+  unique_pages: number;
+  unique_visitors: number;
+  clubs_created: number;
+  news_created: number;
+  top_pages: InfoCulturaMetricTopPage[];
+  section_breakdown: InfoCulturaMetricSectionBreakdown[];
+  series: InfoCulturaMetricSeriesPoint[];
+};
+
 export type InfoCulturaAdminNotification = {
   id: string;
   kind: string;
@@ -199,6 +251,26 @@ export type InfoCulturaAdminNotification = {
   message: string;
   href: string;
   created_at?: string | null;
+};
+
+export type InfoCulturaActivityLog = {
+  source: 'audit' | 'editorial' | string;
+  action: string;
+  content_type: string;
+  object_id: number | null;
+  summary: string;
+  actor_user_id: number | null;
+  actor_name: string;
+  club_id: number | null;
+  metadata_json: string | null;
+  created_at: string | null;
+};
+
+export type UniversitySearchResult = {
+  name: string;
+  country: string;
+  domains: string[];
+  web_pages: string[];
 };
 
 export type InfoCulturaRegistrationPage = {
@@ -222,6 +294,7 @@ export type UserPayload = {
   email: string;
   role: string;
   password?: string;
+  generate_password?: boolean;
   is_active?: boolean;
 };
 
@@ -242,6 +315,33 @@ export type NewsPayload = {
   news_status: string;
   published_at?: string | null;
   club_id?: number;
+};
+
+export type NewsletterPayload = {
+  title: string;
+  subject: string;
+  content: string;
+  status: string;
+  sent_at?: string | null;
+};
+
+export type NewsletterSubscriberPayload = {
+  email: string;
+  is_active: boolean;
+};
+
+export type MetricViewPayload = {
+  kind?: string;
+  section: string;
+  content_type?: string;
+  object_id?: number | null;
+  title: string;
+  page_path: string;
+  locale?: string;
+  referrer?: string;
+  user_agent?: string;
+  visitor_key?: string;
+  club_id?: number | null;
 };
 
 export type BookPayload = {

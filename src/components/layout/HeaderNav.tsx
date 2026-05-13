@@ -19,6 +19,7 @@ import {
 import logo from '../../assets/ispgaya-logo.svg';
 import logoNegative from '../../assets/ispgaya-logo-negative.svg';
 import { fetchPublicClubs, InfoCulturaClub } from '../../api/infoculturaApi';
+import { getLocaleText, useLocale } from '../../i18n/locale.js';
 
 type LinkItem = {
   label: string;
@@ -72,6 +73,67 @@ function mapClubToLinkItem(club: InfoCulturaClub): LinkItem {
     href: getClubHref(club),
     internal: true
   };
+}
+
+function translateMenuLabel(locale: 'pt' | 'en', value: string): string {
+  if (locale === 'pt') return value;
+
+  const map: Record<string, string> = {
+    Instituicao: 'Institution',
+    'O ISPGAYA': 'About ISPGAYA',
+    Organizacao: 'Organization',
+    'Corpo Docente': 'Faculty',
+    'Qualidade Institucional': 'Institutional Quality',
+    'Etica e Boas Praticas': 'Ethics and Good Practices',
+    'Emprego e Recrutamento': 'Jobs and Recruitment',
+    'Titulo Especialista': 'Specialist Title',
+    Contactos: 'Contacts',
+    Ensino: 'Study',
+    'Oferta Formativa': 'Study Offer',
+    'Programas Avancados': 'Advanced Programmes',
+    Candidaturas: 'Applications',
+    'Bolsas e Financiamento': 'Scholarships and Funding',
+    Empregabilidade: 'Employability',
+    'Estagios e Emprego': 'Internships and Jobs',
+    Alumni: 'Alumni',
+    Investigacao: 'Research',
+    'Publicacoes Cientificas': 'Scientific Publications',
+    'Atividades Cientificas': 'Scientific Activities',
+    Biblioteca: 'Library',
+    WIDESKILLS: 'WIDESKILLS',
+    Politecnica: 'Polytechnic',
+    Internacional: 'International',
+    'Estudantes Internacionais': 'International Students',
+    'Guia ECTS': 'ECTS Guide',
+    'Laboratorio Cultural': 'Cultural Lab',
+    'Vida Academica': 'Academic Life',
+    Noticias: 'News',
+    Eventos: 'Events',
+    'Estudante ISPGAYA': 'ISPGAYA Student',
+    'Associacao de Estudantes': 'Student Association',
+    'Tuna Academica': 'Academic Tuna',
+    'Clube de Leitura': 'Reading Club',
+    'Clube de Teatro': 'Theatre Club',
+    'Perguntas Frequentes': 'Frequently Asked Questions',
+    'Candidatura Online': 'Online Application',
+    Horarios: 'Timetables',
+    'Área Privada': 'Private Area',
+    'Links de Interesse': 'Useful Links'
+  };
+
+  return map[value] || value;
+}
+
+function localizeExternalUrl(locale: 'pt' | 'en', href: string): string {
+  if (!href.startsWith('https://ispgaya.pt/') && !href.startsWith('https://international.ispgaya.pt/')) {
+    return href;
+  }
+
+  return href
+    .replace('https://ispgaya.pt/pt/', `https://ispgaya.pt/${locale}/`)
+    .replace('https://ispgaya.pt/en/', `https://ispgaya.pt/${locale}/`)
+    .replace('https://international.ispgaya.pt/pt', `https://international.ispgaya.pt/${locale}`)
+    .replace('https://international.ispgaya.pt/en', `https://international.ispgaya.pt/${locale}`);
 }
 
 const menuItems: MenuItem[] = [
@@ -201,6 +263,7 @@ type HeaderNavProps = {
 };
 
 function HeaderNav({ transparent = false }: HeaderNavProps) {
+  const { locale, setLocale } = useLocale();
   const [laboratorioDropdown, setLaboratorioDropdown] = useState<LinkItem[]>(
     defaultLaboratorioDropdown
   );
@@ -280,6 +343,9 @@ function HeaderNav({ transparent = false }: HeaderNavProps) {
   const dropdownAnchorClassName = transparent
     ? 'inline-block w-full py-0.5 text-inherit'
     : navDropdownAnchor;
+  const localeLabel = getLocaleText(locale, 'Idioma', 'Language');
+  const privateAreaLabel = getLocaleText(locale, 'Área Privada', 'Private Area');
+  const interestLinksLabel = getLocaleText(locale, 'Links de Interesse', 'Useful Links');
 
   function closeMobileMenu() {
     setIsMobileMenuOpen(false);
@@ -292,23 +358,46 @@ function HeaderNav({ transparent = false }: HeaderNavProps) {
           <img src={logoSrc} alt="ISPGAYA" className={brandLogo} />
         </Link>
 
-        <nav className={desktopMenuClassName} aria-label="Principal">
+        <nav className={desktopMenuClassName} aria-label={getLocaleText(locale, 'Principal', 'Primary')}>
           {resolvedMenuItems.map((item) =>
             item.dropdown ? (
               <div key={item.label} className={navItemGroup}>
-                {renderMenuLink(item, linkClassName)}
+                {renderMenuLink(
+                  {
+                    ...item,
+                    label: translateMenuLabel(locale, item.label),
+                    href: localizeExternalUrl(locale, item.href)
+                  },
+                  linkClassName
+                )}
                 <div className={dropdownWrapClassName}>
                   <ul className={dropdownListClassName}>
                     {item.dropdown.map((child) => (
                       <li key={child.label} className={dropdownItemClassName}>
-                        {renderMenuLink(child, dropdownAnchorClassName)}
+                        {renderMenuLink(
+                          {
+                            ...child,
+                            label: translateMenuLabel(locale, child.label),
+                            href: localizeExternalUrl(locale, child.href)
+                          },
+                          dropdownAnchorClassName
+                        )}
                       </li>
                     ))}
                   </ul>
                 </div>
               </div>
             ) : (
-              <div key={item.label}>{renderMenuLink(item, linkClassName)}</div>
+              <div key={item.label}>
+                {renderMenuLink(
+                  {
+                    ...item,
+                    label: translateMenuLabel(locale, item.label),
+                    href: localizeExternalUrl(locale, item.href)
+                  },
+                  linkClassName
+                )}
+              </div>
             )
           )}
         </nav>
@@ -326,7 +415,11 @@ function HeaderNav({ transparent = false }: HeaderNavProps) {
             });
           }}
           aria-expanded={isMobileMenuOpen}
-          aria-label={isMobileMenuOpen ? 'Fechar menu' : 'Abrir menu'}
+          aria-label={
+            isMobileMenuOpen
+              ? getLocaleText(locale, 'Fechar menu', 'Close menu')
+              : getLocaleText(locale, 'Abrir menu', 'Open menu')
+          }
         >
           {isMobileMenuOpen ? (
             <X className="h-5 w-5" />
@@ -373,24 +466,24 @@ function HeaderNav({ transparent = false }: HeaderNavProps) {
               <div className={`${container} px-6 sm:px-6 lg:px-3`}>
                 <div className="mx-auto w-full max-w-md divide-y divide-slate-200">
                   <div className="flex items-right justify-right gap-3 text-sm font-semibold text-slate-700">
-                    <a
-                      href="https://ispgaya.pt/pt"
-                      title="pt"
-                      rel="alternate"
-                      hrefLang="pt"
-                      className="text-slate-900"
+                    <button
+                      type="button"
+                      title={localeLabel}
+                      className={locale === 'pt' ? 'text-slate-900' : 'text-slate-500 hover:text-slate-700'}
+                      onClick={() => setLocale('pt')}
+                      aria-pressed={locale === 'pt'}
                     >
                       PT
-                    </a>
-                    <a
-                      href="https://ispgaya.pt/en"
-                      title="en"
-                      rel="alternate"
-                      hrefLang="en"
-                      className="text-slate-500 hover:text-slate-700"
+                    </button>
+                    <button
+                      type="button"
+                      title={localeLabel}
+                      className={locale === 'en' ? 'text-slate-900' : 'text-slate-500 hover:text-slate-700'}
+                      onClick={() => setLocale('en')}
+                      aria-pressed={locale === 'en'}
                     >
                       EN
-                    </a>
+                    </button>
                   </div>
                 {resolvedMenuItems.map((item) => {
                   const isExpanded = activeMobileSection === item.label;
@@ -400,7 +493,11 @@ function HeaderNav({ transparent = false }: HeaderNavProps) {
                     <div key={item.label} className="py-3">
                       <div className="flex items-center justify-between gap-3">
                         {renderMenuLink(
-                          item,
+                          {
+                            ...item,
+                            label: translateMenuLabel(locale, item.label),
+                            href: localizeExternalUrl(locale, item.href)
+                          },
                           'text-[15px] font-medium text-slate-800 text-left',
                           closeMobileMenu
                         )}
@@ -414,7 +511,11 @@ function HeaderNav({ transparent = false }: HeaderNavProps) {
                             }
                             className="inline-flex h-10 w-10 items-center justify-center rounded-md text-slate-600 transition hover:bg-slate-100"
                             aria-expanded={isExpanded}
-                            aria-label={isExpanded ? 'Fechar submenu' : 'Abrir submenu'}
+                            aria-label={
+                              isExpanded
+                                ? getLocaleText(locale, 'Fechar submenu', 'Close submenu')
+                                : getLocaleText(locale, 'Abrir submenu', 'Open submenu')
+                            }
                           >
                             <ChevronDown
                               className={`h-5 w-5 transition-transform ${isExpanded ? 'rotate-180' : ''}`}
@@ -428,7 +529,11 @@ function HeaderNav({ transparent = false }: HeaderNavProps) {
                           {item.dropdown?.map((child) => (
                             <div key={child.label} className="border-t border-slate-200 first:border-t-0">
                               {renderMenuLink(
-                                child,
+                                {
+                                  ...child,
+                                  label: translateMenuLabel(locale, child.label),
+                                  href: localizeExternalUrl(locale, child.href)
+                                },
                                 'flex items-center gap-3 px-4 py-3 text-[14px] text-slate-700 hover:text-[#dd8609]',
                                 closeMobileMenu
                               )}
@@ -443,7 +548,7 @@ function HeaderNav({ transparent = false }: HeaderNavProps) {
                 
                   <div className="flex items-left justify-left gap-2 text-left text-[11px] font-semibold  text-slate-500">
                     <Lock className="h-4 w-4" />
-                    <span>Área Privada</span>
+                    <span>{privateAreaLabel}</span>
                   </div>
                   <div className="mt-3 grid gap-2 text-left">
                     {mobilePrivateLinks.map((item) => (
@@ -460,7 +565,7 @@ function HeaderNav({ transparent = false }: HeaderNavProps) {
 
                   <div className="flex items-left justify-left gap-2 text-left text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">
                     <Zap className="h-4 w-4" />
-                    <span>Links de Interesse</span>
+                    <span>{interestLinksLabel}</span>
                   </div>
                   <div className="mt-3 grid gap-2 text-left">
                     {mobileInterestLinks.map((item) => (

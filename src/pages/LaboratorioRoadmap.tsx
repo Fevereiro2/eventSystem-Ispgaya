@@ -3,35 +3,58 @@ import Footer from '../components/layout/Footer';
 import HeaderNav from '../components/layout/HeaderNav';
 import TopBar from '../components/layout/TopBar';
 import logo from '../assets/ispgaya-logo.svg';
+import { getLocaleText, useLocale } from '../i18n/locale.js';
 import { container, mainContent } from '../styles/ui';
 
-const contentBlocks = [
-  {
-    title: 'Missão',
-    text: 'Promover a cultura na comunidade académica, incentivando a participação, a criatividade e a partilha de experiências.'
-  },
-  {
-    title: 'Objetivos',
-    items: [
-      'Incentivar a participação em atividades culturais',
-      'Divulgar eventos e iniciativas culturais',
-      'Estimular a criatividade e o pensamento crítico',
-      'Aproximar os estudantes da cultura dentro e fora da instituição'
-    ]
-  }
-];
-
 function LaboratorioRoadmap() {
+  const { locale } = useLocale();
+  const contentBlocks =
+    locale === 'en'
+      ? [
+          {
+            title: 'Mission',
+            text: 'Promote culture within the academic community, encouraging participation, creativity and the sharing of experiences.'
+          },
+          {
+            title: 'Goals',
+            items: [
+              'Encourage participation in cultural activities',
+              'Promote cultural events and initiatives',
+              'Stimulate creativity and critical thinking',
+              'Bring students closer to culture inside and outside the institution'
+            ]
+          }
+        ]
+      : [
+          {
+            title: 'Missão',
+            text: 'Promover a cultura na comunidade académica, incentivando a participação, a criatividade e a partilha de experiências.'
+          },
+          {
+            title: 'Objetivos',
+            items: [
+              'Incentivar a participação em atividades culturais',
+              'Divulgar eventos e iniciativas culturais',
+              'Estimular a criatividade e o pensamento crítico',
+              'Aproximar os estudantes da cultura dentro e fora da instituição'
+            ]
+          }
+        ];
+
   return (
     <>
       <TopBar />
       <HeaderNav />
       <Breadcrumbs
-        title="Missão e Objetivos"
-        description="O Laboratório Cultural é um espaço vivo onde a criatividade ganha forma e a cultura se torna experiência."
-        parentLabel="Laboratorio Cultural"
+        title={getLocaleText(locale, 'Missão e Objetivos', 'Mission and Goals')}
+        description={getLocaleText(
+          locale,
+          'O Laboratório Cultural é um espaço vivo onde a criatividade ganha forma e a cultura se torna experiência.',
+          'The Cultural Lab is a living space where creativity takes shape and culture becomes an experience.'
+        )}
+        parentLabel={getLocaleText(locale, 'Laboratorio Cultural', 'Cultural Lab')}
         parentHref="/laboratorio-cultural"
-        currentLabel="Missão e Objetivos"
+        currentLabel={getLocaleText(locale, 'Missão e Objetivos', 'Mission and Goals')}
         currentHref="/laboratorio-cultural/roadmap"
       />
 

@@ -1,10 +1,10 @@
-import { InfoCulturaClub, InfoCulturaUser } from '../../api/infoculturaApi';
+import { InfoCulturaClub, InfoCulturaUser } from '../../api/infoculturaApi.js';
 import {
   activitySectionByTab,
   allActivityTabs,
   NOTIFICATION_READ_KEY,
   WORKFLOW_LABELS
-} from './constants';
+} from './constants.js';
 import {
   ActivitySection,
   ActivitySubpage,
@@ -13,7 +13,7 @@ import {
   ContentSubpage,
   NewsSubpage,
   UserPage
-} from './types';
+} from './types.js';
 
 export function getDefaultActivityOrdering(tab: ActivityTab): string {
   if (tab === 'books') return 'featured';
@@ -157,6 +157,39 @@ export function getContentRoute(page: ContentSubpage): string {
   return page === 'form' ? '/infocultura/conteudos/novo' : '/infocultura/conteudos/registados';
 }
 
+export function getAdminSectionHref(section: AdminSection): string {
+  switch (section) {
+    case 'resumo':
+      return '/infocultura/resumo';
+    case 'metricas':
+      return '/infocultura/metricas';
+    case 'logs':
+      return '/infocultura/logs';
+    case 'notificacoes':
+      return '/infocultura/notificacoes';
+    case 'newsletters':
+      return '/infocultura/newsletters';
+    case 'utilizadores':
+      return '/infocultura/utilizadores';
+    case 'conteudos':
+      return '/infocultura/conteudos';
+    case 'noticias':
+      return '/infocultura/noticias';
+    case 'livros':
+      return '/infocultura/livros';
+    case 'sessoes':
+      return '/infocultura/sessoes';
+    case 'eventos':
+      return '/infocultura/eventos';
+    case 'atividades':
+      return '/infocultura/atividades';
+    case 'inscricoes':
+      return '/infocultura/inscricoes';
+    case 'clubes':
+      return '/infocultura/clubes';
+  }
+}
+
 export function isActivitySection(section: AdminSection | null): section is ActivitySection | 'atividades' {
   return section === 'livros' || section === 'sessoes' || section === 'eventos' || section === 'atividades';
 }
@@ -164,6 +197,14 @@ export function isActivitySection(section: AdminSection | null): section is Acti
 export function getAdminSection(pathname: string): AdminSection | null {
   if (pathname === '/infocultura' || pathname === '/infocultura/' || pathname === '/infocultura/resumo') {
     return 'resumo';
+  }
+
+  if (pathname === '/infocultura/metricas' || pathname.startsWith('/infocultura/metricas/')) {
+    return 'metricas';
+  }
+
+  if (pathname === '/infocultura/logs' || pathname.startsWith('/infocultura/logs/')) {
+    return 'logs';
   }
 
   if (
@@ -183,6 +224,10 @@ export function getAdminSection(pathname: string): AdminSection | null {
 
   if (pathname === '/infocultura/notificacoes') {
     return 'notificacoes';
+  }
+
+  if (pathname === '/infocultura/newsletters' || pathname.startsWith('/infocultura/newsletters/')) {
+    return 'newsletters';
   }
 
   if (pathname === '/infocultura/livros' || pathname.startsWith('/infocultura/livros/')) {

@@ -1,25 +1,37 @@
-from .admin_views import (
-    AdminAuditLogListView,
+from .admin.books import (
     AdminBookBulkDeleteView,
     AdminBookDetailView,
     AdminBookListCreateView,
-    AdminCategoryDetailView,
-    AdminCategoryListCreateView,
+)
+from .admin.clubs import (
     AdminClubDetailView,
     AdminClubListCreateView,
     AdminClubMemberAssignView,
     AdminClubMemberRemoveView,
+)
+from .admin.content import (
+    AdminCategoryDetailView,
+    AdminCategoryListCreateView,
+)
+from .admin.dashboard import (
+    AdminAuditLogListView,
     AdminDashboardNotificationsView,
     AdminDashboardSummaryView,
+    AdminImageUploadView,
+    AdminRegistrationStatusListView,
+)
+from .admin.events import (
     AdminEventBulkDeleteView,
     AdminEventBulkStatusUpdateView,
     AdminEventDetailView,
     AdminEventListCreateView,
-    AdminImageUploadView,
+)
+from .admin.registrations import (
     AdminRegistrationBulkStatusUpdateView,
     AdminRegistrationListView,
-    AdminRegistrationStatusListView,
     AdminRegistrationStatusUpdateView,
+)
+from .admin.sessions import (
     AdminSessionDetailView,
     AdminSessionListCreateView,
 )

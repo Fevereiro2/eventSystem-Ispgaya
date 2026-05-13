@@ -1,4 +1,4 @@
-import { CulturalArea } from '../../data/culturalContent';
+import { CulturalArea } from '../../data/culturalContent.js';
 
 export type FormState = {
   area: CulturalArea;
@@ -13,6 +13,7 @@ export type UserFormState = {
   email: string;
   role: string;
   password: string;
+  generate_password: boolean;
 };
 
 export type ClubFormState = {
@@ -84,7 +85,10 @@ export type ActivitySection = 'livros' | 'sessoes' | 'eventos';
 
 export type AdminSection =
   | 'resumo'
+  | 'metricas'
+  | 'logs'
   | 'notificacoes'
+  | 'newsletters'
   | 'utilizadores'
   | 'conteudos'
   | 'noticias'

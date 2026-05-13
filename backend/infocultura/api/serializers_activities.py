@@ -12,6 +12,7 @@ from ..services import (
     validate_date_interval,
 )
 from .serializers_news import EditorialHistorySerializer
+from .serializers_shared import ClubScopedWriteMixin
 from .serializers_workflow import (
     EVENT_WORKFLOW_STATUS_ORDER,
     get_role_allowed_workflow_statuses,
@@ -220,31 +221,8 @@ class AdminEventReadSerializer(EventSerializer):
         return EditorialHistorySerializer(history, many=True).data
 
 
-class ClubScopedWriteSerializer(serializers.ModelSerializer):
-    club_id = serializers.PrimaryKeyRelatedField(
-        source='club',
-        queryset=Club.objects.all(),
-        required=False,
-    )
-
-    def validate_club_scope(self, attrs):
-        request = self.context['request']
-        user = request.user
-        role_name = getattr(getattr(user, 'role', None), 'name', None)
-
-        if role_name == 'club_admin':
-            if not user.club_id:
-                raise serializers.ValidationError(
-                    {'club_id': 'O club_admin tem de ter um clube associado.'}
-                )
-
-            attrs['club'] = user.club
-
-        club = attrs.get('club') or getattr(self.instance, 'club', None)
-        if club is None:
-            raise serializers.ValidationError({'club_id': 'O clube e obrigatorio.'})
-
-        return club
+class ClubScopedWriteSerializer(ClubScopedWriteMixin, serializers.ModelSerializer):
+    pass
 
 
 class AdminBookWriteSerializer(ClubScopedWriteSerializer):
@@ -264,7 +242,7 @@ class AdminBookWriteSerializer(ClubScopedWriteSerializer):
         read_only_fields = ['id']
 
     def validate(self, attrs):
-        self.validate_club_scope(attrs)
+        self.resolve_club_scope(attrs)
         return attrs
 
     def create(self, validated_data):
@@ -303,7 +281,7 @@ class AdminSessionWriteSerializer(ClubScopedWriteSerializer):
         read_only_fields = ['id']
 
     def validate(self, attrs):
-        self.validate_club_scope(attrs)
+        self.resolve_club_scope(attrs)
         start_date = attrs.get('start_date') or getattr(self.instance, 'start_date', None)
         end_date = attrs.get('end_date') or getattr(self.instance, 'end_date', None)
 

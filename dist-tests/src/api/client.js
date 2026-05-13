@@ -1,4 +1,5 @@
-const API_BASE = (import.meta.env.VITE_INFOCULTURA_API || 'http://127.0.0.1:8001/api').replace(/\/$/, '');
+const clientEnv = import.meta.env;
+const API_BASE = (clientEnv?.VITE_INFOCULTURA_API || 'http://127.0.0.1:8001/api').replace(/\/$/, '');
 const ACCESS_TOKEN_STORAGE_KEY = 'ispgaya_cultura_token';
 export class InfoCulturaApiError extends Error {
     constructor(message, status) {

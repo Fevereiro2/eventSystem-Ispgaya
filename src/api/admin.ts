@@ -6,21 +6,27 @@ import {
   EventPayload,
   InfoCulturaAdminCollectionPage,
   InfoCulturaAdminNotification,
+  InfoCulturaActivityLog,
   InfoCulturaBook,
   InfoCulturaCategory,
   InfoCulturaClub,
   InfoCulturaDashboardStats,
   InfoCulturaEvent,
   InfoCulturaNews,
+  InfoCulturaNewsletter,
+  InfoCulturaNewsletterSubscriber,
   InfoCulturaNewsStatus,
   InfoCulturaRegistration,
   InfoCulturaRegistrationPage,
   InfoCulturaRegistrationStatus,
   InfoCulturaSession,
+  InfoCulturaMetricsOverview,
   NewsPayload,
+  NewsletterPayload,
+  NewsletterSubscriberPayload,
   SessionPayload,
   InfoCulturaUser,
-} from './types';
+} from './types.js';
 import {
   normalizeItemResponse,
   normalizeItemsResponse,
@@ -32,8 +38,8 @@ import {
   ApiBulkRegistrationResponse,
   ApiImageUploadResponse,
   ApiItemResponse,
-} from './client';
-import { CulturalItem } from '../data/culturalContent';
+} from './client.js';
+import { CulturalItem } from '../data/culturalContent.js';
 
 export async function fetchAdminContent(token: string): Promise<CulturalItem[]> {
   const data = await request<{ items: CulturalItem[] } | CulturalItem[]>('/content/admin/', {}, token);
@@ -138,6 +144,68 @@ export async function fetchAdminNotifications(token: string): Promise<InfoCultur
   return request<InfoCulturaAdminNotification[]>('/dashboard/admin/notifications/', {}, token);
 }
 
+export async function fetchAdminActivityLogs(
+  token: string,
+  filters?: {
+    source?: 'audit' | 'editorial';
+    action?: string;
+    contentType?: string;
+    search?: string;
+    clubId?: number;
+    limit?: number;
+  }
+): Promise<{ items: InfoCulturaActivityLog[]; total: number }> {
+  const search = new URLSearchParams();
+  if (filters?.source) {
+    search.set('source', filters.source);
+  }
+  if (filters?.action?.trim()) {
+    search.set('action', filters.action.trim());
+  }
+  if (filters?.contentType?.trim()) {
+    search.set('content_type', filters.contentType.trim());
+  }
+  if (filters?.search?.trim()) {
+    search.set('search', filters.search.trim());
+  }
+  if (typeof filters?.clubId === 'number') {
+    search.set('club_id', String(filters.clubId));
+  }
+  if (typeof filters?.limit === 'number' && filters.limit > 0) {
+    search.set('limit', String(filters.limit));
+  }
+
+  const query = search.toString();
+  return request<{ items: InfoCulturaActivityLog[]; total: number }>(
+    `/dashboard/admin/logs/${query ? `?${query}` : ''}`,
+    {},
+    token
+  );
+}
+
+export async function fetchAdminMetricsOverview(
+  token: string,
+  filters?: {
+    period?: 'day' | 'week' | 'month';
+    limit?: number;
+  }
+): Promise<InfoCulturaMetricsOverview> {
+  const search = new URLSearchParams();
+  if (filters?.period) {
+    search.set('period', filters.period);
+  }
+  if (typeof filters?.limit === 'number' && filters.limit > 0) {
+    search.set('limit', String(filters.limit));
+  }
+
+  const query = search.toString();
+  return request<InfoCulturaMetricsOverview>(
+    `/metrics/admin/${query ? `?${query}` : ''}`,
+    {},
+    token
+  );
+}
+
 export async function fetchAdminNewsStatuses(token: string): Promise<InfoCulturaNewsStatus[]> {
   return request<InfoCulturaNewsStatus[]>('/news/admin/statuses/', {}, token);
 }
@@ -188,6 +256,174 @@ export async function fetchAdminNews(
   return request<InfoCulturaAdminCollectionPage<InfoCulturaNews>>(
     `/news/admin/${query ? `?${query}` : ''}`,
     {},
+    token
+  );
+}
+
+export async function fetchAdminNewsletters(
+  token: string,
+  filters?: {
+    status?: string;
+    search?: string;
+    page?: number;
+    pageSize?: number;
+    exportMode?: 'csv';
+  }
+): Promise<InfoCulturaAdminCollectionPage<InfoCulturaNewsletter>> {
+  const search = new URLSearchParams();
+
+  if (filters?.status && filters.status !== 'all') {
+    search.set('status', filters.status);
+  }
+  if (filters?.search?.trim()) {
+    search.set('search', filters.search.trim());
+  }
+  if (typeof filters?.page === 'number' && filters.page > 0) {
+    search.set('page', String(filters.page));
+  }
+  if (typeof filters?.pageSize === 'number' && filters.pageSize > 0) {
+    search.set('page_size', String(filters.pageSize));
+  }
+  if (filters?.exportMode === 'csv') {
+    search.set('export', 'csv');
+  }
+
+  const query = search.toString();
+  return request<InfoCulturaAdminCollectionPage<InfoCulturaNewsletter>>(
+    `/newsletters/admin/${query ? `?${query}` : ''}`,
+    {},
+    token
+  );
+}
+
+export async function createAdminNewsletter(
+  token: string,
+  payload: NewsletterPayload
+): Promise<InfoCulturaNewsletter> {
+  return request<InfoCulturaNewsletter>(
+    '/newsletters/admin/',
+    {
+      method: 'POST',
+      body: JSON.stringify(payload)
+    },
+    token
+  );
+}
+
+export async function updateAdminNewsletter(
+  token: string,
+  id: number,
+  payload: NewsletterPayload
+): Promise<InfoCulturaNewsletter> {
+  return request<InfoCulturaNewsletter>(
+    `/newsletters/admin/${id}/`,
+    {
+      method: 'PUT',
+      body: JSON.stringify(payload)
+    },
+    token
+  );
+}
+
+export async function deleteAdminNewsletter(token: string, id: number): Promise<void> {
+  await request<void>(
+    `/newsletters/admin/${id}/`,
+    {
+      method: 'DELETE'
+    },
+    token
+  );
+}
+
+export async function sendAdminNewsletter(
+  token: string,
+  id: number
+): Promise<{ newsletter: InfoCulturaNewsletter; sent: number }> {
+  return request<{ newsletter: InfoCulturaNewsletter; sent: number }>(
+    `/newsletters/admin/${id}/send/`,
+    {
+      method: 'POST'
+    },
+    token
+  );
+}
+
+export async function fetchAdminNewsletterSubscribers(
+  token: string,
+  filters?: {
+    search?: string;
+    isActive?: boolean | 'all';
+    page?: number;
+    pageSize?: number;
+    exportMode?: 'csv';
+  }
+): Promise<InfoCulturaAdminCollectionPage<InfoCulturaNewsletterSubscriber>> {
+  const search = new URLSearchParams();
+
+  if (filters?.search?.trim()) {
+    search.set('search', filters.search.trim());
+  }
+  if (filters?.isActive === true) {
+    search.set('is_active', 'true');
+  } else if (filters?.isActive === false) {
+    search.set('is_active', 'false');
+  }
+  if (typeof filters?.page === 'number' && filters.page > 0) {
+    search.set('page', String(filters.page));
+  }
+  if (typeof filters?.pageSize === 'number' && filters.pageSize > 0) {
+    search.set('page_size', String(filters.pageSize));
+  }
+  if (filters?.exportMode === 'csv') {
+    search.set('export', 'csv');
+  }
+
+  const query = search.toString();
+  return request<InfoCulturaAdminCollectionPage<InfoCulturaNewsletterSubscriber>>(
+    `/newsletters/admin/subscribers/${query ? `?${query}` : ''}`,
+    {},
+    token
+  );
+}
+
+export async function createAdminNewsletterSubscriber(
+  token: string,
+  payload: NewsletterSubscriberPayload
+): Promise<InfoCulturaNewsletterSubscriber> {
+  return request<InfoCulturaNewsletterSubscriber>(
+    '/newsletters/admin/subscribers/',
+    {
+      method: 'POST',
+      body: JSON.stringify(payload)
+    },
+    token
+  );
+}
+
+export async function updateAdminNewsletterSubscriber(
+  token: string,
+  id: number,
+  payload: NewsletterSubscriberPayload
+): Promise<InfoCulturaNewsletterSubscriber> {
+  return request<InfoCulturaNewsletterSubscriber>(
+    `/newsletters/admin/subscribers/${id}/`,
+    {
+      method: 'PUT',
+      body: JSON.stringify(payload)
+    },
+    token
+  );
+}
+
+export async function deleteAdminNewsletterSubscriber(
+  token: string,
+  id: number
+): Promise<void> {
+  await request<void>(
+    `/newsletters/admin/subscribers/${id}/`,
+    {
+      method: 'DELETE'
+    },
     token
   );
 }

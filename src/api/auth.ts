@@ -2,8 +2,8 @@ import {
   InfoCulturaRole,
   InfoCulturaUser,
   UserPayload,
-} from './types';
-import { request, setStoredAccessToken } from './client';
+} from './types.js';
+import { request, setStoredAccessToken } from './client.js';
 
 type ApiLoginResponse = {
   token: string;

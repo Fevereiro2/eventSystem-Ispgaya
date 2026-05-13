@@ -18,7 +18,7 @@ from ..core.security import (
 from ..core.utils import get_client_ip
 from ..models import AppUser, Role
 from ..service_modules.audit import record_admin_audit_action
-from .admin_common import AdminAuditMixin
+from .admin.common import AdminAuditMixin
 from ..api.response_builders import apply_date_range_filters, build_csv_response
 
 

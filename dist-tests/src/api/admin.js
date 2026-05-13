@@ -1,4 +1,4 @@
-import { normalizeItemResponse, normalizeItemsResponse, request, requestBlob, } from './client';
+import { normalizeItemResponse, normalizeItemsResponse, request, requestBlob, } from './client.js';
 export async function fetchAdminContent(token) {
     const data = await request('/content/admin/', {}, token);
     return normalizeItemsResponse(data);
@@ -51,6 +51,40 @@ export async function fetchAdminDashboard(token) {
 export async function fetchAdminNotifications(token) {
     return request('/dashboard/admin/notifications/', {}, token);
 }
+export async function fetchAdminActivityLogs(token, filters) {
+    const search = new URLSearchParams();
+    if (filters?.source) {
+        search.set('source', filters.source);
+    }
+    if (filters?.action?.trim()) {
+        search.set('action', filters.action.trim());
+    }
+    if (filters?.contentType?.trim()) {
+        search.set('content_type', filters.contentType.trim());
+    }
+    if (filters?.search?.trim()) {
+        search.set('search', filters.search.trim());
+    }
+    if (typeof filters?.clubId === 'number') {
+        search.set('club_id', String(filters.clubId));
+    }
+    if (typeof filters?.limit === 'number' && filters.limit > 0) {
+        search.set('limit', String(filters.limit));
+    }
+    const query = search.toString();
+    return request(`/dashboard/admin/logs/${query ? `?${query}` : ''}`, {}, token);
+}
+export async function fetchAdminMetricsOverview(token, filters) {
+    const search = new URLSearchParams();
+    if (filters?.period) {
+        search.set('period', filters.period);
+    }
+    if (typeof filters?.limit === 'number' && filters.limit > 0) {
+        search.set('limit', String(filters.limit));
+    }
+    const query = search.toString();
+    return request(`/metrics/admin/${query ? `?${query}` : ''}`, {}, token);
+}
 export async function fetchAdminNewsStatuses(token) {
     return request('/news/admin/statuses/', {}, token);
 }
@@ -85,6 +119,88 @@ export async function fetchAdminNews(token, filters) {
     }
     const query = search.toString();
     return request(`/news/admin/${query ? `?${query}` : ''}`, {}, token);
+}
+export async function fetchAdminNewsletters(token, filters) {
+    const search = new URLSearchParams();
+    if (filters?.status && filters.status !== 'all') {
+        search.set('status', filters.status);
+    }
+    if (filters?.search?.trim()) {
+        search.set('search', filters.search.trim());
+    }
+    if (typeof filters?.page === 'number' && filters.page > 0) {
+        search.set('page', String(filters.page));
+    }
+    if (typeof filters?.pageSize === 'number' && filters.pageSize > 0) {
+        search.set('page_size', String(filters.pageSize));
+    }
+    if (filters?.exportMode === 'csv') {
+        search.set('export', 'csv');
+    }
+    const query = search.toString();
+    return request(`/newsletters/admin/${query ? `?${query}` : ''}`, {}, token);
+}
+export async function createAdminNewsletter(token, payload) {
+    return request('/newsletters/admin/', {
+        method: 'POST',
+        body: JSON.stringify(payload)
+    }, token);
+}
+export async function updateAdminNewsletter(token, id, payload) {
+    return request(`/newsletters/admin/${id}/`, {
+        method: 'PUT',
+        body: JSON.stringify(payload)
+    }, token);
+}
+export async function deleteAdminNewsletter(token, id) {
+    await request(`/newsletters/admin/${id}/`, {
+        method: 'DELETE'
+    }, token);
+}
+export async function sendAdminNewsletter(token, id) {
+    return request(`/newsletters/admin/${id}/send/`, {
+        method: 'POST'
+    }, token);
+}
+export async function fetchAdminNewsletterSubscribers(token, filters) {
+    const search = new URLSearchParams();
+    if (filters?.search?.trim()) {
+        search.set('search', filters.search.trim());
+    }
+    if (filters?.isActive === true) {
+        search.set('is_active', 'true');
+    }
+    else if (filters?.isActive === false) {
+        search.set('is_active', 'false');
+    }
+    if (typeof filters?.page === 'number' && filters.page > 0) {
+        search.set('page', String(filters.page));
+    }
+    if (typeof filters?.pageSize === 'number' && filters.pageSize > 0) {
+        search.set('page_size', String(filters.pageSize));
+    }
+    if (filters?.exportMode === 'csv') {
+        search.set('export', 'csv');
+    }
+    const query = search.toString();
+    return request(`/newsletters/admin/subscribers/${query ? `?${query}` : ''}`, {}, token);
+}
+export async function createAdminNewsletterSubscriber(token, payload) {
+    return request('/newsletters/admin/subscribers/', {
+        method: 'POST',
+        body: JSON.stringify(payload)
+    }, token);
+}
+export async function updateAdminNewsletterSubscriber(token, id, payload) {
+    return request(`/newsletters/admin/subscribers/${id}/`, {
+        method: 'PUT',
+        body: JSON.stringify(payload)
+    }, token);
+}
+export async function deleteAdminNewsletterSubscriber(token, id) {
+    await request(`/newsletters/admin/subscribers/${id}/`, {
+        method: 'DELETE'
+    }, token);
 }
 export async function fetchAdminRegistrationStatuses(token) {
     return request('/registrations/admin/statuses/', {}, token);

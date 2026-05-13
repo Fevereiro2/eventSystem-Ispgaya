@@ -1,4 +1,4 @@
-import { normalizeItemsResponse, request, requestBlob, } from './client';
+import { normalizeItemsResponse, request, requestBlob, } from './client.js';
 export async function fetchPublicContent(area) {
     const data = await request(`/content/?area=${area}`);
     return normalizeItemsResponse(data);
@@ -85,4 +85,33 @@ export async function downloadSessionCalendar(sessionId) {
 }
 export async function downloadEventCalendar(eventId) {
     return requestBlob(`/events/${eventId}/calendar/`);
+}
+export async function searchUniversities(filters) {
+    const search = new URLSearchParams();
+    if (filters?.name?.trim()) {
+        search.set('name', filters.name.trim());
+    }
+    if (filters?.country?.trim()) {
+        search.set('country', filters.country.trim());
+    }
+    if (typeof filters?.limit === 'number' && filters.limit > 0) {
+        search.set('limit', String(filters.limit));
+    }
+    if (typeof filters?.offset === 'number' && filters.offset > 0) {
+        search.set('offset', String(filters.offset));
+    }
+    const query = search.toString();
+    const response = await request(`/universities/search/${query ? `?${query}` : ''}`);
+    return Array.isArray(response) ? response : response.items || [];
+}
+export async function trackInfoCulturaView(payload) {
+    try {
+        await request('/metrics/view/', {
+            method: 'POST',
+            body: JSON.stringify(payload)
+        }, undefined, false);
+    }
+    catch {
+        // tracking should never block the user flow
+    }
 }

@@ -118,6 +118,7 @@ export function useAdminUsers({ token, canManageUsers, activeSection, userPage, 
                 email: selectedUser.email,
                 role: selectedUser.role,
                 password: '',
+                generate_password: false,
             });
             setUserFormError('');
         }

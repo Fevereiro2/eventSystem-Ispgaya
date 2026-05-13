@@ -1,4 +1,4 @@
-import { activitySectionByTab, allActivityTabs, NOTIFICATION_READ_KEY, WORKFLOW_LABELS } from './constants';
+import { activitySectionByTab, allActivityTabs, NOTIFICATION_READ_KEY, WORKFLOW_LABELS } from './constants.js';
 export function getDefaultActivityOrdering(tab) {
     if (tab === 'books')
         return 'featured';
@@ -130,12 +130,50 @@ export function getActivityRoute(tab, page) {
 export function getContentRoute(page) {
     return page === 'form' ? '/infocultura/conteudos/novo' : '/infocultura/conteudos/registados';
 }
+export function getAdminSectionHref(section) {
+    switch (section) {
+        case 'resumo':
+            return '/infocultura/resumo';
+        case 'metricas':
+            return '/infocultura/metricas';
+        case 'logs':
+            return '/infocultura/logs';
+        case 'notificacoes':
+            return '/infocultura/notificacoes';
+        case 'newsletters':
+            return '/infocultura/newsletters';
+        case 'utilizadores':
+            return '/infocultura/utilizadores';
+        case 'conteudos':
+            return '/infocultura/conteudos';
+        case 'noticias':
+            return '/infocultura/noticias';
+        case 'livros':
+            return '/infocultura/livros';
+        case 'sessoes':
+            return '/infocultura/sessoes';
+        case 'eventos':
+            return '/infocultura/eventos';
+        case 'atividades':
+            return '/infocultura/atividades';
+        case 'inscricoes':
+            return '/infocultura/inscricoes';
+        case 'clubes':
+            return '/infocultura/clubes';
+    }
+}
 export function isActivitySection(section) {
     return section === 'livros' || section === 'sessoes' || section === 'eventos' || section === 'atividades';
 }
 export function getAdminSection(pathname) {
     if (pathname === '/infocultura' || pathname === '/infocultura/' || pathname === '/infocultura/resumo') {
         return 'resumo';
+    }
+    if (pathname === '/infocultura/metricas' || pathname.startsWith('/infocultura/metricas/')) {
+        return 'metricas';
+    }
+    if (pathname === '/infocultura/logs' || pathname.startsWith('/infocultura/logs/')) {
+        return 'logs';
     }
     if (pathname === '/infocultura/utilizadores' ||
         pathname.startsWith('/infocultura/utilizadores/')) {
@@ -149,6 +187,9 @@ export function getAdminSection(pathname) {
     }
     if (pathname === '/infocultura/notificacoes') {
         return 'notificacoes';
+    }
+    if (pathname === '/infocultura/newsletters' || pathname.startsWith('/infocultura/newsletters/')) {
+        return 'newsletters';
     }
     if (pathname === '/infocultura/livros' || pathname.startsWith('/infocultura/livros/')) {
         return 'livros';

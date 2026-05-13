@@ -1,13 +1,15 @@
-import { CulturalItem } from '../data/culturalContent';
+import { CulturalItem } from '../data/culturalContent.js';
 import {
   InfoCulturaEvent,
   InfoCulturaNews,
   InfoCulturaRegistration,
-} from './types';
+} from './types.js';
 
-const API_BASE = (
-  import.meta.env.VITE_INFOCULTURA_API || 'http://127.0.0.1:8001/api'
-).replace(/\/$/, '');
+const clientEnv = (import.meta as ImportMeta & { env?: Record<string, string> }).env;
+const API_BASE = (clientEnv?.VITE_INFOCULTURA_API || 'http://127.0.0.1:8001/api').replace(
+  /\/$/,
+  ''
+);
 const ACCESS_TOKEN_STORAGE_KEY = 'ispgaya_cultura_token';
 
 export type ApiListResponse = {

@@ -1,18 +1,22 @@
 import { jsx as _jsx, jsxs as _jsxs } from "react/jsx-runtime";
 import { useEffect, useMemo, useState, } from 'react';
-import { Bell, CalendarClock, FilePlus2, FolderKanban, Newspaper, Users, } from 'lucide-react';
+import { Bell, FolderKanban } from 'lucide-react';
 import { NavLink, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import infoCulturaBg from '../assets/19825874_uqliU.jpeg';
 import ispgayaLogo from '../assets/ispgaya-logo.svg';
 import { adminActions, adminBtnDanger, adminBtnEdit, adminBtnPrimary, adminBtnSecondary, adminError, adminField, adminFieldSpaced, adminFormGridSpaced, adminInfo, adminInput, adminLabel, adminList, adminListDesc, adminListItem, adminListMeta, adminListTitle, adminListTools, adminListTop, adminPanelCard, adminPanelForm, adminPortalContent, adminPortalShell, adminPortalSidebar, adminPortalSidebarBrand, adminPortalSidebarHead, adminPortalSidebarLink, adminPortalSidebarLinkActive, adminPortalSidebarNav, adminPortalSidebarSection, adminPortalSidebarSub, adminPortalSidebarTitle, adminTextarea, blockText, blockTitle, container, infoLegacyBackdropImage, infoLegacyBackdropOverlay, infoLegacyBrandLogo, infoLegacyBrandSub, infoLegacyBrandText, infoLegacyBrandWrap, infoLegacyCenter, infoLegacyChrome, infoLegacyGrid, infoLegacyFooter, infoLegacyFooterInner, infoLegacyHeader, infoLegacyHeaderInner, infoLegacyLeft, infoLegacyBlock, infoLegacyBlockTitle, infoLegacyBlockText, infoLegacyBlockList, infoLegacyInput, infoLegacyLang, infoLegacyLoginForm, infoLegacyLoginHint, infoLegacyPanel, infoLegacyRight, infoLegacyLoginStage, infoLegacyLoginTitle, infoLegacyMain, infoLegacyMeta, infoLegacyPage, infoLegacyPrimaryButton, } from '../styles/ui';
 import { getAreaLabel, } from '../data/culturalContent';
-import AdminPageHero from './adminCultura/AdminPageHero';
+import AdminPageHero from './adminCultura/components/AdminPageHero.js';
 import { bulkDeleteAdminBooks, bulkDeleteAdminEvents, bulkDeleteAdminNews, assignUserToClub, bulkUpdateAdminEventStatus, bulkUpdateAdminNewsStatus, bulkUpdateAdminRegistrationStatus, createAdminBook, createAdminCategory, createAdminClub, createAdminContent, createAdminEvent, createAdminNews, createAdminSession, createAdminUser, deactivateAdminUser, deleteAdminBook, deleteAdminCategory, deleteAdminClub, deleteAdminContent, deleteAdminEvent, deleteAdminNews, deleteAdminSession, exportAdminBooksCsv, exportAdminEventsCsv, exportAdminNewsCsv, exportAdminRegistrationsCsv, exportAdminSessionsCsv, fetchAdminDashboard, fetchAdminNotifications, isInfoCulturaAuthError, removeUserFromClub, uploadAdminImage, updateAdminBook, updateAdminCategory, updateAdminRegistrationStatus, updateAdminClub, updateAdminContent, updateAdminEvent, updateAdminNews, updateAdminSession, updateAdminUser, } from '../api/infoculturaApi';
 import DashboardPage from './adminCultura/pages/DashboardPage';
 import ActivitiesPage from './adminCultura/ActivitiesPage';
 import ClubsPage from './adminCultura/pages/ClubsPage';
 import EventsPage from './adminCultura/pages/EventsPage';
+import LogsPage from './adminCultura/pages/LogsPage';
+import MetricsPage from './adminCultura/pages/MetricsPage';
 import NewsPage from './adminCultura/pages/NewsPage';
+import NewslettersPage from './adminCultura/pages/NewslettersPage';
+import { buildActivityOverviewStats, buildContentOverviewStats, buildDashboardAgenda, buildDashboardAlerts, buildDashboardCards, buildDashboardHighlights, buildDashboardQuickActions, buildClubOverviewStats, buildNewsOverviewStats, buildNotificationOverviewStats, buildRegistrationOverviewStats, buildUserOverviewStats, buildSidebarContextNav, getActivityPageLinks, getActivitySectionCopy, getContentPageLinks, getNewsPageLinks, getVisibleSectionGroups, getVisibleSections, } from './adminCultura/derived.js';
 import { useAdminActivities } from './adminCultura/hooks/useAdminActivities';
 import { useAdminAuth } from './adminCultura/hooks/useAdminAuth';
 import { useAdminNews } from './adminCultura/hooks/useAdminNews';
@@ -21,16 +25,11 @@ import { useAdminUsers } from './adminCultura/hooks/useAdminUsers';
 import RegistrationsPage from './adminCultura/pages/RegistrationsPage';
 import SessionsPage from './adminCultura/pages/SessionsPage';
 import UsersPage from './adminCultura/pages/UsersPage';
-import { ACTIVITY_PAGE_SIZE, activityTabBySection, adminSectionGroups, adminSections, EVENT_WORKFLOW_ORDER, initialBookForm, initialCategoryForm, initialClubForm, initialContentForm, initialEventForm, initialNewsForm, initialSessionForm, initialUserForm, NEWS_PAGE_SIZE, NEWS_WORKFLOW_ORDER, NOTIFICATION_READ_KEY, REGISTRATION_PAGE_SIZE, TOKEN_KEY } from './adminCultura/constants';
-import { downloadBlobFile, escapeCsvValue, formatAdminDateTime, getActivityRoute, getActivitySubpage, getAdminSection, getAllowedActivityTabs, getContentRoute, getContentSubpage, getDefaultActivityOrdering, getDefaultActivityTab, getNewsRoute, getNewsSubpage, getStoredReadNotificationIds, getUserPage, getWorkflowStatusLabel, getWorkflowStatusOptions, isWithinDateRange, normalizeWorkflowStatus, sortClubs, sortClubsByOrder, sortUsers, sortUsersByOrder, toDateInputValue, toDateTimeLocalValue } from './adminCultura/utils';
+import { ACTIVITY_PAGE_SIZE, activityTabBySection, EVENT_WORKFLOW_ORDER, initialBookForm, initialCategoryForm, initialClubForm, initialContentForm, initialEventForm, initialNewsForm, initialSessionForm, initialUserForm, NEWS_PAGE_SIZE, NEWS_WORKFLOW_ORDER, NOTIFICATION_READ_KEY, REGISTRATION_PAGE_SIZE, TOKEN_KEY } from './adminCultura/constants';
+import { downloadBlobFile, escapeCsvValue, formatAdminDateTime, getActivityRoute, getActivitySubpage, getAdminSection, getAllowedActivityTabs, getContentRoute, getContentSubpage, getDefaultActivityOrdering, getDefaultActivityTab, getNewsRoute, getNewsSubpage, getStoredReadNotificationIds, getUserPage, getWorkflowStatusOptions, isWithinDateRange, normalizeWorkflowStatus, sortClubs, sortClubsByOrder, sortUsers, sortUsersByOrder, toDateInputValue, toDateTimeLocalValue } from './adminCultura/utils';
 function AdminCultura() {
     const location = useLocation();
     const navigate = useNavigate();
-    const [isDesktopViewport, setIsDesktopViewport] = useState(() => {
-        if (typeof window === 'undefined')
-            return true;
-        return window.innerWidth >= 1024;
-    });
     const [authUser, setAuthUser] = useState('');
     const [authPass, setAuthPass] = useState('');
     const [authError, setAuthError] = useState('');
@@ -180,18 +179,6 @@ function AdminCultura() {
     const [categoryFormError, setCategoryFormError] = useState('');
     const [sessionFormError, setSessionFormError] = useState('');
     const [eventFormError, setEventFormError] = useState('');
-    useEffect(() => {
-        if (typeof window === 'undefined')
-            return;
-        const updateViewport = () => {
-            setIsDesktopViewport(window.innerWidth >= 1024);
-        };
-        updateViewport();
-        window.addEventListener('resize', updateViewport);
-        return () => {
-            window.removeEventListener('resize', updateViewport);
-        };
-    }, []);
     const activeSection = getAdminSection(location.pathname);
     const activeNewsSubpage = useMemo(() => getNewsSubpage(location.pathname), [location.pathname]);
     const activeActivitySubpage = useMemo(() => getActivitySubpage(location.pathname), [location.pathname]);
@@ -201,21 +188,8 @@ function AdminCultura() {
     const allowedActivityTabs = useMemo(() => getAllowedActivityTabs(currentUser), [currentUser]);
     const defaultActivityTab = useMemo(() => getDefaultActivityTab(currentUser), [currentUser]);
     const defaultActivityHref = useMemo(() => getActivityRoute(defaultActivityTab, 'list'), [defaultActivityTab]);
-    const visibleSections = useMemo(() => adminSections.filter((section) => {
-        if (section.id === 'clubes') {
-            return canManageUsers;
-        }
-        if (section.id === 'livros' || section.id === 'sessoes' || section.id === 'eventos') {
-            return allowedActivityTabs.includes(activityTabBySection[section.id]);
-        }
-        return true;
-    }), [allowedActivityTabs, canManageUsers]);
-    const visibleSectionGroups = useMemo(() => adminSectionGroups
-        .map((group) => ({
-        ...group,
-        sections: visibleSections.filter((section) => group.ids.includes(section.id)),
-    }))
-        .filter((group) => group.sections.length > 0), [visibleSections]);
+    const visibleSections = getVisibleSections(canManageUsers, allowedActivityTabs);
+    const visibleSectionGroups = getVisibleSectionGroups(visibleSections);
     const sortedItems = useMemo(() => [...items].sort((a, b) => (a.updatedAt < b.updatedAt ? 1 : -1)), [items]);
     const sortedUsers = useMemo(() => sortUsersByOrder(users, userOrder), [users, userOrder]);
     const sortedClubs = useMemo(() => sortClubsByOrder(clubs, clubOrder), [clubs, clubOrder]);
@@ -245,53 +219,9 @@ function AdminCultura() {
     const pendingRegistrations = useMemo(() => registrations.filter((registration) => registration.status === 'pending').length, [registrations]);
     const approvedRegistrations = useMemo(() => registrations.filter((registration) => registration.status === 'approved').length, [registrations]);
     const rejectedRegistrations = useMemo(() => registrations.filter((registration) => registration.status === 'rejected' || registration.status === 'cancelled').length, [registrations]);
-    const dashboardCards = useMemo(() => dashboardStats
-        ? [
-            { label: 'Utilizadores ativos', value: dashboardStats.active_users },
-            { label: 'Noticias publicadas', value: dashboardStats.news_published },
-            { label: 'Noticias em revisao', value: dashboardStats.news_review },
-            { label: 'Eventos em revisao', value: dashboardStats.events_review },
-            { label: 'Livros em destaque', value: dashboardStats.featured_books },
-            { label: 'Sessoes proximas', value: dashboardStats.upcoming_sessions },
-            { label: 'Inscricoes pendentes', value: dashboardStats.registrations_pending },
-            {
-                label: 'Clubes com inscricoes abertas',
-                value: dashboardStats.clubs_with_registrations_open
-            }
-        ]
-        : [], [dashboardStats]);
-    const dashboardHighlights = useMemo(() => [
-        {
-            label: 'Utilizadores ativos',
-            value: dashboardStats?.active_users ?? activeUsers,
-            tone: 'slate',
-            icon: Users,
-        },
-        {
-            label: 'Noticias publicadas',
-            value: dashboardStats?.news_published ?? publishedItems,
-            tone: 'amber',
-            icon: Newspaper,
-        },
-        {
-            label: 'Sessoes proximas',
-            value: dashboardStats?.upcoming_sessions ?? sessions.length,
-            tone: 'blue',
-            icon: CalendarClock,
-        },
-        {
-            label: 'Inscricoes pendentes',
-            value: dashboardStats?.registrations_pending ?? pendingRegistrations,
-            tone: 'rose',
-            icon: Bell,
-        },
-    ], [activeUsers, dashboardStats, pendingRegistrations, publishedItems, sessions.length]);
-    const activitySectionLabel = activityTab === 'books' ? 'Livros' : activityTab === 'sessions' ? 'Sessoes' : 'Eventos';
-    const activitySectionDescription = activityTab === 'books'
-        ? 'Gestao editorial dos livros associados aos clubes.'
-        : activityTab === 'sessions'
-            ? 'Planeamento e acompanhamento das sessoes de cada clube.'
-            : 'Programacao e workflow editorial dos eventos culturais.';
+    const dashboardCards = buildDashboardCards(dashboardStats);
+    const dashboardHighlights = buildDashboardHighlights(dashboardStats, activeUsers, publishedItems, pendingRegistrations, sessions.length);
+    const { label: activitySectionLabel, description: activitySectionDescription } = getActivitySectionCopy(activityTab);
     const newsPageHref = activeNewsSubpage ? getNewsRoute(activeNewsSubpage) : null;
     const activityPageHref = activeActivitySubpage
         ? getActivityRoute(activityTab, activeActivitySubpage)
@@ -304,100 +234,13 @@ function AdminCultura() {
     const showEventCategories = activityTab === 'events' && activeActivitySubpage === 'categories';
     const showContentForm = activeContentSubpage === 'form';
     const showContentList = activeContentSubpage === 'list';
-    const newsPageLinks = useMemo(() => [
-        { label: editingNewsId ? 'Editar Noticia' : 'Nova Noticia', href: getNewsRoute('form') },
-        { label: 'Noticias Registadas', href: getNewsRoute('list') },
-    ], [editingNewsId]);
-    const activityPageLinks = useMemo(() => activityTab === 'books'
-        ? [
-            { label: editingBookId ? 'Editar Livro' : 'Novo Livro', href: getActivityRoute(activityTab, 'form') },
-            { label: 'Livros Registados', href: getActivityRoute(activityTab, 'list') },
-        ]
-        : activityTab === 'sessions'
-            ? [
-                { label: editingSessionId ? 'Editar Sessao' : 'Nova Sessao', href: getActivityRoute(activityTab, 'form') },
-                { label: 'Sessoes Registadas', href: getActivityRoute(activityTab, 'list') },
-            ]
-            : [
-                { label: editingEventId ? 'Editar Evento' : 'Novo Evento', href: getActivityRoute(activityTab, 'form') },
-                { label: 'Eventos Registados', href: getActivityRoute(activityTab, 'list') },
-                { label: 'Categorias de Eventos', href: getActivityRoute(activityTab, 'categories') },
-            ], [activityTab, editingBookId, editingEventId, editingSessionId]);
-    const contentPageLinks = useMemo(() => [
-        { label: editingId ? 'Editar Conteudo' : 'Novo Conteudo', href: getContentRoute('form') },
-        { label: 'Conteudos Registados', href: getContentRoute('list') },
-    ], [editingId]);
-    const sidebarContextNavBySection = useMemo(() => ({
-        noticias: {
-            links: newsPageLinks,
-            activeHref: newsPageHref,
-        },
-        livros: {
-            links: activityTab === 'books' ? activityPageLinks : [],
-            activeHref: activityTab === 'books' ? activityPageHref : null,
-        },
-        sessoes: {
-            links: activityTab === 'sessions' ? activityPageLinks : [],
-            activeHref: activityTab === 'sessions' ? activityPageHref : null,
-        },
-        eventos: {
-            links: activityTab === 'events' ? activityPageLinks : [],
-            activeHref: activityTab === 'events' ? activityPageHref : null,
-        },
-        conteudos: {
-            links: contentPageLinks,
-            activeHref: contentPageHref,
-        },
-    }), [
-        activityPageHref,
-        activityPageLinks,
-        activityTab,
-        contentPageHref,
-        contentPageLinks,
-        newsPageHref,
-        newsPageLinks,
-    ]);
+    const newsPageLinks = getNewsPageLinks(editingNewsId);
+    const activityPageLinks = getActivityPageLinks(activityTab, editingBookId, editingSessionId, editingEventId);
+    const contentPageLinks = getContentPageLinks(editingId);
+    const sidebarContextNavBySection = buildSidebarContextNav(activityTab, newsPageLinks, activityPageLinks, contentPageLinks, newsPageHref, activityPageHref, contentPageHref);
     const readNotificationIdSet = useMemo(() => new Set(readNotificationIds), [readNotificationIds]);
     const unreadNotifications = useMemo(() => notifications.filter((notification) => !readNotificationIdSet.has(notification.id)), [notifications, readNotificationIdSet]);
-    const dashboardAlerts = useMemo(() => notifications.length > 0
-        ? notifications.slice(0, 4).map((notification) => ({
-            id: notification.id,
-            title: notification.title,
-            detail: notification.message,
-            href: notification.href,
-            level: notification.level,
-            is_read: readNotificationIdSet.has(notification.id),
-            created_at: notification.created_at || null,
-        }))
-        : [
-            {
-                id: 'editorial-review',
-                title: 'Revisao editorial',
-                detail: `${dashboardStats?.news_review ?? 0} noticias e ${dashboardStats?.events_review ?? 0} eventos aguardam revisao.`,
-                href: '/infocultura/noticias',
-                level: 'warning',
-                is_read: false,
-                created_at: null,
-            },
-            {
-                id: 'registrations-pending',
-                title: 'Inscricoes por validar',
-                detail: `${dashboardStats?.registrations_pending ?? pendingRegistrations} inscricoes pendentes de decisao.`,
-                href: '/infocultura/inscricoes',
-                level: 'warning',
-                is_read: false,
-                created_at: null,
-            },
-            {
-                id: 'clubs-open',
-                title: 'Clubes com atividade aberta',
-                detail: `${dashboardStats?.clubs_with_registrations_open ?? 0} clubes com inscricoes atualmente ativas.`,
-                href: '/infocultura/clubes',
-                level: 'info',
-                is_read: false,
-                created_at: null,
-            },
-        ], [dashboardStats, notifications, pendingRegistrations, readNotificationIdSet]);
+    const dashboardAlerts = buildDashboardAlerts(notifications, readNotificationIdSet, dashboardStats, pendingRegistrations);
     function openDashboardNotification(notification) {
         handleOpenNotification({
             id: notification.id,
@@ -409,203 +252,19 @@ function AdminCultura() {
             created_at: notification.created_at,
         });
     }
-    const dashboardAgenda = useMemo(() => [
-        dashboardStats?.latest_news
-            ? {
-                label: 'Ultima noticia',
-                title: dashboardStats.latest_news.title,
-                meta: `${dashboardStats.latest_news.club_name || 'Sem clube'} · ${dashboardStats.latest_news.status
-                    ? getWorkflowStatusLabel(dashboardStats.latest_news.status)
-                    : 'Sem estado'}`,
-                date: formatAdminDateTime(dashboardStats.latest_news.date || ''),
-                href: '/infocultura/noticias',
-            }
-            : null,
-        dashboardStats?.next_session
-            ? {
-                label: 'Proxima sessao',
-                title: dashboardStats.next_session.title,
-                meta: dashboardStats.next_session.club_name || 'Sem clube',
-                date: formatAdminDateTime(dashboardStats.next_session.date || ''),
-                href: '/infocultura/sessoes',
-            }
-            : null,
-        dashboardStats?.next_event
-            ? {
-                label: 'Proximo evento',
-                title: dashboardStats.next_event.title,
-                meta: `${dashboardStats.next_event.club_name || 'Sem clube'}${dashboardStats.next_event.status
-                    ? ` · ${getWorkflowStatusLabel(dashboardStats.next_event.status)}`
-                    : ''}`,
-                date: formatAdminDateTime(dashboardStats.next_event.date || ''),
-                href: '/infocultura/eventos',
-            }
-            : null,
-    ].filter(Boolean), [dashboardStats]);
-    const dashboardQuickActions = useMemo(() => {
-        const actions = [
-            {
-                label: 'Nova noticia',
-                hint: 'Abrir publicacao editorial',
-                href: '/infocultura/noticias',
-                icon: Newspaper,
-            },
-            {
-                label: 'Nova atividade',
-                hint: 'Gerir livros, sessoes e eventos',
-                href: defaultActivityHref,
-                icon: CalendarClock,
-            },
-            {
-                label: 'Conteudos culturais',
-                hint: 'Atualizar Tuna, Leitura e Teatro',
-                href: '/infocultura/conteudos',
-                icon: FilePlus2,
-            },
-            {
-                label: 'Inscricoes',
-                hint: 'Validar pedidos pendentes',
-                href: '/infocultura/inscricoes',
-                icon: Bell,
-            },
-        ];
-        if (canManageUsers) {
-            actions.unshift({
-                label: 'Utilizadores',
-                hint: 'Criar ou editar acessos',
-                href: '/infocultura/utilizadores',
-                icon: Users,
-            });
-        }
-        return actions;
-    }, [canManageUsers, defaultActivityHref]);
+    const dashboardAgenda = buildDashboardAgenda(dashboardStats);
+    const dashboardQuickActions = buildDashboardQuickActions(canManageUsers, defaultActivityHref);
     const latestNotifications = useMemo(() => notifications.map((notification) => ({
         ...notification,
         isRead: readNotificationIdSet.has(notification.id),
     })), [notifications, readNotificationIdSet]);
-    const notificationOverviewStats = useMemo(() => [
-        { label: 'Total', value: notifications.length },
-        { label: 'Por ler', value: unreadNotifications.length },
-        {
-            label: 'Editoriais',
-            value: notifications.filter((notification) => notification.kind === 'editorial').length,
-        },
-        {
-            label: 'Agenda',
-            value: notifications.filter((notification) => notification.kind === 'schedule').length,
-        },
-    ], [notifications, unreadNotifications.length]);
-    const userOverviewStats = useMemo(() => [
-        { label: 'Total', value: filteredUsers.length },
-        {
-            label: 'Ativos',
-            value: filteredUsers.filter((user) => user.is_active).length,
-        },
-        {
-            label: 'Inativos',
-            value: filteredUsers.filter((user) => !user.is_active).length,
-        },
-        {
-            label: 'Club admins',
-            value: filteredUsers.filter((user) => user.role === 'club_admin').length,
-        },
-    ], [filteredUsers]);
-    const clubsOverviewStats = useMemo(() => [
-        { label: 'Total', value: filteredClubs.length },
-        {
-            label: 'Ativos',
-            value: filteredClubs.filter((club) => club.is_active).length,
-        },
-        {
-            label: 'Inscricoes abertas',
-            value: filteredClubs.filter((club) => club.enable_registrations).length,
-        },
-        {
-            label: 'Com imagem',
-            value: filteredClubs.filter((club) => Boolean(club.image)).length,
-        },
-    ], [filteredClubs]);
-    const newsOverviewStats = useMemo(() => [
-        { label: 'Total filtrado', value: newsTotal },
-        {
-            label: 'Em revisao',
-            value: dashboardStats?.news_review ??
-                sortedNews.filter((item) => normalizeWorkflowStatus(item.news_status_name) === 'review').length,
-        },
-        { label: 'Selecionadas', value: selectedNewsIds.length },
-        {
-            label: 'Publicadas',
-            value: dashboardStats?.news_published ??
-                sortedNews.filter((item) => normalizeWorkflowStatus(item.news_status_name) === 'published').length,
-        },
-    ], [dashboardStats, newsTotal, selectedNewsIds.length, sortedNews]);
-    const activityOverviewStats = useMemo(() => {
-        if (activityTab === 'books') {
-            return [
-                { label: 'Total filtrado', value: activityTotal },
-                {
-                    label: 'Em destaque',
-                    value: sortedBooks.filter((item) => item.is_featured).length,
-                },
-                { label: 'Selecionados', value: selectedBookIds.length },
-                {
-                    label: 'Clubes na pagina',
-                    value: new Set(sortedBooks.map((item) => item.club_id)).size,
-                },
-            ];
-        }
-        if (activityTab === 'sessions') {
-            return [
-                { label: 'Total filtrado', value: activityTotal },
-                {
-                    label: 'Proximas',
-                    value: sortedSessions.filter((item) => new Date(item.start_date).getTime() >= Date.now()).length,
-                },
-                {
-                    label: 'Inscricoes abertas',
-                    value: sortedSessions.filter((item) => item.enable_registrations).length,
-                },
-                {
-                    label: 'Clubes na pagina',
-                    value: new Set(sortedSessions.map((item) => item.club_id)).size,
-                },
-            ];
-        }
-        return [
-            { label: 'Total filtrado', value: activityTotal },
-            {
-                label: 'Em revisao',
-                value: sortedEvents.filter((item) => normalizeWorkflowStatus(item.status) === 'review')
-                    .length,
-            },
-            { label: 'Selecionados', value: selectedEventIds.length },
-            { label: 'Categorias', value: sortedCategories.length },
-        ];
-    }, [
-        activityTab,
-        activityTotal,
-        selectedBookIds.length,
-        selectedEventIds.length,
-        sortedBooks,
-        sortedCategories.length,
-        sortedEvents,
-        sortedSessions,
-    ]);
-    const registrationOverviewStats = useMemo(() => [
-        { label: 'Total filtrado', value: registrationTotal },
-        { label: 'Pendentes', value: pendingRegistrations },
-        { label: 'Aprovadas', value: approvedRegistrations },
-        { label: 'Rejeitadas', value: rejectedRegistrations },
-    ], [approvedRegistrations, pendingRegistrations, registrationTotal, rejectedRegistrations]);
-    const contentOverviewStats = useMemo(() => [
-        { label: 'Total', value: sortedItems.length },
-        { label: 'Publicados', value: publishedItems },
-        { label: 'Rascunhos', value: Math.max(0, sortedItems.length - publishedItems) },
-        {
-            label: 'Areas',
-            value: new Set(sortedItems.map((item) => item.area)).size,
-        },
-    ], [publishedItems, sortedItems]);
+    const notificationOverviewStats = buildNotificationOverviewStats(notifications, unreadNotifications.length);
+    const userOverviewStats = buildUserOverviewStats(filteredUsers);
+    const clubsOverviewStats = buildClubOverviewStats(filteredClubs);
+    const newsOverviewStats = buildNewsOverviewStats(newsTotal, dashboardStats, selectedNewsIds, sortedNews);
+    const activityOverviewStats = buildActivityOverviewStats(activityTab, activityTotal, selectedBookIds, selectedEventIds, sortedBooks, sortedCategories, sortedEvents, sortedSessions);
+    const registrationOverviewStats = buildRegistrationOverviewStats(registrationTotal, pendingRegistrations, approvedRegistrations, rejectedRegistrations);
+    const contentOverviewStats = buildContentOverviewStats(sortedItems, publishedItems);
     const clubMembers = useMemo(() => {
         if (!editingClubId)
             return [];
@@ -1396,18 +1055,20 @@ function AdminCultura() {
         event.preventDefault();
         if (!token || !canManageUsers || !userPage)
             return;
+        const manualPassword = userForm.password.trim();
         const payload = {
             name: userForm.name.trim(),
             email: userForm.email.trim(),
             role: userForm.role,
-            ...(userForm.password.trim() ? { password: userForm.password.trim() } : {})
+            generate_password: userForm.generate_password,
+            ...(!userForm.generate_password && manualPassword ? { password: manualPassword } : {})
         };
         if (!payload.name || !payload.email || !payload.role) {
             setUserFormError('Preenche nome, email e role.');
             return;
         }
-        if (userPage.mode === 'create' && !payload.password) {
-            setUserFormError('A password e obrigatoria para criar um utilizador.');
+        if (userPage.mode === 'create' && !userForm.generate_password && !manualPassword) {
+            setUserFormError('Ativa a geracao automatica ou indica uma password.');
             return;
         }
         setIsSavingUser(true);
@@ -2100,9 +1761,6 @@ function AdminCultura() {
     if (location.pathname === '/infocultura' || location.pathname === '/infocultura/') {
         return _jsx(Navigate, { to: "/infocultura/resumo", replace: true });
     }
-    if (!isDesktopViewport) {
-        return (_jsxs("div", { className: infoLegacyLoginStage, children: [_jsx("img", { src: infoCulturaBg, alt: "", className: infoLegacyBackdropImage }), _jsx("div", { className: infoLegacyBackdropOverlay }), _jsxs("div", { className: infoLegacyChrome, children: [_jsx("header", { className: infoLegacyHeader, children: _jsxs("div", { className: infoLegacyHeaderInner, children: [_jsxs("div", { className: infoLegacyBrandWrap, children: [_jsx("img", { src: ispgayaLogo, alt: "ISPGAYA", className: infoLegacyBrandLogo }), _jsxs("div", { children: [_jsx("p", { className: infoLegacyBrandText, children: "InfoCultura" }), _jsx("p", { className: infoLegacyBrandSub, children: "Gestao cultural interna" })] })] }), _jsx("p", { className: infoLegacyLang, children: "PT | EN" })] }) }), _jsx("main", { className: infoLegacyCenter, children: _jsxs("div", { className: "w-full max-w-xl rounded-xl border border-white/20 bg-white/95 p-6 shadow-2xl backdrop-blur", children: [_jsx("h2", { className: infoLegacyLoginTitle, children: "Acesso apenas em computador" }), _jsx("p", { className: "mt-3 text-sm leading-6 text-slate-700", children: "O portal InfoCultura esta disponivel apenas em ecras de desktop. Para continuar, acede a partir de um computador." }), _jsx("p", { className: infoLegacyMeta, children: "Dispositivos moveis e tablets nao suportam esta area administrativa." })] }) })] })] }));
-    }
     if (!activeSection) {
         return _jsx(Navigate, { to: "/infocultura/resumo", replace: true });
     }
@@ -2121,13 +1779,13 @@ function AdminCultura() {
                                                                 sidebarContextNavBySection[section.id]?.links.length ? (_jsx("div", { className: "border-l-[4px] border-[#f4a24d] bg-white/75 px-4 py-2", children: _jsx("div", { className: "flex flex-col gap-1", children: sidebarContextNavBySection[section.id]?.links.map((link) => (_jsx(NavLink, { to: link.href, className: ({ isActive }) => `block w-full rounded-md px-3 py-2 text-sm transition-colors ${isActive ||
                                                                             sidebarContextNavBySection[section.id]?.activeHref === link.href
                                                                             ? 'bg-orange-50 font-semibold text-[#dd8609]'
-                                                                            : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'}`, children: link.label }, link.href))) }) })) : null] }, section.id))) })] }, group.title)))] }), _jsxs("div", { className: adminPortalContent, children: [activeSection === 'resumo' ? (_jsx(DashboardPage, { currentUser: currentUser, isLoadingUsers: isLoadingUsers, dashboardStats: dashboardStats, isLoadingDashboard: isLoadingDashboard, dashboardError: dashboardError, unreadNotifications: unreadNotifications.length, isLoadingNotifications: isLoadingNotifications, notificationError: notificationError, dashboardHighlights: dashboardHighlights, dashboardAlerts: dashboardAlerts, dashboardQuickActions: dashboardQuickActions, dashboardCards: dashboardCards, dashboardAgenda: dashboardAgenda, onOpenNotification: openDashboardNotification, onMarkAllAsRead: markAllNotificationsAsRead, onNavigate: navigate })) : null, activeSection === 'notificacoes' ? (_jsxs("div", { className: "space-y-6", children: [_jsx(AdminPageHero, { icon: Bell, title: "Centro de Notificacoes", description: "Alertas editoriais, operacionais e de agenda gerados a partir da atividade do sistema.", tone: "amber", stats: notificationOverviewStats, actions: _jsx("button", { type: "button", className: adminBtnSecondary, disabled: notifications.length === 0, onClick: markAllNotificationsAsRead, children: "Marcar todas como lidas" }) }), _jsxs("section", { className: adminPanelCard, children: [isLoadingNotifications ? (_jsx("p", { className: adminInfo, children: "A carregar notificacoes..." })) : null, notificationError ? _jsx("p", { className: adminError, children: notificationError }) : null, !isLoadingNotifications && latestNotifications.length === 0 ? (_jsx("p", { className: adminInfo, children: "Nao existem notificacoes para mostrar." })) : null, _jsx("div", { className: "space-y-4", children: latestNotifications.map((notification) => (_jsx("article", { className: `rounded-2xl border p-5 shadow-sm ${notification.isRead
+                                                                            : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'}`, children: link.label }, link.href))) }) })) : null] }, section.id))) })] }, group.title)))] }), _jsxs("div", { className: adminPortalContent, children: [activeSection === 'resumo' ? (_jsx(DashboardPage, { currentUser: currentUser, isLoadingUsers: isLoadingUsers, dashboardStats: dashboardStats, isLoadingDashboard: isLoadingDashboard, dashboardError: dashboardError, unreadNotifications: unreadNotifications.length, isLoadingNotifications: isLoadingNotifications, notificationError: notificationError, dashboardHighlights: dashboardHighlights, dashboardAlerts: dashboardAlerts, dashboardQuickActions: dashboardQuickActions, dashboardCards: dashboardCards, dashboardAgenda: dashboardAgenda, onOpenNotification: openDashboardNotification, onMarkAllAsRead: markAllNotificationsAsRead, onNavigate: navigate })) : null, activeSection === 'metricas' ? _jsx(MetricsPage, {}) : null, activeSection === 'logs' ? _jsx(LogsPage, {}) : null, activeSection === 'notificacoes' ? (_jsxs("div", { className: "space-y-6", children: [_jsx(AdminPageHero, { icon: Bell, title: "Centro de Notificacoes", description: "Alertas editoriais, operacionais e de agenda gerados a partir da atividade do sistema.", tone: "amber", stats: notificationOverviewStats, actions: _jsx("button", { type: "button", className: adminBtnSecondary, disabled: notifications.length === 0, onClick: markAllNotificationsAsRead, children: "Marcar todas como lidas" }) }), _jsxs("section", { className: adminPanelCard, children: [isLoadingNotifications ? (_jsx("p", { className: adminInfo, children: "A carregar notificacoes..." })) : null, notificationError ? _jsx("p", { className: adminError, children: notificationError }) : null, !isLoadingNotifications && latestNotifications.length === 0 ? (_jsx("p", { className: adminInfo, children: "Nao existem notificacoes para mostrar." })) : null, _jsx("div", { className: "space-y-4", children: latestNotifications.map((notification) => (_jsx("article", { className: `rounded-2xl border p-5 shadow-sm ${notification.isRead
                                                                     ? 'border-slate-200 bg-white'
                                                                     : notification.level === 'warning'
                                                                         ? 'border-amber-200 bg-amber-50'
                                                                         : notification.level === 'success'
                                                                             ? 'border-emerald-200 bg-emerald-50'
-                                                                            : 'border-sky-200 bg-sky-50'}`, children: _jsxs("div", { className: "flex flex-wrap items-start justify-between gap-4", children: [_jsxs("div", { className: "max-w-3xl", children: [_jsxs("div", { className: "flex flex-wrap items-center gap-3", children: [_jsx("h3", { className: "text-lg font-semibold text-slate-900", children: notification.title }), !notification.isRead ? (_jsx("span", { className: "inline-flex items-center rounded-full bg-[#dd8609] px-2.5 py-1 text-xs font-semibold text-white", children: "Nova" })) : null, _jsx("span", { className: "inline-flex items-center rounded-full bg-white/80 px-2.5 py-1 text-xs font-semibold uppercase tracking-[0.12em] text-slate-600", children: notification.kind })] }), _jsx("p", { className: "mt-3 leading-7 text-slate-700", children: notification.message }), _jsx("p", { className: "mt-3 text-sm font-medium text-slate-500", children: formatAdminDateTime(notification.created_at || '') })] }), _jsxs("div", { className: "flex flex-wrap gap-3", children: [_jsx("button", { type: "button", className: adminBtnPrimary, onClick: () => handleOpenNotification(notification), children: "Abrir" }), !notification.isRead ? (_jsx("button", { type: "button", className: adminBtnSecondary, onClick: () => markNotificationAsRead(notification.id), children: "Marcar como lida" })) : null] })] }) }, notification.id))) })] })] })) : null, activeSection === 'utilizadores' ? (_jsx(UsersPage, { userPage: userPage, canManageUsers: canManageUsers, isExportingUsers: isExportingUsers, handleExportUsersCsv: handleExportUsersCsv, userOverviewStats: userOverviewStats, isLoadingUsers: isLoadingUsers, filteredUsers: filteredUsers, currentUser: currentUser, userDateFrom: userDateFrom, userDateTo: userDateTo, userOrder: userOrder, setUserDateFrom: setUserDateFrom, setUserDateTo: setUserDateTo, setUserOrder: setUserOrder, isSavingUser: isSavingUser, isLoadingRoles: isLoadingRoles, roles: roles, userForm: userForm, setUserForm: setUserForm, userFormError: userFormError, handleSaveUser: handleSaveUser, resetUserForm: resetUserForm, selectedUser: selectedUser, isDeactivatingUser: isDeactivatingUser, handleDeactivateUser: handleDeactivateUser })) : null, activeSection === 'clubes' ? (_jsx(ClubsPage, { clubsOverviewStats: clubsOverviewStats, isExportingClubs: isExportingClubs, handleExportClubsCsv: handleExportClubsCsv, handleSaveClub: handleSaveClub, clubForm: clubForm, setClubForm: setClubForm, clubImageFileKey: clubImageFileKey, isUploadingClubImage: isUploadingClubImage, handleUploadClubImage: handleUploadClubImage, clubFormError: clubFormError, isSavingClub: isSavingClub, editingClubId: editingClubId, resetClubForm: resetClubForm, selectedClubUserId: selectedClubUserId, setSelectedClubUserId: setSelectedClubUserId, usersWithoutClub: usersWithoutClub, isAssigningClubUser: isAssigningClubUser, handleAssignUserToClub: handleAssignUserToClub, clubDateFrom: clubDateFrom, clubDateTo: clubDateTo, clubOrder: clubOrder, setClubDateFrom: setClubDateFrom, setClubDateTo: setClubDateTo, setClubOrder: setClubOrder, filteredClubs: filteredClubs, isLoadingClubs: isLoadingClubs, deletingClubId: deletingClubId, handleEditClub: handleEditClub, handleDeleteClub: handleDeleteClub, clubMembers: clubMembers, removingClubUserId: removingClubUserId, handleRemoveUserFromClub: handleRemoveUserFromClub })) : null, activeSection === 'noticias' ? (_jsx(NewsPage, { canManageUsers: canManageUsers, newsOverviewStats: newsOverviewStats, isExportingNews: isExportingNews, handleExportNewsCsv: handleExportNewsCsv, showNewsForm: showNewsForm, showNewsList: showNewsList, handleSaveNews: handleSaveNews, editingNewsId: editingNewsId, newsForm: newsForm, setNewsForm: setNewsForm, clubs: clubs, isLoadingNewsStatuses: isLoadingNewsStatuses, availableNewsStatuses: availableNewsStatuses, newsFormError: newsFormError, isSavingNews: isSavingNews, resetNewsForm: resetNewsForm, newsImageFileKey: newsImageFileKey, isUploadingNewsImage: isUploadingNewsImage, handleUploadNewsImage: handleUploadNewsImage, newsError: newsError, handleApplyNewsSearch: handleApplyNewsSearch, newsSearchInput: newsSearchInput, setNewsSearchInput: setNewsSearchInput, setNewsSearch: setNewsSearch, setNewsPage: setNewsPage, newsClubFilter: newsClubFilter, setNewsClubFilter: setNewsClubFilter, newsStatusFilter: newsStatusFilter, setNewsStatusFilter: setNewsStatusFilter, newsStatuses: newsStatuses, newsDateFrom: newsDateFrom, setNewsDateFrom: setNewsDateFrom, newsDateTo: newsDateTo, setNewsDateTo: setNewsDateTo, newsOrder: newsOrder, setNewsOrder: setNewsOrder, selectedNewsIds: selectedNewsIds, setSelectedNewsIds: setSelectedNewsIds, sortedNews: sortedNews, bulkNewsStatus: bulkNewsStatus, setBulkNewsStatus: setBulkNewsStatus, isApplyingBulkNews: isApplyingBulkNews, handleApplyBulkNewsStatus: handleApplyBulkNewsStatus, isDeletingBulkNews: isDeletingBulkNews, handleBulkDeleteNews: handleBulkDeleteNews, deletingNewsId: deletingNewsId, handleDeleteNews: handleDeleteNews, handleEditNews: handleEditNews, newsTotal: newsTotal, newsPage: newsPage, newsTotalPages: newsTotalPages, isLoadingNews: isLoadingNews, toggleSelectedId: toggleSelectedId })) : null, activeSection === 'livros' ? (_jsx(ActivitiesPage, { activitySectionLabel: activitySectionLabel, activitySectionDescription: activitySectionDescription, activityOverviewStats: activityOverviewStats, isExportingActivities: isExportingActivities, handleExportActivitiesCsv: handleExportActivitiesCsv, showActivityFiltersAndList: showActivityFiltersAndList, canManageUsers: canManageUsers, clubs: clubs, activityClubFilter: activityClubFilter, setActivityClubFilter: setActivityClubFilter, activityCategoryFilter: activityCategoryFilter, setActivityCategoryFilter: setActivityCategoryFilter, activityStatusFilter: activityStatusFilter, setActivityStatusFilter: setActivityStatusFilter, activityError: activityError, handleApplyActivitySearch: handleApplyActivitySearch, activitySearchInput: activitySearchInput, setActivitySearchInput: setActivitySearchInput, setActivitySearch: setActivitySearch, setActivityPage: setActivityPage, activityDateFrom: activityDateFrom, setActivityDateFrom: setActivityDateFrom, activityDateTo: activityDateTo, setActivityDateTo: setActivityDateTo, activityOrder: activityOrder, setActivityOrder: setActivityOrder, activityTab: activityTab, selectedBookIds: selectedBookIds, setSelectedBookIds: setSelectedBookIds, sortedBooks: sortedBooks, isDeletingBulkBooks: isDeletingBulkBooks, handleBulkDeleteBooks: handleBulkDeleteBooks, selectedEventIds: selectedEventIds, setSelectedEventIds: setSelectedEventIds, sortedEvents: sortedEvents, bulkEventStatus: bulkEventStatus, setBulkEventStatus: setBulkEventStatus, availableEventStatuses: availableEventStatuses, isApplyingBulkEvents: isApplyingBulkEvents, handleApplyBulkEventStatus: handleApplyBulkEventStatus, isDeletingBulkEvents: isDeletingBulkEvents, handleBulkDeleteEvents: handleBulkDeleteEvents, showActivityForm: showActivityForm, handleSaveBook: handleSaveBook, editingBookId: editingBookId, bookForm: bookForm, setBookForm: setBookForm, bookImageFileKey: bookImageFileKey, isUploadingBookImage: isUploadingBookImage, handleUploadBookImage: handleUploadBookImage, bookFormError: bookFormError, isSavingBook: isSavingBook, resetBookForm: resetBookForm, handleEditBook: handleEditBook, deletingBookId: deletingBookId, handleDeleteBook: handleDeleteBook, isLoadingActivities: isLoadingActivities, activityTotal: activityTotal, activityPage: activityPage, activityTotalPages: activityTotalPages, handleSaveSession: handleSaveSession, editingSessionId: editingSessionId, sessionForm: sessionForm, setSessionForm: setSessionForm, sessionFormError: sessionFormError, isSavingSession: isSavingSession, resetSessionForm: resetSessionForm, handleEditSession: handleEditSession, deletingSessionId: deletingSessionId, handleDeleteSession: handleDeleteSession, sortedSessions: sortedSessions, handleSaveEvent: handleSaveEvent, editingEventId: editingEventId, eventForm: eventForm, setEventForm: setEventForm, eventImageFileKey: eventImageFileKey, isUploadingEventImage: isUploadingEventImage, handleUploadEventImage: handleUploadEventImage, eventFormError: eventFormError, isSavingEvent: isSavingEvent, resetEventForm: resetEventForm, handleEditEvent: handleEditEvent, deletingEventId: deletingEventId, handleDeleteEvent: handleDeleteEvent, showEventCategories: showEventCategories, handleSaveCategory: handleSaveCategory, categoryForm: categoryForm, setCategoryForm: setCategoryForm, categoryFormError: categoryFormError, isSavingCategory: isSavingCategory, editingCategoryId: editingCategoryId, resetCategoryForm: resetCategoryForm, sortedCategories: sortedCategories, isLoadingCategories: isLoadingCategories, handleEditCategory: handleEditCategory, deletingCategoryId: deletingCategoryId, handleDeleteCategory: handleDeleteCategory, toggleSelectedId: toggleSelectedId })) : null, activeSection === 'sessoes' ? (_jsx(SessionsPage, { activitySectionLabel: activitySectionLabel, activitySectionDescription: activitySectionDescription, activityOverviewStats: activityOverviewStats, isExportingActivities: isExportingActivities, handleExportActivitiesCsv: handleExportActivitiesCsv, showActivityFiltersAndList: showActivityFiltersAndList, canManageUsers: canManageUsers, clubs: clubs, activityClubFilter: activityClubFilter, setActivityClubFilter: setActivityClubFilter, activityCategoryFilter: activityCategoryFilter, setActivityCategoryFilter: setActivityCategoryFilter, activityStatusFilter: activityStatusFilter, setActivityStatusFilter: setActivityStatusFilter, activityError: activityError, handleApplyActivitySearch: handleApplyActivitySearch, activitySearchInput: activitySearchInput, setActivitySearchInput: setActivitySearchInput, setActivitySearch: setActivitySearch, setActivityPage: setActivityPage, activityDateFrom: activityDateFrom, setActivityDateFrom: setActivityDateFrom, activityDateTo: activityDateTo, setActivityDateTo: setActivityDateTo, activityOrder: activityOrder, setActivityOrder: setActivityOrder, selectedBookIds: selectedBookIds, setSelectedBookIds: setSelectedBookIds, sortedBooks: sortedBooks, isDeletingBulkBooks: isDeletingBulkBooks, handleBulkDeleteBooks: handleBulkDeleteBooks, selectedEventIds: selectedEventIds, setSelectedEventIds: setSelectedEventIds, sortedEvents: sortedEvents, bulkEventStatus: bulkEventStatus, setBulkEventStatus: setBulkEventStatus, availableEventStatuses: availableEventStatuses, isApplyingBulkEvents: isApplyingBulkEvents, handleApplyBulkEventStatus: handleApplyBulkEventStatus, isDeletingBulkEvents: isDeletingBulkEvents, handleBulkDeleteEvents: handleBulkDeleteEvents, showActivityForm: showActivityForm, handleSaveBook: handleSaveBook, editingBookId: editingBookId, bookForm: bookForm, setBookForm: setBookForm, bookImageFileKey: bookImageFileKey, isUploadingBookImage: isUploadingBookImage, handleUploadBookImage: handleUploadBookImage, bookFormError: bookFormError, isSavingBook: isSavingBook, resetBookForm: resetBookForm, handleEditBook: handleEditBook, deletingBookId: deletingBookId, handleDeleteBook: handleDeleteBook, isLoadingActivities: isLoadingActivities, activityTotal: activityTotal, activityPage: activityPage, activityTotalPages: activityTotalPages, handleSaveSession: handleSaveSession, editingSessionId: editingSessionId, sessionForm: sessionForm, setSessionForm: setSessionForm, sessionFormError: sessionFormError, isSavingSession: isSavingSession, resetSessionForm: resetSessionForm, handleEditSession: handleEditSession, deletingSessionId: deletingSessionId, handleDeleteSession: handleDeleteSession, sortedSessions: sortedSessions, handleSaveEvent: handleSaveEvent, editingEventId: editingEventId, eventForm: eventForm, setEventForm: setEventForm, eventImageFileKey: eventImageFileKey, isUploadingEventImage: isUploadingEventImage, handleUploadEventImage: handleUploadEventImage, eventFormError: eventFormError, isSavingEvent: isSavingEvent, resetEventForm: resetEventForm, handleEditEvent: handleEditEvent, deletingEventId: deletingEventId, handleDeleteEvent: handleDeleteEvent, showEventCategories: showEventCategories, handleSaveCategory: handleSaveCategory, categoryForm: categoryForm, setCategoryForm: setCategoryForm, categoryFormError: categoryFormError, isSavingCategory: isSavingCategory, editingCategoryId: editingCategoryId, resetCategoryForm: resetCategoryForm, sortedCategories: sortedCategories, isLoadingCategories: isLoadingCategories, handleEditCategory: handleEditCategory, deletingCategoryId: deletingCategoryId, handleDeleteCategory: handleDeleteCategory, toggleSelectedId: toggleSelectedId })) : null, activeSection === 'eventos' ? (_jsx(EventsPage, { activitySectionLabel: activitySectionLabel, activitySectionDescription: activitySectionDescription, activityOverviewStats: activityOverviewStats, isExportingActivities: isExportingActivities, handleExportActivitiesCsv: handleExportActivitiesCsv, showActivityFiltersAndList: showActivityFiltersAndList, canManageUsers: canManageUsers, clubs: clubs, activityClubFilter: activityClubFilter, setActivityClubFilter: setActivityClubFilter, activityCategoryFilter: activityCategoryFilter, setActivityCategoryFilter: setActivityCategoryFilter, activityStatusFilter: activityStatusFilter, setActivityStatusFilter: setActivityStatusFilter, activityError: activityError, handleApplyActivitySearch: handleApplyActivitySearch, activitySearchInput: activitySearchInput, setActivitySearchInput: setActivitySearchInput, setActivitySearch: setActivitySearch, setActivityPage: setActivityPage, activityDateFrom: activityDateFrom, setActivityDateFrom: setActivityDateFrom, activityDateTo: activityDateTo, setActivityDateTo: setActivityDateTo, activityOrder: activityOrder, setActivityOrder: setActivityOrder, selectedBookIds: selectedBookIds, setSelectedBookIds: setSelectedBookIds, sortedBooks: sortedBooks, isDeletingBulkBooks: isDeletingBulkBooks, handleBulkDeleteBooks: handleBulkDeleteBooks, selectedEventIds: selectedEventIds, setSelectedEventIds: setSelectedEventIds, sortedEvents: sortedEvents, bulkEventStatus: bulkEventStatus, setBulkEventStatus: setBulkEventStatus, availableEventStatuses: availableEventStatuses, isApplyingBulkEvents: isApplyingBulkEvents, handleApplyBulkEventStatus: handleApplyBulkEventStatus, isDeletingBulkEvents: isDeletingBulkEvents, handleBulkDeleteEvents: handleBulkDeleteEvents, showActivityForm: showActivityForm, handleSaveBook: handleSaveBook, editingBookId: editingBookId, bookForm: bookForm, setBookForm: setBookForm, bookImageFileKey: bookImageFileKey, isUploadingBookImage: isUploadingBookImage, handleUploadBookImage: handleUploadBookImage, bookFormError: bookFormError, isSavingBook: isSavingBook, resetBookForm: resetBookForm, handleEditBook: handleEditBook, deletingBookId: deletingBookId, handleDeleteBook: handleDeleteBook, isLoadingActivities: isLoadingActivities, activityTotal: activityTotal, activityPage: activityPage, activityTotalPages: activityTotalPages, handleSaveSession: handleSaveSession, editingSessionId: editingSessionId, sessionForm: sessionForm, setSessionForm: setSessionForm, sessionFormError: sessionFormError, isSavingSession: isSavingSession, resetSessionForm: resetSessionForm, handleEditSession: handleEditSession, deletingSessionId: deletingSessionId, handleDeleteSession: handleDeleteSession, sortedSessions: sortedSessions, handleSaveEvent: handleSaveEvent, editingEventId: editingEventId, eventForm: eventForm, setEventForm: setEventForm, eventImageFileKey: eventImageFileKey, isUploadingEventImage: isUploadingEventImage, handleUploadEventImage: handleUploadEventImage, eventFormError: eventFormError, isSavingEvent: isSavingEvent, resetEventForm: resetEventForm, handleEditEvent: handleEditEvent, deletingEventId: deletingEventId, handleDeleteEvent: handleDeleteEvent, showEventCategories: showEventCategories, handleSaveCategory: handleSaveCategory, categoryForm: categoryForm, setCategoryForm: setCategoryForm, categoryFormError: categoryFormError, isSavingCategory: isSavingCategory, editingCategoryId: editingCategoryId, resetCategoryForm: resetCategoryForm, sortedCategories: sortedCategories, isLoadingCategories: isLoadingCategories, handleEditCategory: handleEditCategory, deletingCategoryId: deletingCategoryId, handleDeleteCategory: handleDeleteCategory, toggleSelectedId: toggleSelectedId })) : null, activeSection === 'inscricoes' ? (_jsx(RegistrationsPage, { registrationOverviewStats: registrationOverviewStats, isExportingRegistrations: isExportingRegistrations, handleExportRegistrationsCsv: handleExportRegistrationsCsv, registrationTotal: registrationTotal, pendingRegistrations: pendingRegistrations, approvedRegistrations: approvedRegistrations, rejectedRegistrations: rejectedRegistrations, canManageUsers: canManageUsers, clubs: clubs, registrationClubFilter: registrationClubFilter, setRegistrationClubFilter: setRegistrationClubFilter, registrationStatusFilter: registrationStatusFilter, setRegistrationStatusFilter: setRegistrationStatusFilter, isLoadingRegistrationStatuses: isLoadingRegistrationStatuses, registrationStatuses: registrationStatuses, registrationDateFrom: registrationDateFrom, setRegistrationDateFrom: setRegistrationDateFrom, registrationDateTo: registrationDateTo, setRegistrationDateTo: setRegistrationDateTo, handleRegistrationSearchSubmit: handleRegistrationSearchSubmit, registrationSearchInput: registrationSearchInput, setRegistrationSearchInput: setRegistrationSearchInput, setRegistrationSearch: setRegistrationSearch, setRegistrationPage: setRegistrationPage, registrationError: registrationError, registrationOrder: registrationOrder, setRegistrationOrder: setRegistrationOrder, selectedRegistrationIds: selectedRegistrationIds, setSelectedRegistrationIds: setSelectedRegistrationIds, bulkRegistrationStatus: bulkRegistrationStatus, setBulkRegistrationStatus: setBulkRegistrationStatus, isApplyingBulkRegistrations: isApplyingBulkRegistrations, handleApplyBulkRegistrationStatus: handleApplyBulkRegistrationStatus, isLoadingRegistrations: isLoadingRegistrations, registrationPage: registrationPage, registrationTotalPages: registrationTotalPages, registrations: registrations, updatingRegistrationId: updatingRegistrationId, handleUpdateRegistrationStatus: handleUpdateRegistrationStatus, toggleSelectedId: toggleSelectedId })) : null, activeSection === 'conteudos' ? (_jsxs("div", { className: "space-y-6", children: [_jsx(AdminPageHero, { icon: FolderKanban, title: "Conteudos", description: "Gestao editorial das areas permanentes do Laboratorio Cultural.", tone: "emerald", stats: contentOverviewStats }), showContentForm ? (_jsxs("form", { id: "content-form", onSubmit: handleSaveContent, className: adminPanelForm, children: [_jsx("h2", { className: blockTitle, children: editingId ? 'Editar Conteudo' : 'Novo Conteudo' }), _jsx("p", { className: blockText, children: "Cria ou atualiza conteudo para as paginas do Laboratorio Cultural." }), _jsxs("div", { className: adminFormGridSpaced, children: [_jsxs("div", { className: adminField, children: [_jsx("label", { className: adminLabel, htmlFor: "area", children: "Area" }), _jsxs("select", { id: "area", className: adminInput, value: contentForm.area, onChange: (event) => setContentForm((prev) => ({
+                                                                            : 'border-sky-200 bg-sky-50'}`, children: _jsxs("div", { className: "flex flex-wrap items-start justify-between gap-4", children: [_jsxs("div", { className: "max-w-3xl", children: [_jsxs("div", { className: "flex flex-wrap items-center gap-3", children: [_jsx("h3", { className: "text-lg font-semibold text-slate-900", children: notification.title }), !notification.isRead ? (_jsx("span", { className: "inline-flex items-center rounded-full bg-[#dd8609] px-2.5 py-1 text-xs font-semibold text-white", children: "Nova" })) : null, _jsx("span", { className: "inline-flex items-center rounded-full bg-white/80 px-2.5 py-1 text-xs font-semibold uppercase tracking-[0.12em] text-slate-600", children: notification.kind })] }), _jsx("p", { className: "mt-3 leading-7 text-slate-700", children: notification.message }), _jsx("p", { className: "mt-3 text-sm font-medium text-slate-500", children: formatAdminDateTime(notification.created_at || '') })] }), _jsxs("div", { className: "flex flex-wrap gap-3", children: [_jsx("button", { type: "button", className: adminBtnPrimary, onClick: () => handleOpenNotification(notification), children: "Abrir" }), !notification.isRead ? (_jsx("button", { type: "button", className: adminBtnSecondary, onClick: () => markNotificationAsRead(notification.id), children: "Marcar como lida" })) : null] })] }) }, notification.id))) })] })] })) : null, activeSection === 'newsletters' ? _jsx(NewslettersPage, {}) : null, activeSection === 'utilizadores' ? (_jsx(UsersPage, { userPage: userPage, canManageUsers: canManageUsers, isExportingUsers: isExportingUsers, handleExportUsersCsv: handleExportUsersCsv, userOverviewStats: userOverviewStats, isLoadingUsers: isLoadingUsers, filteredUsers: filteredUsers, currentUser: currentUser, userDateFrom: userDateFrom, userDateTo: userDateTo, userOrder: userOrder, setUserDateFrom: setUserDateFrom, setUserDateTo: setUserDateTo, setUserOrder: setUserOrder, isSavingUser: isSavingUser, isLoadingRoles: isLoadingRoles, roles: roles, userForm: userForm, setUserForm: setUserForm, userFormError: userFormError, handleSaveUser: handleSaveUser, resetUserForm: resetUserForm, selectedUser: selectedUser, isDeactivatingUser: isDeactivatingUser, handleDeactivateUser: handleDeactivateUser })) : null, activeSection === 'clubes' ? (_jsx(ClubsPage, { clubsOverviewStats: clubsOverviewStats, isExportingClubs: isExportingClubs, handleExportClubsCsv: handleExportClubsCsv, handleSaveClub: handleSaveClub, clubForm: clubForm, setClubForm: setClubForm, clubImageFileKey: clubImageFileKey, isUploadingClubImage: isUploadingClubImage, handleUploadClubImage: handleUploadClubImage, clubFormError: clubFormError, isSavingClub: isSavingClub, editingClubId: editingClubId, resetClubForm: resetClubForm, selectedClubUserId: selectedClubUserId, setSelectedClubUserId: setSelectedClubUserId, usersWithoutClub: usersWithoutClub, isAssigningClubUser: isAssigningClubUser, handleAssignUserToClub: handleAssignUserToClub, clubDateFrom: clubDateFrom, clubDateTo: clubDateTo, clubOrder: clubOrder, setClubDateFrom: setClubDateFrom, setClubDateTo: setClubDateTo, setClubOrder: setClubOrder, filteredClubs: filteredClubs, isLoadingClubs: isLoadingClubs, deletingClubId: deletingClubId, handleEditClub: handleEditClub, handleDeleteClub: handleDeleteClub, clubMembers: clubMembers, removingClubUserId: removingClubUserId, handleRemoveUserFromClub: handleRemoveUserFromClub })) : null, activeSection === 'noticias' ? (_jsx(NewsPage, { canManageUsers: canManageUsers, newsOverviewStats: newsOverviewStats, isExportingNews: isExportingNews, handleExportNewsCsv: handleExportNewsCsv, showNewsForm: showNewsForm, showNewsList: showNewsList, handleSaveNews: handleSaveNews, editingNewsId: editingNewsId, newsForm: newsForm, setNewsForm: setNewsForm, clubs: clubs, isLoadingNewsStatuses: isLoadingNewsStatuses, availableNewsStatuses: availableNewsStatuses, newsFormError: newsFormError, isSavingNews: isSavingNews, resetNewsForm: resetNewsForm, newsImageFileKey: newsImageFileKey, isUploadingNewsImage: isUploadingNewsImage, handleUploadNewsImage: handleUploadNewsImage, newsError: newsError, handleApplyNewsSearch: handleApplyNewsSearch, newsSearchInput: newsSearchInput, setNewsSearchInput: setNewsSearchInput, setNewsSearch: setNewsSearch, setNewsPage: setNewsPage, newsClubFilter: newsClubFilter, setNewsClubFilter: setNewsClubFilter, newsStatusFilter: newsStatusFilter, setNewsStatusFilter: setNewsStatusFilter, newsStatuses: newsStatuses, newsDateFrom: newsDateFrom, setNewsDateFrom: setNewsDateFrom, newsDateTo: newsDateTo, setNewsDateTo: setNewsDateTo, newsOrder: newsOrder, setNewsOrder: setNewsOrder, selectedNewsIds: selectedNewsIds, setSelectedNewsIds: setSelectedNewsIds, sortedNews: sortedNews, bulkNewsStatus: bulkNewsStatus, setBulkNewsStatus: setBulkNewsStatus, isApplyingBulkNews: isApplyingBulkNews, handleApplyBulkNewsStatus: handleApplyBulkNewsStatus, isDeletingBulkNews: isDeletingBulkNews, handleBulkDeleteNews: handleBulkDeleteNews, deletingNewsId: deletingNewsId, handleDeleteNews: handleDeleteNews, handleEditNews: handleEditNews, newsTotal: newsTotal, newsPage: newsPage, newsTotalPages: newsTotalPages, isLoadingNews: isLoadingNews, toggleSelectedId: toggleSelectedId })) : null, activeSection === 'livros' ? (_jsx(ActivitiesPage, { activitySectionLabel: activitySectionLabel, activitySectionDescription: activitySectionDescription, activityOverviewStats: activityOverviewStats, isExportingActivities: isExportingActivities, handleExportActivitiesCsv: handleExportActivitiesCsv, showActivityFiltersAndList: showActivityFiltersAndList, canManageUsers: canManageUsers, clubs: clubs, activityClubFilter: activityClubFilter, setActivityClubFilter: setActivityClubFilter, activityCategoryFilter: activityCategoryFilter, setActivityCategoryFilter: setActivityCategoryFilter, activityStatusFilter: activityStatusFilter, setActivityStatusFilter: setActivityStatusFilter, activityError: activityError, handleApplyActivitySearch: handleApplyActivitySearch, activitySearchInput: activitySearchInput, setActivitySearchInput: setActivitySearchInput, setActivitySearch: setActivitySearch, setActivityPage: setActivityPage, activityDateFrom: activityDateFrom, setActivityDateFrom: setActivityDateFrom, activityDateTo: activityDateTo, setActivityDateTo: setActivityDateTo, activityOrder: activityOrder, setActivityOrder: setActivityOrder, activityTab: activityTab, selectedBookIds: selectedBookIds, setSelectedBookIds: setSelectedBookIds, sortedBooks: sortedBooks, isDeletingBulkBooks: isDeletingBulkBooks, handleBulkDeleteBooks: handleBulkDeleteBooks, selectedEventIds: selectedEventIds, setSelectedEventIds: setSelectedEventIds, sortedEvents: sortedEvents, bulkEventStatus: bulkEventStatus, setBulkEventStatus: setBulkEventStatus, availableEventStatuses: availableEventStatuses, isApplyingBulkEvents: isApplyingBulkEvents, handleApplyBulkEventStatus: handleApplyBulkEventStatus, isDeletingBulkEvents: isDeletingBulkEvents, handleBulkDeleteEvents: handleBulkDeleteEvents, showActivityForm: showActivityForm, handleSaveBook: handleSaveBook, editingBookId: editingBookId, bookForm: bookForm, setBookForm: setBookForm, bookImageFileKey: bookImageFileKey, isUploadingBookImage: isUploadingBookImage, handleUploadBookImage: handleUploadBookImage, bookFormError: bookFormError, isSavingBook: isSavingBook, resetBookForm: resetBookForm, handleEditBook: handleEditBook, deletingBookId: deletingBookId, handleDeleteBook: handleDeleteBook, isLoadingActivities: isLoadingActivities, activityTotal: activityTotal, activityPage: activityPage, activityTotalPages: activityTotalPages, handleSaveSession: handleSaveSession, editingSessionId: editingSessionId, sessionForm: sessionForm, setSessionForm: setSessionForm, sessionFormError: sessionFormError, isSavingSession: isSavingSession, resetSessionForm: resetSessionForm, handleEditSession: handleEditSession, deletingSessionId: deletingSessionId, handleDeleteSession: handleDeleteSession, sortedSessions: sortedSessions, handleSaveEvent: handleSaveEvent, editingEventId: editingEventId, eventForm: eventForm, setEventForm: setEventForm, eventImageFileKey: eventImageFileKey, isUploadingEventImage: isUploadingEventImage, handleUploadEventImage: handleUploadEventImage, eventFormError: eventFormError, isSavingEvent: isSavingEvent, resetEventForm: resetEventForm, handleEditEvent: handleEditEvent, deletingEventId: deletingEventId, handleDeleteEvent: handleDeleteEvent, showEventCategories: showEventCategories, handleSaveCategory: handleSaveCategory, categoryForm: categoryForm, setCategoryForm: setCategoryForm, categoryFormError: categoryFormError, isSavingCategory: isSavingCategory, editingCategoryId: editingCategoryId, resetCategoryForm: resetCategoryForm, sortedCategories: sortedCategories, isLoadingCategories: isLoadingCategories, handleEditCategory: handleEditCategory, deletingCategoryId: deletingCategoryId, handleDeleteCategory: handleDeleteCategory, toggleSelectedId: toggleSelectedId })) : null, activeSection === 'sessoes' ? (_jsx(SessionsPage, { activitySectionLabel: activitySectionLabel, activitySectionDescription: activitySectionDescription, activityOverviewStats: activityOverviewStats, isExportingActivities: isExportingActivities, handleExportActivitiesCsv: handleExportActivitiesCsv, showActivityFiltersAndList: showActivityFiltersAndList, canManageUsers: canManageUsers, clubs: clubs, activityClubFilter: activityClubFilter, setActivityClubFilter: setActivityClubFilter, activityCategoryFilter: activityCategoryFilter, setActivityCategoryFilter: setActivityCategoryFilter, activityStatusFilter: activityStatusFilter, setActivityStatusFilter: setActivityStatusFilter, activityError: activityError, handleApplyActivitySearch: handleApplyActivitySearch, activitySearchInput: activitySearchInput, setActivitySearchInput: setActivitySearchInput, setActivitySearch: setActivitySearch, setActivityPage: setActivityPage, activityDateFrom: activityDateFrom, setActivityDateFrom: setActivityDateFrom, activityDateTo: activityDateTo, setActivityDateTo: setActivityDateTo, activityOrder: activityOrder, setActivityOrder: setActivityOrder, selectedBookIds: selectedBookIds, setSelectedBookIds: setSelectedBookIds, sortedBooks: sortedBooks, isDeletingBulkBooks: isDeletingBulkBooks, handleBulkDeleteBooks: handleBulkDeleteBooks, selectedEventIds: selectedEventIds, setSelectedEventIds: setSelectedEventIds, sortedEvents: sortedEvents, bulkEventStatus: bulkEventStatus, setBulkEventStatus: setBulkEventStatus, availableEventStatuses: availableEventStatuses, isApplyingBulkEvents: isApplyingBulkEvents, handleApplyBulkEventStatus: handleApplyBulkEventStatus, isDeletingBulkEvents: isDeletingBulkEvents, handleBulkDeleteEvents: handleBulkDeleteEvents, showActivityForm: showActivityForm, handleSaveBook: handleSaveBook, editingBookId: editingBookId, bookForm: bookForm, setBookForm: setBookForm, bookImageFileKey: bookImageFileKey, isUploadingBookImage: isUploadingBookImage, handleUploadBookImage: handleUploadBookImage, bookFormError: bookFormError, isSavingBook: isSavingBook, resetBookForm: resetBookForm, handleEditBook: handleEditBook, deletingBookId: deletingBookId, handleDeleteBook: handleDeleteBook, isLoadingActivities: isLoadingActivities, activityTotal: activityTotal, activityPage: activityPage, activityTotalPages: activityTotalPages, handleSaveSession: handleSaveSession, editingSessionId: editingSessionId, sessionForm: sessionForm, setSessionForm: setSessionForm, sessionFormError: sessionFormError, isSavingSession: isSavingSession, resetSessionForm: resetSessionForm, handleEditSession: handleEditSession, deletingSessionId: deletingSessionId, handleDeleteSession: handleDeleteSession, sortedSessions: sortedSessions, handleSaveEvent: handleSaveEvent, editingEventId: editingEventId, eventForm: eventForm, setEventForm: setEventForm, eventImageFileKey: eventImageFileKey, isUploadingEventImage: isUploadingEventImage, handleUploadEventImage: handleUploadEventImage, eventFormError: eventFormError, isSavingEvent: isSavingEvent, resetEventForm: resetEventForm, handleEditEvent: handleEditEvent, deletingEventId: deletingEventId, handleDeleteEvent: handleDeleteEvent, showEventCategories: showEventCategories, handleSaveCategory: handleSaveCategory, categoryForm: categoryForm, setCategoryForm: setCategoryForm, categoryFormError: categoryFormError, isSavingCategory: isSavingCategory, editingCategoryId: editingCategoryId, resetCategoryForm: resetCategoryForm, sortedCategories: sortedCategories, isLoadingCategories: isLoadingCategories, handleEditCategory: handleEditCategory, deletingCategoryId: deletingCategoryId, handleDeleteCategory: handleDeleteCategory, toggleSelectedId: toggleSelectedId })) : null, activeSection === 'eventos' ? (_jsx(EventsPage, { activitySectionLabel: activitySectionLabel, activitySectionDescription: activitySectionDescription, activityOverviewStats: activityOverviewStats, isExportingActivities: isExportingActivities, handleExportActivitiesCsv: handleExportActivitiesCsv, showActivityFiltersAndList: showActivityFiltersAndList, canManageUsers: canManageUsers, clubs: clubs, activityClubFilter: activityClubFilter, setActivityClubFilter: setActivityClubFilter, activityCategoryFilter: activityCategoryFilter, setActivityCategoryFilter: setActivityCategoryFilter, activityStatusFilter: activityStatusFilter, setActivityStatusFilter: setActivityStatusFilter, activityError: activityError, handleApplyActivitySearch: handleApplyActivitySearch, activitySearchInput: activitySearchInput, setActivitySearchInput: setActivitySearchInput, setActivitySearch: setActivitySearch, setActivityPage: setActivityPage, activityDateFrom: activityDateFrom, setActivityDateFrom: setActivityDateFrom, activityDateTo: activityDateTo, setActivityDateTo: setActivityDateTo, activityOrder: activityOrder, setActivityOrder: setActivityOrder, selectedBookIds: selectedBookIds, setSelectedBookIds: setSelectedBookIds, sortedBooks: sortedBooks, isDeletingBulkBooks: isDeletingBulkBooks, handleBulkDeleteBooks: handleBulkDeleteBooks, selectedEventIds: selectedEventIds, setSelectedEventIds: setSelectedEventIds, sortedEvents: sortedEvents, bulkEventStatus: bulkEventStatus, setBulkEventStatus: setBulkEventStatus, availableEventStatuses: availableEventStatuses, isApplyingBulkEvents: isApplyingBulkEvents, handleApplyBulkEventStatus: handleApplyBulkEventStatus, isDeletingBulkEvents: isDeletingBulkEvents, handleBulkDeleteEvents: handleBulkDeleteEvents, showActivityForm: showActivityForm, handleSaveBook: handleSaveBook, editingBookId: editingBookId, bookForm: bookForm, setBookForm: setBookForm, bookImageFileKey: bookImageFileKey, isUploadingBookImage: isUploadingBookImage, handleUploadBookImage: handleUploadBookImage, bookFormError: bookFormError, isSavingBook: isSavingBook, resetBookForm: resetBookForm, handleEditBook: handleEditBook, deletingBookId: deletingBookId, handleDeleteBook: handleDeleteBook, isLoadingActivities: isLoadingActivities, activityTotal: activityTotal, activityPage: activityPage, activityTotalPages: activityTotalPages, handleSaveSession: handleSaveSession, editingSessionId: editingSessionId, sessionForm: sessionForm, setSessionForm: setSessionForm, sessionFormError: sessionFormError, isSavingSession: isSavingSession, resetSessionForm: resetSessionForm, handleEditSession: handleEditSession, deletingSessionId: deletingSessionId, handleDeleteSession: handleDeleteSession, sortedSessions: sortedSessions, handleSaveEvent: handleSaveEvent, editingEventId: editingEventId, eventForm: eventForm, setEventForm: setEventForm, eventImageFileKey: eventImageFileKey, isUploadingEventImage: isUploadingEventImage, handleUploadEventImage: handleUploadEventImage, eventFormError: eventFormError, isSavingEvent: isSavingEvent, resetEventForm: resetEventForm, handleEditEvent: handleEditEvent, deletingEventId: deletingEventId, handleDeleteEvent: handleDeleteEvent, showEventCategories: showEventCategories, handleSaveCategory: handleSaveCategory, categoryForm: categoryForm, setCategoryForm: setCategoryForm, categoryFormError: categoryFormError, isSavingCategory: isSavingCategory, editingCategoryId: editingCategoryId, resetCategoryForm: resetCategoryForm, sortedCategories: sortedCategories, isLoadingCategories: isLoadingCategories, handleEditCategory: handleEditCategory, deletingCategoryId: deletingCategoryId, handleDeleteCategory: handleDeleteCategory, toggleSelectedId: toggleSelectedId })) : null, activeSection === 'inscricoes' ? (_jsx(RegistrationsPage, { registrationOverviewStats: registrationOverviewStats, isExportingRegistrations: isExportingRegistrations, handleExportRegistrationsCsv: handleExportRegistrationsCsv, registrationTotal: registrationTotal, pendingRegistrations: pendingRegistrations, approvedRegistrations: approvedRegistrations, rejectedRegistrations: rejectedRegistrations, canManageUsers: canManageUsers, clubs: clubs, registrationClubFilter: registrationClubFilter, setRegistrationClubFilter: setRegistrationClubFilter, registrationStatusFilter: registrationStatusFilter, setRegistrationStatusFilter: setRegistrationStatusFilter, isLoadingRegistrationStatuses: isLoadingRegistrationStatuses, registrationStatuses: registrationStatuses, registrationDateFrom: registrationDateFrom, setRegistrationDateFrom: setRegistrationDateFrom, registrationDateTo: registrationDateTo, setRegistrationDateTo: setRegistrationDateTo, handleRegistrationSearchSubmit: handleRegistrationSearchSubmit, registrationSearchInput: registrationSearchInput, setRegistrationSearchInput: setRegistrationSearchInput, setRegistrationSearch: setRegistrationSearch, setRegistrationPage: setRegistrationPage, registrationError: registrationError, registrationOrder: registrationOrder, setRegistrationOrder: setRegistrationOrder, selectedRegistrationIds: selectedRegistrationIds, setSelectedRegistrationIds: setSelectedRegistrationIds, bulkRegistrationStatus: bulkRegistrationStatus, setBulkRegistrationStatus: setBulkRegistrationStatus, isApplyingBulkRegistrations: isApplyingBulkRegistrations, handleApplyBulkRegistrationStatus: handleApplyBulkRegistrationStatus, isLoadingRegistrations: isLoadingRegistrations, registrationPage: registrationPage, registrationTotalPages: registrationTotalPages, registrations: registrations, updatingRegistrationId: updatingRegistrationId, handleUpdateRegistrationStatus: handleUpdateRegistrationStatus, toggleSelectedId: toggleSelectedId })) : null, activeSection === 'conteudos' ? (_jsxs("div", { className: "space-y-6", children: [_jsx(AdminPageHero, { icon: FolderKanban, title: "Conteudos", description: "Gestao editorial das areas permanentes do Laboratorio Cultural.", tone: "emerald", stats: contentOverviewStats }), showContentForm ? (_jsxs("form", { id: "content-form", onSubmit: handleSaveContent, className: adminPanelForm, children: [_jsx("h2", { className: blockTitle, children: editingId ? 'Editar Conteudo' : 'Novo Conteudo' }), _jsx("p", { className: blockText, children: "Cria ou atualiza conteudo para as paginas do Laboratorio Cultural." }), _jsxs("div", { className: adminFormGridSpaced, children: [_jsxs("div", { className: adminField, children: [_jsx("label", { className: adminLabel, htmlFor: "area", children: "Area" }), _jsxs("select", { id: "area", className: adminInput, value: contentForm.area, onChange: (event) => setContentForm((prev) => ({
                                                                                 ...prev,
                                                                                 area: event.target.value
                                                                             })), children: [_jsx("option", { value: "tuna", children: "Tuna Academica" }), _jsx("option", { value: "clube-leitura", children: "Clube de Leitura" }), _jsx("option", { value: "teatro", children: "Teatro" })] })] }), _jsxs("div", { className: adminField, children: [_jsx("label", { className: adminLabel, htmlFor: "date", children: "Data" }), _jsx("input", { id: "date", type: "date", className: adminInput, value: contentForm.date, onChange: (event) => setContentForm((prev) => ({ ...prev, date: event.target.value })) })] }), _jsxs("div", { className: adminField, children: [_jsx("label", { className: adminLabel, htmlFor: "title", children: "Titulo" }), _jsx("input", { id: "title", className: adminInput, value: contentForm.title, onChange: (event) => setContentForm((prev) => ({ ...prev, title: event.target.value })) })] }), _jsxs("div", { className: adminField, children: [_jsx("label", { className: adminLabel, htmlFor: "status", children: "Estado" }), _jsxs("select", { id: "status", className: adminInput, value: contentForm.status, onChange: (event) => setContentForm((prev) => ({

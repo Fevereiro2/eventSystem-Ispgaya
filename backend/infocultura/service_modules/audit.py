@@ -1,4 +1,5 @@
 from ..repositories.audit import (
+    list_admin_activity_logs,
     list_admin_audit_logs,
     list_editorial_history,
     record_admin_audit_action,
@@ -6,6 +7,7 @@ from ..repositories.audit import (
 )
 
 __all__ = [
+    'list_admin_activity_logs',
     'list_admin_audit_logs',
     'list_editorial_history',
     'record_admin_audit_action',

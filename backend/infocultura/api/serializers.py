@@ -11,6 +11,7 @@ from .serializers_activities import (
 )
 from .serializers_admin import (
     AdminAuditLogSerializer,
+    AdminActivityLogSerializer,
     AdminBulkIdsSerializer,
     AdminBulkStatusUpdateSerializer,
     AdminClubRegistrationSerializer,
@@ -27,6 +28,8 @@ from .serializers_news import (
     NewsSerializer,
     NewsStatusSerializer,
 )
+from .serializers_newsletters import NewsletterSerializer, NewsletterSubscriberSerializer
+from .serializers_metrics import MetricViewCreateSerializer
 from .serializers_registrations import (
     ClubRegistrationCreateSerializer,
     EventRegistrationCreateSerializer,
@@ -43,6 +46,7 @@ from .serializers_workflow import (
 
 __all__ = [
     'AdminAuditLogSerializer',
+    'AdminActivityLogSerializer',
     'AdminBookWriteSerializer',
     'AdminBulkIdsSerializer',
     'AdminBulkStatusUpdateSerializer',
@@ -68,6 +72,9 @@ __all__ = [
     'LoginSerializer',
     'NewsSerializer',
     'NewsStatusSerializer',
+    'NewsletterSerializer',
+    'NewsletterSubscriberSerializer',
+    'MetricViewCreateSerializer',
     'RegistrationStatusSerializer',
     'RoleSerializer',
     'SessionRegistrationCreateSerializer',
