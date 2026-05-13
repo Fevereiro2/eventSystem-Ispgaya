@@ -66,7 +66,7 @@ function Breadcrumbs({
         </nav>
 
         <div className={heroIntroWrap}>
-          <h1 className={heroIntroTitle}>{title}</h1>
+          <h1 className={`${heroIntroTitle} text-3xl sm:text-4xl md:text-5xl`}>{title}</h1>
           <p className={heroIntroText}>{description}</p>
         </div>
       </section>

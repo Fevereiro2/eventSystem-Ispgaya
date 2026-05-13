@@ -101,18 +101,18 @@ function PaginatedCollection<T>({
       <div className="space-y-10">{paginatedItems.map((item) => renderItem(item))}</div>
 
       <div className="mt-12">
-        <nav aria-label="Paginação" className="flex items-center justify-between">
-          <div className="flex flex-1 justify-between sm:hidden">
+        <nav aria-label="Paginação" className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex flex-1 justify-between gap-3 sm:hidden">
             {currentPage > 1 ? (
               <button
                 type="button"
                 onClick={() => goToPage(currentPage - 1)}
-                className="relative inline-flex items-center rounded-sm border border-gray-300 bg-white px-4 py-2 text-sm font-medium leading-5 text-gray-700"
+                className="relative inline-flex w-full items-center justify-center rounded-sm border border-gray-300 bg-white px-4 py-2 text-sm font-medium leading-5 text-gray-700"
               >
                 {getLocaleText(locale, 'Anterior', 'Previous')}
               </button>
             ) : (
-              <span className="relative inline-flex cursor-default items-center rounded-sm border border-gray-300 bg-white px-4 py-2 text-sm font-medium leading-5 text-gray-500">
+              <span className="relative inline-flex w-full cursor-default items-center justify-center rounded-sm border border-gray-300 bg-white px-4 py-2 text-sm font-medium leading-5 text-gray-500">
                 {getLocaleText(locale, 'Anterior', 'Previous')}
               </span>
             )}
@@ -121,12 +121,12 @@ function PaginatedCollection<T>({
               <button
                 type="button"
                 onClick={() => goToPage(currentPage + 1)}
-                className="relative ml-3 inline-flex items-center rounded-sm border border-gray-300 bg-white px-4 py-2 text-sm font-medium leading-5 text-gray-700"
+                className="relative inline-flex w-full items-center justify-center rounded-sm border border-gray-300 bg-white px-4 py-2 text-sm font-medium leading-5 text-gray-700"
               >
                 {getLocaleText(locale, 'Próximo', 'Next')}
               </button>
             ) : (
-              <span className="relative ml-3 inline-flex cursor-default items-center rounded-sm border border-gray-300 bg-white px-4 py-2 text-sm font-medium leading-5 text-gray-500">
+              <span className="relative inline-flex w-full cursor-default items-center justify-center rounded-sm border border-gray-300 bg-white px-4 py-2 text-sm font-medium leading-5 text-gray-500">
                 {getLocaleText(locale, 'Próximo', 'Next')}
               </span>
             )}
