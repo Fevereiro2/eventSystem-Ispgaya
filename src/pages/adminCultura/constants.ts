@@ -125,6 +125,8 @@ export const allActivityTabs: ActivityTab[] = ['books', 'sessions', 'events'];
 
 export const adminSections: { id: AdminSection; label: string; href: string }[] = [
   { id: 'resumo', label: 'Resumo', href: '/infocultura/resumo' },
+  { id: 'metricas', label: 'Metricas', href: '/infocultura/metricas' },
+  { id: 'logs', label: 'Logs', href: '/infocultura/logs' },
   { id: 'notificacoes', label: 'Notificacoes', href: '/infocultura/notificacoes' },
   { id: 'newsletters', label: 'Newsletters', href: '/infocultura/newsletters' },
   { id: 'utilizadores', label: 'Utilizadores', href: '/infocultura/utilizadores' },
@@ -141,7 +143,7 @@ export const adminSectionGroups: {
   title: string;
   ids: AdminSection[];
 }[] = [
-  { title: 'Painel', ids: ['resumo', 'notificacoes'] },
+  { title: 'Painel', ids: ['resumo', 'metricas', 'logs', 'notificacoes'] },
   { title: 'Gestao', ids: ['newsletters', 'utilizadores', 'clubes', 'inscricoes'] },
   { title: 'Conteudos', ids: ['noticias', 'livros', 'sessoes', 'eventos', 'conteudos'] }
 ];

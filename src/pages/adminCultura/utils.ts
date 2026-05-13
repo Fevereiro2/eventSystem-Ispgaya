@@ -161,6 +161,10 @@ export function getAdminSectionHref(section: AdminSection): string {
   switch (section) {
     case 'resumo':
       return '/infocultura/resumo';
+    case 'metricas':
+      return '/infocultura/metricas';
+    case 'logs':
+      return '/infocultura/logs';
     case 'notificacoes':
       return '/infocultura/notificacoes';
     case 'newsletters':
@@ -193,6 +197,14 @@ export function isActivitySection(section: AdminSection | null): section is Acti
 export function getAdminSection(pathname: string): AdminSection | null {
   if (pathname === '/infocultura' || pathname === '/infocultura/' || pathname === '/infocultura/resumo') {
     return 'resumo';
+  }
+
+  if (pathname === '/infocultura/metricas' || pathname.startsWith('/infocultura/metricas/')) {
+    return 'metricas';
+  }
+
+  if (pathname === '/infocultura/logs' || pathname.startsWith('/infocultura/logs/')) {
+    return 'logs';
   }
 
   if (

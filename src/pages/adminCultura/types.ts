@@ -85,6 +85,8 @@ export type ActivitySection = 'livros' | 'sessoes' | 'eventos';
 
 export type AdminSection =
   | 'resumo'
+  | 'metricas'
+  | 'logs'
   | 'notificacoes'
   | 'newsletters'
   | 'utilizadores'

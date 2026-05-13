@@ -150,6 +150,8 @@ import DashboardPage from './adminCultura/pages/DashboardPage';
 import ActivitiesPage from './adminCultura/ActivitiesPage';
 import ClubsPage from './adminCultura/pages/ClubsPage';
 import EventsPage from './adminCultura/pages/EventsPage';
+import LogsPage from './adminCultura/pages/LogsPage';
+import MetricsPage from './adminCultura/pages/MetricsPage';
 import NewsPage from './adminCultura/pages/NewsPage';
 import NewslettersPage from './adminCultura/pages/NewslettersPage';
 import {
@@ -240,10 +242,6 @@ import {
 function AdminCultura() {
   const location = useLocation();
   const navigate = useNavigate();
-  const [isDesktopViewport, setIsDesktopViewport] = useState(() => {
-    if (typeof window === 'undefined') return true;
-    return window.innerWidth >= 1024;
-  });
   const [authUser, setAuthUser] = useState('');
   const [authPass, setAuthPass] = useState('');
   const [authError, setAuthError] = useState('');
@@ -396,21 +394,6 @@ function AdminCultura() {
   const [categoryFormError, setCategoryFormError] = useState('');
   const [sessionFormError, setSessionFormError] = useState('');
   const [eventFormError, setEventFormError] = useState('');
-
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
-
-    const updateViewport = () => {
-      setIsDesktopViewport(window.innerWidth >= 1024);
-    };
-
-    updateViewport();
-    window.addEventListener('resize', updateViewport);
-
-    return () => {
-      window.removeEventListener('resize', updateViewport);
-    };
-  }, []);
 
   const activeSection = getAdminSection(location.pathname);
   const activeNewsSubpage = useMemo(() => getNewsSubpage(location.pathname), [location.pathname]);
@@ -2332,42 +2315,6 @@ function AdminCultura() {
     return <Navigate to="/infocultura/resumo" replace />;
   }
 
-  if (!isDesktopViewport) {
-    return (
-      <div className={infoLegacyLoginStage}>
-        <img src={infoCulturaBg} alt="" className={infoLegacyBackdropImage} />
-        <div className={infoLegacyBackdropOverlay} />
-        <div className={infoLegacyChrome}>
-          <header className={infoLegacyHeader}>
-            <div className={infoLegacyHeaderInner}>
-              <div className={infoLegacyBrandWrap}>
-                <img src={ispgayaLogo} alt="ISPGAYA" className={infoLegacyBrandLogo} />
-                <div>
-                  <p className={infoLegacyBrandText}>InfoCultura</p>
-                  <p className={infoLegacyBrandSub}>Gestao cultural interna</p>
-                </div>
-              </div>
-              <p className={infoLegacyLang}>PT | EN</p>
-            </div>
-          </header>
-
-          <main className={infoLegacyCenter}>
-            <div className="w-full max-w-xl rounded-xl border border-white/20 bg-white/95 p-6 shadow-2xl backdrop-blur">
-              <h2 className={infoLegacyLoginTitle}>Acesso apenas em computador</h2>
-              <p className="mt-3 text-sm leading-6 text-slate-700">
-                O portal InfoCultura esta disponivel apenas em ecras de desktop. Para continuar,
-                acede a partir de um computador.
-              </p>
-              <p className={infoLegacyMeta}>
-                Dispositivos moveis e tablets nao suportam esta area administrativa.
-              </p>
-            </div>
-          </main>
-        </div>
-      </div>
-    );
-  }
-
   if (!activeSection) {
     return <Navigate to="/infocultura/resumo" replace />;
   }
@@ -2584,6 +2531,10 @@ function AdminCultura() {
               onNavigate={navigate}
             />
           ) : null}
+
+          {activeSection === 'metricas' ? <MetricsPage /> : null}
+
+          {activeSection === 'logs' ? <LogsPage /> : null}
 
           {activeSection === 'notificacoes' ? (
             <div className="space-y-6">
