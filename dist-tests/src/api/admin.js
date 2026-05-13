@@ -51,6 +51,29 @@ export async function fetchAdminDashboard(token) {
 export async function fetchAdminNotifications(token) {
     return request('/dashboard/admin/notifications/', {}, token);
 }
+export async function fetchAdminActivityLogs(token, filters) {
+    const search = new URLSearchParams();
+    if (filters?.source) {
+        search.set('source', filters.source);
+    }
+    if (filters?.action?.trim()) {
+        search.set('action', filters.action.trim());
+    }
+    if (filters?.contentType?.trim()) {
+        search.set('content_type', filters.contentType.trim());
+    }
+    if (filters?.search?.trim()) {
+        search.set('search', filters.search.trim());
+    }
+    if (typeof filters?.clubId === 'number') {
+        search.set('club_id', String(filters.clubId));
+    }
+    if (typeof filters?.limit === 'number' && filters.limit > 0) {
+        search.set('limit', String(filters.limit));
+    }
+    const query = search.toString();
+    return request(`/dashboard/admin/logs/${query ? `?${query}` : ''}`, {}, token);
+}
 export async function fetchAdminMetricsOverview(token, filters) {
     const search = new URLSearchParams();
     if (filters?.period) {

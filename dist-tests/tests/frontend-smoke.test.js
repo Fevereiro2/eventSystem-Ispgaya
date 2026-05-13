@@ -4,6 +4,7 @@ import { test } from 'node:test';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { MemoryRouter } from 'react-router-dom';
 import AdminPageHero from '../src/pages/adminCultura/components/AdminPageHero.js';
+import LogsPage from '../src/pages/adminCultura/pages/LogsPage.js';
 import MetricsPage from '../src/pages/adminCultura/pages/MetricsPage.js';
 import NewslettersPage from '../src/pages/adminCultura/pages/NewslettersPage.js';
 import PaginatedCollection from '../src/components/containers/PaginatedCollection.js';
@@ -43,4 +44,10 @@ test('MetricsPage renders the metrics dashboard shell', () => {
     assert.match(output, /Métricas/);
     assert.match(output, /Visualizações totais/);
     assert.match(output, /Top páginas/);
+});
+test('LogsPage renders the logs dashboard shell', () => {
+    const output = renderToStaticMarkup(_jsx(LogsPage, {}));
+    assert.match(output, /Logs/);
+    assert.match(output, /Atividade recente/);
+    assert.match(output, /Histórico centralizado/);
 });

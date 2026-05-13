@@ -99,6 +99,7 @@ export const allActivityTabs = ['books', 'sessions', 'events'];
 export const adminSections = [
     { id: 'resumo', label: 'Resumo', href: '/infocultura/resumo' },
     { id: 'metricas', label: 'Metricas', href: '/infocultura/metricas' },
+    { id: 'logs', label: 'Logs', href: '/infocultura/logs' },
     { id: 'notificacoes', label: 'Notificacoes', href: '/infocultura/notificacoes' },
     { id: 'newsletters', label: 'Newsletters', href: '/infocultura/newsletters' },
     { id: 'utilizadores', label: 'Utilizadores', href: '/infocultura/utilizadores' },
@@ -111,7 +112,7 @@ export const adminSections = [
     { id: 'clubes', label: 'Clubes', href: '/infocultura/clubes' }
 ];
 export const adminSectionGroups = [
-    { title: 'Painel', ids: ['resumo', 'metricas', 'notificacoes'] },
+    { title: 'Painel', ids: ['resumo', 'metricas', 'logs', 'notificacoes'] },
     { title: 'Gestao', ids: ['newsletters', 'utilizadores', 'clubes', 'inscricoes'] },
     { title: 'Conteudos', ids: ['noticias', 'livros', 'sessoes', 'eventos', 'conteudos'] }
 ];
