@@ -111,3 +111,38 @@ class RegistrationRepositoryTests(TestCase):
         self.assertIn("r.id_registrations AS registration_id", select_sql)
         self.assertIn("cr.id_clubs AS club_id", select_sql)
         self.assertNotIn("r.id ", select_sql)
+
+    @patch("infocultura.repositories.registrations.record_admin_audit_action")
+    @patch("infocultura.repositories.registrations.notify_new_club_registration")
+    @patch("infocultura.repositories.registrations.execute_sql")
+    @patch("infocultura.repositories.registrations.Registration.objects.create")
+    @patch("infocultura.repositories.registrations.transaction.atomic")
+    @patch("infocultura.repositories.registrations.club_registration_exists", return_value=False)
+    @patch("infocultura.repositories.registrations.enforce_club_registration_rate_limit")
+    def test_create_club_registration_writes_audit_log(
+        self,
+        _rate_limit_mock,
+        exists_mock,
+        atomic_mock,
+        create_mock,
+        execute_mock,
+        notify_mock,
+        audit_mock,
+    ):
+        club = SimpleNamespace(id=7, name='Teatro')
+        create_mock.return_value = SimpleNamespace(id=91, email='ana@example.com', name='Ana', phone=None, message=None)
+        atomic_mock.return_value.__enter__.return_value = None
+        atomic_mock.return_value.__exit__.return_value = None
+
+        registration = repo.create_club_registration(
+            club=club,
+            payload=SimpleNamespace(name='Ana', email='ana@example.com', phone=None, message=None),
+            client_ip='203.0.113.7',
+        )
+
+        self.assertEqual(registration.id, 91)
+        audit_mock.assert_called_once()
+        self.assertEqual(audit_mock.call_args.kwargs['content_type'], 'registration')
+        self.assertEqual(audit_mock.call_args.kwargs['club_id'], 7)
+        self.assertEqual(audit_mock.call_args.kwargs['actor_name'], 'Visitante')
+        notify_mock.assert_called_once()
