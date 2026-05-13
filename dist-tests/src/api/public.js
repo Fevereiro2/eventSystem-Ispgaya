@@ -104,3 +104,14 @@ export async function searchUniversities(filters) {
     const response = await request(`/universities/search/${query ? `?${query}` : ''}`);
     return Array.isArray(response) ? response : response.items || [];
 }
+export async function trackInfoCulturaView(payload) {
+    try {
+        await request('/metrics/view/', {
+            method: 'POST',
+            body: JSON.stringify(payload)
+        }, undefined, false);
+    }
+    catch {
+        // tracking should never block the user flow
+    }
+}

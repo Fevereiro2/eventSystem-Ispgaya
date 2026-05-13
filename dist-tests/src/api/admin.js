@@ -51,6 +51,17 @@ export async function fetchAdminDashboard(token) {
 export async function fetchAdminNotifications(token) {
     return request('/dashboard/admin/notifications/', {}, token);
 }
+export async function fetchAdminMetricsOverview(token, filters) {
+    const search = new URLSearchParams();
+    if (filters?.period) {
+        search.set('period', filters.period);
+    }
+    if (typeof filters?.limit === 'number' && filters.limit > 0) {
+        search.set('limit', String(filters.limit));
+    }
+    const query = search.toString();
+    return request(`/metrics/admin/${query ? `?${query}` : ''}`, {}, token);
+}
 export async function fetchAdminNewsStatuses(token) {
     return request('/news/admin/statuses/', {}, token);
 }

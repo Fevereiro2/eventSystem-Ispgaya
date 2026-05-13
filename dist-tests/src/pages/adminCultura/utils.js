@@ -134,6 +134,8 @@ export function getAdminSectionHref(section) {
     switch (section) {
         case 'resumo':
             return '/infocultura/resumo';
+        case 'metricas':
+            return '/infocultura/metricas';
         case 'notificacoes':
             return '/infocultura/notificacoes';
         case 'newsletters':
@@ -164,6 +166,9 @@ export function isActivitySection(section) {
 export function getAdminSection(pathname) {
     if (pathname === '/infocultura' || pathname === '/infocultura/' || pathname === '/infocultura/resumo') {
         return 'resumo';
+    }
+    if (pathname === '/infocultura/metricas' || pathname.startsWith('/infocultura/metricas/')) {
+        return 'metricas';
     }
     if (pathname === '/infocultura/utilizadores' ||
         pathname.startsWith('/infocultura/utilizadores/')) {
