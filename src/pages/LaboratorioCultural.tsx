@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import Breadcrumbs from '../components/ui/Breadcrumbs';
 import Footer from '../components/layout/Footer';
 import HeaderNav from '../components/layout/HeaderNav';
+import BestBooksSection from '../components/sections/BestBooksSection.js';
 import NewsHighlightsSection, {
   type NewsHighlightItem
 } from '../components/ui/NewsHighlightsSection';
@@ -32,6 +33,7 @@ import {
   labResearchSubtitle,
   mainContent
 } from '../styles/ui';
+import { getLocaleText, useLocale } from '../i18n/locale.js';
 
 function normalizeLabel(value: string): string {
   return value
@@ -112,6 +114,7 @@ function ResultCard({
 }
 
 function LaboratorioCultural() {
+  const { locale } = useLocale();
   const [clubs, setClubs] = useState<InfoCulturaClub[]>([]);
   const [newsItems, setNewsItems] = useState<InfoCulturaNews[]>([]);
   const [books, setBooks] = useState<InfoCulturaBook[]>([]);
@@ -439,24 +442,18 @@ function LaboratorioCultural() {
                   </section>
                 ) : null}
 
-                {filteredBooks.length > 0 ? (
-                  <section>
-                    <h2 className="mb-4 text-2xl font-semibold text-slate-900">Livros</h2>
-                    <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
-                      {filteredBooks.slice(0, 6).map((item) => (
-                        <ResultCard
-                          key={`book-${item.id}`}
-                          title={item.title}
-                          meta={`${item.club_name} · ${item.author}`}
-                          description={item.summary}
-                          href={`/laboratorio-cultural/livros/${item.id}`}
-                          image={item.cover_image}
-                          status={item.is_featured ? 'Destaque' : 'Livro'}
-                        />
-                      ))}
-                    </div>
-                  </section>
-                ) : null}
+                <BestBooksSection
+                  books={filteredBooks}
+                  locale={locale}
+                  title={getLocaleText(locale, 'Livros', 'Books')}
+                  description={getLocaleText(
+                    locale,
+                    'Livros filtrados pela pesquisa atual.',
+                    'Books filtered by the current search.'
+                  )}
+                  detailBaseHref="/laboratorio-cultural/livros"
+                  limit={6}
+                />
               </div>
             ) : null}
 
@@ -482,6 +479,21 @@ function LaboratorioCultural() {
                     </div>
                   </section>
                 ) : null}
+
+                <BestBooksSection
+                  books={books}
+                  locale={locale}
+                  title={getLocaleText(locale, 'Livros em destaque', 'Featured books')}
+                  description={getLocaleText(
+                    locale,
+                    'Alguns dos livros mais relevantes do Laboratório Cultural.',
+                    'Some of the most relevant books from the Cultural Lab.'
+                  )}
+                  viewAllHref="/laboratorio-cultural"
+                  viewAllLabel={getLocaleText(locale, 'Ver laboratório', 'View lab')}
+                  detailBaseHref="/laboratorio-cultural/livros"
+                  limit={6}
+                />
 
 
 

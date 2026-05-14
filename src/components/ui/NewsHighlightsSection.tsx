@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom';
+import { useLocale, getLocaleText } from '../../i18n/locale.js';
 
 type NewsTag = {
   label: string;
@@ -53,18 +54,21 @@ function NewsHighlightsSection({
   items,
   className = 'col-span-2 lg:col-span-1 z-10'
 }: NewsHighlightsSectionProps) {
+  const { locale } = useLocale();
+  const resolvedTitle = title || getLocaleText(locale, 'Notícias', 'News');
+  const resolvedViewAllLabel = viewAllLabel || getLocaleText(locale, 'Ver tudo', 'View all');
   return (
     <section className={className}>
       <div className="pl-3">
         <h2 className="font-heading text-3xl font-bold tracking-tight text-black xl:text-4xl 2xl:text-5xl">
-          {title}
+          {getLocaleText(locale, resolvedTitle, resolvedTitle)}
         </h2>
         {viewAllInternal ? (
           <Link
             to={viewAllHref}
             className="ml-1 mt-1 flex items-center text-sm text-gray-500 underline-offset-2 hover:underline"
           >
-            <span>{viewAllLabel}</span>
+            <span>{resolvedViewAllLabel}</span>
             <ArrowIcon />
           </Link>
         ) : (
@@ -72,7 +76,7 @@ function NewsHighlightsSection({
             href={viewAllHref}
             className="ml-1 mt-1 flex items-center text-sm text-gray-500 underline-offset-2 hover:underline"
           >
-            <span>{viewAllLabel}</span>
+            <span>{resolvedViewAllLabel}</span>
             <ArrowIcon />
           </a>
         )}

@@ -12,6 +12,7 @@ import {
   heroPatternSection,
   heroPatternWrap
 } from '../../styles/ui';
+import { useLocale, getLocaleText } from '../../i18n/locale.js';
 
 type BreadcrumbsProps = {
   title?: string;
@@ -44,10 +45,11 @@ function Breadcrumbs({
   currentLabel = 'Publicacoes Cientificas',
   currentHref = '/'
 }: BreadcrumbsProps) {
+  const { locale } = useLocale();
   return (
     <div className={heroPatternWrap}>
       <section className={heroPatternSection}>
-        <nav className={breadcrumbsNav} aria-label="Breadcrumb">
+        <nav className={breadcrumbsNav} aria-label={getLocaleText(locale, 'Breadcrumb', 'Breadcrumb')}>
           <ol role="list" className={breadcrumbsList}>
             <li>
               <div className={breadcrumbsItemMuted}>
@@ -64,7 +66,7 @@ function Breadcrumbs({
         </nav>
 
         <div className={heroIntroWrap}>
-          <h1 className={heroIntroTitle}>{title}</h1>
+          <h1 className={`${heroIntroTitle} text-3xl sm:text-4xl md:text-5xl`}>{title}</h1>
           <p className={heroIntroText}>{description}</p>
         </div>
       </section>
