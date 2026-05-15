@@ -43,8 +43,6 @@ type AdminHeroStat = { label: string; value: string | number };
 type NewsPageProps = {
   canManageUsers: boolean;
   newsOverviewStats: AdminHeroStat[];
-  isExportingNews: boolean;
-  handleExportNewsCsv: () => void | Promise<void>;
   showNewsForm: boolean;
   showNewsList: boolean;
   handleSaveNews: (event: FormEvent<HTMLFormElement>) => void;
@@ -99,8 +97,6 @@ type NewsPageProps = {
 function NewsPage({
   canManageUsers,
   newsOverviewStats,
-  isExportingNews,
-  handleExportNewsCsv,
   showNewsForm,
   showNewsList,
   handleSaveNews,
@@ -159,16 +155,6 @@ function NewsPage({
         description="Workflow editorial, publicacao e acompanhamento das noticias por clube."
         tone="blue"
         stats={newsOverviewStats}
-        actions={
-          <button
-            type="button"
-            className={adminBtnSecondary}
-            onClick={() => void handleExportNewsCsv()}
-            disabled={isExportingNews}
-          >
-            {isExportingNews ? 'A exportar...' : 'Exportar CSV'}
-          </button>
-        }
       />
 
       {showNewsForm ? (

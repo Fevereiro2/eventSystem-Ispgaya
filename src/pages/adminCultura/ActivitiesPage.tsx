@@ -47,8 +47,6 @@ export type ActivitiesPageProps = {
   activitySectionLabel: string;
   activitySectionDescription: string;
   activityOverviewStats: AdminHeroStat[];
-  isExportingActivities: boolean;
-  handleExportActivitiesCsv: () => void | Promise<void>;
   showActivityFiltersAndList: boolean;
   canManageUsers: boolean;
   clubs: InfoCulturaClub[];
@@ -148,8 +146,6 @@ function ActivitiesPage({
   activitySectionLabel,
   activitySectionDescription,
   activityOverviewStats,
-  isExportingActivities,
-  handleExportActivitiesCsv,
   showActivityFiltersAndList,
   canManageUsers,
   clubs,
@@ -252,16 +248,6 @@ function ActivitiesPage({
         description={activitySectionDescription}
         tone="blue"
         stats={activityOverviewStats}
-        actions={
-          <button
-            type="button"
-            className={adminBtnSecondary}
-            onClick={() => void handleExportActivitiesCsv()}
-            disabled={isExportingActivities}
-          >
-            {isExportingActivities ? 'A exportar...' : 'Exportar CSV'}
-          </button>
-        }
       />
 
       {showActivityFiltersAndList ? (

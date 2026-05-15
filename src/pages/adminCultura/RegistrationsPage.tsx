@@ -43,8 +43,6 @@ type AdminHeroStat = { label: string; value: string | number };
 
 type RegistrationsPageProps = {
   registrationOverviewStats: AdminHeroStat[];
-  isExportingRegistrations: boolean;
-  handleExportRegistrationsCsv: () => void | Promise<void>;
   registrationTotal: number;
   pendingRegistrations: number;
   approvedRegistrations: number;
@@ -100,8 +98,6 @@ function getRegistrationStatusBadge(status: string): string {
 
 function RegistrationsPage({
   registrationOverviewStats,
-  isExportingRegistrations,
-  handleExportRegistrationsCsv,
   registrationTotal,
   pendingRegistrations,
   approvedRegistrations,
@@ -148,16 +144,6 @@ function RegistrationsPage({
         description="Consulta, triagem e validacao dos pedidos submetidos pelos clubes."
         tone="rose"
         stats={registrationOverviewStats}
-        actions={
-          <button
-            type="button"
-            className={adminBtnSecondary}
-            onClick={() => void handleExportRegistrationsCsv()}
-            disabled={isExportingRegistrations}
-          >
-            {isExportingRegistrations ? 'A exportar...' : 'Exportar CSV'}
-          </button>
-        }
       />
 
       <section className={adminPanelCard}>
