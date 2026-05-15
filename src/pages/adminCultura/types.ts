@@ -102,6 +102,7 @@ export type AdminSection =
 export type UserPage =
   | { mode: 'list' }
   | { mode: 'create' }
+  | { mode: 'profile'; userId: number }
   | { mode: 'edit'; userId: number }
   | { mode: 'deactivate'; userId: number };
 
