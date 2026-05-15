@@ -126,7 +126,7 @@ function LaboratorioAgendaPage() {
     return () => {
       active = false;
     };
-  }, []);
+  }, [locale]);
 
   const eventCities = useMemo(
     () =>
