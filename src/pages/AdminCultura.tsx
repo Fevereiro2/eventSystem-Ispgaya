@@ -75,7 +75,6 @@ import {
   infoLegacyLoginStage,
   infoLegacyLoginTitle,
   infoLegacyMain,
-  infoLegacyMeta,
   infoLegacyPage,
   infoLegacyPrimaryButton,
 } from '../styles/ui';

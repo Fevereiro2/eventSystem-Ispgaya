@@ -159,7 +159,16 @@ function NewsPage({
         description="Workflow editorial, publicacao e acompanhamento das noticias por clube."
         tone="blue"
         stats={newsOverviewStats}
-
+        actions={
+          <button
+            type="button"
+            className={adminBtnSecondary}
+            onClick={() => void handleExportNewsCsv()}
+            disabled={isExportingNews}
+          >
+            {isExportingNews ? 'A exportar...' : 'Exportar CSV'}
+          </button>
+        }
       />
 
       {showNewsForm ? (

@@ -252,6 +252,16 @@ function ActivitiesPage({
         description={activitySectionDescription}
         tone="blue"
         stats={activityOverviewStats}
+        actions={
+          <button
+            type="button"
+            className={adminBtnSecondary}
+            onClick={() => void handleExportActivitiesCsv()}
+            disabled={isExportingActivities}
+          >
+            {isExportingActivities ? 'A exportar...' : 'Exportar CSV'}
+          </button>
+        }
       />
 
       {showActivityFiltersAndList ? (

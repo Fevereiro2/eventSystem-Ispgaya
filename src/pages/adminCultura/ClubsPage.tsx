@@ -121,6 +121,16 @@ function ClubsPage({
         description="Estrutura interna dos clubes, estados de atividade e configuracao de inscricoes."
         tone="amber"
         stats={clubsOverviewStats}
+        actions={
+          <button
+            type="button"
+            className={adminBtnSecondary}
+            onClick={() => void handleExportClubsCsv()}
+            disabled={isExportingClubs}
+          >
+            {isExportingClubs ? 'A exportar...' : 'Exportar CSV'}
+          </button>
+        }
       />
 
       <form onSubmit={handleSaveClub} className={adminPanelForm}>

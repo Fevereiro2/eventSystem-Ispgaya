@@ -94,23 +94,30 @@ function UsersPage({
   if (userPage.mode === 'list') {
     return (
       <div className="space-y-6">
-        <AdminPageHero
-          icon={Users}
-          title="Utilizadores"
-          description="Gestao e consulta dos acessos administrativos do InfoCultura."
-          tone="slate"
-          stats={userOverviewStats}
-          actions={
-            canManageUsers ? (
-              <>
-                <NavLink to="/infocultura/utilizadores/novo" className={adminBtnPrimary}>
-                  Criar utilizador
-                </NavLink>
-
-              </>
-            ) : undefined
-          }
-        />
+      <AdminPageHero
+        icon={Users}
+        title="Utilizadores"
+        description="Gestao e consulta dos acessos administrativos do InfoCultura."
+        tone="slate"
+        stats={userOverviewStats}
+        actions={
+          canManageUsers ? (
+            <>
+              <NavLink to="/infocultura/utilizadores/novo" className={adminBtnPrimary}>
+                Criar utilizador
+              </NavLink>
+              <button
+                type="button"
+                className={adminBtnSecondary}
+                onClick={() => void handleExportUsersCsv()}
+                disabled={isExportingUsers}
+              >
+                {isExportingUsers ? 'A exportar...' : 'Exportar CSV'}
+              </button>
+            </>
+          ) : undefined
+        }
+      />
 
         <section className={adminPanelCard}>
           <div className={adminFormGridSpaced}>

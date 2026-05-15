@@ -148,7 +148,16 @@ function RegistrationsPage({
         description="Consulta, triagem e validacao dos pedidos submetidos pelos clubes."
         tone="rose"
         stats={registrationOverviewStats}
-
+        actions={
+          <button
+            type="button"
+            className={adminBtnSecondary}
+            onClick={() => void handleExportRegistrationsCsv()}
+            disabled={isExportingRegistrations}
+          >
+            {isExportingRegistrations ? 'A exportar...' : 'Exportar CSV'}
+          </button>
+        }
       />
 
       <section className={adminPanelCard}>
