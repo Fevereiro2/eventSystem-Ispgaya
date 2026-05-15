@@ -46,10 +46,6 @@ import {
 } from '../../../api/infoculturaApi.js';
 import { formatAdminDateTime } from '../utils.js';
 import { getLocaleText, useLocale } from '../../../i18n/locale.js';
-import { get } from 'node:http';
-
-const locale = useLocale();
-
 
 type NewsletterFormState = NewsletterPayload;
 type SubscriberFormState = NewsletterSubscriberPayload;
@@ -67,6 +63,8 @@ const initialSubscriberForm: SubscriberFormState = {
 };
 
 function NewslettersPage() {
+  const localeContext = useLocale();
+  const locale = localeContext.locale || 'pt';
   const token = getStoredAccessToken();
   const [newsletters, setNewsletters] = useState<InfoCulturaNewsletter[]>([]);
   const [subscribers, setSubscribers] = useState<InfoCulturaNewsletterSubscriber[]>([]);

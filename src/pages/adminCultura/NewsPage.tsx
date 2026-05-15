@@ -410,7 +410,7 @@ function NewsPage({
             </form>
 
             <div className={adminActions}>
-
+          </div>
           </div>
 
           <div className={adminFormGridSpaced}>
