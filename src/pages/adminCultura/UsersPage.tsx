@@ -106,14 +106,7 @@ function UsersPage({
                 <NavLink to="/infocultura/utilizadores/novo" className={adminBtnPrimary}>
                   Criar utilizador
                 </NavLink>
-                <button
-                  type="button"
-                  className={adminBtnSecondary}
-                  disabled={isExportingUsers}
-                  onClick={() => void handleExportUsersCsv()}
-                >
-                  {isExportingUsers ? 'A exportar...' : 'Exportar CSV'}
-                </button>
+
               </>
             ) : undefined
           }

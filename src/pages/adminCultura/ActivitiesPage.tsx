@@ -252,16 +252,6 @@ function ActivitiesPage({
         description={activitySectionDescription}
         tone="blue"
         stats={activityOverviewStats}
-        actions={
-          <button
-            type="button"
-            className={adminBtnSecondary}
-            disabled={isExportingActivities}
-            onClick={() => void handleExportActivitiesCsv()}
-          >
-            {isExportingActivities ? 'A exportar...' : 'Exportar CSV'}
-          </button>
-        }
       />
 
       {showActivityFiltersAndList ? (
@@ -380,16 +370,7 @@ function ActivitiesPage({
               </div>
             </form>
 
-            <div className={adminActions}>
-              <button
-                type="button"
-                className={adminBtnSecondary}
-                disabled={isExportingActivities}
-                onClick={() => void handleExportActivitiesCsv()}
-              >
-                {isExportingActivities ? 'A exportar...' : 'Exportar CSV'}
-              </button>
-            </div>
+
           </div>
 
           <div className={adminFormGridSpaced}>

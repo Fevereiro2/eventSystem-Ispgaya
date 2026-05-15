@@ -17,6 +17,7 @@ import {
   InfoCulturaActivityLog,
   InfoCulturaApiError,
 } from '../../../api/infoculturaApi.js';
+import { getLocaleText, useLocale } from '../../../i18n/locale';
 
 const SOURCE_LABELS: Record<string, string> = {
   audit: 'Administração',
@@ -65,6 +66,7 @@ function LogsPage() {
   const [logs, setLogs] = useState<InfoCulturaActivityLog[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+ const { locale } = useLocale();
 
   useEffect(() => {
     let active = true;
@@ -120,23 +122,23 @@ function LogsPage() {
     <div className="space-y-6">
       <AdminPageHero
         icon={ScrollText}
-        title="Logs"
-        description="Histórico centralizado das ações administrativas, editoriais e submissões públicas."
+        title={getLocaleText(locale, 'Logs', 'Logs')}
+        description={getLocaleText(locale, 'Histórico centralizado das ações administrativas, editoriais e submissões públicas.', 'Centralized history of administrative, editorial and public submissions.')}
         tone="slate"
         stats={[
-          { label: 'Entradas', value: stats.total },
-          { label: 'Administração', value: stats.audit },
-          { label: 'Editorial', value: stats.editorial },
-          { label: 'Inscrições', value: stats.publicRegistrations },
+          { label: getLocaleText(locale, 'Entradas', 'Entries'), value: stats.total },
+          { label: getLocaleText(locale, 'Administração', 'Administration'), value: stats.audit },
+          { label: getLocaleText(locale, 'Editorial', 'Editorial'), value: stats.editorial },
+          { label: getLocaleText(locale, 'Inscrições', 'Registrations'), value: stats.publicRegistrations },
         ]}
       />
 
       <section className={adminPanelCard}>
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div>
-            <h2 className="text-2xl font-semibold text-slate-900">Filtro</h2>
+            <h2 className="text-2xl font-semibold text-slate-900">{getLocaleText(locale, 'Filtro', 'Filter')}</h2>
             <p className="mt-1 text-sm text-slate-600">
-              Pesquisa rápida no feed de ações do portal.
+              {getLocaleText(locale, 'Pesquisa rápida no feed de ações do portal.', 'Quick search in the portal actions feed.')}
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
@@ -151,23 +153,23 @@ function LogsPage() {
                 }
                 onClick={() => setSource(item)}
               >
-                {item === 'all' ? 'Tudo' : getSourceLabel(item)}
+                {item === 'all' ? getLocaleText(locale, 'Tudo', 'All') : getSourceLabel(item)}
               </button>
             ))}
           </div>
         </div>
 
         <label className="mt-4 block">
-          <span className="mb-2 block text-sm font-medium text-slate-700">Pesquisa</span>
+          <span className="mb-2 block text-sm font-medium text-slate-700">{getLocaleText(locale, 'Pesquisa', 'Search')}</span>
           <input
             value={search}
             onChange={(event) => setSearch(event.target.value)}
             className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-[#dd8609]"
-            placeholder="Procurar por notícia, clube, utilizador ou resumo..."
+            placeholder={getLocaleText(locale, 'Procurar por notícia, clube, utilizador ou resumo...', 'Search for news, club, user or summary...')}
           />
         </label>
 
-        {loading ? <p className="mt-4 text-sm text-slate-500">A carregar logs...</p> : null}
+        {loading ? <p className="mt-4 text-sm text-slate-500">{getLocaleText(locale, 'A carregar logs...', 'Loading logs...')}</p> : null}
         {error ? <p className={`mt-4 ${adminError}`}>{error}</p> : null}
       </section>
 
@@ -175,27 +177,27 @@ function LogsPage() {
         <article className={adminStatCard}>
           <BadgeInfo className="h-5 w-5 text-[#dd8609]" />
           <p className={`${adminStatValue} mt-3`}>{stats.total}</p>
-          <p className={adminStatLabel}>Total</p>
+          <p className={adminStatLabel}>{getLocaleText(locale, 'Total', 'Total')}</p>
         </article>
         <article className={adminStatCard}>
           <ShieldAlert className="h-5 w-5 text-[#dd8609]" />
           <p className={`${adminStatValue} mt-3`}>{stats.audit}</p>
-          <p className={adminStatLabel}>Administração</p>
+          <p className={adminStatLabel}>{getLocaleText(locale, 'Administração', 'Administration')}</p>
         </article>
         <article className={adminStatCard}>
           <Activity className="h-5 w-5 text-[#dd8609]" />
           <p className={`${adminStatValue} mt-3`}>{stats.editorial}</p>
-          <p className={adminStatLabel}>Editorial</p>
+          <p className={adminStatLabel}>{getLocaleText(locale, 'Editorial', 'Editorial')}</p>
         </article>
         <article className={adminStatCard}>
           <Clock3 className="h-5 w-5 text-[#dd8609]" />
           <p className={`${adminStatValue} mt-3`}>{stats.publicRegistrations}</p>
-          <p className={adminStatLabel}>Inscrições</p>
+          <p className={adminStatLabel}>{getLocaleText(locale, 'Inscrições', 'Registrations')}</p>
         </article>
       </section>
 
       <section className={adminPanelCard}>
-        <h3 className="text-2xl font-semibold text-slate-900">Atividade recente</h3>
+        <h3 className="text-2xl font-semibold text-slate-900">{getLocaleText(locale, 'Atividade recente', 'Recent Activity')}</h3>
         <div className="mt-6 space-y-4">
           {logs.length > 0 ? (
             logs.map((item, index) => (
@@ -231,7 +233,7 @@ function LogsPage() {
               </article>
             ))
           ) : (
-            <p className={adminInfo}>Ainda não há logs para mostrar.</p>
+            <p className={adminInfo}>{getLocaleText(locale, 'Ainda não há logs para mostrar.', 'There are no logs to display.')}</p>
           )}
         </div>
       </section>
