@@ -121,16 +121,6 @@ function ClubsPage({
         description="Estrutura interna dos clubes, estados de atividade e configuracao de inscricoes."
         tone="amber"
         stats={clubsOverviewStats}
-        actions={
-          <button
-            type="button"
-            className={adminBtnSecondary}
-            disabled={isExportingClubs}
-            onClick={() => void handleExportClubsCsv()}
-          >
-            {isExportingClubs ? 'A exportar...' : 'Exportar CSV'}
-          </button>
-        }
       />
 
       <form onSubmit={handleSaveClub} className={adminPanelForm}>
@@ -382,16 +372,6 @@ function ClubsPage({
               <option value="name_desc">Nome Z-A</option>
               <option value="registrations_open">Inscricoes abertas primeiro</option>
             </select>
-          </div>
-          <div className="flex items-end">
-            <button
-              type="button"
-              className={adminBtnSecondary}
-              disabled={isExportingClubs}
-              onClick={() => void handleExportClubsCsv()}
-            >
-              {isExportingClubs ? 'A exportar...' : 'Exportar CSV'}
-            </button>
           </div>
         </div>
 

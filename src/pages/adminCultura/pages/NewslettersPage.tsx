@@ -45,6 +45,11 @@ import {
   updateAdminNewsletterSubscriber,
 } from '../../../api/infoculturaApi.js';
 import { formatAdminDateTime } from '../utils.js';
+import { getLocaleText, useLocale } from '../../../i18n/locale.js';
+import { get } from 'node:http';
+
+const locale = useLocale();
+
 
 type NewsletterFormState = NewsletterPayload;
 type SubscriberFormState = NewsletterSubscriberPayload;
@@ -102,7 +107,7 @@ function NewslettersPage() {
           ? caughtError.message
           : caughtError instanceof Error
             ? caughtError.message
-            : 'Nao foi possivel carregar as newsletters.';
+            : getLocaleText(locale, 'Nao foi possivel carregar as newsletters.', 'Could not load newsletters.');
       setError(message);
     } finally {
       setLoading(false);
@@ -144,7 +149,7 @@ function NewslettersPage() {
           ? caughtError.message
           : caughtError instanceof Error
             ? caughtError.message
-            : 'Nao foi possivel guardar a newsletter.';
+            : getLocaleText(locale, 'Nao foi possivel guardar a newsletter.', 'Could not save the newsletter.');
       setError(message);
     } finally {
       setSavingNewsletter(false);
@@ -172,7 +177,7 @@ function NewslettersPage() {
           ? caughtError.message
           : caughtError instanceof Error
             ? caughtError.message
-            : 'Nao foi possivel guardar o subscritor.';
+            : getLocaleText(locale, 'Nao foi possivel guardar o subscritor.', 'Could not save the subscriber.');
       setError(message);
     } finally {
       setSavingSubscriber(false);
@@ -214,7 +219,7 @@ function NewslettersPage() {
           ? caughtError.message
           : caughtError instanceof Error
             ? caughtError.message
-            : 'Nao foi possivel apagar a newsletter.';
+            : getLocaleText(locale, 'Nao foi possivel apagar a newsletter.', 'Could not delete the newsletter.');
       setError(message);
     } finally {
       setDeletingNewsletterId(null);
@@ -222,7 +227,7 @@ function NewslettersPage() {
   };
 
   const handleDeleteSubscriber = async (id: number) => {
-    if (!token || !window.confirm('Apagar este subscritor?')) return;
+    if (!token || !window.confirm(getLocaleText(locale, 'Apagar este subscritor?', 'Delete this subscriber?'))) return;
     setDeletingSubscriberId(id);
     setError('');
 
@@ -236,7 +241,7 @@ function NewslettersPage() {
           ? caughtError.message
           : caughtError instanceof Error
             ? caughtError.message
-            : 'Nao foi possivel apagar o subscritor.';
+            : getLocaleText(locale, 'Nao foi possivel apagar o subscritor.', 'Could not delete the subscriber.');
       setError(message);
     } finally {
       setDeletingSubscriberId(null);
@@ -257,7 +262,7 @@ function NewslettersPage() {
           ? caughtError.message
           : caughtError instanceof Error
             ? caughtError.message
-            : 'Nao foi possivel enviar a newsletter.';
+            : getLocaleText(locale, 'Nao foi possivel enviar a newsletter.', 'Could not send the newsletter.');
       setError(message);
     } finally {
       setSendingNewsletterId(null);
@@ -268,14 +273,14 @@ function NewslettersPage() {
     <div className="space-y-6">
       <AdminPageHero
         icon={Mail}
-        title="Newsletters"
-        description="Criacao, gestao e envio de campanhas por email para os subscritores ativos."
+        title={getLocaleText(locale, 'Newsletters', 'Newsletters')}
+        description={getLocaleText(locale, 'Criacao, gestao e envio de campanhas por email para os subscritores ativos.', 'Creation, management and sending of email campaigns to active subscribers.')}
         tone="blue"
         stats={[
-          { label: 'Newsletters', value: newsletters.length },
-          { label: 'Subscritores ativos', value: activeSubscribers },
+          { label: getLocaleText(locale, 'Newsletters', 'Newsletters'), value: newsletters.length },
+          { label: getLocaleText(locale, 'Subscritores ativos', 'Active Subscribers'), value: activeSubscribers },
           {
-            label: 'Enviadas',
+            label: getLocaleText(locale, 'Enviadas', 'Sent'),
             value: newsletters.filter((newsletter) => newsletter.status === 'sent').length,
           },
         ]}
@@ -305,10 +310,8 @@ function NewslettersPage() {
           <form onSubmit={handleNewsletterSubmit} className={adminPanelForm}>
             <div className="flex items-center justify-between gap-3">
               <div>
-                <h2 className={blockTitle}>{editingNewsletterId ? 'Editar newsletter' : 'Nova newsletter'}</h2>
-                <p className={blockText}>
-                  Define o titulo interno, assunto e conteudo da campanha.
-                </p>
+                <h2 className={blockTitle}>{editingNewsletterId ? getLocaleText(locale, 'Editar newsletter', 'Edit Newsletter') : getLocaleText(locale, 'Nova newsletter', 'New Newsletter')}</h2>
+                <p className={blockText}> {getLocaleText(locale, 'Define o titulo interno, assunto e conteudo da campanha.', 'Define the internal title, subject and content of the campaign.')}</p>
               </div>
               <button type="button" className={adminBtnSecondary} onClick={resetNewsletterForm}>
                 <RotateCcw size={16} />
@@ -318,7 +321,7 @@ function NewslettersPage() {
             <div className={adminFormGridSpaced}>
               <div className={adminField}>
                 <label className={adminLabel} htmlFor="newsletter-title">
-                  Titulo
+                  Titulo 
                 </label>
                 <input
                   id="newsletter-title"

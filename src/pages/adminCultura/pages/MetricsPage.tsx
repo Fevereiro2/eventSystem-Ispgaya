@@ -17,23 +17,28 @@ import {
   InfoCulturaApiError,
   InfoCulturaMetricsOverview,
 } from '../../../api/infoculturaApi.js';
+import { getLocaleText, useLocale } from '../../../i18n/locale.js';
+const localeCtx = useLocale();
+const locale = localeCtx.locale;
 
 const PERIOD_LABELS: Record<'day' | 'week' | 'month', string> = {
-  day: 'Dia',
-  week: 'Semana',
-  month: 'Mês',
+  day: getLocaleText(locale, 'Dia', 'Day'),
+  week: getLocaleText(locale, 'Semana', 'Week'),
+  month: getLocaleText(locale, 'Mês', 'Month'),
 };
 
+
+
 const SECTION_LABELS: Record<string, string> = {
-  home: 'Início',
-  news: 'Notícias',
-  events: 'Eventos',
-  research: 'Investigação',
-  laboratory: 'Laboratório Cultural',
-  agenda: 'Agenda',
-  clubs: 'Clubes',
-  books: 'Livros',
-  sessions: 'Sessões',
+  home: getLocaleText(locale, 'Início', 'Home'),
+  news: getLocaleText(locale, 'Notícias', 'News'),
+  events: getLocaleText(locale, 'Eventos', 'Events'),
+  research: getLocaleText(locale, 'Investigação', 'Research'),
+  laboratory: getLocaleText(locale, 'Laboratório Cultural', 'Cultural Laboratory'),
+  agenda: getLocaleText(locale, 'Agenda', 'Agenda'),
+  clubs: getLocaleText(locale, 'Clubes', 'Clubs'),
+  books: getLocaleText(locale, 'Livros', 'Books'),
+  sessions: getLocaleText(locale, 'Sessões', 'Sessions'),
 };
 
 function getSectionLabel(value: string): string {
@@ -52,12 +57,11 @@ function formatShortDate(value: string | null): string {
 
 function MetricBars({ overview }: { overview: InfoCulturaMetricsOverview | null }) {
   const maxValue = Math.max(1, ...(overview?.series.map((point) => point.value) || [1]));
-
   return (
     <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h3 className="text-2xl font-semibold text-slate-900">Evolução temporal</h3>
+          <h3 className="text-2xl font-semibold text-slate-900">{getLocaleText(locale, 'Evolução', 'Evolution')}</h3>
           <p className="mt-1 text-sm text-slate-600">
             {overview ? `Janela atual: ${PERIOD_LABELS[overview.period as 'day' | 'week' | 'month'] || overview.period}` : 'Sem dados.'}
           </p>
@@ -93,7 +97,7 @@ function MetricBars({ overview }: { overview: InfoCulturaMetricsOverview | null 
             })}
           </svg>
         ) : (
-          <p className={adminInfo}>Ainda não existem dados para este período.</p>
+          <p className={adminInfo}>{getLocaleText(locale, 'Tente selecionar outro intervalo.', 'Try selecting another time period.')}</p>
         )}
       </div>
     </div>
@@ -127,7 +131,8 @@ function MetricsPage() {
             ? caughtError.message
             : caughtError instanceof Error
               ? caughtError.message
-              : 'Nao foi possivel carregar as metricas.';
+              : getLocaleText(locale, 'Nao foi possivel carregar as metricas.', 'Could not load metrics.');
+
         setError(message);
       } finally {
         if (active) {
@@ -154,25 +159,25 @@ function MetricsPage() {
     <div className="space-y-6">
       <AdminPageHero
         icon={BarChart3}
-        title="Métricas"
-        description="Visão estatística das páginas mais visualizadas por dia, semana e mês."
+        title={getLocaleText(locale, 'Métricas', 'Metrics')}
+        description={getLocaleText(locale, 'Visão estatística das páginas mais visualizadas por dia, semana e mês.', 'Statistical view of the most viewed pages by day, week and month.')}
         tone="emerald"
         stats={[
-          { label: 'Visualizações', value: overview?.total_views ?? 0 },
-          { label: 'Páginas únicas', value: overview?.unique_pages ?? 0 },
-          { label: 'Visitantes', value: overview?.unique_visitors ?? 0 },
-          { label: 'Clubes criados', value: overview?.clubs_created ?? 0 },
-          { label: 'Notícias criadas', value: overview?.news_created ?? 0 },
-          { label: 'Top page', value: topPage ? topPage.views : 0 },
+          { label: getLocaleText(locale, 'Visualizações', 'Views'), value: overview?.total_views ?? 0 },
+          { label: getLocaleText(locale, 'Páginas únicas', 'Unique Pages'), value: overview?.unique_pages ?? 0 },
+          { label: getLocaleText(locale, 'Visitantes', 'Visitors'), value: overview?.unique_visitors ?? 0 },
+          { label: getLocaleText(locale, 'Clubes criados', 'Clubs Created'), value: overview?.clubs_created ?? 0 },
+          { label: getLocaleText(locale, 'Notícias criadas', 'News Created'), value: overview?.news_created ?? 0 },
+          { label: getLocaleText(locale, 'Top page', 'Top Page'), value: topPage ? topPage.views : 0 },
         ]}
       />
 
       <section className={adminPanelCard}>
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div>
-            <h2 className="text-2xl font-semibold text-slate-900">Intervalo</h2>
+            <h2 className="text-2xl font-semibold text-slate-900">{getLocaleText(locale, 'Intervalo', 'Time Period')}</h2>
             <p className="mt-1 text-sm text-slate-600">
-              Alterna entre os principais recortes temporais.
+              {getLocaleText(locale, 'Alterna entre os principais recortes temporais.', 'Switch between the main time periods.')}
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
@@ -193,7 +198,7 @@ function MetricsPage() {
           </div>
         </div>
 
-        {loading ? <p className="mt-4 text-sm text-slate-500">A carregar métricas...</p> : null}
+        {loading ? <p className="mt-4 text-sm text-slate-500">{getLocaleText(locale, 'A carregar métricas...', 'Loading metrics...')}</p> : null}
         {error ? <p className={`mt-4 ${adminError}`}>{error}</p> : null}
       </section>
 
@@ -201,17 +206,17 @@ function MetricsPage() {
         <article className={adminStatCard}>
           <Eye className="h-5 w-5 text-[#dd8609]" />
           <p className={`${adminStatValue} mt-3`}>{overview?.total_views ?? 0}</p>
-          <p className={adminStatLabel}>Visualizações totais</p>
+          <p className={adminStatLabel}>{getLocaleText(locale, 'Visualizações totais', 'Total Views')}</p>
         </article>
         <article className={adminStatCard}>
           <TrendingUp className="h-5 w-5 text-[#dd8609]" />
           <p className={`${adminStatValue} mt-3`}>{overview?.unique_pages ?? 0}</p>
-          <p className={adminStatLabel}>Páginas únicas</p>
+          <p className={adminStatLabel}>{getLocaleText(locale, 'Páginas únicas', 'Unique Pages')}</p>
         </article>
         <article className={adminStatCard}>
           <Users className="h-5 w-5 text-[#dd8609]" />
           <p className={`${adminStatValue} mt-3`}>{overview?.unique_visitors ?? 0}</p>
-          <p className={adminStatLabel}>Visitantes únicos</p>
+          <p className={adminStatLabel}>{getLocaleText(locale, 'Visitantes únicos', 'Unique Visitors')}</p>
         </article>
       </section>
 
@@ -221,7 +226,7 @@ function MetricsPage() {
         <section className={adminPanelCard}>
           <div className="flex items-center gap-3">
             <LineChart className="h-5 w-5 text-[#dd8609]" />
-            <h3 className="text-2xl font-semibold text-slate-900">Top páginas</h3>
+            <h3 className="text-2xl font-semibold text-slate-900">{getLocaleText(locale, 'Top páginas', 'Top Pages')}</h3>
           </div>
           <div className="mt-6 space-y-4">
             {overview?.top_pages?.length ? (
@@ -238,26 +243,26 @@ function MetricsPage() {
                       <p className="mt-1 break-all text-xs text-slate-500">{item.page_path}</p>
                     </div>
                     <span className="rounded-full bg-white px-3 py-1 text-xs font-semibold text-slate-700">
-                      {item.views} vistas
+                      {item.views} {getLocaleText(locale, 'vistas', 'views')}
                     </span>
                   </div>
                   <div className="mt-3 grid grid-cols-2 gap-3 text-sm text-slate-600">
-                    <p>Visitantes: {item.unique_visitors}</p>
+                    <p>{getLocaleText(locale, 'Visitantes:', 'Visitors:')} {item.unique_visitors}</p>
                     <p className="text-right">
-                      Última vista: {formatShortDate(item.last_viewed_at)}
+                      {getLocaleText(locale, 'Última vista:', 'Last Viewed:')} {formatShortDate(item.last_viewed_at)}
                     </p>
                   </div>
                 </article>
               ))
             ) : (
-              <p className={adminInfo}>Ainda não há páginas com visualizações.</p>
+              <p className={adminInfo}>{getLocaleText(locale, 'Ainda não há páginas com visualizações.', 'There are no pages with views yet.')}</p>
             )}
           </div>
         </section>
       </div>
 
       <section className={adminPanelCard}>
-        <h3 className="text-2xl font-semibold text-slate-900">Distribuição por secção</h3>
+        <h3 className="text-2xl font-semibold text-slate-900">{getLocaleText(locale, 'Distribuição por secção', 'Distribution by Section')}</h3>
         <div className="mt-6 space-y-4">
           {sectionRows.length > 0 ? (
             sectionRows.map((item) => (
@@ -275,7 +280,7 @@ function MetricsPage() {
               </div>
             ))
           ) : (
-            <p className={adminInfo}>Sem dados de secções para mostrar.</p>
+            <p className={adminInfo}>{getLocaleText(locale, 'Sem dados de secções para mostrar.', 'There is no section data to display.')}</p>
           )}
         </div>
       </section>

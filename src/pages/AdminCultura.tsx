@@ -2320,7 +2320,7 @@ function AdminCultura() {
       }
     } catch (error) {
       const message =
-        error instanceof Error ? error.message : 'Nao foi possivel apagar o evento.';
+        error instanceof Error ? error.message : 'Nao foi possivel apagar o evento.' ;
       setActivityError(message);
     } finally {
       setDeletingEventId(null);
