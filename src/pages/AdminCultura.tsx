@@ -10,6 +10,7 @@ import { Bell, FolderKanban } from 'lucide-react';
 import { NavLink, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import infoCulturaBg from '../assets/19825874_uqliU.jpeg';
 import ispgayaLogo from '../assets/ispgaya-logo.svg';
+import { getLocaleText, useLocale } from '../i18n/locale.js';
 import {
   adminActions,
   adminBtnDanger,
@@ -242,6 +243,7 @@ import {
 function AdminCultura() {
   const location = useLocation();
   const navigate = useNavigate();
+  const { locale, setLocale } = useLocale();
   const [authUser, setAuthUser] = useState('');
   const [authPass, setAuthPass] = useState('');
   const [authError, setAuthError] = useState('');
@@ -481,6 +483,33 @@ function AdminCultura() {
 
     return users.find((user) => user.id === userPage.userId) || null;
   }, [userPage, users]);
+
+  function renderLocaleToggle() {
+    return (
+      <div className={infoLegacyLang}>
+        <button
+          type="button"
+          title={getLocaleText(locale, 'Idioma', 'Language')}
+          aria-pressed={locale === 'pt'}
+          className={locale === 'pt' ? 'font-bold text-slate-900' : 'text-slate-500'}
+          onClick={() => setLocale('pt')}
+        >
+          PT
+        </button>
+        <span className="px-2 text-slate-300">|</span>
+        <button
+          type="button"
+          title={getLocaleText(locale, 'Idioma', 'Language')}
+          aria-pressed={locale === 'en'}
+          className={locale === 'en' ? 'font-bold text-slate-900' : 'text-slate-500'}
+          onClick={() => setLocale('en')}
+        >
+          EN
+        </button>
+      </div>
+    );
+  }
+
   const publishedItems = useMemo(
     () => items.filter((item) => item.status === 'publicado').length,
     [items]
@@ -2365,7 +2394,7 @@ function AdminCultura() {
                   <p className={infoLegacyBrandSub}>Gestao cultural interna</p>
                 </div>
               </div>
-              <p className={infoLegacyLang}>PT | EN</p>
+              {renderLocaleToggle()}
             </div>
           </header>
 
@@ -2471,7 +2500,7 @@ function AdminCultura() {
             <button type="button" onClick={handleLogout} className={adminBtnSecondary}>
               Terminar sessao
             </button>
-            <p className={infoLegacyLang}>PT | EN</p>
+            {renderLocaleToggle()}
           </div>
         </div>
       </header>
