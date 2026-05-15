@@ -2,6 +2,7 @@ import { Dispatch, FormEvent, SetStateAction } from 'react';
 import { CalendarClock } from 'lucide-react';
 
 import AdminPageHero from './components/AdminPageHero.js';
+import { adminNamePattern, adminNameTitle } from './nameValidation.js';
 import { ActivityTab, BookFormState, CategoryFormState, EventFormState, SessionFormState } from './types';
 import { formatAdminDateTime, getWorkflowStatusLabel, normalizeWorkflowStatus } from './utils';
 import { EVENT_WORKFLOW_ORDER } from './constants';
@@ -809,6 +810,8 @@ function ActivitiesPage({
                   <input
                     id="session-name"
                     className={adminInput}
+                    pattern={adminNamePattern}
+                    title={adminNameTitle}
                     value={sessionForm.name}
                     onChange={(event) =>
                       setSessionForm((prev) => ({ ...prev, name: event.target.value }))
@@ -1435,6 +1438,8 @@ function ActivitiesPage({
                 <input
                   id="category-name"
                   className={adminInput}
+                  pattern={adminNamePattern}
+                  title={adminNameTitle}
                   value={categoryForm.name}
                   onChange={(event) =>
                     setCategoryForm((prev) => ({ ...prev, name: event.target.value }))

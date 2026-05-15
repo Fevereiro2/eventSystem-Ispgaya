@@ -2,6 +2,7 @@ import { Dispatch, FormEvent, SetStateAction } from 'react';
 import { Building2 } from 'lucide-react';
 
 import AdminPageHero from './components/AdminPageHero.js';
+import { adminNamePattern, adminNameTitle } from './nameValidation.js';
 import { ClubFormState } from './types';
 import { formatAdminDateTime } from './utils';
 import {
@@ -134,6 +135,8 @@ function ClubsPage({
             <input
               id="club-name"
               className={adminInput}
+              pattern={adminNamePattern}
+              title={adminNameTitle}
               value={clubForm.name}
               onChange={(event) =>
                 setClubForm((prev) => ({ ...prev, name: event.target.value }))

@@ -11,6 +11,7 @@ from ..services import (
     record_editorial_action,
     validate_date_interval,
 )
+from ..core.security import validate_entity_name
 from .serializers_news import EditorialHistorySerializer
 from .serializers_shared import ClubScopedWriteMixin
 from .serializers_workflow import (
@@ -282,6 +283,11 @@ class AdminSessionWriteSerializer(ClubScopedWriteSerializer):
 
     def validate(self, attrs):
         self.resolve_club_scope(attrs)
+        if 'name' in attrs:
+            try:
+                attrs['name'] = validate_entity_name(attrs['name'], field_label='O nome da sessao')
+            except ValueError as error:
+                raise serializers.ValidationError({'name': str(error)}) from error
         start_date = attrs.get('start_date') or getattr(self.instance, 'start_date', None)
         end_date = attrs.get('end_date') or getattr(self.instance, 'end_date', None)
 
@@ -511,6 +517,12 @@ class AdminCategoryWriteSerializer(serializers.ModelSerializer):
         model = Category
         fields = ['id', 'name', 'description']
         read_only_fields = ['id']
+
+    def validate_name(self, value):
+        try:
+            return validate_entity_name(value, field_label='O nome da categoria')
+        except ValueError as error:
+            raise serializers.ValidationError(str(error)) from error
 
     def create(self, validated_data):
         now = timezone.now()

@@ -1,6 +1,7 @@
 from rest_framework import serializers
 
 from ..models import AppUser, Club
+from ..core.security import validate_entity_name
 
 
 class ClubSerializer(serializers.ModelSerializer):
@@ -18,6 +19,12 @@ class ClubSerializer(serializers.ModelSerializer):
             'enable_registrations',
             'created_at',
         ]
+
+    def validate_name(self, value):
+        try:
+            return validate_entity_name(value, field_label='O nome do clube')
+        except ValueError as error:
+            raise serializers.ValidationError(str(error)) from error
 
     def create(self, validated_data):
         return Club.objects.create(**validated_data)

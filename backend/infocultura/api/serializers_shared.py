@@ -3,6 +3,7 @@ from __future__ import annotations
 from rest_framework import serializers
 
 from ..models import Club
+from ..core.security import validate_entity_name
 
 
 class ClubScopedWriteMixin:
@@ -37,3 +38,9 @@ class ContactRegistrationSerializer(serializers.Serializer):
     email = serializers.EmailField(max_length=150)
     phone = serializers.CharField(max_length=20, required=False, allow_blank=True)
     message = serializers.CharField(required=False, allow_blank=True)
+
+    def validate_name(self, value):
+        try:
+            return validate_entity_name(value, field_label='O nome')
+        except ValueError as error:
+            raise serializers.ValidationError(str(error)) from error

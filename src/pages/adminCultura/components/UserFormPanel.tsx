@@ -4,6 +4,7 @@ import { Users } from 'lucide-react';
 
 import { InfoCulturaRole, InfoCulturaUser } from '../../../api/infoculturaApi.js';
 import { useUniversityEmailDomain } from '../hooks/useUniversityEmailDomain.js';
+import { adminNamePattern, adminNameTitle } from '../nameValidation.js';
 import { UserPage, UserFormState } from '../types.js';
 import {
   adminActions,
@@ -94,6 +95,8 @@ export default function UserFormPanel({
                 <input
                   id="user-name"
                   className={adminInput}
+                  pattern={adminNamePattern}
+                  title={adminNameTitle}
                   value={userForm.name}
                   onChange={(event) =>
                     setUserForm((prev) => ({ ...prev, name: event.target.value }))
