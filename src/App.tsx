@@ -17,12 +17,14 @@ import Teatro from './pages/Teatro';
 import TunaAcademica from './pages/TunaAcademica';
 import { appRoot } from './styles/ui';
 import InfoCulturaRouteTracker from './components/layout/InfoCulturaRouteTracker';
+import ToastViewport from './components/ui/ToastViewport';
 
 function App() {
   return (
     <BrowserRouter>
       <InfoCulturaRouteTracker />
       <div className={appRoot}>
+        <ToastViewport />
         <Routes>
           <Route path="/" element={<HomePage />} />
           <Route path="/vida-academica/noticias" element={<NoticiasPage />} />

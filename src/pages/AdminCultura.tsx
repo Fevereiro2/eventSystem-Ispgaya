@@ -471,7 +471,11 @@ function AdminCultura() {
     [canManageUsers, eventForm.status]
   );
   const selectedUser = useMemo(() => {
-    if (!userPage || userPage.mode === 'list' || userPage.mode === 'create') {
+    if (
+      !userPage ||
+      userPage.mode === 'list' ||
+      userPage.mode === 'create'
+    ) {
       return null;
     }
 
@@ -844,7 +848,13 @@ function AdminCultura() {
   function resetBookForm() {
     setBookForm({
       ...initialBookForm,
-      club_id: canManageUsers ? '' : currentUser?.club_id ? String(currentUser.club_id) : ''
+      club_id: canManageUsers
+        ? activityClubFilter !== 'all'
+          ? activityClubFilter
+          : ''
+        : currentUser?.club_id
+          ? String(currentUser.club_id)
+          : ''
     });
     setBookImageFileKey((prev) => prev + 1);
     setEditingBookId(null);
@@ -1882,6 +1892,19 @@ function AdminCultura() {
     event.preventDefault();
     if (!token) return;
 
+    const resolvedBookClubId = canManageUsers
+      ? (bookForm.club_id
+          ? Number(bookForm.club_id)
+          : activityClubFilter !== 'all'
+            ? Number(activityClubFilter)
+            : null)
+      : currentUser?.club_id ?? null;
+
+    if (!canManageUsers && !resolvedBookClubId) {
+      setBookFormError('O teu utilizador precisa de estar associado a um clube para criar livros.');
+      return;
+    }
+
     const payload: BookPayload = {
       title: bookForm.title.trim(),
       author: bookForm.author.trim(),
@@ -1890,7 +1913,7 @@ function AdminCultura() {
       cover_image: bookForm.cover_image.trim(),
       summary: bookForm.summary.trim(),
       is_featured: bookForm.is_featured,
-      ...(bookForm.club_id ? { club_id: Number(bookForm.club_id) } : {})
+      ...(resolvedBookClubId ? { club_id: resolvedBookClubId } : {})
     };
 
     if (!payload.title || !payload.author || !payload.summary || !payload.publication_year) {

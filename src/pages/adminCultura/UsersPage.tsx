@@ -198,6 +198,12 @@ function UsersPage({
                   >
                     {user.is_active ? 'Ativo' : 'Inativo'}
                   </span>
+                  <NavLink
+                    to={`/infocultura/utilizadores/${user.id}/perfil`}
+                    className={adminBtnSecondary}
+                  >
+                    Perfil
+                  </NavLink>
                   {canManageUsers ? (
                     <>
                       <NavLink
@@ -220,6 +226,110 @@ function UsersPage({
               </article>
             ))}
           </div>
+        </section>
+      </div>
+    );
+  }
+
+  if (userPage.mode === 'profile') {
+    return (
+      <div className="space-y-6">
+        <AdminPageHero
+          icon={Users}
+          title="Perfil de Utilizador"
+          description="Detalhe completo do acesso e da filiação do utilizador no InfoCultura."
+          tone="blue"
+          actions={
+            <NavLink to="/infocultura/utilizadores" className={adminBtnSecondary}>
+              Voltar aos utilizadores
+            </NavLink>
+          }
+        />
+
+        <section className={adminPanelCard}>
+          {!selectedUser ? (
+            <p className={adminInfo}>
+              {isLoadingUsers ? 'A carregar utilizador...' : 'Utilizador nao encontrado.'}
+            </p>
+          ) : (
+            <div className="space-y-6">
+              <div className="flex flex-wrap items-start justify-between gap-4">
+                <div>
+                  <h3 className={adminUserName}>{selectedUser.name}</h3>
+                  <p className={adminUserEmail}>{selectedUser.email}</p>
+                  <p className={adminUserMeta}>
+                    {selectedUser.role}
+                    {currentUser?.id === selectedUser.id ? ' · sessao atual' : ''}
+                  </p>
+                </div>
+                <span
+                  className={`${adminUserStatus} ${
+                    selectedUser.is_active ? adminUserStatusActive : adminUserStatusInactive
+                  }`}
+                >
+                  {selectedUser.is_active ? 'Ativo' : 'Inativo'}
+                </span>
+              </div>
+
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                  <p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">
+                    Email
+                  </p>
+                  <p className="mt-2 text-sm font-medium text-slate-900">{selectedUser.email}</p>
+                </div>
+                <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                  <p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">
+                    Função
+                  </p>
+                  <p className="mt-2 text-sm font-medium text-slate-900">{selectedUser.role}</p>
+                </div>
+                <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                  <p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">
+                    Clube
+                  </p>
+                  <p className="mt-2 text-sm font-medium text-slate-900">
+                    {selectedUser.club_name || 'Sem clube associado'}
+                  </p>
+                </div>
+                <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                  <p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">
+                    Estado
+                  </p>
+                  <p className="mt-2 text-sm font-medium text-slate-900">
+                    {selectedUser.is_active ? 'Conta ativa' : 'Conta inativa'}
+                  </p>
+                </div>
+                <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 md:col-span-2">
+                  <p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">
+                    Criado em
+                  </p>
+                  <p className="mt-2 text-sm font-medium text-slate-900">
+                    {formatAdminDateTime(selectedUser.created_at || '')}
+                  </p>
+                </div>
+              </div>
+
+              {canManageUsers ? (
+                <div className="flex flex-wrap gap-3">
+                  <NavLink
+                    to={`/infocultura/utilizadores/${selectedUser.id}/editar`}
+                    className={adminBtnEdit}
+                  >
+                    Editar utilizador
+                  </NavLink>
+                  {selectedUser.is_active && currentUser?.id !== selectedUser.id ? (
+                    <NavLink
+                      to={`/infocultura/utilizadores/${selectedUser.id}/desativar`}
+                      className={adminBtnDanger}
+                    >
+                      Desativar
+                    </NavLink>
+                  ) : null}
+                </div>
+              ) : null}
+            </div>
+          )}
         </section>
       </div>
     );

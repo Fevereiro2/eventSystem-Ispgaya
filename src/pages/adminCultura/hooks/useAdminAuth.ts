@@ -2,6 +2,7 @@ import { FormEvent } from 'react';
 
 import { loginInfoCultura, logoutInfoCultura } from '../../../api/infoculturaApi';
 import { TOKEN_KEY } from '../constants';
+import { pushToast } from '../../../utils/toast.js';
 
 type UseAdminAuthOptions = {
   authUser: string;
@@ -32,6 +33,11 @@ export function useAdminAuth({
       sessionStorage.setItem(TOKEN_KEY, nextToken);
       setAuthPass('');
       setAuthUser('');
+      pushToast({
+        title: 'Sessão iniciada',
+        message: 'O acesso ao painel foi autenticado com sucesso.',
+        tone: 'success'
+      });
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Credenciais invalidas.';
       setAuthError(message);
@@ -43,6 +49,11 @@ export function useAdminAuth({
     clearDomainState();
     setAuthUser('');
     setAuthPass('');
+    pushToast({
+      title: 'Sessão terminada',
+      message: 'A sessão foi encerrada com sucesso.',
+      tone: 'info'
+    });
   }
 
   return {
