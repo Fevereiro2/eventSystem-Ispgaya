@@ -240,7 +240,12 @@ import {
   toDateTimeLocalValue
 } from './adminCultura/utils';
 
+
+
+
+
 function AdminCultura() {
+
   const location = useLocation();
   const navigate = useNavigate();
   const { locale, setLocale } = useLocale();
@@ -2403,42 +2408,43 @@ function AdminCultura() {
               <div className={infoLegacyGrid}>
                 <div className={infoLegacyLeft}>
                   <div className={infoLegacyBlock}>
-                    <h3 className={infoLegacyBlockTitle}>Laboratorio Cultural</h3>
+                    <h3 className={infoLegacyBlockTitle}>
+                      {getLocaleText(locale, 'Laboratorio Cultural', 'Cultural Laboratory')}
+                    </h3>
                     <p className={infoLegacyBlockText}>
-                      A nossa abordagem cultural e interdisciplinar, promovendo criacao
-                      artistica, participacao academica e ligacao com a comunidade.
+                      {getLocaleText(locale, 'A nossa abordagem cultural e interdisciplinar, promovendo criacao artistica, participacao academica e ligacao com a comunidade.', 'Our cultural approach is interdisciplinary, promoting artistic creation, academic participation and connection with the community.')}
                     </p>
                     <ul className={infoLegacyBlockList}>
-                      <li>Organizar programacao cultural</li>
-                      <li>Atualizar noticias por area</li>
-                      <li>Gerir conteudo em rascunho e publicado</li>
+                      <li>{getLocaleText(locale, 'Organizar programacao cultural', 'Organize cultural programming')}</li>
+                      <li>{getLocaleText(locale, 'Atualizar noticias por area', 'Update news by area')}</li>
+                      <li>{getLocaleText(locale, 'Gerir conteudo em rascunho e publicado', 'Manage content in draft and published')}</li>
                     </ul>
                   </div>
 
                   <div className={infoLegacyBlock}>
-                    <h3 className={infoLegacyBlockTitle}>Primeiro acesso</h3>
+                    <h3 className={infoLegacyBlockTitle}>{getLocaleText(locale, 'Primeiro acesso', 'First Access')}</h3>
                     <p className={infoLegacyBlockText}>
-                      Se e a primeira vez a usar o portal, contacte a equipa tecnica para
-                      atribuicao de credenciais de administrador.
+                      {getLocaleText(locale, 'Se e a primeira vez a usar o portal, contacte a equipa tecnica para', 'If this is your first time using the portal, contact the technical team to')}
+                      {getLocaleText(locale, 'atribuicao de credenciais de administrador.', 'request administrator credentials.')}
                     </p>
                   </div>
                 </div>
 
                 <div className={infoLegacyRight}>
-                  <h2 className={infoLegacyLoginTitle}>Entrar</h2>
+                  <h2 className={infoLegacyLoginTitle}>{getLocaleText(locale, 'Entrar', 'Login')}</h2>
                   <p className={infoLegacyLoginHint}>
-                    Acesso reservado aos administradores do InfoCultura.
+                    {getLocaleText(locale, 'Acesso reservado aos administradores do InfoCultura.', 'Access reserved for InfoCultura administrators.')}
                   </p>
 
                   <form className={infoLegacyLoginForm} onSubmit={handleLogin}>
                     <div className={adminField}>
                       <label htmlFor="admin-user" className={adminLabel}>
-                        Utilizador
+                        {getLocaleText(locale, 'Utilizador', 'User')}
                       </label>
                       <input
                         id="admin-user"
                         className={infoLegacyInput}
-                        placeholder="Utilizador"
+                        placeholder={getLocaleText(locale, 'Utilizador', 'User')}
                         value={authUser}
                         onChange={(event) => setAuthUser(event.target.value)}
                       />
@@ -2446,13 +2452,13 @@ function AdminCultura() {
 
                     <div className={adminField}>
                       <label htmlFor="admin-pass" className={adminLabel}>
-                        Palavra-chave
+                        {getLocaleText(locale, 'Palavra-chave', 'Password')}
                       </label>
                       <input
                         id="admin-pass"
                         type="password"
                         className={infoLegacyInput}
-                        placeholder="Palavra-chave"
+                        placeholder={getLocaleText(locale, 'Palavra-chave', 'Password')}
                         value={authPass}
                         onChange={(event) => setAuthPass(event.target.value)}
                       />
@@ -2461,13 +2467,8 @@ function AdminCultura() {
                     {authError ? <p className={adminError}>{authError}</p> : null}
 
                     <button type="submit" className={infoLegacyPrimaryButton}>
-                      Entrar
+                      {getLocaleText(locale, 'Entrar', 'Login')}
                     </button>
-
-                    <p className={infoLegacyMeta}>
-                      Demo local: utilizador <strong>admin</strong> e password{' '}
-                      <strong>cultura2026</strong>.
-                    </p>
                   </form>
                 </div>
               </div>
@@ -2492,13 +2493,13 @@ function AdminCultura() {
           <div className={infoLegacyBrandWrap}>
             <img src={ispgayaLogo} alt="ISPGAYA" className={infoLegacyBrandLogo} />
             <div>
-              <p className={infoLegacyBrandText}>InfoCultura</p>
-              <p className={infoLegacyBrandSub}>Gestao cultural interna</p>
+              <p className={infoLegacyBrandText}>{getLocaleText(locale, 'InfoCultura', 'InfoCultura')}</p>
+              <p className={infoLegacyBrandSub}>{getLocaleText(locale, 'Gestao cultural interna', 'Internal Cultural Management')}</p>
             </div>
           </div>
           <div className="flex items-center gap-3">
             <button type="button" onClick={handleLogout} className={adminBtnSecondary}>
-              Terminar sessao
+              {getLocaleText(locale, 'Terminar sessao', 'End session')}
             </button>
             {renderLocaleToggle()}
           </div>
@@ -2512,8 +2513,8 @@ function AdminCultura() {
           <div className={adminPortalShell}>
             <aside className={adminPortalSidebar} aria-label="Menu lateral do painel">
               <div className={adminPortalSidebarHead}>
-                <p className={adminPortalSidebarBrand}>InfoCultura</p>
-                <p className={adminPortalSidebarSub}>Gestao cultural interna</p>
+                <p className={adminPortalSidebarBrand}>{getLocaleText(locale, 'InfoCultura', 'InfoCultura')}</p>
+                <p className={adminPortalSidebarSub}>{getLocaleText(locale, 'Gestao cultural interna', 'Internal Cultural Management')}</p>
               </div>
 
               {visibleSectionGroups.map((group) => (
@@ -2603,19 +2604,19 @@ function AdminCultura() {
                     disabled={notifications.length === 0}
                     onClick={markAllNotificationsAsRead}
                   >
-                    Marcar todas como lidas
+                    {getLocaleText(locale, 'Marcar todas como lidas', 'Mark all as read')}
                   </button>
                 }
               />
 
               <section className={adminPanelCard}>
                 {isLoadingNotifications ? (
-                  <p className={adminInfo}>A carregar notificacoes...</p>
+                  <p className={adminInfo}>{getLocaleText(locale, 'A carregar notificacoes...', 'Loading notifications...')}</p>
                 ) : null}
                 {notificationError ? <p className={adminError}>{notificationError}</p> : null}
 
                 {!isLoadingNotifications && latestNotifications.length === 0 ? (
-                  <p className={adminInfo}>Nao existem notificacoes para mostrar.</p>
+                  <p className={adminInfo}>{getLocaleText(locale, 'Nao existem notificacoes para mostrar.', 'There are no notifications to display.')}</p>
                 ) : null}
 
                 <div className="space-y-4">
@@ -2640,7 +2641,7 @@ function AdminCultura() {
                             </h3>
                             {!notification.isRead ? (
                               <span className="inline-flex items-center rounded-full bg-[#dd8609] px-2.5 py-1 text-xs font-semibold text-white">
-                                Nova
+                                {getLocaleText(locale, 'Nova', 'New')}
                               </span>
                             ) : null}
                             <span className="inline-flex items-center rounded-full bg-white/80 px-2.5 py-1 text-xs font-semibold uppercase tracking-[0.12em] text-slate-600">
@@ -2659,7 +2660,7 @@ function AdminCultura() {
                             className={adminBtnPrimary}
                             onClick={() => handleOpenNotification(notification)}
                           >
-                            Abrir
+                            {getLocaleText(locale, 'Abrir', 'Open')}
                           </button>
                           {!notification.isRead ? (
                             <button
@@ -2667,7 +2668,7 @@ function AdminCultura() {
                               className={adminBtnSecondary}
                               onClick={() => markNotificationAsRead(notification.id)}
                             >
-                              Marcar como lida
+                              {getLocaleText(locale, 'Marcar como lida', 'Mark as read')}
                             </button>
                           ) : null}
                         </div>
@@ -3162,8 +3163,8 @@ function AdminCultura() {
             <div className="space-y-6">
                 <AdminPageHero
                   icon={FolderKanban}
-                  title="Conteudos"
-                  description="Gestao editorial das areas permanentes do Laboratorio Cultural."
+                  title={getLocaleText(locale, 'Conteudos', 'Contents')}
+                  description={getLocaleText(locale, 'Gestao editorial das areas permanentes do Laboratorio Cultural.', 'Editorial management of the permanent areas of the Cultural Laboratory.')}
                   tone="emerald"
                   stats={contentOverviewStats}
                 />
@@ -3171,16 +3172,16 @@ function AdminCultura() {
               {showContentForm ? (
               <form id="content-form" onSubmit={handleSaveContent} className={adminPanelForm}>
                 <h2 className={blockTitle}>
-                  {editingId ? 'Editar Conteudo' : 'Novo Conteudo'}
+                  {editingId ? getLocaleText(locale, 'Editar Conteudo', 'Edit Content') : getLocaleText(locale, 'Novo Conteudo', 'New Content')}
                 </h2>
                 <p className={blockText}>
-                  Cria ou atualiza conteudo para as paginas do Laboratorio Cultural.
+                  {getLocaleText(locale, 'Cria ou atualiza conteudo para as paginas do Laboratorio Cultural.', 'Create or update content for the pages of the Cultural Laboratory.')}
                 </p>
 
                 <div className={adminFormGridSpaced}>
                   <div className={adminField}>
                     <label className={adminLabel} htmlFor="area">
-                      Area
+                      {getLocaleText(locale, 'Area', 'Area')}
                     </label>
                     <select
                       id="area"
@@ -3193,15 +3194,15 @@ function AdminCultura() {
                         }))
                       }
                     >
-                      <option value="tuna">Tuna Academica</option>
-                      <option value="clube-leitura">Clube de Leitura</option>
-                      <option value="teatro">Teatro</option>
+                      <option value="tuna">{getLocaleText(locale, 'Tuna Academica', 'Academic Tuna')}</option>
+                      <option value="clube-leitura">{getLocaleText(locale, 'Clube de Leitura', 'Reading Club')}</option>
+                      <option value="teatro">{getLocaleText(locale, 'Teatro', 'Theater')}</option>
                     </select>
                   </div>
 
                   <div className={adminField}>
                     <label className={adminLabel} htmlFor="date">
-                      Data
+                      {getLocaleText(locale, 'Data', 'Date')}
                     </label>
                     <input
                       id="date"
@@ -3216,7 +3217,7 @@ function AdminCultura() {
 
                   <div className={adminField}>
                     <label className={adminLabel} htmlFor="title">
-                      Titulo
+                      {getLocaleText(locale, 'Titulo', 'Title')}
                     </label>
                     <input
                       id="title"
@@ -3230,7 +3231,7 @@ function AdminCultura() {
 
                   <div className={adminField}>
                     <label className={adminLabel} htmlFor="status">
-                      Estado
+                      {getLocaleText(locale, 'Estado', 'Status')}
                     </label>
                     <select
                       id="status"
@@ -3243,15 +3244,15 @@ function AdminCultura() {
                         }))
                       }
                     >
-                      <option value="rascunho">Rascunho</option>
-                      <option value="publicado">Publicado</option>
+                      <option value="rascunho">{getLocaleText(locale, 'Rascunho', 'Draft')}</option>
+                      <option value="publicado">{getLocaleText(locale, 'Publicado', 'Published')}</option>
                     </select>
                   </div>
                 </div>
 
                 <div className={adminFieldSpaced}>
                   <label className={adminLabel} htmlFor="description">
-                    Descricao
+                    {getLocaleText(locale, 'Descricao', 'Description')}
                   </label>
                   <textarea
                     id="description"
@@ -3270,14 +3271,14 @@ function AdminCultura() {
                     className={adminBtnPrimary}
                     disabled={isSavingContent}
                   >
-                    {isSavingContent ? 'A guardar...' : editingId ? 'Atualizar' : 'Criar'}
+                    {isSavingContent ? 'A guardar...'  : editingId ? 'Atualizar' : 'Criar'}
                   </button>
                   <button
                     type="button"
                     onClick={resetContentForm}
                     className={adminBtnSecondary}
                   >
-                    Limpar
+                    {getLocaleText(locale, 'Limpar', 'Clear')}
                   </button>
                 </div>
               </form>
@@ -3286,7 +3287,7 @@ function AdminCultura() {
               {showContentList ? (
               <div id="content-list" className={adminList}>
                 {isLoadingItems ? (
-                  <p className={adminInfo}>A carregar conteudos...</p>
+                  <p className={adminInfo}> {getLocaleText(locale, 'A carregar conteudos...', 'Loading content...')}</p>  
                 ) : null}
                 {sortedItems.map((item) => (
                   <article key={item.id} className={adminListItem}>
@@ -3307,7 +3308,7 @@ function AdminCultura() {
                         className={adminBtnEdit}
                         onClick={() => handleEditContent(item)}
                       >
-                        Editar
+                        {getLocaleText(locale, 'Editar', 'Edit')}
                       </button>
                       <button
                         type="button"
@@ -3315,7 +3316,7 @@ function AdminCultura() {
                         disabled={deletingId === item.id}
                         onClick={() => handleDeleteContent(item.id)}
                       >
-                        {deletingId === item.id ? 'A apagar...' : 'Apagar'}
+                        {getLocaleText(locale, 'Apagar', 'Delete')}
                       </button>
                     </div>
                   </article>
@@ -3331,8 +3332,8 @@ function AdminCultura() {
 
       <footer className={infoLegacyFooter}>
         <div className={infoLegacyFooterInner}>
-          <span>2026 · Instituto Superior Politecnico Gaya</span>
-          <span>InfoCultura</span>
+          <span>2026 · Instituto Superior Politecnico Gaya  </span>
+          <span>InfoCultura </span>
         </div>
       </footer>
     </div>
