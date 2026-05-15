@@ -45,7 +45,7 @@ function EventosPage() {
     return () => {
       active = false;
     };
-  }, []);
+  }, [locale]);
 
   const sortedEvents = useMemo(
     () =>

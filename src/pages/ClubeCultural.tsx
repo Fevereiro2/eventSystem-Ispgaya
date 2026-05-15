@@ -68,15 +68,15 @@ function matchesClubTerms(name: string, terms: string[]): boolean {
   return terms.some((term) => label.includes(normalizeLabel(term)));
 }
 
-function formatDate(value?: string | null): string {
-  if (!value) return 'Sem data';
+function formatDate(value?: string | null, locale: 'pt' | 'en' = 'pt'): string {
+  if (!value) return getLocaleText(locale, 'Sem data', 'No date');
 
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) {
     return value;
   }
 
-  return new Intl.DateTimeFormat('pt-PT', {
+  return new Intl.DateTimeFormat(locale === 'en' ? 'en-GB' : 'pt-PT', {
     dateStyle: 'medium',
     timeStyle: value.includes('T') ? 'short' : undefined
   }).format(date);
@@ -169,7 +169,7 @@ function ClubeCultural({
     return () => {
       active = false;
     };
-  }, [clubId, clubSearchTerms]);
+  }, [clubId, clubSearchTerms, locale]);
 
   const filteredNews = useMemo(
     () => newsItems.filter((item) => isOnOrAfterDate(item.published_at, fromDate)),
@@ -193,12 +193,12 @@ function ClubeCultural({
     [books, featuredOnly]
   );
 
-  const title = pageTitle || club?.name || 'Clube Cultural';
+  const title = pageTitle || club?.name || getLocaleText(locale, 'Clube Cultural', 'Cultural Club');
   const description =
     pageDescription ||
     club?.mission ||
     club?.description ||
-    'Pagina publica do clube cultural.';
+    getLocaleText(locale, 'Pagina publica do clube cultural.', 'Public page for the cultural club.');
   const currentHref =
     routePath || (clubId ? `/laboratorio-cultural/clubes/${clubId}` : '/laboratorio-cultural');
 
@@ -234,7 +234,7 @@ function ClubeCultural({
       <Breadcrumbs
         title={title}
         description={description}
-        parentLabel={getLocaleText(locale, 'Laboratorio Cultural', 'Cultural Lab')}
+        parentLabel={getLocaleText(locale, 'Laboratório Cultural', 'Cultural Lab')}
         parentHref="/laboratorio-cultural"
         currentLabel={title}
         currentHref={currentHref}
@@ -311,7 +311,7 @@ function ClubeCultural({
 
                   <div className={adminField}>
                     <label className={adminLabel} htmlFor="club-filter-featured">
-                      Livros em destaque
+                      {getLocaleText(locale, 'Livros em destaque', 'Featured books')}
                     </label>
                     <select
                       id="club-filter-featured"
@@ -376,7 +376,7 @@ function ClubeCultural({
 
                   {filteredNews.length > 0 ? (
                     <div className="mt-8">
-                      <h3 className={blockTitle}>{getLocaleText(locale, 'Noticias', 'News')}</h3>
+                      <h3 className={blockTitle}>{getLocaleText(locale, 'Notícias', 'News')}</h3>
                       <div className={contentItems}>
                         {filteredNews.map((item) => (
                           <article key={item.id} className={contentItemCard}>
@@ -391,7 +391,7 @@ function ClubeCultural({
                               <h4 className={contentItemTitle}>{item.title}</h4>
                               <span className={contentItemStatus}>{item.news_status_name}</span>
                             </div>
-                            <p className={contentItemDate}>{formatDate(item.published_at)}</p>
+                            <p className={contentItemDate}>{formatDate(item.published_at, locale)}</p>
                             <p className={contentItemDesc}>{item.summary}</p>
                             <Link
                               to={`/laboratorio-cultural/noticias/${item.id}`}
@@ -407,7 +407,7 @@ function ClubeCultural({
 
                   {filteredSessions.length > 0 ? (
                     <div className="mt-8">
-                      <h3 className={blockTitle}>{getLocaleText(locale, 'Sessoes', 'Sessions')}</h3>
+                      <h3 className={blockTitle}>{getLocaleText(locale, 'Sessões', 'Sessions')}</h3>
                       <div className={contentItems}>
                         {filteredSessions.map((item) => (
                           <article key={item.id} className={contentItemCard}>
@@ -416,7 +416,7 @@ function ClubeCultural({
                               <span className={contentItemStatus}>{item.name}</span>
                             </div>
                             <p className={contentItemDate}>
-                              {formatDate(item.session_date)} · {formatDate(item.start_date)}
+                              {formatDate(item.session_date, locale)} · {formatDate(item.start_date, locale)}
                             </p>
                             <p className={contentItemDesc}>{item.description}</p>
                             <Link
@@ -449,8 +449,8 @@ function ClubeCultural({
                               <span className={contentItemStatus}>{item.status}</span>
                             </div>
                             <p className={contentItemDate}>
-                              {formatDate(item.event_date)} ·{' '}
-                                {item.location || item.city || getLocaleText(locale, 'Local por definir', 'Location to be defined')}
+                              {formatDate(item.event_date, locale)} ·{' '}
+                              {item.location || item.city || getLocaleText(locale, 'Local por definir', 'Location to be defined')}
                             </p>
                             <p className={contentItemDesc}>{item.description}</p>
                             {item.categories.length > 0 ? (

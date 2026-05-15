@@ -45,7 +45,7 @@ function NoticiasPage() {
     return () => {
       active = false;
     };
-  }, []);
+  }, [locale]);
 
   const sortedNews = useMemo(
     () =>
