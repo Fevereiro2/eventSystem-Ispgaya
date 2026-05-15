@@ -18,7 +18,7 @@ from ..core.security import (
 from ..core.utils import get_client_ip
 from ..models import AppUser, Role
 from ..service_modules.audit import record_admin_audit_action
-from .admin.common import AdminAuditMixin
+from .admin.common import AdminAuditMixin, get_allowed_club_id
 from ..api.response_builders import apply_date_range_filters, build_csv_response
 
 
@@ -159,7 +159,11 @@ class AdminUserListCreateView(AdminAuditMixin, generics.ListCreateAPIView):
 
     def get_queryset(self):
         queryset = AppUser.objects.select_related("role", "club")
+        allowed_club_id = get_allowed_club_id(self.request.user)
         search = (self.request.query_params.get("search") or "").strip()
+
+        if allowed_club_id is not None:
+            queryset = queryset.filter(club_id=allowed_club_id)
 
         if search:
             queryset = queryset.filter(
@@ -213,6 +217,15 @@ class AdminUserDetailView(AdminAuditMixin, generics.RetrieveUpdateAPIView):
         if self.request.method == "GET":
             return UserSerializer
         return AdminUserWriteSerializer
+
+    def get_queryset(self):
+        queryset = AppUser.objects.select_related("role", "club")
+        allowed_club_id = get_allowed_club_id(self.request.user)
+
+        if allowed_club_id is not None:
+            return queryset.filter(club_id=allowed_club_id)
+
+        return queryset
 
     def update(self, request, *args, **kwargs):
         user = self.get_object()

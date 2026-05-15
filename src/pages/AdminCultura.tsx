@@ -10,6 +10,7 @@ import { Bell, FolderKanban } from 'lucide-react';
 import { NavLink, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import infoCulturaBg from '../assets/19825874_uqliU.jpeg';
 import ispgayaLogo from '../assets/ispgaya-logo.svg';
+import { getLocaleText, useLocale } from '../i18n/locale.js';
 import {
   adminActions,
   adminBtnDanger,
@@ -242,6 +243,7 @@ import {
 function AdminCultura() {
   const location = useLocation();
   const navigate = useNavigate();
+  const { locale, setLocale } = useLocale();
   const [authUser, setAuthUser] = useState('');
   const [authPass, setAuthPass] = useState('');
   const [authError, setAuthError] = useState('');
@@ -471,12 +473,43 @@ function AdminCultura() {
     [canManageUsers, eventForm.status]
   );
   const selectedUser = useMemo(() => {
-    if (!userPage || userPage.mode === 'list' || userPage.mode === 'create') {
+    if (
+      !userPage ||
+      userPage.mode === 'list' ||
+      userPage.mode === 'create'
+    ) {
       return null;
     }
 
     return users.find((user) => user.id === userPage.userId) || null;
   }, [userPage, users]);
+
+  function renderLocaleToggle() {
+    return (
+      <div className={infoLegacyLang}>
+        <button
+          type="button"
+          title={getLocaleText(locale, 'Idioma', 'Language')}
+          aria-pressed={locale === 'pt'}
+          className={locale === 'pt' ? 'font-bold text-slate-900' : 'text-slate-500'}
+          onClick={() => setLocale('pt')}
+        >
+          PT
+        </button>
+        <span className="px-2 text-slate-300">|</span>
+        <button
+          type="button"
+          title={getLocaleText(locale, 'Idioma', 'Language')}
+          aria-pressed={locale === 'en'}
+          className={locale === 'en' ? 'font-bold text-slate-900' : 'text-slate-500'}
+          onClick={() => setLocale('en')}
+        >
+          EN
+        </button>
+      </div>
+    );
+  }
+
   const publishedItems = useMemo(
     () => items.filter((item) => item.status === 'publicado').length,
     [items]
@@ -844,7 +877,13 @@ function AdminCultura() {
   function resetBookForm() {
     setBookForm({
       ...initialBookForm,
-      club_id: canManageUsers ? '' : currentUser?.club_id ? String(currentUser.club_id) : ''
+      club_id: canManageUsers
+        ? activityClubFilter !== 'all'
+          ? activityClubFilter
+          : ''
+        : currentUser?.club_id
+          ? String(currentUser.club_id)
+          : ''
     });
     setBookImageFileKey((prev) => prev + 1);
     setEditingBookId(null);
@@ -1882,6 +1921,19 @@ function AdminCultura() {
     event.preventDefault();
     if (!token) return;
 
+    const resolvedBookClubId = canManageUsers
+      ? (bookForm.club_id
+          ? Number(bookForm.club_id)
+          : activityClubFilter !== 'all'
+            ? Number(activityClubFilter)
+            : null)
+      : currentUser?.club_id ?? null;
+
+    if (!canManageUsers && !resolvedBookClubId) {
+      setBookFormError('O teu utilizador precisa de estar associado a um clube para criar livros.');
+      return;
+    }
+
     const payload: BookPayload = {
       title: bookForm.title.trim(),
       author: bookForm.author.trim(),
@@ -1890,7 +1942,7 @@ function AdminCultura() {
       cover_image: bookForm.cover_image.trim(),
       summary: bookForm.summary.trim(),
       is_featured: bookForm.is_featured,
-      ...(bookForm.club_id ? { club_id: Number(bookForm.club_id) } : {})
+      ...(resolvedBookClubId ? { club_id: resolvedBookClubId } : {})
     };
 
     if (!payload.title || !payload.author || !payload.summary || !payload.publication_year) {
@@ -2342,7 +2394,7 @@ function AdminCultura() {
                   <p className={infoLegacyBrandSub}>Gestao cultural interna</p>
                 </div>
               </div>
-              <p className={infoLegacyLang}>PT | EN</p>
+              {renderLocaleToggle()}
             </div>
           </header>
 
@@ -2448,7 +2500,7 @@ function AdminCultura() {
             <button type="button" onClick={handleLogout} className={adminBtnSecondary}>
               Terminar sessao
             </button>
-            <p className={infoLegacyLang}>PT | EN</p>
+            {renderLocaleToggle()}
           </div>
         </div>
       </header>

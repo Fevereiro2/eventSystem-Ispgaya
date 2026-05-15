@@ -4,6 +4,7 @@ import {
   InfoCulturaNews,
   InfoCulturaRegistration,
 } from './types.js';
+import { pushToast } from '../utils/toast.js';
 
 const clientEnv = (import.meta as ImportMeta & { env?: Record<string, string> }).env;
 const API_BASE = (clientEnv?.VITE_INFOCULTURA_API || 'http://127.0.0.1:8001/api').replace(
@@ -101,6 +102,24 @@ function extractApiErrorMessage(body: unknown): string | null {
   return fieldMessages.length > 0 ? fieldMessages.join(' ') : null;
 }
 
+function notifyApiError(message: string, status: number): void {
+  const tone = status >= 500 ? 'error' : status === 403 ? 'warning' : 'error';
+  const title =
+    status === 401
+      ? 'Sessão expirada'
+      : status === 403
+        ? 'Sem permissão'
+        : status === 404
+          ? 'Recurso não encontrado'
+          : 'Erro';
+
+  pushToast({
+    title,
+    message,
+    tone
+  });
+}
+
 let refreshTokenPromise: Promise<string | null> | null = null;
 
 async function refreshInfoCulturaToken(): Promise<string | null> {
@@ -182,6 +201,8 @@ export async function request<T>(
       // ignore parse errors and use default message
     }
 
+    notifyApiError(message, response.status);
+
     throw new InfoCulturaApiError(message, response.status);
   }
 
@@ -233,6 +254,7 @@ export async function requestBlob(
     } catch {
       // ignore
     }
+    notifyApiError(message, response.status);
     throw new InfoCulturaApiError(message, response.status);
   }
 
