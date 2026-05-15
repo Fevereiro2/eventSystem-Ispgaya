@@ -18,31 +18,31 @@ import {
   InfoCulturaMetricsOverview,
 } from '../../../api/infoculturaApi.js';
 import { getLocaleText, useLocale } from '../../../i18n/locale.js';
-const localeCtx = useLocale();
-const locale = localeCtx.locale;
 
-const PERIOD_LABELS: Record<'day' | 'week' | 'month', string> = {
-  day: getLocaleText(locale, 'Dia', 'Day'),
-  week: getLocaleText(locale, 'Semana', 'Week'),
-  month: getLocaleText(locale, 'Mês', 'Month'),
-};
+function getPeriodLabel(locale: 'pt' | 'en', period: 'day' | 'week' | 'month'): string {
+  const labels = {
+    day: getLocaleText(locale, 'Dia', 'Day'),
+    week: getLocaleText(locale, 'Semana', 'Week'),
+    month: getLocaleText(locale, 'Mês', 'Month'),
+  } as const;
 
+  return labels[period];
+}
 
+function getSectionLabel(locale: 'pt' | 'en', value: string): string {
+  const labels: Record<string, string> = {
+    home: getLocaleText(locale, 'Início', 'Home'),
+    news: getLocaleText(locale, 'Notícias', 'News'),
+    events: getLocaleText(locale, 'Eventos', 'Events'),
+    research: getLocaleText(locale, 'Investigação', 'Research'),
+    laboratory: getLocaleText(locale, 'Laboratório Cultural', 'Cultural Laboratory'),
+    agenda: getLocaleText(locale, 'Agenda', 'Agenda'),
+    clubs: getLocaleText(locale, 'Clubes', 'Clubs'),
+    books: getLocaleText(locale, 'Livros', 'Books'),
+    sessions: getLocaleText(locale, 'Sessões', 'Sessions'),
+  };
 
-const SECTION_LABELS: Record<string, string> = {
-  home: getLocaleText(locale, 'Início', 'Home'),
-  news: getLocaleText(locale, 'Notícias', 'News'),
-  events: getLocaleText(locale, 'Eventos', 'Events'),
-  research: getLocaleText(locale, 'Investigação', 'Research'),
-  laboratory: getLocaleText(locale, 'Laboratório Cultural', 'Cultural Laboratory'),
-  agenda: getLocaleText(locale, 'Agenda', 'Agenda'),
-  clubs: getLocaleText(locale, 'Clubes', 'Clubs'),
-  books: getLocaleText(locale, 'Livros', 'Books'),
-  sessions: getLocaleText(locale, 'Sessões', 'Sessions'),
-};
-
-function getSectionLabel(value: string): string {
-  return SECTION_LABELS[value] || value;
+  return labels[value] || value;
 }
 
 function formatShortDate(value: string | null): string {
@@ -56,6 +56,7 @@ function formatShortDate(value: string | null): string {
 }
 
 function MetricBars({ overview }: { overview: InfoCulturaMetricsOverview | null }) {
+  const { locale } = useLocale();
   const maxValue = Math.max(1, ...(overview?.series.map((point) => point.value) || [1]));
   return (
     <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
@@ -63,7 +64,9 @@ function MetricBars({ overview }: { overview: InfoCulturaMetricsOverview | null 
         <div>
           <h3 className="text-2xl font-semibold text-slate-900">{getLocaleText(locale, 'Evolução', 'Evolution')}</h3>
           <p className="mt-1 text-sm text-slate-600">
-            {overview ? `Janela atual: ${PERIOD_LABELS[overview.period as 'day' | 'week' | 'month'] || overview.period}` : 'Sem dados.'}
+            {overview
+              ? `Janela atual: ${getPeriodLabel(locale, overview.period as 'day' | 'week' | 'month') || overview.period}`
+              : getLocaleText(locale, 'Sem dados.', 'No data.')}
           </p>
         </div>
       </div>
@@ -105,6 +108,7 @@ function MetricBars({ overview }: { overview: InfoCulturaMetricsOverview | null 
 }
 
 function MetricsPage() {
+  const { locale } = useLocale();
   const token = getStoredAccessToken();
   const [period, setPeriod] = useState<'day' | 'week' | 'month'>('week');
   const [overview, setOverview] = useState<InfoCulturaMetricsOverview | null>(null);
@@ -192,7 +196,7 @@ function MetricsPage() {
                 }
                 onClick={() => setPeriod(item)}
               >
-                {PERIOD_LABELS[item]}
+                {getPeriodLabel(locale, item)}
               </button>
             ))}
           </div>
@@ -234,8 +238,8 @@ function MetricsPage() {
                 <article key={`${item.page_path}-${index}`} className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
                   <div className="flex items-start justify-between gap-4">
                     <div className="min-w-0">
-                      <p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">
-                        {getSectionLabel(item.section)}
+                        <p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">
+                        {getSectionLabel(locale, item.section)}
                       </p>
                       <h4 className="mt-1 truncate text-base font-semibold text-slate-900">
                         {item.title}
@@ -265,9 +269,9 @@ function MetricsPage() {
         <h3 className="text-2xl font-semibold text-slate-900">{getLocaleText(locale, 'Distribuição por secção', 'Distribution by Section')}</h3>
         <div className="mt-6 space-y-4">
           {sectionRows.length > 0 ? (
-            sectionRows.map((item) => (
+              sectionRows.map((item) => (
               <div key={item.section} className="grid grid-cols-[120px_minmax(0,1fr)_60px] items-center gap-3">
-                  <p className="text-sm font-medium text-slate-700">{getSectionLabel(item.section)}</p>
+                <p className="text-sm font-medium text-slate-700">{getSectionLabel(locale, item.section)}</p>
                 <div className="h-3 rounded-full bg-slate-100">
                   <div
                     className="h-3 rounded-full bg-[#dd8609]"
