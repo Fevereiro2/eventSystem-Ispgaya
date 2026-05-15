@@ -46,8 +46,6 @@ type AdminHeroStat = { label: string; value: string | number };
 
 type ClubsPageProps = {
   clubsOverviewStats: AdminHeroStat[];
-  isExportingClubs: boolean;
-  handleExportClubsCsv: () => void | Promise<void>;
   handleSaveClub: (event: FormEvent<HTMLFormElement>) => void;
   clubForm: ClubFormState;
   setClubForm: Dispatch<SetStateAction<ClubFormState>>;
@@ -81,8 +79,6 @@ type ClubsPageProps = {
 
 function ClubsPage({
   clubsOverviewStats,
-  isExportingClubs,
-  handleExportClubsCsv,
   handleSaveClub,
   clubForm,
   setClubForm,
@@ -121,16 +117,6 @@ function ClubsPage({
         description="Estrutura interna dos clubes, estados de atividade e configuracao de inscricoes."
         tone="amber"
         stats={clubsOverviewStats}
-        actions={
-          <button
-            type="button"
-            className={adminBtnSecondary}
-            onClick={() => void handleExportClubsCsv()}
-            disabled={isExportingClubs}
-          >
-            {isExportingClubs ? 'A exportar...' : 'Exportar CSV'}
-          </button>
-        }
       />
 
       <form onSubmit={handleSaveClub} className={adminPanelForm}>

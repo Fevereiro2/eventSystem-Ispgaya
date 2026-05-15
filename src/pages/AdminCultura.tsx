@@ -108,11 +108,6 @@ import {
   deleteAdminEvent,
   deleteAdminNews,
   deleteAdminSession,
-  exportAdminBooksCsv,
-  exportAdminEventsCsv,
-  exportAdminNewsCsv,
-  exportAdminRegistrationsCsv,
-  exportAdminSessionsCsv,
   fetchAdminDashboard,
   fetchAdminNotifications,
   InfoCulturaAdminNotification,
@@ -213,8 +208,6 @@ import {
   UserFormState,
 } from './adminCultura/types';
 import {
-  downloadBlobFile,
-  escapeCsvValue,
   formatAdminDateTime,
   getActivityRoute,
   getActivitySubpage,
@@ -379,11 +372,6 @@ function AdminCultura() {
   const [registrationTotalPages, setRegistrationTotalPages] = useState(0);
   const [selectedRegistrationIds, setSelectedRegistrationIds] = useState<number[]>([]);
   const [bulkRegistrationStatus, setBulkRegistrationStatus] = useState('approved');
-  const [isExportingNews, setIsExportingNews] = useState(false);
-  const [isExportingActivities, setIsExportingActivities] = useState(false);
-  const [isExportingUsers, setIsExportingUsers] = useState(false);
-  const [isExportingClubs, setIsExportingClubs] = useState(false);
-  const [isExportingRegistrations, setIsExportingRegistrations] = useState(false);
   const [isApplyingBulkNews, setIsApplyingBulkNews] = useState(false);
   const [isApplyingBulkEvents, setIsApplyingBulkEvents] = useState(false);
   const [isApplyingBulkRegistrations, setIsApplyingBulkRegistrations] = useState(false);
@@ -929,171 +917,6 @@ function AdminCultura() {
     event.preventDefault();
     setActivityPage(1);
     setActivitySearch(activitySearchInput.trim());
-  }
-
-  async function handleExportNewsCsv() {
-    if (!token) return;
-
-    setIsExportingNews(true);
-    setNewsError('');
-
-    try {
-      const blob = await exportAdminNewsCsv(token, {
-        clubId: canManageUsers && newsClubFilter !== 'all' ? Number(newsClubFilter) : undefined,
-        status: newsStatusFilter,
-        search: newsSearch,
-        ordering: newsOrder,
-        dateFrom: newsDateFrom,
-        dateTo: newsDateTo
-      });
-      downloadBlobFile(blob, 'infocultura-news.csv');
-    } catch (error) {
-      const message =
-        error instanceof Error ? error.message : 'Nao foi possivel exportar as noticias.';
-      setNewsError(message);
-    } finally {
-      setIsExportingNews(false);
-    }
-  }
-
-  async function handleExportActivitiesCsv() {
-    if (!token) return;
-
-    setIsExportingActivities(true);
-    setActivityError('');
-
-    const clubId =
-      canManageUsers && activityClubFilter !== 'all' ? Number(activityClubFilter) : undefined;
-
-    try {
-      const blob =
-        activityTab === 'books'
-          ? await exportAdminBooksCsv(token, {
-              clubId,
-              search: activitySearch,
-              ordering: activityOrder,
-              dateFrom: activityDateFrom,
-              dateTo: activityDateTo
-            })
-          : activityTab === 'sessions'
-            ? await exportAdminSessionsCsv(token, {
-                clubId,
-                search: activitySearch,
-                ordering: activityOrder,
-                dateFrom: activityDateFrom,
-                dateTo: activityDateTo
-              })
-            : await exportAdminEventsCsv(token, {
-                clubId,
-                categoryId:
-                  activityCategoryFilter !== 'all'
-                    ? Number(activityCategoryFilter)
-                    : undefined,
-                status: activityStatusFilter,
-                search: activitySearch,
-                ordering: activityOrder,
-                dateFrom: activityDateFrom,
-                dateTo: activityDateTo
-              });
-
-      const filename =
-        activityTab === 'books'
-          ? 'infocultura-books.csv'
-          : activityTab === 'sessions'
-            ? 'infocultura-sessions.csv'
-            : 'infocultura-events.csv';
-      downloadBlobFile(blob, filename);
-    } catch (error) {
-      const message =
-        error instanceof Error ? error.message : 'Nao foi possivel exportar a lista atual.';
-      setActivityError(message);
-    } finally {
-      setIsExportingActivities(false);
-    }
-  }
-
-  async function handleExportUsersCsv() {
-    setIsExportingUsers(true);
-    setPanelError('');
-
-    try {
-      const rows = [
-        ['id', 'name', 'email', 'role', 'club', 'is_active', 'created_at'],
-        ...filteredUsers.map((user) => [
-          user.id,
-          user.name,
-          user.email,
-          user.role,
-          user.club_name || '',
-          user.is_active ? 'sim' : 'nao',
-          user.created_at || ''
-        ])
-      ];
-      const csvText = rows.map((row) => row.map((value) => escapeCsvValue(value)).join(',')).join('\n');
-      downloadBlobFile(new Blob([csvText], { type: 'text/csv;charset=utf-8' }), 'infocultura-users.csv');
-    } catch (error) {
-      const message =
-        error instanceof Error ? error.message : 'Nao foi possivel exportar os utilizadores.';
-      setPanelError(message);
-    } finally {
-      setIsExportingUsers(false);
-    }
-  }
-
-  async function handleExportClubsCsv() {
-    setIsExportingClubs(true);
-    setPanelError('');
-
-    try {
-      const rows = [
-        ['id', 'name', 'description', 'mission', 'is_active', 'enable_registrations', 'created_at'],
-        ...filteredClubs.map((club) => [
-          club.id,
-          club.name,
-          club.description,
-          club.mission,
-          club.is_active ? 'sim' : 'nao',
-          club.enable_registrations ? 'sim' : 'nao',
-          club.created_at || ''
-        ])
-      ];
-      const csvText = rows.map((row) => row.map((value) => escapeCsvValue(value)).join(',')).join('\n');
-      downloadBlobFile(new Blob([csvText], { type: 'text/csv;charset=utf-8' }), 'infocultura-clubs.csv');
-    } catch (error) {
-      const message =
-        error instanceof Error ? error.message : 'Nao foi possivel exportar os clubes.';
-      setPanelError(message);
-    } finally {
-      setIsExportingClubs(false);
-    }
-  }
-
-  async function handleExportRegistrationsCsv() {
-    if (!token) return;
-
-    setIsExportingRegistrations(true);
-    setRegistrationError('');
-
-    try {
-      const blob = await exportAdminRegistrationsCsv(token, {
-        clubId:
-          canManageUsers && registrationClubFilter !== 'all'
-            ? Number(registrationClubFilter)
-            : undefined,
-        status: registrationStatusFilter,
-        search: registrationSearch,
-        ordering: registrationOrder,
-        dateFrom: registrationDateFrom,
-        dateTo: registrationDateTo
-      });
-      downloadBlobFile(blob, 'infocultura-registrations.csv');
-    } catch (error) {
-      const message =
-        error instanceof Error ? error.message : 'Nao foi possivel exportar as inscricoes.';
-      setRegistrationError(message);
-    } finally {
-      setIsExportingRegistrations(false);
-    }
   }
 
   function toggleSelectedId(setter: Dispatch<SetStateAction<number[]>>, id: number) {
@@ -2685,8 +2508,6 @@ function AdminCultura() {
             <UsersPage
               userPage={userPage}
               canManageUsers={canManageUsers}
-              isExportingUsers={isExportingUsers}
-              handleExportUsersCsv={handleExportUsersCsv}
               userOverviewStats={userOverviewStats}
               isLoadingUsers={isLoadingUsers}
               filteredUsers={filteredUsers}
@@ -2714,8 +2535,6 @@ function AdminCultura() {
           {activeSection === 'clubes' ? (
             <ClubsPage
               clubsOverviewStats={clubsOverviewStats}
-              isExportingClubs={isExportingClubs}
-              handleExportClubsCsv={handleExportClubsCsv}
               handleSaveClub={handleSaveClub}
               clubForm={clubForm}
               setClubForm={setClubForm}
@@ -2752,8 +2571,6 @@ function AdminCultura() {
             <NewsPage
               canManageUsers={canManageUsers}
               newsOverviewStats={newsOverviewStats}
-              isExportingNews={isExportingNews}
-              handleExportNewsCsv={handleExportNewsCsv}
               showNewsForm={showNewsForm}
               showNewsList={showNewsList}
               handleSaveNews={handleSaveNews}
@@ -2811,8 +2628,6 @@ function AdminCultura() {
               activitySectionLabel={activitySectionLabel}
               activitySectionDescription={activitySectionDescription}
               activityOverviewStats={activityOverviewStats}
-              isExportingActivities={isExportingActivities}
-              handleExportActivitiesCsv={handleExportActivitiesCsv}
               showActivityFiltersAndList={showActivityFiltersAndList}
               canManageUsers={canManageUsers}
               clubs={clubs}
@@ -2914,8 +2729,6 @@ function AdminCultura() {
               activitySectionLabel={activitySectionLabel}
               activitySectionDescription={activitySectionDescription}
               activityOverviewStats={activityOverviewStats}
-              isExportingActivities={isExportingActivities}
-              handleExportActivitiesCsv={handleExportActivitiesCsv}
               showActivityFiltersAndList={showActivityFiltersAndList}
               canManageUsers={canManageUsers}
               clubs={clubs}
@@ -3016,8 +2829,6 @@ function AdminCultura() {
               activitySectionLabel={activitySectionLabel}
               activitySectionDescription={activitySectionDescription}
               activityOverviewStats={activityOverviewStats}
-              isExportingActivities={isExportingActivities}
-              handleExportActivitiesCsv={handleExportActivitiesCsv}
               showActivityFiltersAndList={showActivityFiltersAndList}
               canManageUsers={canManageUsers}
               clubs={clubs}
@@ -3116,8 +2927,6 @@ function AdminCultura() {
           {activeSection === 'inscricoes' ? (
             <RegistrationsPage
               registrationOverviewStats={registrationOverviewStats}
-              isExportingRegistrations={isExportingRegistrations}
-              handleExportRegistrationsCsv={handleExportRegistrationsCsv}
               registrationTotal={registrationTotal}
               pendingRegistrations={pendingRegistrations}
               approvedRegistrations={approvedRegistrations}

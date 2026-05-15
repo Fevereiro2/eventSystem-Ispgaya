@@ -37,8 +37,6 @@ type AdminHeroStat = { label: string; value: string | number };
 type UsersPageProps = {
   userPage: UserPage | null;
   canManageUsers: boolean;
-  isExportingUsers: boolean;
-  handleExportUsersCsv: () => void | Promise<void>;
   userOverviewStats: AdminHeroStat[];
   isLoadingUsers: boolean;
   filteredUsers: InfoCulturaUser[];
@@ -65,8 +63,6 @@ type UsersPageProps = {
 function UsersPage({
   userPage,
   canManageUsers,
-  isExportingUsers,
-  handleExportUsersCsv,
   userOverviewStats,
   isLoadingUsers,
   filteredUsers,
@@ -106,14 +102,6 @@ function UsersPage({
               <NavLink to="/infocultura/utilizadores/novo" className={adminBtnPrimary}>
                 Criar utilizador
               </NavLink>
-              <button
-                type="button"
-                className={adminBtnSecondary}
-                onClick={() => void handleExportUsersCsv()}
-                disabled={isExportingUsers}
-              >
-                {isExportingUsers ? 'A exportar...' : 'Exportar CSV'}
-              </button>
             </>
           ) : undefined
         }
