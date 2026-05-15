@@ -563,6 +563,7 @@ function ActivitiesPage({
                       id="book-club-id"
                       className={adminInput}
                       value={bookForm.club_id}
+                      required={canManageUsers && activityClubFilter === 'all'}
                       onChange={(event) =>
                         setBookForm((prev) => ({ ...prev, club_id: event.target.value }))
                       }
@@ -709,7 +710,14 @@ function ActivitiesPage({
               {bookFormError ? <p className={adminError}>{bookFormError}</p> : null}
 
               <div className={adminActions}>
-                <button type="submit" className={adminBtnPrimary} disabled={isSavingBook}>
+                <button
+                  type="submit"
+                  className={adminBtnPrimary}
+                  disabled={
+                    isSavingBook ||
+                    (canManageUsers && activityClubFilter === 'all' && !bookForm.club_id)
+                  }
+                >
                   {isSavingBook ? 'A guardar...' : editingBookId ? 'Atualizar' : 'Criar'}
                 </button>
                 <button type="button" onClick={resetBookForm} className={adminBtnSecondary}>

@@ -23,11 +23,14 @@ import {
 } from '../api/infoculturaApi';
 import {
   adminBtnSecondary,
+  blockText,
+  blockTitle,
   container,
   contentEmpty,
+  contentCard,
+  contentSection,
   labResearchGrid,
   labResearchLink,
-  labResearchSection,
   labResearchSubcard,
   labResearchSubtext,
   labResearchSubtitle,
@@ -310,43 +313,33 @@ function LaboratorioCultural() {
       />
 
       <main className={mainContent}>
-        <section className={labResearchSection}>
+        <section className={contentSection}>
           <div className={`${container} px-4 sm:px-6 xl:px-8`}>
-           
-              <article className={labResearchSubcard}>
-                <div className="overflow-hidden rounded-[2rem] border border-slate-200 bg-[linear-gradient(135deg,#fff7ec_0%,#ffffff_46%,#f6f8fb_100%)]">
-                  <div className="px-5 py-7 sm:px-6 lg:px-7 sm:py-8">
-                      <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#dd8609]">
-                        Visão Cultural
-                      </p>
-                      <h3 className="mt-4 font-heading text-3xl font-semibold text-slate-900 sm:text-4xl">
-                        Missão e Objetivos
-                      </h3>
-                      <p className="mt-4 max-w-2xl text-base leading-8 text-slate-700">
-                        O Laboratório Cultural existe para aproximar cultura, comunidade académica
-                        e participação. Esta entrada apresenta de forma clara a missão do espaço,
-                        os seus objetivos e o enquadramento necessário para perceber rapidamente o
-                        propósito do Laboratório Cultural sem procurar essa informação no meio do
-                        resto do conteúdo.
-                      </p>
+            <div className="space-y-10">
+              <article className={contentCard}>
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#dd8609]">
+                  Visão Cultural
+                </p>
+                <h3 className={`${blockTitle} mt-4`}>Missão e Objetivos</h3>
+                <p className={`${blockText} max-w-3xl`}>
+                  O Laboratório Cultural existe para aproximar cultura, comunidade académica e
+                  participação. Esta entrada apresenta de forma clara a missão do espaço, os seus
+                  objetivos e o enquadramento necessário para perceber rapidamente o propósito do
+                  Laboratório Cultural sem procurar essa informação no meio do resto do conteúdo.
+                </p>
 
-                      <div className="mt-6 flex flex-wrap gap-3">
-                        <Link
-                          to="/laboratorio-cultural/roadmap"
-                          className="inline-flex items-center rounded-md bg-[#dd8609] px-4 py-2 text-sm font-semibold text-white transition-opacity hover:opacity-90"
-                        >
-                          Abrir página
-                        </Link>
-                      </div>
-                  </div>
+                <div className="mt-6 flex flex-wrap items-center gap-3">
+                  <Link to="/laboratorio-cultural/roadmap" className={adminBtnSecondary}>
+                    Abrir página
+                  </Link>
+                  <span className="text-sm text-slate-500">Leitura rápida</span>
                 </div>
               </article>
 
               {isLoading ? <p className={contentEmpty}>A carregar laboratorio...</p> : null}
               {!isLoading && loadError ? <p className={contentEmpty}>{loadError}</p> : null}
-            
 
-            {!isLoading && !loadError ? (
+              {!isLoading && !loadError ? (
               <div className="mt-10">
                 <h2 className="mb-4 text-2xl font-semibold text-slate-900">
                   {hasSearch ? 'Clubes encontrados' : 'Clubes ativos'}
@@ -533,6 +526,7 @@ function LaboratorioCultural() {
                 </div>
               </div>
             ) : null}
+            </div>
           </div>
         </section>
       </main>

@@ -266,6 +266,11 @@ export function getUserPage(pathname: string): UserPage | null {
     return { mode: 'create' };
   }
 
+  const profileMatch = pathname.match(/^\/infocultura\/utilizadores\/(\d+)\/perfil\/?$/);
+  if (profileMatch) {
+    return { mode: 'profile', userId: Number(profileMatch[1]) };
+  }
+
   const editMatch = pathname.match(/^\/infocultura\/utilizadores\/(\d+)\/editar\/?$/);
   if (editMatch) {
     return { mode: 'edit', userId: Number(editMatch[1]) };
