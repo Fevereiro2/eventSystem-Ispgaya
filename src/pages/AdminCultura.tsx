@@ -2641,7 +2641,7 @@ function AdminCultura() {
                             </h3>
                             {!notification.isRead ? (
                               <span className="inline-flex items-center rounded-full bg-[#dd8609] px-2.5 py-1 text-xs font-semibold text-white">
-                                Nova
+                                {getLocaleText(locale, 'Nova', 'New')}
                               </span>
                             ) : null}
                             <span className="inline-flex items-center rounded-full bg-white/80 px-2.5 py-1 text-xs font-semibold uppercase tracking-[0.12em] text-slate-600">
@@ -2660,7 +2660,7 @@ function AdminCultura() {
                             className={adminBtnPrimary}
                             onClick={() => handleOpenNotification(notification)}
                           >
-                            Abrir
+                            {getLocaleText(locale, 'Abrir', 'Open')}
                           </button>
                           {!notification.isRead ? (
                             <button
@@ -2668,7 +2668,7 @@ function AdminCultura() {
                               className={adminBtnSecondary}
                               onClick={() => markNotificationAsRead(notification.id)}
                             >
-                              Marcar como lida
+                              {getLocaleText(locale, 'Marcar como lida', 'Mark as read')}
                             </button>
                           ) : null}
                         </div>
@@ -3163,8 +3163,8 @@ function AdminCultura() {
             <div className="space-y-6">
                 <AdminPageHero
                   icon={FolderKanban}
-                  title="Conteudos"
-                  description="Gestao editorial das areas permanentes do Laboratorio Cultural."
+                  title={getLocaleText(locale, 'Conteudos', 'Contents')}
+                  description={getLocaleText(locale, 'Gestao editorial das areas permanentes do Laboratorio Cultural.', 'Editorial management of the permanent areas of the Cultural Laboratory.')}
                   tone="emerald"
                   stats={contentOverviewStats}
                 />
@@ -3172,16 +3172,16 @@ function AdminCultura() {
               {showContentForm ? (
               <form id="content-form" onSubmit={handleSaveContent} className={adminPanelForm}>
                 <h2 className={blockTitle}>
-                  {editingId ? 'Editar Conteudo' : 'Novo Conteudo'}
+                  {editingId ? getLocaleText(locale, 'Editar Conteudo', 'Edit Content') : getLocaleText(locale, 'Novo Conteudo', 'New Content')}
                 </h2>
                 <p className={blockText}>
-                  Cria ou atualiza conteudo para as paginas do Laboratorio Cultural.
+                  {getLocaleText(locale, 'Cria ou atualiza conteudo para as paginas do Laboratorio Cultural.', 'Create or update content for the pages of the Cultural Laboratory.')}
                 </p>
 
                 <div className={adminFormGridSpaced}>
                   <div className={adminField}>
                     <label className={adminLabel} htmlFor="area">
-                      Area
+                      {getLocaleText(locale, 'Area', 'Area')}
                     </label>
                     <select
                       id="area"
@@ -3194,15 +3194,15 @@ function AdminCultura() {
                         }))
                       }
                     >
-                      <option value="tuna">Tuna Academica</option>
-                      <option value="clube-leitura">Clube de Leitura</option>
-                      <option value="teatro">Teatro</option>
+                      <option value="tuna">{getLocaleText(locale, 'Tuna Academica', 'Academic Tuna')}</option>
+                      <option value="clube-leitura">{getLocaleText(locale, 'Clube de Leitura', 'Reading Club')}</option>
+                      <option value="teatro">{getLocaleText(locale, 'Teatro', 'Theater')}</option>
                     </select>
                   </div>
 
                   <div className={adminField}>
                     <label className={adminLabel} htmlFor="date">
-                      Data
+                      {getLocaleText(locale, 'Data', 'Date')}
                     </label>
                     <input
                       id="date"
@@ -3217,7 +3217,7 @@ function AdminCultura() {
 
                   <div className={adminField}>
                     <label className={adminLabel} htmlFor="title">
-                      Titulo
+                      {getLocaleText(locale, 'Titulo', 'Title')}
                     </label>
                     <input
                       id="title"
@@ -3231,7 +3231,7 @@ function AdminCultura() {
 
                   <div className={adminField}>
                     <label className={adminLabel} htmlFor="status">
-                      Estado
+                      {getLocaleText(locale, 'Estado', 'Status')}
                     </label>
                     <select
                       id="status"
@@ -3244,15 +3244,15 @@ function AdminCultura() {
                         }))
                       }
                     >
-                      <option value="rascunho">Rascunho</option>
-                      <option value="publicado">Publicado</option>
+                      <option value="rascunho">{getLocaleText(locale, 'Rascunho', 'Draft')}</option>
+                      <option value="publicado">{getLocaleText(locale, 'Publicado', 'Published')}</option>
                     </select>
                   </div>
                 </div>
 
                 <div className={adminFieldSpaced}>
                   <label className={adminLabel} htmlFor="description">
-                    Descricao
+                    {getLocaleText(locale, 'Descricao', 'Description')}
                   </label>
                   <textarea
                     id="description"
@@ -3271,14 +3271,14 @@ function AdminCultura() {
                     className={adminBtnPrimary}
                     disabled={isSavingContent}
                   >
-                    {isSavingContent ? 'A guardar...' : editingId ? 'Atualizar' : 'Criar'}
+                    {isSavingContent ? 'A guardar...'  : editingId ? 'Atualizar' : 'Criar'}
                   </button>
                   <button
                     type="button"
                     onClick={resetContentForm}
                     className={adminBtnSecondary}
                   >
-                    Limpar
+                    {getLocaleText(locale, 'Limpar', 'Clear')}
                   </button>
                 </div>
               </form>
@@ -3287,7 +3287,7 @@ function AdminCultura() {
               {showContentList ? (
               <div id="content-list" className={adminList}>
                 {isLoadingItems ? (
-                  <p className={adminInfo}>A carregar conteudos...</p>
+                  <p className={adminInfo}> {getLocaleText(locale, 'A carregar conteudos...', 'Loading content...')}</p>  
                 ) : null}
                 {sortedItems.map((item) => (
                   <article key={item.id} className={adminListItem}>
@@ -3308,7 +3308,7 @@ function AdminCultura() {
                         className={adminBtnEdit}
                         onClick={() => handleEditContent(item)}
                       >
-                        Editar
+                        {getLocaleText(locale, 'Editar', 'Edit')}
                       </button>
                       <button
                         type="button"
@@ -3316,7 +3316,7 @@ function AdminCultura() {
                         disabled={deletingId === item.id}
                         onClick={() => handleDeleteContent(item.id)}
                       >
-                        {deletingId === item.id ? 'A apagar...' : 'Apagar'}
+                        {getLocaleText(locale, 'Apagar', 'Delete')}
                       </button>
                     </div>
                   </article>
@@ -3332,8 +3332,8 @@ function AdminCultura() {
 
       <footer className={infoLegacyFooter}>
         <div className={infoLegacyFooterInner}>
-          <span>2026 · Instituto Superior Politecnico Gaya</span>
-          <span>InfoCultura</span>
+          <span>2026 · Instituto Superior Politecnico Gaya  </span>
+          <span>InfoCultura </span>
         </div>
       </footer>
     </div>
