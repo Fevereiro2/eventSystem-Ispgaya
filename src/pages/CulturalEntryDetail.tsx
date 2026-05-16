@@ -124,7 +124,7 @@ function CulturalEntryDetail({ kind }: CulturalEntryDetailProps) {
       } catch (error) {
         if (!active) return;
         const message =
-          error instanceof Error ? error.message : getLocaleText(locale, 'Nao foi possivel carregar o detalhe.', 'Unable to load the details.');
+          error instanceof Error ? error.message : getLocaleText(locale, 'Não foi possivel carregar o detalhe.', 'Unable to load the details.');
         setLoadError(message);
       } finally {
         if (active) {
@@ -276,7 +276,7 @@ function CulturalEntryDetail({ kind }: CulturalEntryDetailProps) {
       setIsRegistrationModalOpen(false);
     } catch (error) {
       const message =
-        error instanceof Error ? error.message : getLocaleText(locale, 'Nao foi possivel enviar a inscricao.', 'Unable to submit the registration.');
+        error instanceof Error ? error.message : getLocaleText(locale, 'Não foi possivel enviar a inscricao.', 'Unable to submit the registration.');
       setRegistrationError(message);
     } finally {
       setIsSubmittingRegistration(false);
@@ -295,7 +295,7 @@ function CulturalEntryDetail({ kind }: CulturalEntryDetailProps) {
       downloadBlob(blob, `${kind === 'event' ? 'evento' : 'sessao'}-${entry.id}.ics`);
     } catch (error) {
       setRegistrationError(
-        error instanceof Error ? error.message : getLocaleText(locale, 'Nao foi possivel descarregar o calendario.', 'Unable to download the calendar.')
+        error instanceof Error ? error.message : getLocaleText(locale, 'Não foi possivel descarregar o calendario.', 'Unable to download the calendar.')
       );
     } finally {
       setIsDownloadingCalendar(false);

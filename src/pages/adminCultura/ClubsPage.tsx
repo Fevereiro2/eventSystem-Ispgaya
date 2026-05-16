@@ -220,7 +220,7 @@ function ClubsPage({
             <select
               id="club-registrations"
               className={adminInput}
-              value={clubForm.enable_registrations ? 'sim' : 'nao'}
+              value={clubForm.enable_registrations ? 'sim' : 'Não'}
               onChange={(event) =>
                 setClubForm((prev) => ({
                   ...prev,
@@ -229,7 +229,7 @@ function ClubsPage({
               }
             >
               <option value="sim">Sim</option>
-              <option value="nao">Nao</option>
+              <option value="Não">Não</option>
             </select>
           </div>
         </div>

@@ -120,13 +120,13 @@ function ClubeCultural({
       }
 
       if (!clubSearchTerms || clubSearchTerms.length === 0) {
-        throw new Error(getLocaleText(locale, 'Clube invalido.', 'Invalid club.'));
+        throw new Error(getLocaleText(locale, 'Clube ínvalido.', 'Invalid club.'));
       }
 
       const clubs = await fetchPublicClubs();
       const matchedClub = clubs.find((item) => matchesClubTerms(item.name, clubSearchTerms));
       if (!matchedClub) {
-        throw new Error(getLocaleText(locale, 'Clube nao encontrado.', 'Club not found.'));
+        throw new Error(getLocaleText(locale, 'Clube Não encontrado.', 'Club not found.'));
       }
 
       return matchedClub.id;
@@ -155,7 +155,7 @@ function ClubeCultural({
       } catch (error) {
         if (!active) return;
         const message =
-          error instanceof Error ? error.message : getLocaleText(locale, 'Nao foi possivel carregar o clube.', 'Unable to load the club.');
+          error instanceof Error ? error.message : getLocaleText(locale, 'Não foi possivel carregar o clube.', 'Unable to load the club.');
         setLoadError(message);
       } finally {
         if (active) {
@@ -198,7 +198,7 @@ function ClubeCultural({
     pageDescription ||
     club?.mission ||
     club?.description ||
-    getLocaleText(locale, 'Pagina publica do clube cultural.', 'Public page for the cultural club.');
+    getLocaleText(locale, 'Página pública do clube cultural.', 'Public page for the cultural club.');
   const currentHref =
     routePath || (clubId ? `/laboratorio-cultural/clubes/${clubId}` : '/laboratorio-cultural');
 
@@ -213,14 +213,14 @@ function ClubeCultural({
       setRegistrationFeedback(
         getLocaleText(
           locale,
-          'Inscricao enviada com sucesso. Aguarda validacao pelo clube.',
+          'Inscrição enviada com sucesso. Aguarda validação pelo clube.',
           'Registration sent successfully. Wait for club validation.'
         )
       );
       setIsRegistrationModalOpen(false);
     } catch (error) {
       const message =
-        error instanceof Error ? error.message : getLocaleText(locale, 'Nao foi possivel enviar a inscricao.', 'Unable to submit the registration.');
+        error instanceof Error ? error.message : getLocaleText(locale, 'Não foi possivel enviar a inscrição.', 'Unable to submit the registration.');
       setRegistrationError(message);
     } finally {
       setIsSubmittingRegistration(false);
@@ -283,7 +283,7 @@ function ClubeCultural({
                     {getLocaleText(locale, 'Inscrever-me neste clube', 'Join this club')}
                   </button>
                   <p className="text-sm text-slate-600">
-                    {getLocaleText(locale, 'O pedido sera enviado para validacao da equipa do clube.', 'The request will be sent to the club team for validation.')}
+                    {getLocaleText(locale, 'O pedido será enviado para validação da equipa do clube.', 'The request will be sent to the club team for validation.')}
                   </p>
                 </div>
               ) : null}
@@ -370,7 +370,7 @@ function ClubeCultural({
                   filteredSessions.length === 0 &&
                   filteredEvents.length === 0 ? (
                     <p className={contentEmpty}>
-                      {getLocaleText(locale, 'Ainda nao existem conteudos publicados para os filtros atuais.', 'There are no published contents for the current filters.')}
+                      {getLocaleText(locale, 'Ainda não existem conteúdos publicados para os filtros atuais.', 'There are no published contents for the current filters.')}
                     </p>
                   ) : null}
 

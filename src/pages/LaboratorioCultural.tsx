@@ -153,7 +153,7 @@ function LaboratorioCultural() {
         const message =
           error instanceof Error
             ? error.message
-            : getLocaleText(locale, 'Nao foi possivel carregar o laboratorio.', 'Unable to load the laboratory.');
+            : getLocaleText(locale, 'Não foi possivel carregar o laboratorio.', 'Unable to load the laboratory.');
         setLoadError(message);
       } finally {
         if (active) {
@@ -357,7 +357,7 @@ function LaboratorioCultural() {
                   {hasSearch ? getLocaleText(locale, 'Clubes encontrados', 'Found clubs') : getLocaleText(locale, 'Clubes ativos', 'Active clubs')}
                 </h2>
                 {filteredClubs.length === 0 ? (
-                  <p className={contentEmpty}>{getLocaleText(locale, 'Ainda nao existem clubes ativos para mostrar.', 'There are no active clubs to show yet.')}</p>
+                  <p className={contentEmpty}>{getLocaleText(locale, 'Ainda não existem clubes ativos para mostrar.', 'There are no active clubs to show yet.')}</p>
                 ) : (
                   <div className={labResearchGrid}>
                     {filteredClubs.map((club) => (
@@ -388,7 +388,7 @@ function LaboratorioCultural() {
             {!isLoading && !loadError && hasSearch ? (
               <div className="mt-10 space-y-10">
                 {totalResults === 0 ? (
-                  <p className={contentEmpty}>{getLocaleText(locale, 'Nao existem resultados para a pesquisa atual.', 'There are no results for the current search.')}</p>
+                  <p className={contentEmpty}>{getLocaleText(locale, 'Não existem resultados para a pesquisa atual.', 'There are no results for the current search.')}</p>
                 ) : null}
 
                 {filteredNews.length > 0 ? (

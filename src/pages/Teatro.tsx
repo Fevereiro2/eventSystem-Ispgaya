@@ -9,7 +9,7 @@ function Teatro() {
       pageTitle={getLocaleText(locale, 'Teatro', 'Theatre')}
       pageDescription={getLocaleText(
         locale,
-        'Pagina publica do clube de Teatro com noticias, agenda, sessoes e eventos em destaque.',
+        'Página pública do clube de Teatro com notícias, agenda, sessões e eventos em destaque.',
         'Public page for the Theatre club with featured news, agenda, sessions and events.'
       )}
       routePath="/laboratorio-cultural/teatro"

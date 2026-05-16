@@ -944,7 +944,7 @@ function AdminCultura() {
       setSelectedNewsIds([]);
     } catch (error) {
       const message =
-        error instanceof Error ? error.message : 'Nao foi possivel aplicar a acao em lote.';
+        error instanceof Error ? error.message : 'Não foi possível aplicar a ação em lote.';
       setNewsError(message);
     } finally {
       setIsApplyingBulkNews(false);
@@ -953,7 +953,7 @@ function AdminCultura() {
 
   async function handleBulkDeleteNews() {
     if (!token || selectedNewsIds.length === 0) return;
-    if (!window.confirm('Apagar as noticias selecionadas?')) return;
+    if (!window.confirm('Apagar as notícias selecionadas?')) return;
 
     setIsDeletingBulkNews(true);
     setNewsError('');
@@ -972,7 +972,7 @@ function AdminCultura() {
       }
     } catch (error) {
       const message =
-        error instanceof Error ? error.message : 'Nao foi possivel apagar as noticias selecionadas.';
+        error instanceof Error ? error.message : 'Não foi possível apagar as notícias selecionadas.';
       setNewsError(message);
     } finally {
       setIsDeletingBulkNews(false);
@@ -1000,7 +1000,7 @@ function AdminCultura() {
       setSelectedEventIds([]);
     } catch (error) {
       const message =
-        error instanceof Error ? error.message : 'Nao foi possivel aplicar a acao em lote.';
+        error instanceof Error ? error.message : 'Não foi possível aplicar a ação em lote.';
       setActivityError(message);
     } finally {
       setIsApplyingBulkEvents(false);
@@ -1028,7 +1028,7 @@ function AdminCultura() {
       }
     } catch (error) {
       const message =
-        error instanceof Error ? error.message : 'Nao foi possivel apagar os livros selecionados.';
+        error instanceof Error ? error.message : 'Não foi possível apagar os livros selecionados.';
       setActivityError(message);
     } finally {
       setIsDeletingBulkBooks(false);
@@ -1056,7 +1056,7 @@ function AdminCultura() {
       }
     } catch (error) {
       const message =
-        error instanceof Error ? error.message : 'Nao foi possivel apagar os eventos selecionados.';
+        error instanceof Error ? error.message : 'Não foi possível apagar os eventos selecionados.';
       setActivityError(message);
     } finally {
       setIsDeletingBulkEvents(false);
@@ -1088,7 +1088,7 @@ function AdminCultura() {
       setSelectedRegistrationIds([]);
     } catch (error) {
       const message =
-        error instanceof Error ? error.message : 'Nao foi possivel aplicar a acao em lote.';
+        error instanceof Error ? error.message : 'Não foi possível aplicar a ação em lote.';
       setRegistrationError(message);
     } finally {
       setIsApplyingBulkRegistrations(false);
@@ -1217,7 +1217,7 @@ function AdminCultura() {
         if (!isMounted) return;
         if (handleAuthError(error)) return;
         const message =
-          error instanceof Error ? error.message : 'Nao foi possivel carregar o resumo.';
+          error instanceof Error ? error.message : 'Não foi possível carregar o resumo.';
         setDashboardError(message);
       })
       .finally(() => {
@@ -1248,7 +1248,7 @@ function AdminCultura() {
         if (!isMounted) return;
         if (handleAuthError(error)) return;
         const message =
-          error instanceof Error ? error.message : 'Nao foi possivel carregar as notificacoes.';
+          error instanceof Error ? error.message : 'Não foi possível carregar as notificacoes.';
         setNotificationError(message);
       })
       .finally(() => {
@@ -1326,7 +1326,7 @@ function AdminCultura() {
       navigate(getContentRoute('list'));
     } catch (error) {
       const message =
-        error instanceof Error ? error.message : 'Nao foi possivel guardar o conteudo.';
+        error instanceof Error ? error.message : 'Não foi possível guardar o conteúdo.';
       setPanelError(message);
     } finally {
       setIsSavingContent(false);
@@ -1360,7 +1360,7 @@ function AdminCultura() {
       }
     } catch (error) {
       const message =
-        error instanceof Error ? error.message : 'Nao foi possivel apagar o conteudo.';
+        error instanceof Error ? error.message : 'Não foi possível apagar o conteúdo.';
       setPanelError(message);
     } finally {
       setDeletingId(null);
@@ -1393,7 +1393,7 @@ function AdminCultura() {
     }
 
     if (userPage.mode === 'create' && !userForm.generate_password && !manualPassword) {
-      setUserFormError('Ativa a geracao automatica ou indica uma password.');
+      setUserFormError('Ativa a geração automatica ou indica uma password.');
       return;
     }
 
@@ -1426,7 +1426,7 @@ function AdminCultura() {
       navigate('/infocultura/utilizadores');
     } catch (error) {
       const message =
-        error instanceof Error ? error.message : 'Nao foi possivel guardar o utilizador.';
+        error instanceof Error ? error.message : 'Não foi possível guardar o utilizador.';
       setUserFormError(message);
     } finally {
       setIsSavingUser(false);
@@ -1449,7 +1449,7 @@ function AdminCultura() {
       navigate('/infocultura/utilizadores');
     } catch (error) {
       const message =
-        error instanceof Error ? error.message : 'Nao foi possivel desativar o utilizador.';
+        error instanceof Error ? error.message : 'Não foi possível desativar o utilizador.';
       setUserFormError(message);
     } finally {
       setIsDeactivatingUser(false);
@@ -1471,7 +1471,7 @@ function AdminCultura() {
     };
 
     if (!payload.name) {
-      setClubFormError('O nome do clube e obrigatorio.');
+      setClubFormError('O nome do clube é obrigatório.');
       return;
     }
 
@@ -1508,7 +1508,7 @@ function AdminCultura() {
       resetClubForm();
     } catch (error) {
       const message =
-        error instanceof Error ? error.message : 'Nao foi possivel guardar o clube.';
+        error instanceof Error ? error.message : 'Não foi possível guardar o clube.';
       setClubFormError(message);
     } finally {
       setIsSavingClub(false);
@@ -1526,7 +1526,7 @@ function AdminCultura() {
       setClubForm((prev) => ({ ...prev, image: imagePath }));
     } catch (error) {
       const message =
-        error instanceof Error ? error.message : 'Nao foi possivel carregar a imagem do clube.';
+        error instanceof Error ? error.message : 'Não foi possível carregar a imagem do clube.';
       setClubFormError(message);
     } finally {
       setIsUploadingClubImage(false);
@@ -1564,7 +1564,7 @@ function AdminCultura() {
       }
     } catch (error) {
       const message =
-        error instanceof Error ? error.message : 'Nao foi possivel apagar o clube.';
+        error instanceof Error ? error.message : 'Não foi possível apagar o clube.';
       setClubFormError(message);
     } finally {
       setDeletingClubId(null);
@@ -1588,7 +1588,7 @@ function AdminCultura() {
       setSelectedClubUserId('');
     } catch (error) {
       const message =
-        error instanceof Error ? error.message : 'Nao foi possivel associar o utilizador.';
+        error instanceof Error ? error.message : 'Não foi possível associar o utilizador.';
       setClubFormError(message);
     } finally {
       setIsAssigningClubUser(false);
@@ -1613,7 +1613,7 @@ function AdminCultura() {
       const message =
         error instanceof Error
           ? error.message
-          : 'Nao foi possivel remover o utilizador do clube.';
+          : 'Não foi possível remover o utilizador do clube.';
       setClubFormError(message);
     } finally {
       setRemovingClubUserId(null);
@@ -1651,12 +1651,12 @@ function AdminCultura() {
     };
 
     if (!payload.title || !payload.summary || !payload.content || !payload.news_status) {
-      setNewsFormError('Preenche titulo, resumo, conteudo e estado.');
+      setNewsFormError('Preenche o título, resumo, conteúdo e estado.');
       return;
     }
 
     if (canManageUsers && !payload.club_id) {
-      setNewsFormError('Seleciona o clube da noticia.');
+      setNewsFormError('Seleciona o clube da notícia.');
       return;
     }
 
@@ -1679,7 +1679,7 @@ function AdminCultura() {
       navigate(getNewsRoute('list'));
     } catch (error) {
       const message =
-        error instanceof Error ? error.message : 'Nao foi possivel guardar a noticia.';
+        error instanceof Error ? error.message : 'Não foi possível guardar a noticia.';
       setNewsFormError(message);
     } finally {
       setIsSavingNews(false);
@@ -1697,7 +1697,7 @@ function AdminCultura() {
       setNewsForm((prev) => ({ ...prev, image: imagePath }));
     } catch (error) {
       const message =
-        error instanceof Error ? error.message : 'Nao foi possivel carregar a imagem.';
+        error instanceof Error ? error.message : 'Não foi possível carregar a imagem.';
       setNewsFormError(message);
     } finally {
       setIsUploadingNewsImage(false);
@@ -1720,7 +1720,7 @@ function AdminCultura() {
       }
     } catch (error) {
       const message =
-        error instanceof Error ? error.message : 'Nao foi possivel apagar a noticia.';
+        error instanceof Error ? error.message : 'Não foi possível apagar a noticia.';
       setNewsError(message);
     } finally {
       setDeletingNewsId(null);
@@ -1756,7 +1756,7 @@ function AdminCultura() {
       setBookForm((prev) => ({ ...prev, cover_image: imagePath }));
     } catch (error) {
       const message =
-        error instanceof Error ? error.message : 'Nao foi possivel carregar a capa.';
+        error instanceof Error ? error.message : 'Não foi possível carregar a capa.';
       setBookFormError(message);
     } finally {
       setIsUploadingBookImage(false);
@@ -1793,7 +1793,7 @@ function AdminCultura() {
     };
 
     if (!payload.title || !payload.author || !payload.summary || !payload.publication_year) {
-      setBookFormError('Preenche titulo, autor, ano e resumo.');
+      setBookFormError('Preenche o título, autor, ano e resumo.');
       return;
     }
 
@@ -1821,7 +1821,7 @@ function AdminCultura() {
       navigate(getActivityRoute('books', 'list'));
     } catch (error) {
       const message =
-        error instanceof Error ? error.message : 'Nao foi possivel guardar o livro.';
+        error instanceof Error ? error.message : 'Não foi possível guardar o livro.';
       setBookFormError(message);
     } finally {
       setIsSavingBook(false);
@@ -1843,7 +1843,7 @@ function AdminCultura() {
       }
     } catch (error) {
       const message =
-        error instanceof Error ? error.message : 'Nao foi possivel apagar o livro.';
+        error instanceof Error ? error.message : 'Não foi possível apagar o livro.';
       setActivityError(message);
     } finally {
       setDeletingBookId(null);
@@ -1871,7 +1871,7 @@ function AdminCultura() {
     };
 
     if (!payload.name || !payload.description) {
-      setCategoryFormError('Preenche o nome e a descricao da categoria.');
+      setCategoryFormError('Preenche o nome e a descrição da categoria.');
       return;
     }
 
@@ -1894,7 +1894,7 @@ function AdminCultura() {
       navigate(getActivityRoute('events', 'categories'));
     } catch (error) {
       const message =
-        error instanceof Error ? error.message : 'Nao foi possivel guardar a categoria.';
+        error instanceof Error ? error.message : 'Não foi possível guardar a categoria.';
       setCategoryFormError(message);
     } finally {
       setIsSavingCategory(false);
@@ -1925,7 +1925,7 @@ function AdminCultura() {
       }
     } catch (error) {
       const message =
-        error instanceof Error ? error.message : 'Nao foi possivel apagar a categoria.';
+        error instanceof Error ? error.message : 'Não foi possível apagar a categoria.';
       setActivityError(message);
     } finally {
       setDeletingCategoryId(null);
@@ -1983,12 +1983,12 @@ function AdminCultura() {
       !payload.start_date ||
       !payload.end_date
     ) {
-      setSessionFormError('Preenche nome, titulo, descricao e datas da sessao.');
+      setSessionFormError('Preenche o nome, título, descrição e datas da sessão.');
       return;
     }
 
     if (!payload.club_id) {
-      setSessionFormError('Seleciona o clube da sessao.');
+      setSessionFormError('Seleciona o clube da sessão.');
       return;
     }
 
@@ -2011,7 +2011,7 @@ function AdminCultura() {
       navigate(getActivityRoute('sessions', 'list'));
     } catch (error) {
       const message =
-        error instanceof Error ? error.message : 'Nao foi possivel guardar a sessao.';
+        error instanceof Error ? error.message : 'Não foi possível guardar a sessão.';
       setSessionFormError(message);
     } finally {
       setIsSavingSession(false);
@@ -2032,7 +2032,7 @@ function AdminCultura() {
       }
     } catch (error) {
       const message =
-        error instanceof Error ? error.message : 'Nao foi possivel apagar a sessao.';
+        error instanceof Error ? error.message : 'Não foi possível apagar a sessão.';
       setActivityError(message);
     } finally {
       setDeletingSessionId(null);
@@ -2097,7 +2097,7 @@ function AdminCultura() {
       !payload.end_date ||
       !payload.status
     ) {
-      setEventFormError('Preenche titulo, descricao, estado e datas do evento.');
+      setEventFormError('Preenche o título, descrição, estado e datas do evento.');
       return;
     }
 
@@ -2125,7 +2125,7 @@ function AdminCultura() {
       navigate(getActivityRoute('events', 'list'));
     } catch (error) {
       const message =
-        error instanceof Error ? error.message : 'Nao foi possivel guardar o evento.';
+        error instanceof Error ? error.message : 'Não foi possível guardar o evento.';
       setEventFormError(message);
     } finally {
       setIsSavingEvent(false);
@@ -2143,7 +2143,7 @@ function AdminCultura() {
       setEventForm((prev) => ({ ...prev, image: imagePath }));
     } catch (error) {
       const message =
-        error instanceof Error ? error.message : 'Nao foi possivel carregar a imagem.';
+        error instanceof Error ? error.message : 'Não foi possível carregar a imagem.';
       setEventFormError(message);
     } finally {
       setIsUploadingEventImage(false);
@@ -2166,7 +2166,7 @@ function AdminCultura() {
       }
     } catch (error) {
       const message =
-        error instanceof Error ? error.message : 'Nao foi possivel apagar o evento.' ;
+        error instanceof Error ? error.message : 'Não foi possível apagar o evento.' ;
       setActivityError(message);
     } finally {
       setDeletingEventId(null);
@@ -2201,7 +2201,7 @@ function AdminCultura() {
       );
     } catch (error) {
       const message =
-        error instanceof Error ? error.message : 'Nao foi possivel atualizar a inscricao.';
+        error instanceof Error ? error.message : 'Não foi possível atualizar a inscricao.';
       setRegistrationError(message);
     } finally {
       setUpdatingRegistrationId(null);
@@ -2242,7 +2242,7 @@ function AdminCultura() {
                 <img src={ispgayaLogo} alt="ISPGAYA" className={infoLegacyBrandLogo} />
                 <div>
                   <p className={infoLegacyBrandText}>InfoCultura</p>
-                  <p className={infoLegacyBrandSub}>Gestao cultural interna</p>
+                  <p className={infoLegacyBrandSub}>Gestão cultural interna</p>
                 </div>
               </div>
               {renderLocaleToggle()}
@@ -2345,7 +2345,7 @@ function AdminCultura() {
           </div>
           <div className="flex items-center gap-3">
             <button type="button" onClick={handleLogout} className={adminBtnSecondary}>
-              {getLocaleText(locale, 'Terminar sessao', 'End session')}
+              {getLocaleText(locale, 'Terminar sessão', 'End session')}
             </button>
             {renderLocaleToggle()}
           </div>
@@ -2439,7 +2439,7 @@ function AdminCultura() {
             <div className="space-y-6">
               <AdminPageHero
                 icon={Bell}
-                title="Centro de Notificacões"
+                title="Centro de Notificações"
                 description="Alertas editoriais, operacionais e de agenda gerados a partir da atividade do sistema."
                 tone="amber"
                 stats={notificationOverviewStats}
@@ -2998,7 +2998,7 @@ function AdminCultura() {
                 <AdminPageHero
                   icon={FolderKanban}
                   title={getLocaleText(locale, 'Conteudos', 'Contents')}
-                  description={getLocaleText(locale, 'Gestao editorial das areas permanentes do Laboratorio Cultural.', 'Editorial management of the permanent areas of the Cultural Laboratory.')}
+                  description={getLocaleText(locale, 'Gestão editorial das áreas permanentes do Laboratório Cultural.', 'Editorial management of the permanent areas of the Cultural Laboratory.')}
                   tone="emerald"
                   stats={contentOverviewStats}
                 />
@@ -3006,10 +3006,10 @@ function AdminCultura() {
               {showContentForm ? (
               <form id="content-form" onSubmit={handleSaveContent} className={adminPanelForm}>
                 <h2 className={blockTitle}>
-                  {editingId ? getLocaleText(locale, 'Editar Conteudo', 'Edit Content') : getLocaleText(locale, 'Novo Conteudo', 'New Content')}
+                  {editingId ? getLocaleText(locale, 'Editar Conteúdo', 'Edit Content') : getLocaleText(locale, 'Novo Conteúdo', 'New Content')}
                 </h2>
                 <p className={blockText}>
-                  {getLocaleText(locale, 'Cria ou atualiza conteudo para as paginas do Laboratorio Cultural.', 'Create or update content for the pages of the Cultural Laboratory.')}
+                  {getLocaleText(locale, 'Cria ou atualiza conteúdo para as páginas do Laboratório Cultural.', 'Create or update content for the pages of the Cultural Laboratory.')}
                 </p>
 
                 <div className={adminFormGridSpaced}>
@@ -3028,7 +3028,7 @@ function AdminCultura() {
                         }))
                       }
                     >
-                      <option value="tuna">{getLocaleText(locale, 'Tuna Academica', 'Academic Tuna')}</option>
+                      <option value="tuna">{getLocaleText(locale, 'Tuna Académica', 'Academic Tuna')}</option>
                       <option value="clube-leitura">{getLocaleText(locale, 'Clube de Leitura', 'Reading Club')}</option>
                       <option value="teatro">{getLocaleText(locale, 'Teatro', 'Theater')}</option>
                     </select>
@@ -3051,7 +3051,7 @@ function AdminCultura() {
 
                   <div className={adminField}>
                     <label className={adminLabel} htmlFor="title">
-                      {getLocaleText(locale, 'Titulo', 'Title')}
+                      {getLocaleText(locale, 'Título', 'Title')}
                     </label>
                     <input
                       id="title"
@@ -3086,7 +3086,7 @@ function AdminCultura() {
 
                 <div className={adminFieldSpaced}>
                   <label className={adminLabel} htmlFor="description">
-                    {getLocaleText(locale, 'Descricao', 'Description')}
+                    {getLocaleText(locale, 'Descrição', 'Description')}
                   </label>
                   <textarea
                     id="description"
@@ -3121,7 +3121,7 @@ function AdminCultura() {
               {showContentList ? (
               <div id="content-list" className={adminList}>
                 {isLoadingItems ? (
-                  <p className={adminInfo}> {getLocaleText(locale, 'A carregar conteudos...', 'Loading content...')}</p>  
+                  <p className={adminInfo}> {getLocaleText(locale, 'A carregar conteúdos...', 'Loading content...')}</p>  
                 ) : null}
                 {sortedItems.map((item) => (
                   <article key={item.id} className={adminListItem}>
