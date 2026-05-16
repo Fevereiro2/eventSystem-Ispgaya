@@ -243,6 +243,18 @@ class AdminBookWriteSerializer(ClubScopedWriteSerializer):
         read_only_fields = ['id']
 
     def validate(self, attrs):
+        if 'club' not in attrs:
+            raw_club_id = None
+            if hasattr(self, 'initial_data'):
+                raw_club_id = self.initial_data.get('club_id')
+            if raw_club_id in (None, ''):
+                raw_club_id = self.context['request'].data.get('club_id')
+            if raw_club_id not in (None, ''):
+                try:
+                    attrs['club'] = Club.objects.get(pk=raw_club_id)
+                except (Club.DoesNotExist, TypeError, ValueError) as error:
+                    raise serializers.ValidationError({'club_id': 'O clube e obrigatorio.'}) from error
+
         self.resolve_club_scope(attrs)
         return attrs
 
@@ -282,6 +294,18 @@ class AdminSessionWriteSerializer(ClubScopedWriteSerializer):
         read_only_fields = ['id']
 
     def validate(self, attrs):
+        if 'club' not in attrs:
+            raw_club_id = None
+            if hasattr(self, 'initial_data'):
+                raw_club_id = self.initial_data.get('club_id')
+            if raw_club_id in (None, ''):
+                raw_club_id = self.context['request'].data.get('club_id')
+            if raw_club_id not in (None, ''):
+                try:
+                    attrs['club'] = Club.objects.get(pk=raw_club_id)
+                except (Club.DoesNotExist, TypeError, ValueError) as error:
+                    raise serializers.ValidationError({'club_id': 'O clube e obrigatorio.'}) from error
+
         self.resolve_club_scope(attrs)
         if 'name' in attrs:
             try:

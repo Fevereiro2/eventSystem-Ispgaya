@@ -1111,6 +1111,20 @@ function AdminCultura() {
   }, [currentUser?.club_id, canManageUsers]);
 
   useEffect(() => {
+    if (!canManageUsers || activityTab !== 'books' || editingBookId !== null) {
+      return;
+    }
+
+    if (activityClubFilter === 'all') {
+      return;
+    }
+
+    setBookForm((prev) =>
+      prev.club_id === activityClubFilter ? prev : { ...prev, club_id: activityClubFilter }
+    );
+  }, [activityClubFilter, activityTab, canManageUsers, editingBookId]);
+
+  useEffect(() => {
     if (!currentUser) return;
 
     if (activeSection === 'atividades') {
@@ -1943,6 +1957,10 @@ function AdminCultura() {
     event.preventDefault();
     if (!token) return;
 
+    const resolvedSessionClubId = canManageUsers
+      ? (sessionForm.club_id ? Number(sessionForm.club_id) : null)
+      : currentUser?.club_id ?? null;
+
     const payload: SessionPayload = {
       name: sessionForm.name.trim(),
       title: sessionForm.title.trim(),
@@ -1954,7 +1972,7 @@ function AdminCultura() {
       registration_capacity: sessionForm.registration_capacity
         ? Number(sessionForm.registration_capacity)
         : null,
-      ...(sessionForm.club_id ? { club_id: Number(sessionForm.club_id) } : {})
+      ...(resolvedSessionClubId ? { club_id: resolvedSessionClubId } : {})
     };
 
     if (
@@ -1969,7 +1987,7 @@ function AdminCultura() {
       return;
     }
 
-    if (canManageUsers && !payload.club_id) {
+    if (!payload.club_id) {
       setSessionFormError('Seleciona o clube da sessao.');
       return;
     }

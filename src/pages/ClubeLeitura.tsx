@@ -100,7 +100,7 @@ function ClubeLeitura() {
             viewAllHref="/laboratorio-cultural"
             viewAllLabel={getLocaleText(locale, 'Explorar o laboratório', 'Explore the lab')}
             detailBaseHref="/laboratorio-cultural/livros"
-            limit={4}
+            limit={10}
           />
         </div>
       </main>

@@ -11,8 +11,8 @@ import heroWelcomeImage from '../assets/homepage/candidatar/ispg-students-admiss
 import heroStudyImage from '../assets/homepage/candidatar/ispgaya-students-grants.webp';
 import heroEmployabilityImage from '../assets/homepage/candidatar/ispgaya-students-help.webp';
 import imagem1 from '../assets/backgroundphotos/bem-vindos-estudantes-ispgaya.webp';
-import imagem2 from '../assets/homepage/candidatar/ispgaya-students-grants.webp';
-import imagem3 from '../assets/homepage/candidatar/ispgaya-students-help.webp';
+import imagem2 from '../assets/backgroundphotos/empregabilidade-ispgaya.webp';
+import imagem3 from '../assets/backgroundphotos/estudar-no-ispagaya.webp';
 import aondefuturo from '../assets/homepage/ondefuturo.webp';
 import helix from '../assets/homepage/destaques/helix-ispgaya-site.webp';
 import mais23 from '../assets/homepage/destaques/3.webp';
@@ -419,7 +419,7 @@ function HomePage() {
   return (
     <>
       <main className={mainContent}>
-        <section className="relative h-screen overflow-hidden bg-[#10263b]">
+        <section className="relative h-[100svh] min-h-[640px] overflow-hidden bg-[#10263b] sm:min-h-[720px] lg:min-h-screen">
           <div className="absolute inset-0 overflow-hidden">
             <div
               className="flex h-full w-full transition-transform duration-700 ease-in-out"
@@ -449,18 +449,48 @@ function HomePage() {
             <HeaderNav transparent={!isHeaderSolid} />
           </div>
 
-          <div className={`relative z-10 flex h-full flex-col ${container}`}>
+          <div className={`relative z-10 flex h-full min-h-[640px] flex-col px-4 sm:min-h-[720px] sm:px-6 lg:min-h-screen lg:px-3 ${container}`}>
             <div className="flex-1" />
 
-            <div className="pb-[7vh] text-white">
+            <div className="pb-10 pt-32 text-white sm:pb-[7vh]">
               <div className="grid grid-cols-12 gap-y-8">
                 <div className="col-span-12 lg:col-span-6 xl:col-span-7">
                   <h1 className="font-heading text-3xl font-bold leading-snug sm:text-5xl sm:leading-snug lg:text-4xl lg:leading-snug xl:pr-[8vw] xl:text-5xl xl:leading-snug 2xl:pr-[5vw] 2xl:text-6xl">
                     {currentHero.title}
                   </h1>
-                  <p className="mt-4 max-w-2xl whitespace-pre-line text-base font-medium sm:text-lg">
+                  <p className={`mt-4 max-w-2xl whitespace-pre-line text-base font-medium sm:text-lg ${showStudyLinks ? 'hidden lg:block' : ''}`}>
                     {currentHero.text}
                   </p>
+
+                  {showStudyLinks ? (
+                    <div className="mt-7 lg:hidden">
+                      <p className="text-sm font-semibold uppercase tracking-[0.08em] text-white/80">
+                        {getLocaleText(locale, 'Fica a conhecer a nossa oferta formativa:', 'Discover our training programs:')}
+                      </p>
+                      <ul className="mt-3 divide-y divide-white/70 border-y border-white/70">
+                        {studyLinks.map((item) => (
+                          <li key={item.label}>
+                            <a
+                              href={item.href}
+                              className="flex items-center justify-between py-3 text-xl font-bold text-white"
+                            >
+                              <span>{item.label}</span>
+                              <span aria-hidden="true">&#10230;</span>
+                            </a>
+                          </li>
+                        ))}
+                      </ul>
+                      <a
+                        href="#content-start"
+                        className="mt-6 inline-flex items-center text-sm font-bold uppercase tracking-tight text-white"
+                      >
+                        <span>{getLocaleText(locale, 'Descobre Mais', 'Find out more')}</span>
+                        <span className="ml-4 flex h-10 w-10 items-center justify-center rounded-full border-2 border-white">
+                          <ChevronRight className="h-5 w-5 rotate-90" />
+                        </span>
+                      </a>
+                    </div>
+                  ) : null}
                 </div>
 
                 <div className="col-span-12 hidden lg:block lg:col-span-6 xl:col-span-5">
@@ -525,20 +555,20 @@ function HomePage() {
         </section>
 
         <section id="content-start" className="scroll-mt-36 bg-white pt-10 lg:pt-12 xl:pt-16 2xl:pt-20">
-          <div className={`${container} text-center`}>
+          <div className={`${container} px-4 text-center sm:px-6 lg:px-3`}>
             <h2 className="font-heading text-3xl font-bold tracking-tight text-black xl:text-4xl 2xl:text-5xl">
                 {getLocaleText(locale, 'Destaques', 'Highlights')}
             </h2>
           </div>
 
           <div
-            className={`${container} mt-10 flex snap-x snap-mandatory gap-4 overflow-x-auto px-6 pb-4 pt-2 sm:px-6 md:justify-center md:gap-6 md:px-0`}
+            className={`${container} mt-8 flex snap-x snap-mandatory gap-4 overflow-x-auto px-4 pb-4 pt-2 sm:px-6 md:mt-10 md:justify-center md:gap-6 lg:px-3`}
           >
               {highlightCards.map((item) => (
               <a
                 key={item.title}
                 href={item.href}
-                className="group relative flex min-h-[500px] min-w-[78vw] max-w-[78vw] snap-center flex-col overflow-hidden rounded bg-gray-200 first:ml-0 md:min-w-0 md:max-w-none md:basis-6/12 lg:basis-4/12 2xl:basis-3/12"
+                className="group relative flex min-h-[380px] min-w-[82vw] max-w-[82vw] snap-center flex-col overflow-hidden rounded bg-gray-200 first:ml-0 sm:min-h-[440px] sm:min-w-[70vw] sm:max-w-[70vw] md:min-w-0 md:max-w-none md:basis-6/12 lg:min-h-[500px] lg:basis-4/12 2xl:basis-3/12"
               >
                 <div className="absolute inset-0">
                   <img
@@ -566,7 +596,7 @@ function HomePage() {
         </section>
 
         <section className="relative mt-20 bg-gray-50 py-16 before:absolute before:-top-5 before:h-14 before:w-full before:-skew-y-1 before:bg-gray-50 after:absolute after:-bottom-5 after:h-14 after:w-full after:-skew-y-1 after:bg-gray-50 lg:mt-24 xl:mt-28">
-          <div className={`${container} grid grid-cols-1 gap-y-10 lg:grid-cols-2 lg:gap-x-4 xl:gap-x-6 2xl:gap-x-8`}>
+          <div className={`${container} grid grid-cols-1 gap-y-10 px-4 sm:px-6 lg:grid-cols-2 lg:gap-x-4 lg:px-3 xl:gap-x-6 2xl:gap-x-8`}>
             <div className="relative col-span-1 hidden lg:block">
               <div className="sticky top-36">
                 <img
@@ -585,14 +615,14 @@ function HomePage() {
               </div>
 
               {metrics.map((item, index) => (
-                <div key={item.title} className="flex">
+                <div key={item.title} className="flex min-w-0 items-start">
                   {index % 2 === 1 ? (
                     <>
-                      <div className="mr-4 border-b-2 border-l-2 border-gray-300 pb-6 pl-6 pr-2 pt-2">
+                      <div className="mr-3 min-w-0 border-b-2 border-l-2 border-gray-300 pb-4 pl-4 pr-2 pt-2 sm:mr-4 sm:pb-6 sm:pl-6">
                         <p className="text-lg font-bold xl:text-2xl">{item.title}</p>
                         <p className="mt-3 max-w-md text-sm sm:text-base">{item.text}</p>
                       </div>
-                      <div>
+                      <div className="shrink-0">
                         <p className="mt-2 font-heading text-3xl font-bold text-orange-400 sm:text-4xl lg:text-5xl xl:text-6xl">
                           {item.value}
                         </p>
@@ -600,12 +630,12 @@ function HomePage() {
                     </>
                   ) : (
                     <>
-                      <div>
+                      <div className="shrink-0">
                         <p className="mt-2 font-heading text-3xl font-bold text-orange-400 sm:text-4xl lg:text-5xl xl:text-6xl">
                           {item.value}
                         </p>
                       </div>
-                      <div className="ml-2 border-b-2 border-r-2 border-gray-300 pb-2 pl-2 pr-2 pt-2 sm:ml-4 sm:pb-6 sm:pl-6">
+                      <div className="ml-2 min-w-0 border-b-2 border-r-2 border-gray-300 pb-2 pl-2 pr-2 pt-2 sm:ml-4 sm:pb-6 sm:pl-6">
                         <p className="text-lg font-bold xl:text-2xl">{item.title}</p>
                         <p className="mt-3 max-w-md text-sm sm:text-base">{item.text}</p>
                       </div>
@@ -618,7 +648,7 @@ function HomePage() {
         </section>
 
         <section className="relative mt-16 overflow-hidden lg:mt-28 xl:mt-32 2xl:mt-32">
-          <div className={`${container} grid grid-cols-1 gap-x-10 bg-white lg:grid-cols-2`}>
+          <div className={`${container} grid grid-cols-1 gap-x-10 bg-white px-4 sm:px-6 lg:grid-cols-2 lg:px-3`}>
             <div className="relative z-10 col-span-2 bg-white py-6 lg:col-span-1">
               <h2 className="max-w-2xl font-heading text-3xl font-bold tracking-tight text-black xl:text-4xl 2xl:text-5xl">
                 {getLocaleText(locale, 'Ainda queres saber mais? Nós podemos ajudar-te.', 'Do you still want to know more? We can help you')}
@@ -630,13 +660,13 @@ function HomePage() {
               <div className="mt-6 flex flex-col sm:flex-row sm:items-center">
                   <a
                   href="https://inforestudante.ispgaya.pt/nonio/security/preRegisto.do?origem=CANDIDATURAS"
-                  className="inline-block bg-orange-400 px-6 py-2 text-center font-bold text-white transition hover:bg-orange-500"
+                  className="inline-block w-full bg-orange-400 px-6 py-2 text-center font-bold text-white transition hover:bg-orange-500 sm:w-auto"
                 >
                   {getLocaleText(locale, 'Candidatar-me', 'Apply now')}
                 </a>
                 <a
                   href={buildIspgayaUrl(locale, '/ensino/candidaturas')}
-                  className="mt-3 inline-block border-2 border-orange-700 px-6 py-2 text-center font-bold text-orange-700 transition hover:border-orange-600 hover:bg-orange-600 hover:text-white sm:ml-6 sm:mt-0"
+                  className="mt-3 inline-block w-full border-2 border-orange-700 px-6 py-2 text-center font-bold text-orange-700 transition hover:border-orange-600 hover:bg-orange-600 hover:text-white sm:ml-6 sm:mt-0 sm:w-auto"
                 >
                   {getLocaleText(locale, 'Quero saber mais', 'I want to know more')}
                 </a>
@@ -687,7 +717,7 @@ function HomePage() {
                     <a
                       key={item.title}
                       href={item.href}
-                      className={`border px-6 py-8 text-center transition ${
+                      className={`border px-6 py-8 text-center transition ${index === activeSupport ? 'block' : 'hidden md:block'} ${
                         index === activeSupport
                           ? 'border-orange-200 bg-orange-100'
                           : 'border-orange-50 bg-orange-50 hover:border-orange-200 hover:bg-orange-100'
@@ -710,7 +740,7 @@ function HomePage() {
         </section>
 
         <section className="mt-12 bg-white lg:mt-16 xl:mt-20">
-          <div className={`${container}`}>
+          <div className={`${container} px-4 sm:px-6 lg:px-3`}>
             <div className="mx-auto grid w-full max-w-7xl grid-cols-1 gap-10 lg:grid-cols-2">
               <NewsHighlightsSection
                 title={getLocaleText(locale, 'Notícias', 'News')}
@@ -730,8 +760,8 @@ function HomePage() {
           </div>
         </section>
 
-        <section className="bg-slate-50 py-16 lg:py-20">
-          <div className={container}>
+        <section className="mt-12 bg-slate-50 py-16 lg:mt-16 lg:py-20 xl:mt-20">
+          <div className={`${container} px-4 sm:px-6 lg:px-3`}>
             <BestBooksSection
               books={homepageBookHighlights}
               locale={locale}
@@ -744,8 +774,9 @@ function HomePage() {
               viewAllHref="/laboratorio-cultural"
               viewAllLabel={getLocaleText(locale, 'Explorar o laboratório', 'Explore the lab')}
               detailBaseHref="/laboratorio-cultural/livros"
-              limit={4}
+              limit={10}
             />
+            
           </div>
         </section>
 
