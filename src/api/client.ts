@@ -12,6 +12,13 @@ const API_BASE = (clientEnv?.VITE_INFOCULTURA_API || 'http://127.0.0.1:8001/api'
   ''
 );
 const ACCESS_TOKEN_STORAGE_KEY = 'ispgaya_cultura_token';
+let inMemoryAccessToken = '';
+
+declare global {
+  interface Window {
+    __INFOCULTURA_ACCESS_TOKEN__?: string;
+  }
+}
 
 export type ApiListResponse = {
   items: CulturalItem[];
@@ -61,16 +68,33 @@ export class InfoCulturaApiError extends Error {
 }
 
 export function getStoredAccessToken(): string {
-  if (typeof window === 'undefined') return '';
-  return sessionStorage.getItem(ACCESS_TOKEN_STORAGE_KEY) || '';
+  if (typeof window !== 'undefined') {
+    const windowToken = window.__INFOCULTURA_ACCESS_TOKEN__ || '';
+    if (windowToken) {
+      inMemoryAccessToken = windowToken;
+      return windowToken;
+    }
+
+    const storedToken = sessionStorage.getItem(ACCESS_TOKEN_STORAGE_KEY) || '';
+    if (storedToken) {
+      inMemoryAccessToken = storedToken;
+      window.__INFOCULTURA_ACCESS_TOKEN__ = storedToken;
+      return storedToken;
+    }
+  }
+
+  return inMemoryAccessToken;
 }
 
 export function setStoredAccessToken(token: string): void {
+  inMemoryAccessToken = token || '';
   if (typeof window === 'undefined') return;
-  if (token) {
-    sessionStorage.setItem(ACCESS_TOKEN_STORAGE_KEY, token);
+  window.__INFOCULTURA_ACCESS_TOKEN__ = inMemoryAccessToken;
+  if (inMemoryAccessToken) {
+    sessionStorage.setItem(ACCESS_TOKEN_STORAGE_KEY, inMemoryAccessToken);
   } else {
     sessionStorage.removeItem(ACCESS_TOKEN_STORAGE_KEY);
+    delete window.__INFOCULTURA_ACCESS_TOKEN__;
   }
 }
 

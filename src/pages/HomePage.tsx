@@ -11,8 +11,8 @@ import heroWelcomeImage from '../assets/homepage/candidatar/ispg-students-admiss
 import heroStudyImage from '../assets/homepage/candidatar/ispgaya-students-grants.webp';
 import heroEmployabilityImage from '../assets/homepage/candidatar/ispgaya-students-help.webp';
 import imagem1 from '../assets/backgroundphotos/bem-vindos-estudantes-ispgaya.webp';
-import imagem2 from '../assets/homepage/candidatar/ispgaya-students-grants.webp';
-import imagem3 from '../assets/homepage/candidatar/ispgaya-students-help.webp';
+import imagem2 from '../assets/backgroundphotos/empregabilidade-ispgaya.webp';
+import imagem3 from '../assets/backgroundphotos/estudar-no-ispagaya.webp';
 import aondefuturo from '../assets/homepage/ondefuturo.webp';
 import helix from '../assets/homepage/destaques/helix-ispgaya-site.webp';
 import mais23 from '../assets/homepage/destaques/3.webp';
@@ -744,8 +744,9 @@ function HomePage() {
               viewAllHref="/laboratorio-cultural"
               viewAllLabel={getLocaleText(locale, 'Explorar o laboratório', 'Explore the lab')}
               detailBaseHref="/laboratorio-cultural/livros"
-              limit={4}
+              limit={10}
             />
+            
           </div>
         </section>
 

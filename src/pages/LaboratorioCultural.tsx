@@ -461,7 +461,7 @@ function LaboratorioCultural() {
                     'Books filtered by the current search.'
                   )}
                   detailBaseHref="/laboratorio-cultural/livros"
-                  limit={6}
+                  limit={10}
                 />
               </div>
             ) : null}
@@ -501,7 +501,7 @@ function LaboratorioCultural() {
                   viewAllHref="/laboratorio-cultural"
                   viewAllLabel={getLocaleText(locale, 'Ver laboratório', 'View lab')}
                   detailBaseHref="/laboratorio-cultural/livros"
-                  limit={6}
+                  limit={10}
                 />
 
 

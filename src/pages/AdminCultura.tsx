@@ -1111,6 +1111,20 @@ function AdminCultura() {
   }, [currentUser?.club_id, canManageUsers]);
 
   useEffect(() => {
+    if (!canManageUsers || activityTab !== 'books' || editingBookId !== null) {
+      return;
+    }
+
+    if (activityClubFilter === 'all') {
+      return;
+    }
+
+    setBookForm((prev) =>
+      prev.club_id === activityClubFilter ? prev : { ...prev, club_id: activityClubFilter }
+    );
+  }, [activityClubFilter, activityTab, canManageUsers, editingBookId]);
+
+  useEffect(() => {
     if (!currentUser) return;
 
     if (activeSection === 'atividades') {

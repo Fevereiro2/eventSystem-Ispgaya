@@ -542,9 +542,16 @@ function ActivitiesPage({
                       className={adminInput}
                       value={bookForm.club_id}
                       required={canManageUsers && activityClubFilter === 'all'}
-                      onChange={(event) =>
-                        setBookForm((prev) => ({ ...prev, club_id: event.target.value }))
-                      }
+                      onChange={(event) => {
+                        const nextClubId = event.target.value;
+                        if (import.meta.env.DEV) {
+                          console.log('[InfoCultura club select]', { nextClubId });
+                        }
+                        setBookForm((prev) => ({ ...prev, club_id: nextClubId }));
+                        if (canManageUsers) {
+                          setActivityClubFilter(nextClubId || 'all');
+                        }
+                      }}
                     >
                       <option value="">Seleciona um clube</option>
                       {clubs.map((club) => (

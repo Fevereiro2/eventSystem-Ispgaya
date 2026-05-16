@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 
 import type { InfoCulturaBook } from '../../api/infoculturaApi.js';
@@ -30,6 +31,159 @@ function sortBooks(list: InfoCulturaBook[]): InfoCulturaBook[] {
   });
 }
 
+function getSpineGradient(index: number): string {
+  const palettes = [
+    'from-[#dd8609] via-[#c77708] to-[#8a5405]',
+    'from-[#3f4a58] via-slate-800 to-slate-950',
+    'from-[#f4a24d] via-[#dd8609] to-[#b86c04]',
+    'from-slate-900 via-[#3f4a58] to-slate-700',
+    'from-[#2f3844] via-slate-700 to-[#dd8609]'
+  ];
+
+  return palettes[index % palettes.length] ?? palettes[0];
+}
+
+type BookSpineProps = {
+  book: InfoCulturaBook;
+  locale: Locale;
+  href: string;
+  spineColor: string;
+  isOpen: boolean;
+  onOpen: () => void;
+  onClose: () => void;
+};
+
+function BookSpine({
+  book,
+  locale,
+  href,
+  spineColor,
+  isOpen,
+  onOpen,
+  onClose
+}: BookSpineProps) {
+  return (
+    <div
+      className="relative h-[380px] w-[54px] shrink-0 overflow-visible outline-none"
+    >
+      <div
+        className="absolute -bottom-7 left-1/2 h-8 -translate-x-1/2 rounded-full bg-black/60 blur-xl transition-all duration-500"
+        style={{ width: isOpen ? '192px' : '48px', backgroundColor: isOpen ? 'rgba(0,0,0,0.8)' : 'rgba(0,0,0,0.6)' }}
+      />
+
+      <div className="relative h-full w-full [transform-style:preserve-3d]">
+        <button
+          type="button"
+          aria-label={getLocaleText(locale, `Abrir ${book.title}`, `Open ${book.title}`)}
+          aria-pressed={isOpen}
+          className={`absolute left-0 top-0 z-40 h-full w-[54px] overflow-hidden rounded-md border border-white/15 bg-gradient-to-b ${spineColor} shadow-[0_18px_35px_rgba(15,23,42,0.22)]`}
+          onClick={() => {
+            if (isOpen) {
+              onClose();
+            } else {
+              onOpen();
+            }
+          }}
+          onKeyDown={(event) => {
+            if (event.key === 'Enter' || event.key === ' ') {
+              event.preventDefault();
+              if (isOpen) {
+                onClose();
+              } else {
+                onOpen();
+              }
+            }
+          }}
+        >
+          <div className="absolute inset-x-0 top-0 h-1 bg-white/25" />
+          <div className="absolute inset-y-0 left-0 w-2 bg-white/10" />
+          <div className="absolute inset-y-0 right-0 w-2 bg-black/25" />
+          <div className="absolute inset-y-0 left-[9px] w-px bg-white/20" />
+
+          <p
+            className="absolute left-1/2 top-8 -translate-x-1/2 [writing-mode:vertical-rl] text-[10px] font-bold uppercase tracking-[0.34em]"
+            style={{ color: '#f8fafc' }}
+          >
+            ISPGAYA
+          </p>
+
+          <p
+            className="absolute left-1/2 top-24 -translate-x-1/2 [writing-mode:vertical-rl] text-[11px] font-semibold uppercase tracking-[0.18em]"
+            style={{ color: '#f8fafc' }}
+          >
+            {book.title}
+          </p>
+
+          <p
+            className="absolute bottom-6 left-1/2 -translate-x-1/2 [writing-mode:vertical-rl] text-[9px] uppercase tracking-[0.26em]"
+            style={{ color: '#e2e8f0' }}
+          >
+            {book.author}
+          </p>
+        </button>
+
+        <div
+          className="absolute left-[54px] top-0 h-full w-[196px] origin-left overflow-hidden rounded-r-lg border border-slate-200 bg-white shadow-[0_18px_38px_rgba(15,23,42,0.18)] transition-all duration-700 ease-out"
+          style={{
+            opacity: isOpen ? 1 : 0,
+            transform: isOpen ? 'rotateY(0deg)' : 'rotateY(86deg)',
+            pointerEvents: isOpen ? 'auto' : 'none'
+          }}
+        >
+          {book.cover_image ? (
+            <img
+              src={resolveInfoCulturaAssetUrl(book.cover_image)}
+              alt={book.title}
+              className="absolute inset-0 h-full w-full object-cover"
+            />
+          ) : (
+            <div className="absolute inset-0 bg-gradient-to-br from-slate-100 to-slate-300" />
+          )}
+
+          <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-white via-white/60 to-white/5" />
+          <div className="pointer-events-none absolute inset-y-0 left-0 w-5 bg-gradient-to-r from-black/20 to-transparent" />
+
+          <div className="relative z-10 flex h-full flex-col justify-end p-5 text-slate-900">
+            <p className="mb-3 text-[10px] font-semibold uppercase tracking-[0.24em] text-[#dd8609]">
+              ISPGAYA
+            </p>
+
+            <div className="border-l-4 border-[#dd8609] bg-white/90 px-3 py-3 shadow-sm backdrop-blur-sm">
+              <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-500">
+                {getLocaleText(locale, 'Livro', 'Book')}
+              </p>
+              <h3 className="mt-2 font-heading text-xl font-bold leading-tight text-slate-900">
+                {book.title}
+              </h3>
+              <p className="mt-3 text-sm font-medium text-slate-600">{book.author}</p>
+            </div>
+
+            <Link
+              to={href}
+              className="mt-4 inline-flex w-fit items-center text-sm font-semibold text-[#dd8609] underline-offset-2 hover:underline"
+              onClick={(event) => event.stopPropagation()}
+            >
+              {getLocaleText(locale, 'Ver detalhe', 'View details')}
+            </Link>
+          </div>
+
+          <div
+            className="pointer-events-none absolute inset-0 bg-gradient-to-tr from-transparent via-white/35 to-transparent transition-opacity duration-500"
+            style={{ opacity: isOpen ? 1 : 0 }}
+          />
+        </div>
+
+        <div
+          className="absolute left-[245px] top-4 h-[calc(100%-32px)] w-4 rounded-r-md bg-gradient-to-r from-zinc-200 to-zinc-400 shadow-lg transition-opacity duration-500"
+          style={{ opacity: isOpen ? 1 : 0 }}
+        >
+          <div className="h-full w-full bg-[linear-gradient(to_bottom,rgba(0,0,0,.12)_1px,transparent_1px)] bg-[length:100%_8px]" />
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function BestBooksSection({
   books,
   locale,
@@ -44,6 +198,14 @@ function BestBooksSection({
 }: BestBooksSectionProps) {
   const sortedBooks = sortBooks(books);
   const displayedBooks = typeof limit === 'number' ? sortedBooks.slice(0, limit) : sortedBooks;
+  const [activeBookId, setActiveBookId] = useState<number | null>(null);
+  const activeIndex = displayedBooks.findIndex((book) => book.id === activeBookId);
+
+  useEffect(() => {
+    if (activeBookId !== null && !displayedBooks.some((book) => book.id === activeBookId)) {
+      setActiveBookId(null);
+    }
+  }, [activeBookId, displayedBooks]);
 
   const resolvedTitle = title || getLocaleText(locale, 'Livros em destaque', 'Featured books');
   const resolvedDescription =
@@ -92,64 +254,31 @@ function BestBooksSection({
             {resolvedEmptyLabel}
           </p>
         ) : (
-          <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-4">
-            {displayedBooks.map((book) => (
-              <article
+          <div className="relative mx-auto flex max-w-6xl flex-wrap items-end justify-start gap-x-5 gap-y-16 overflow-visible px-4 py-16 pl-2 md:pl-6">
+            {displayedBooks.map((book, index) => (
+              <div
                 key={book.id}
-                className="group overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition-transform duration-200 hover:-translate-y-0.5"
+                className="relative shrink-0 transition-transform duration-500 ease-out hover:z-50"
+                style={{
+                  transform:
+                    activeIndex < 0 || activeIndex === index
+                      ? 'translateX(0)'
+                      : index < activeIndex
+                        ? `translateX(-${Math.min((activeIndex - index) * 8, 24)}px)`
+                        : `translateX(${Math.min(250 + (index - activeIndex - 1) * 14, 320)}px)`,
+                  zIndex: activeIndex === index ? 20 : 1
+                }}
               >
-                {book.cover_image ? (
-                  <img
-                    src={resolveInfoCulturaAssetUrl(book.cover_image)}
-                    alt={book.title}
-                    className="h-48 w-full object-cover transition-transform duration-300 group-hover:scale-105"
-                  />
-                ) : (
-                  <div className="flex h-48 w-full items-center justify-center bg-gradient-to-br from-slate-100 to-slate-200 px-6 text-center">
-                    <div>
-                      <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
-                        {getLocaleText(locale, 'Livro', 'Book')}
-                      </p>
-                      <h3 className="mt-2 text-lg font-semibold text-slate-900">{book.title}</h3>
-                    </div>
-                  </div>
-                )}
-
-                <div className="p-5">
-                  <div className="flex items-start justify-between gap-3">
-                    <div>
-                      <h3 className="text-lg font-semibold text-slate-900">{book.title}</h3>
-                      <p className="mt-1 text-sm text-slate-500">
-                        {book.author} · {book.publication_year}
-                      </p>
-                    </div>
-                    <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-600">
-                      {book.is_featured
-                        ? getLocaleText(locale, 'Destaque', 'Featured')
-                        : getLocaleText(locale, 'Livro', 'Book')}
-                    </span>
-                  </div>
-
-                  {book.club_name ? (
-                    <p className="mt-3 text-xs font-semibold uppercase tracking-[0.12em] text-[#dd8609]">
-                      {book.club_name}
-                    </p>
-                  ) : null}
-
-                  <p className="mt-3 line-clamp-3 text-sm leading-6 text-slate-700">
-                    {book.summary}
-                  </p>
-
-                  <div className="mt-4">
-                    <Link
-                      to={`${detailBaseHref}/${book.id}`}
-                      className="inline-flex items-center text-sm font-semibold text-[#dd8609] underline-offset-2 hover:underline"
-                    >
-                      {getLocaleText(locale, 'Ver detalhe', 'View details')}
-                    </Link>
-                  </div>
-                </div>
-              </article>
+                <BookSpine
+                  book={book}
+                  locale={locale}
+                  href={`${detailBaseHref}/${book.id}`}
+                  spineColor={getSpineGradient(index)}
+                  isOpen={activeBookId === book.id}
+                  onOpen={() => setActiveBookId(book.id)}
+                  onClose={() => setActiveBookId(null)}
+                />
+              </div>
             ))}
           </div>
         )}
