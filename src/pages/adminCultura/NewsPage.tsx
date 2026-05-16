@@ -151,7 +151,7 @@ function NewsPage({
       <AdminPageHero
         icon={Newspaper}
         title="Noticias"
-        description="Workflow editorial, publicacao e acompanhamento das noticias por clube."
+        description="Workflow editorial, publicação e acompanhamento das noticias por clube."
         tone="blue"
         stats={newsOverviewStats}
       />
@@ -189,7 +189,7 @@ function NewsPage({
 
             <div className={adminField}>
               <label className={adminLabel} htmlFor="news-title">
-                Titulo
+                Título
               </label>
               <input
                 id="news-title"
@@ -226,7 +226,7 @@ function NewsPage({
               <p className={blockText}>
                 {canManageUsers
                   ? 'O superadmin pode publicar ou arquivar diretamente.'
-                  : 'O club_admin trabalha em rascunho ou envia para revisao.'}
+                  : 'O club_admin trabalha em rascunho ou envia para revisão.'}
               </p>
             </div>
 
@@ -285,7 +285,7 @@ function NewsPage({
                 ? 'A carregar imagem...'
                 : newsForm.image
                   ? 'Imagem carregada com sucesso.'
-                  : 'Seleciona uma imagem para a noticia.'}
+                  : 'Seleciona uma imagem para a notícia.'}
             </p>
             {newsForm.image ? (
               <img
@@ -298,7 +298,7 @@ function NewsPage({
 
           <div className={adminFieldSpaced}>
             <label className={adminLabel} htmlFor="news-content">
-              Conteudo
+              Conteúdo
             </label>
             <textarea
               id="news-content"
@@ -328,8 +328,8 @@ function NewsPage({
         <section id="news-list" className={adminPanelCard}>
           <div className={adminHeaderRow}>
             <div>
-              <h2 className={blockTitle}>Noticias registadas</h2>
-              <p className={blockText}>Lista das noticias criadas no InfoCultura.</p>
+              <h2 className={blockTitle}>Notícias registadas</h2>
+              <p className={blockText}>Lista das Notícias criadas no InfoCultura.</p>
             </div>
             {canManageUsers ? (
               <div className={adminField}>
@@ -384,7 +384,7 @@ function NewsPage({
                   className={adminInput}
                   value={newsSearchInput}
                   onChange={(event) => setNewsSearchInput(event.target.value)}
-                  placeholder="Titulo, resumo, conteudo ou clube"
+                  placeholder="Titulo, resumo, conteúdo ou clube"
                 />
               </div>
               <div className={adminActions}>
@@ -422,7 +422,7 @@ function NewsPage({
             </div>
             <div className={adminField}>
               <label className={adminLabel} htmlFor="news-date-to">
-                Criadas ate
+                Criadas até
               </label>
               <input
                 id="news-date-to"
@@ -468,8 +468,8 @@ function NewsPage({
               disabled={sortedNews.length === 0}
             >
               {selectedNewsIds.length === sortedNews.length && sortedNews.length > 0
-                ? 'Limpar selecao'
-                : 'Selecionar pagina'}
+                ? 'Limpar seleção'
+                : 'Selecionar página'}
             </button>
             <select
               className={adminInput}
@@ -501,9 +501,9 @@ function NewsPage({
           </div>
 
           <div className={adminList}>
-            {isLoadingNews ? <p className={adminInfo}>A carregar noticias...</p> : null}
+            {isLoadingNews ? <p className={adminInfo}>A carregar notícias...</p> : null}
             {!isLoadingNews && sortedNews.length === 0 ? (
-              <p className={adminInfo}>Nao existem noticias para o filtro atual.</p>
+              <p className={adminInfo}>Não existem notícias para o filtro atual.</p>
             ) : null}
             {sortedNews.map((item) => (
               <article key={item.id} className={adminListItem}>
@@ -567,7 +567,7 @@ function NewsPage({
           {!isLoadingNews ? (
             <div className={`${adminActions} mt-6`}>
               <p className={adminInfo}>
-                {newsTotal} noticia(s) · pagina {newsPage} de {newsTotalPages || 1}
+                {newsTotal} notícia(s) · página {newsPage} de {newsTotalPages || 1}
               </p>
               <button
                 type="button"

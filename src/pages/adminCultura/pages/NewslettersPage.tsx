@@ -175,7 +175,7 @@ function NewslettersPage() {
           ? caughtError.message
           : caughtError instanceof Error
             ? caughtError.message
-            : getLocaleText(locale, 'Nao foi possivel guardar o subscritor.', 'Could not save the subscriber.');
+            : getLocaleText(locale, 'Não foi possivel guardar o subscritor.', 'Could not save the subscriber.');
       setError(message);
     } finally {
       setSavingSubscriber(false);
@@ -217,7 +217,7 @@ function NewslettersPage() {
           ? caughtError.message
           : caughtError instanceof Error
             ? caughtError.message
-            : getLocaleText(locale, 'Nao foi possivel apagar a newsletter.', 'Could not delete the newsletter.');
+            : getLocaleText(locale, 'Não foi possivel apagar a newsletter.', 'Could not delete the newsletter.');
       setError(message);
     } finally {
       setDeletingNewsletterId(null);
@@ -239,7 +239,7 @@ function NewslettersPage() {
           ? caughtError.message
           : caughtError instanceof Error
             ? caughtError.message
-            : getLocaleText(locale, 'Nao foi possivel apagar o subscritor.', 'Could not delete the subscriber.');
+            : getLocaleText(locale, 'Não foi possivel apagar o subscritor.', 'Could not delete the subscriber.');
       setError(message);
     } finally {
       setDeletingSubscriberId(null);
@@ -260,7 +260,7 @@ function NewslettersPage() {
           ? caughtError.message
           : caughtError instanceof Error
             ? caughtError.message
-            : getLocaleText(locale, 'Nao foi possivel enviar a newsletter.', 'Could not send the newsletter.');
+            : getLocaleText(locale, 'Não foi possivel enviar a newsletter.', 'Could not send the newsletter.');
       setError(message);
     } finally {
       setSendingNewsletterId(null);
@@ -272,7 +272,7 @@ function NewslettersPage() {
       <AdminPageHero
         icon={Mail}
         title={getLocaleText(locale, 'Newsletters', 'Newsletters')}
-        description={getLocaleText(locale, 'Criacao, gestao e envio de campanhas por email para os subscritores ativos.', 'Creation, management and sending of email campaigns to active subscribers.')}
+        description={getLocaleText(locale, 'Criação, gestão e envio de campanhas por email para os subscritores ativos.', 'Creation, management and sending of email campaigns to active subscribers.')}
         tone="blue"
         stats={[
           { label: getLocaleText(locale, 'Newsletters', 'Newsletters'), value: newsletters.length },
@@ -447,7 +447,7 @@ function NewslettersPage() {
             ))}
 
             {!loading && newsletters.length === 0 ? (
-              <p className={adminInfo}>Nao existem newsletters registadas.</p>
+              <p className={adminInfo}>Não existem newsletters registadas.</p>
             ) : null}
           </div>
         </div>
@@ -556,7 +556,7 @@ function NewslettersPage() {
             ))}
 
             {!loading && subscribers.length === 0 ? (
-              <p className={adminInfo}>Nao existem subscritores registados.</p>
+              <p className={adminInfo}>Não existem subscritores registados.</p>
             ) : null}
           </div>
         </div>

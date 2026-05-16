@@ -22,7 +22,7 @@ export const EVENT_WORKFLOW_ORDER = ['draft', 'review', 'published', 'archived']
 
 export const WORKFLOW_LABELS: Record<string, string> = {
   draft: 'Rascunho',
-  review: 'Em revisao',
+  review: 'Em revisão',
   published: 'Publicado',
   archived: 'Arquivado',
   rascunho: 'Rascunho',
@@ -126,17 +126,17 @@ export const allActivityTabs: ActivityTab[] = ['books', 'sessions', 'events'];
 
 export const adminSections: { id: AdminSection; label: string; href: string }[] = [
   { id: 'resumo', label: 'Resumo', href: '/infocultura/resumo' },
-  { id: 'metricas', label: 'Metricas', href: '/infocultura/metricas' },
+  { id: 'metricas', label: 'Métricas', href: '/infocultura/metricas' },
   { id: 'logs', label: 'Logs', href: '/infocultura/logs' },
-  { id: 'notificacoes', label: 'Notificacoes', href: '/infocultura/notificacoes' },
+  { id: 'notificacoes', label: 'Notificações', href: '/infocultura/notificacoes' },
   { id: 'newsletters', label: 'Newsletters', href: '/infocultura/newsletters' },
   { id: 'utilizadores', label: 'Utilizadores', href: '/infocultura/utilizadores' },
-  { id: 'noticias', label: 'Noticias', href: '/infocultura/noticias' },
+  { id: 'noticias', label: 'Notícias', href: '/infocultura/noticias' },
   { id: 'livros', label: 'Livros', href: '/infocultura/livros' },
-  { id: 'sessoes', label: 'Sessoes', href: '/infocultura/sessoes' },
+  { id: 'sessoes', label: 'Sessões', href: '/infocultura/sessoes' },
   { id: 'eventos', label: 'Eventos', href: '/infocultura/eventos' },
-  { id: 'conteudos', label: 'Conteudos', href: '/infocultura/conteudos' },
-  { id: 'inscricoes', label: 'Inscricoes', href: '/infocultura/inscricoes' },
+  { id: 'conteudos', label: 'Conteúdos', href: '/infocultura/conteudos' },
+  { id: 'inscricoes', label: 'Inscrições', href: '/infocultura/inscricoes' },
   { id: 'clubes', label: 'Clubes', href: '/infocultura/clubes' }
 ];
 
@@ -145,6 +145,6 @@ export const adminSectionGroups: {
   ids: AdminSection[];
 }[] = [
   { title: 'Painel', ids: ['resumo', 'metricas', 'logs', 'notificacoes'] },
-  { title: 'Gestao', ids: ['newsletters', 'utilizadores', 'clubes', 'inscricoes'] },
-  { title: 'Conteudos', ids: ['noticias', 'livros', 'sessoes', 'eventos', 'conteudos'] }
+  { title: 'Gestão', ids: ['newsletters', 'utilizadores', 'clubes', 'inscricoes'] },
+  { title: 'Conteúdos', ids: ['noticias', 'livros', 'sessoes', 'eventos', 'conteudos'] }
 ];

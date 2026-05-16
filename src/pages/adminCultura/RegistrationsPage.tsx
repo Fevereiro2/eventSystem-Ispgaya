@@ -140,14 +140,14 @@ function RegistrationsPage({
     <div className="space-y-6">
       <AdminPageHero
         icon={Inbox}
-        title="Inscricoes"
-        description="Consulta, triagem e validacao dos pedidos submetidos pelos clubes."
+        title="Inscrições"
+        description="Consulta, triagem e validação dos pedidos submetidos pelos clubes."
         tone="rose"
         stats={registrationOverviewStats}
       />
 
       <section className={adminPanelCard}>
-        <h2 className={blockTitle}>Inscricoes</h2>
+        <h2 className={blockTitle}>Inscrições</h2>
         <p className={blockText}>
           Consulta os pedidos submetidos pelos clubes e atualiza o respetivo estado.
         </p>
@@ -159,15 +159,15 @@ function RegistrationsPage({
           </div>
           <div className={adminStatCard}>
             <p className={adminStatValue}>{pendingRegistrations}</p>
-            <p className={adminStatLabel}>Pendentes na pagina</p>
+            <p className={adminStatLabel}>Pendentes na página</p>
           </div>
           <div className={adminStatCard}>
             <p className={adminStatValue}>{approvedRegistrations}</p>
-            <p className={adminStatLabel}>Aprovadas na pagina</p>
+            <p className={adminStatLabel}>Aprovadas na página</p>
           </div>
           <div className={adminStatCard}>
             <p className={adminStatValue}>{rejectedRegistrations}</p>
-            <p className={adminStatLabel}>Rejeitadas na pagina</p>
+            <p className={adminStatLabel}>Rejeitadas na página</p>
           </div>
         </div>
 
@@ -332,7 +332,7 @@ function RegistrationsPage({
         {!isLoadingRegistrations ? (
           <div className={adminActions}>
             <p className={blockText}>
-              Pagina {registrationPage}
+              página {registrationPage}
               {registrationTotalPages > 0 ? ` de ${registrationTotalPages}` : ''} ·{' '}
               {registrationTotal} resultado{registrationTotal === 1 ? '' : 's'}
             </p>
@@ -364,9 +364,9 @@ function RegistrationsPage({
         ) : null}
 
         <div className={adminUserList}>
-          {isLoadingRegistrations ? <p className={adminInfo}>A carregar inscricoes...</p> : null}
+          {isLoadingRegistrations ? <p className={adminInfo}>A carregar inscrições...</p> : null}
           {!isLoadingRegistrations && registrations.length === 0 ? (
-            <p className={adminInfo}>Nao existem inscricoes para os filtros atuais.</p>
+            <p className={adminInfo}>Não existem inscrições para os filtros atuais.</p>
           ) : null}
           {registrations.map((registration) => (
             <article key={registration.id} className={adminUserItem}>

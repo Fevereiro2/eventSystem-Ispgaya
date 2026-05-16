@@ -115,7 +115,7 @@ function ClubsPage({
       <AdminPageHero
         icon={Building2}
         title="Clubes"
-        description="Estrutura interna dos clubes, estados de atividade e configuracao de inscricoes."
+        description="Estrutura interna dos clubes, estados de atividade e configuração de inscrições."
         tone="amber"
         stats={clubsOverviewStats}
       />
@@ -123,7 +123,7 @@ function ClubsPage({
       <form onSubmit={handleSaveClub} className={adminPanelForm}>
         <h2 className={blockTitle}>{editingClubId ? 'Editar Clube' : 'Novo Clube'}</h2>
         <p className={blockText}>
-          Cria clubes para organizar a estrutura do InfoCultura. Esta secao e reservada
+          Cria clubes para organizar a estrutura do InfoCultura. Esta seçcão e reservada
           ao superadmin.
         </p>
 
@@ -164,7 +164,7 @@ function ClubsPage({
                 ? 'A carregar imagem...'
                 : clubForm.image
                   ? 'Imagem carregada com sucesso.'
-                  : 'Seleciona uma imagem do computador ou telemovel.'}
+                  : 'Seleciona uma imagem do computador ou telemóvel.'}
             </p>
             {clubForm.image ? (
               <img
@@ -177,7 +177,7 @@ function ClubsPage({
 
           <div className={adminField}>
             <label className={adminLabel} htmlFor="club-mission">
-              Missao
+              Missão
             </label>
             <textarea
               id="club-mission"
@@ -215,7 +215,7 @@ function ClubsPage({
 
           <div className={adminField}>
             <label className={adminLabel} htmlFor="club-registrations">
-              Permitir inscricoes
+              Permitir inscrições
             </label>
             <select
               id="club-registrations"
@@ -236,7 +236,7 @@ function ClubsPage({
 
         <div className={adminFieldSpaced}>
           <label className={adminLabel} htmlFor="club-description">
-            Descricao
+            Descrição
           </label>
           <textarea
             id="club-description"
@@ -259,7 +259,7 @@ function ClubsPage({
             {isSavingClub
               ? 'A guardar...'
               : editingClubId
-                ? 'Guardar alteracoes'
+                ? 'Guardar alterações'
                 : 'Criar clube'}
           </button>
           <button type="button" onClick={resetClubForm} className={adminBtnSecondary}>
@@ -296,7 +296,7 @@ function ClubsPage({
               </button>
             </div>
             {usersWithoutClub.length === 0 ? (
-              <p className={adminInfo}>Nao existem utilizadores ativos sem clube.</p>
+              <p className={adminInfo}>Não existem utilizadores ativos sem clube.</p>
             ) : null}
           </div>
         ) : (
@@ -344,7 +344,7 @@ function ClubsPage({
           </div>
           <div className={adminField}>
             <label className={adminLabel} htmlFor="club-date-to">
-              Criados ate
+              Criados até
             </label>
             <input
               id="club-date-to"
@@ -369,7 +369,7 @@ function ClubsPage({
               <option value="oldest">Mais antigos</option>
               <option value="name_asc">Nome A-Z</option>
               <option value="name_desc">Nome Z-A</option>
-              <option value="registrations_open">Inscricoes abertas primeiro</option>
+              <option value="registrations_open">Inscrições abertas primeiro</option>
             </select>
           </div>
         </div>
@@ -377,7 +377,7 @@ function ClubsPage({
         <div className={adminUserList}>
           {isLoadingClubs ? <p className={adminInfo}>A carregar clubes...</p> : null}
           {!isLoadingClubs && filteredClubs.length === 0 ? (
-            <p className={adminInfo}>Nao existem clubes registados.</p>
+            <p className={adminInfo}>Não existem clubes registados.</p>
           ) : null}
           {filteredClubs.map((club) => (
             <article key={club.id} className={adminUserItem}>
@@ -390,8 +390,8 @@ function ClubsPage({
                   />
                 ) : null}
                 <h3 className={adminUserName}>{club.name}</h3>
-                <p className={adminUserEmail}>{club.mission || 'Sem missao definida'}</p>
-                <p className={adminUserMeta}>{club.description || 'Sem descricao'}</p>
+                <p className={adminUserEmail}>{club.mission || 'Sem missão definida'}</p>
+                <p className={adminUserMeta}>{club.description || 'Sem descrição'}</p>
                 <p className={adminUserMeta}>
                   Inscricoes: {club.enable_registrations ? 'Permitidas' : 'Desativadas'}
                 </p>
@@ -428,13 +428,13 @@ function ClubsPage({
         <section className={adminPanelCard}>
           <h2 className={blockTitle}>Utilizadores deste clube</h2>
           <p className={blockText}>
-            Aqui podes ver quem pertence ao clube em edicao e remover a associacao se
-            necessario.
+            Aqui podes ver quem pertence ao clube em edição e remover a associação se
+            necessário.
           </p>
 
           <div className={adminUserList}>
             {clubMembers.length === 0 ? (
-              <p className={adminInfo}>Ainda nao existem utilizadores associados.</p>
+              <p className={adminInfo}>Ainda não existem utilizadores associados.</p>
             ) : null}
             {clubMembers.map((user) => (
               <article key={user.id} className={adminUserItem}>
