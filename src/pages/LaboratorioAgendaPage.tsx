@@ -222,33 +222,33 @@ function LaboratorioAgendaPage() {
       />
 
       <main className={mainContent}>
-        <section className="py-12 md:py-14">
-          <div className={container}>
+        <section className="py-8 md:py-14">
+          <div className={`${container} px-4 sm:px-6 lg:px-3 xl:px-8`}>
             {isLoading ? <p className={contentEmpty}>{getLocaleText(locale, 'A carregar agenda...', 'Loading agenda...')}</p> : null}
             {loadError ? <p className={contentEmpty}>{loadError}</p> : null}
 
             {!isLoading && !loadError ? (
-              <div className="space-y-10">
-                <section className="rounded-[2rem] border border-slate-200 bg-[linear-gradient(135deg,#fff7ec_0%,#ffffff_46%,#f6f8fb_100%)] p-6 shadow-sm md:p-8">
-                  <div className="flex flex-wrap items-start justify-between gap-4">
-                    <div>
+              <div className="space-y-6 md:space-y-10">
+                <section className="border-b border-slate-200 pb-6 md:pb-8">
+                  <div className="flex flex-col items-start justify-between gap-4 md:flex-row">
+                    <div className="min-w-0">
                       <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#dd8609]">
                         {getLocaleText(locale, 'Explorar agenda', 'Explore agenda')}
                       </p>
-                      <h2 className="mt-3 font-heading text-3xl font-semibold text-slate-900">
+                      <h2 className="mt-3 break-words font-heading text-2xl font-semibold text-slate-900 sm:text-3xl">
                         {getLocaleText(locale, 'Vê todos os eventos por filtro', 'See all events by filter')}
                       </h2>
-                      <p className="mt-3 max-w-3xl text-base leading-8 text-slate-700">
+                      <p className="mt-3 max-w-3xl text-sm leading-7 text-slate-700 sm:text-base sm:leading-8">
                         {getLocaleText(locale, 'Filtra por clube, categoria, cidade e estado. Depois navega no calendário para perceber rapidamente o que acontece em cada data.', 'Filter by club, category, city and status. Then browse the calendar to quickly understand what happens on each date.')}
                       </p>
                     </div>
-                    <Link to="/laboratorio-cultural" className={adminBtnSecondary}>
+                    <Link to="/laboratorio-cultural" className={`${adminBtnSecondary} w-full text-center sm:w-auto`}>
                       {getLocaleText(locale, 'Voltar ao laboratório', 'Back to laboratory')}
                     </Link>
                   </div>
                 </section>
 
-                <section className="rounded-2xl border border-slate-200 bg-slate-50 p-6">
+                <section className="border-b border-slate-200 pb-6">
                   <div className={adminFormGridSpaced}>
                     <div className={adminField}>
                       <label className={adminLabel} htmlFor="agenda-event-club-filter">
@@ -329,10 +329,10 @@ function LaboratorioAgendaPage() {
                     </div>
                   </div>
 
-                  <div className="mt-5 flex flex-wrap gap-3">
+                  <div className="mt-5 grid grid-cols-1 gap-3 sm:flex sm:flex-wrap">
                     <button
                       type="button"
-                      className={adminBtnSecondary}
+                      className={`${adminBtnSecondary} w-full text-center sm:w-auto`}
                       onClick={() => {
                         setEventClubFilter('all');
                         setEventCategoryFilter('all');
@@ -346,7 +346,7 @@ function LaboratorioAgendaPage() {
                     {selectedDate ? (
                       <button
                         type="button"
-                        className={adminBtnSecondary}
+                        className={`${adminBtnSecondary} w-full text-center sm:w-auto`}
                         onClick={() => setSelectedDate('')}
                       >
                         {getLocaleText(locale, 'Limpar data', 'Clear date')}
@@ -355,9 +355,9 @@ function LaboratorioAgendaPage() {
                   </div>
                 </section>
 
-                <section className="grid gap-8 xl:grid-cols-[1.1fr_0.9fr]">
-                  <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm md:p-6">
-                    <div className="mb-5 flex items-center justify-between gap-4">
+                <section className="grid gap-6 xl:grid-cols-[1.1fr_0.9fr] xl:gap-8">
+                  <div className="min-w-0">
+                    <div className="mb-4 flex items-center justify-between gap-2 sm:mb-5 sm:gap-4">
                       <button
                         type="button"
                         onClick={() =>
@@ -365,11 +365,11 @@ function LaboratorioAgendaPage() {
                             (current) => new Date(current.getFullYear(), current.getMonth() - 1, 1)
                           )
                         }
-                        className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 text-slate-700 transition hover:border-[#dd8609] hover:text-[#dd8609]"
+                          className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-slate-200 text-slate-700 transition hover:border-[#dd8609] hover:text-[#dd8609] sm:h-10 sm:w-10"
                       >
                         <ChevronLeft className="h-5 w-5" />
                       </button>
-                      <h2 className="font-heading text-2xl font-semibold capitalize text-slate-900">
+                      <h2 className="min-w-0 break-words text-center font-heading text-xl font-semibold capitalize text-slate-900 sm:text-2xl">
                         {formatMonthLabel(visibleMonth, locale)}
                       </h2>
                       <button
@@ -379,18 +379,18 @@ function LaboratorioAgendaPage() {
                             (current) => new Date(current.getFullYear(), current.getMonth() + 1, 1)
                           )
                         }
-                        className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 text-slate-700 transition hover:border-[#dd8609] hover:text-[#dd8609]"
+                          className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-slate-200 text-slate-700 transition hover:border-[#dd8609] hover:text-[#dd8609] sm:h-10 sm:w-10"
                       >
                         <ChevronRight className="h-5 w-5" />
                       </button>
                     </div>
 
-                    <div className="grid grid-cols-7 gap-1 text-center text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-500 sm:gap-2 sm:text-xs">
+                    <div className="grid grid-cols-7 gap-1 text-center text-[9px] font-semibold uppercase tracking-[0.04em] text-slate-500 sm:gap-2 sm:text-xs sm:tracking-[0.12em]">
                       {(locale === 'en'
                         ? ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
                         : ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom']
                       ).map((day) => (
-                        <div key={day} className="py-2">
+                          <div key={day} className="py-1.5 sm:py-2">
                           {day}
                         </div>
                       ))}
@@ -407,18 +407,21 @@ function LaboratorioAgendaPage() {
                             key={dateKey}
                             type="button"
                             onClick={() => setSelectedDate(isSelected ? '' : dateKey)}
-                            className={`min-h-[72px] rounded-2xl border p-2 text-left transition sm:min-h-[88px] ${
+                            className={`min-h-[46px] border-b border-r border-slate-200 p-1.5 text-left transition sm:min-h-[88px] sm:p-2 ${
                               isSelected
-                                ? 'border-[#dd8609] bg-orange-50'
+                                ? 'bg-orange-50 text-[#dd8609]'
                                 : inMonth
-                                  ? 'border-slate-200 bg-white hover:border-slate-300'
-                                  : 'border-slate-100 bg-slate-50 text-slate-400'
+                                  ? 'bg-white hover:bg-slate-50'
+                                  : 'bg-slate-50 text-slate-400'
                             }`}
                           >
-                            <span className="block text-sm font-semibold">{date.getDate()}</span>
+                            <span className="block text-xs font-semibold sm:text-sm">{date.getDate()}</span>
                             {items.length > 0 ? (
-                              <span className="mt-2 block text-[10px] text-slate-600 sm:text-xs">
-                                {items.length} {getLocaleText(locale, 'evento(s)', 'event(s)')}
+                              <span className="mt-1 block text-[9px] leading-tight text-slate-600 sm:mt-2 sm:text-xs">
+                                <span className="sm:hidden">{items.length}</span>
+                                <span className="hidden sm:inline">
+                                  {items.length} {getLocaleText(locale, 'evento(s)', 'event(s)')}
+                                </span>
                               </span>
                             ) : null}
                           </button>
@@ -427,10 +430,10 @@ function LaboratorioAgendaPage() {
                     </div>
                   </div>
 
-                  <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm md:p-6">
+                  <div className="min-w-0 border-t border-slate-200 pt-6 xl:border-t-0 xl:pt-0">
                     <div className="flex items-start justify-between gap-4">
-                      <div>
-                        <h2 className="font-heading text-2xl font-semibold text-slate-900">
+                      <div className="min-w-0">
+                        <h2 className="break-words font-heading text-xl font-semibold text-slate-900 sm:text-2xl">
                           {selectedDate ? `${getLocaleText(locale, 'Eventos em', 'Events on')} ${formatDateLabel(selectedDate, locale)}` : getLocaleText(locale, 'Visão geral filtrada', 'Filtered overview')}
                         </h2>
                         <p className="mt-2 text-sm leading-6 text-slate-600">
@@ -448,7 +451,7 @@ function LaboratorioAgendaPage() {
                         filteredEvents.map((item) => (
                           <article
                             key={item.id}
-                            className="overflow-hidden rounded-2xl border border-slate-200 bg-slate-50"
+                            className="border-b border-slate-200 pb-5"
                           >
                             {item.image ? (
                               <img
@@ -457,10 +460,10 @@ function LaboratorioAgendaPage() {
                                 className="h-32 w-full object-cover sm:h-40"
                               />
                             ) : null}
-                            <div className="p-5">
-                              <div className="flex flex-wrap items-start justify-between gap-3">
-                                <h3 className="text-lg font-semibold text-slate-900">{item.title}</h3>
-                                <span className="rounded-full bg-white px-3 py-1 text-xs font-medium text-slate-600">
+                            <div className={item.image ? 'pt-4 sm:pt-5' : ''}>
+                              <div className="flex flex-col items-start gap-3 sm:flex-row sm:justify-between">
+                                <h3 className="min-w-0 break-words text-base font-semibold text-slate-900 sm:text-lg">{item.title}</h3>
+                                <span className="text-xs font-semibold uppercase tracking-[0.12em] text-[#dd8609]">
                                   {getEventTimeState(item) === 'upcoming'
                                     ? getLocaleText(locale, 'Próximo', 'Upcoming')
                                     : getEventTimeState(item) === 'ongoing'

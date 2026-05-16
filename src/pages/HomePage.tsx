@@ -678,25 +678,26 @@ function HomePage() {
                 <div className="flex items-center py-4">
                   <button
                     type="button"
-                    onClick={() =>
-                      setActiveSupport((current) =>
-                        current === 0 ? supportSlides.length - 1 : current - 1
-                      )
-                    }
-                    className="p-2 text-gray-700 transition hover:text-gray-600"
+                    onClick={() => setActiveSupport((current) => Math.max(current - 1, 0))}
+                    disabled={activeSupport === 0}
+                    className="swiper-button-prev p-2 text-gray-700 transition hover:text-gray-600 disabled:cursor-not-allowed disabled:opacity-30"
+                    aria-label={getLocaleText(locale, 'Slide anterior', 'Previous slide')}
                   >
+                    <span className="sr-only">{getLocaleText(locale, 'Anterior', 'Previous')}</span>
                     <ChevronLeft className="h-7 w-7" />
                   </button>
 
-                  <div className="mx-2 flex items-center space-x-3">
+                  <div className="swiper-pagination swiper-pagination-clickable swiper-pagination-bullets swiper-pagination-horizontal mx-2 flex items-center space-x-3">
                     {supportSlides.map((item, index) => (
                       <button
                         key={item.title}
                         type="button"
                         onClick={() => setActiveSupport(index)}
-                        className={`h-2.5 w-2.5 rounded-full ${
-                          index === activeSupport ? 'bg-orange-400' : 'bg-gray-300'
+                        className={`h-5 w-5 rounded-full bg-orange-200 transition-transform ${
+                          index === activeSupport ? 'scale-125 bg-orange-400' : ''
                         }`}
+                        aria-label={`Slide ${index + 1}`}
+                        aria-current={index === activeSupport ? 'true' : undefined}
                       >
                         <span className="sr-only">Slide {index + 1}</span>
                       </button>
@@ -705,9 +706,14 @@ function HomePage() {
 
                   <button
                     type="button"
-                    onClick={() => setActiveSupport((current) => (current + 1) % supportSlides.length)}
-                    className="p-2 text-gray-700 transition hover:text-gray-600"
+                    onClick={() =>
+                      setActiveSupport((current) => Math.min(current + 1, supportSlides.length - 1))
+                    }
+                    disabled={activeSupport === supportSlides.length - 1}
+                    className="swiper-button-next p-2 text-gray-700 transition hover:text-gray-600 disabled:cursor-not-allowed disabled:opacity-30"
+                    aria-label={getLocaleText(locale, 'Slide seguinte', 'Next slide')}
                   >
+                    <span className="sr-only">{getLocaleText(locale, 'Seguinte', 'Next')}</span>
                     <ChevronRight className="h-7 w-7" />
                   </button>
                 </div>
