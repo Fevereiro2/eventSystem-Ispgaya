@@ -12,6 +12,7 @@ export type UserFormState = {
   name: string;
   email: string;
   role: string;
+  club_id: string;
   password: string;
   generate_password: boolean;
 };

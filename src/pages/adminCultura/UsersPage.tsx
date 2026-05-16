@@ -29,7 +29,7 @@ import {
   adminUserStatusActive,
   adminUserStatusInactive,
 } from '../../styles/ui';
-import { InfoCulturaRole, InfoCulturaUser } from '../../api/infoculturaApi';
+import { InfoCulturaClub, InfoCulturaRole, InfoCulturaUser } from '../../api/infoculturaApi';
 import UserFormPanel from './components/UserFormPanel.js';
 
 type AdminHeroStat = { label: string; value: string | number };
@@ -49,6 +49,8 @@ type UsersPageProps = {
   setUserOrder: Dispatch<SetStateAction<string>>;
   isSavingUser: boolean;
   isLoadingRoles: boolean;
+  clubs: InfoCulturaClub[];
+  isLoadingClubs: boolean;
   roles: InfoCulturaRole[];
   userForm: UserFormState;
   setUserForm: Dispatch<SetStateAction<UserFormState>>;
@@ -75,6 +77,8 @@ function UsersPage({
   setUserOrder,
   isSavingUser,
   isLoadingRoles,
+  clubs,
+  isLoadingClubs,
   roles,
   userForm,
   setUserForm,
@@ -331,6 +335,8 @@ function UsersPage({
         isLoadingUsers={isLoadingUsers}
         isSavingUser={isSavingUser}
         isLoadingRoles={isLoadingRoles}
+        clubs={clubs}
+        isLoadingClubs={isLoadingClubs}
         roles={roles}
         userForm={userForm}
         setUserForm={setUserForm}

@@ -38,14 +38,24 @@ function renderBreadcrumbLink(href: string, label: string, className: string) {
 }
 
 function Breadcrumbs({
-  title = 'Publicacoes Cientificas',
-  description = 'O ISPGAYA desenvolve investigacao cientifica nas diversas areas em que oferece formacao, resultando em publicacoes, livros, capitulos e artigos cientificos.',
-  parentLabel = 'Investigacao',
+  title,
+  description,
+  parentLabel,
   parentHref = '/',
-  currentLabel = 'Publicacoes Cientificas',
+  currentLabel,
   currentHref = '/'
 }: BreadcrumbsProps) {
   const { locale } = useLocale();
+  const resolvedTitle = title || getLocaleText(locale, 'Publicações Científicas', 'Scientific Publications');
+  const resolvedDescription =
+    description ||
+    getLocaleText(
+      locale,
+      'O ISPGAYA desenvolve investigação científica nas diversas áreas em que oferece formação, resultando em publicações, livros, capítulos e artigos científicos.',
+      'ISPGAYA develops scientific research across the various areas where it offers training, resulting in publications, books, chapters and scientific articles.'
+    );
+  const resolvedParentLabel = parentLabel || getLocaleText(locale, 'Investigação', 'Research');
+  const resolvedCurrentLabel = currentLabel || getLocaleText(locale, 'Publicações Científicas', 'Scientific Publications');
   return (
     <div className={heroPatternWrap}>
       <section className={heroPatternSection}>
@@ -53,21 +63,21 @@ function Breadcrumbs({
           <ol role="list" className={breadcrumbsList}>
             <li>
               <div className={breadcrumbsItemMuted}>
-                {renderBreadcrumbLink(parentHref, parentLabel, breadcrumbsAnchor)}
+                {renderBreadcrumbLink(parentHref, resolvedParentLabel, breadcrumbsAnchor)}
                 <span className={breadcrumbsSlash}>/</span>
               </div>
             </li>
             <li>
               <div className={breadcrumbsItemCurrent}>
-                {renderBreadcrumbLink(currentHref, currentLabel, breadcrumbsAnchor)}
+                {renderBreadcrumbLink(currentHref, resolvedCurrentLabel, breadcrumbsAnchor)}
               </div>
             </li>
           </ol>
         </nav>
 
         <div className={heroIntroWrap}>
-          <h1 className={`${heroIntroTitle} text-3xl sm:text-4xl md:text-5xl`}>{title}</h1>
-          <p className={heroIntroText}>{description}</p>
+          <h1 className={`${heroIntroTitle} text-3xl sm:text-4xl md:text-5xl`}>{resolvedTitle}</h1>
+          <p className={heroIntroText}>{resolvedDescription}</p>
         </div>
       </section>
     </div>

@@ -47,9 +47,9 @@ function ArrowIcon() {
 }
 
 function NewsHighlightsSection({
-  title = 'Notícias',
+  title,
   viewAllHref,
-  viewAllLabel = 'Ver tudo',
+  viewAllLabel,
   viewAllInternal = false,
   items,
   className = 'col-span-2 lg:col-span-1 z-10'

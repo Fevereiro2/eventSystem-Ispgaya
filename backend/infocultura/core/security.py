@@ -30,13 +30,36 @@ def validate_login_identifier(value: str) -> str:
     return normalized
 
 
+def _validate_name_characters(value: str, *, field_label: str) -> str:
+    allowed_punctuation = {" ", "-", "'", "."}
+    if not any(char.isalpha() for char in value):
+        raise ValueError(f"{field_label} tem de conter pelo menos uma letra.")
+
+    invalid_characters = [char for char in value if not (char.isalpha() or char in allowed_punctuation)]
+    if invalid_characters:
+        raise ValueError(
+            f"{field_label} apenas pode conter letras, espacos, hifens, apostrofos e pontos."
+        )
+
+    return value
+
+
 def validate_person_name(value: str) -> str:
     normalized = value.strip()
     if not normalized:
         raise ValueError("O nome e obrigatorio.")
     if _has_control_characters(normalized):
         raise ValueError("O nome contem caracteres invalidos.")
-    return normalized
+    return _validate_name_characters(normalized, field_label="O nome")
+
+
+def validate_entity_name(value: str, *, field_label: str) -> str:
+    normalized = value.strip()
+    if not normalized:
+        raise ValueError(f"{field_label} e obrigatorio.")
+    if _has_control_characters(normalized):
+        raise ValueError(f"{field_label} contem caracteres invalidos.")
+    return _validate_name_characters(normalized, field_label=field_label)
 
 
 def validate_plaintext_password(value: str, *, min_length: int = 8) -> str:

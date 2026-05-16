@@ -20,6 +20,7 @@ import logo from '../../assets/ispgaya-logo.svg';
 import logoNegative from '../../assets/ispgaya-logo-negative.svg';
 import { fetchPublicClubs, InfoCulturaClub } from '../../api/infoculturaApi';
 import { getLocaleText, useLocale } from '../../i18n/locale.js';
+import { buildIspgayaUrl } from '../../i18n/urls.js';
 
 type LinkItem = {
   label: string;
@@ -31,15 +32,17 @@ type MenuItem = LinkItem & {
   dropdown?: LinkItem[];
 };
 
-const defaultLaboratorioDropdown: LinkItem[] = [
-  { label: 'Tuna Academica', href: '/laboratorio-cultural/tuna', internal: true },
-  {
-    label: 'Clube de Leitura',
-    href: '/laboratorio-cultural/clube-leitura',
-    internal: true
-  },
-  { label: 'Clube de Teatro', href: '/laboratorio-cultural/teatro', internal: true }
-];
+function getDefaultLaboratorioDropdown(locale: 'pt' | 'en'): LinkItem[] {
+  return [
+    { label: getLocaleText(locale, 'Tuna Académica', 'Academic Tuna'), href: '/laboratorio-cultural/tuna', internal: true },
+    {
+      label: getLocaleText(locale, 'Clube de Leitura', 'Reading Club'),
+      href: '/laboratorio-cultural/clube-leitura',
+      internal: true
+    },
+    { label: getLocaleText(locale, 'Clube de Teatro', 'Theatre Club'), href: '/laboratorio-cultural/teatro', internal: true }
+  ];
+}
 
 function normalizeLabel(value: string): string {
   return value
@@ -208,7 +211,7 @@ const menuItems: MenuItem[] = [
     label: 'Laboratorio Cultural',
     href: '/laboratorio-cultural',
     internal: true,
-    dropdown: defaultLaboratorioDropdown
+    dropdown: undefined
   },
   {
     label: 'Vida Academica',
@@ -227,23 +230,6 @@ const menuItems: MenuItem[] = [
       { label: 'Tuna Academica', href: 'https://ispgaya.pt/pt/vida-academica/tuna-academica' }
     ]
   }
-];
-
-const mobilePrivateLinks: LinkItem[] = [
-  { label: 'Inforestudante', href: 'https://inforestudante.ispgaya.pt' },
-  { label: 'Infordocente', href: 'https://infordocente.ispgaya.pt' },
-  { label: 'Infocultura', href: 'https://infordocente.ispgaya.pt' },
-  { label: 'Email', href: 'https://outlook.office.com' },
-  { label: 'Horários', href: 'https://horarios.ispgaya.pt/geral/' }
-];
-
-const mobileInterestLinks: LinkItem[] = [
-  { label: 'Perguntas Frequentes', href: 'https://ispgaya.pt/pt/perguntas-frequentes' },
-  {
-    label: 'Candidatura Online',
-    href: 'https://inforestudante.ispgaya.pt/nonio/security/preRegisto.do?origem=CANDIDATURAS'
-  },
-  { label: 'Contactos', href: 'https://ispgaya.pt/pt/instituicao/contactos' }
 ];
 
 function renderMenuLink(item: LinkItem, className: string, onClick?: () => void) {
@@ -265,10 +251,28 @@ type HeaderNavProps = {
 function HeaderNav({ transparent = false }: HeaderNavProps) {
   const { locale, setLocale } = useLocale();
   const [laboratorioDropdown, setLaboratorioDropdown] = useState<LinkItem[]>(
-    defaultLaboratorioDropdown
+    getDefaultLaboratorioDropdown(locale)
   );
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [activeMobileSection, setActiveMobileSection] = useState<string | null>(null);
+  const mobilePrivateLinks: LinkItem[] = [
+    { label: getLocaleText(locale, 'Inforestudante', 'Student Portal'), href: 'https://inforestudante.ispgaya.pt' },
+    { label: getLocaleText(locale, 'Infordocente', 'Teacher Portal'), href: 'https://infordocente.ispgaya.pt' },
+    { label: 'Infocultura', href: buildIspgayaUrl(locale, '/infocultura') },
+    { label: getLocaleText(locale, 'Email', 'Email'), href: 'https://outlook.office.com' },
+    { label: getLocaleText(locale, 'Horários', 'Timetables'), href: 'https://horarios.ispgaya.pt/geral/' }
+  ];
+  const mobileInterestLinks: LinkItem[] = [
+    {
+      label: getLocaleText(locale, 'Perguntas Frequentes', 'Frequently Asked Questions'),
+      href: buildIspgayaUrl(locale, '/perguntas-frequentes')
+    },
+    {
+      label: getLocaleText(locale, 'Candidatura Online', 'Online Application'),
+      href: 'https://inforestudante.ispgaya.pt/nonio/security/preRegisto.do?origem=CANDIDATURAS'
+    },
+    { label: getLocaleText(locale, 'Contactos', 'Contacts'), href: buildIspgayaUrl(locale, '/instituicao/contactos') }
+  ];
 
   useEffect(() => {
     let active = true;
@@ -279,11 +283,11 @@ function HeaderNav({ transparent = false }: HeaderNavProps) {
         if (!active) return;
 
         setLaboratorioDropdown(
-          clubs.length > 0 ? clubs.map(mapClubToLinkItem) : defaultLaboratorioDropdown
+          clubs.length > 0 ? clubs.map(mapClubToLinkItem) : getDefaultLaboratorioDropdown(locale)
         );
       } catch {
         if (!active) return;
-        setLaboratorioDropdown(defaultLaboratorioDropdown);
+        setLaboratorioDropdown(getDefaultLaboratorioDropdown(locale));
       }
     }
 
@@ -292,7 +296,7 @@ function HeaderNav({ transparent = false }: HeaderNavProps) {
     return () => {
       active = false;
     };
-  }, []);
+  }, [locale]);
 
   useEffect(() => {
     if (!isMobileMenuOpen) {

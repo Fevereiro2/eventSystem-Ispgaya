@@ -40,62 +40,37 @@ import gaiaSkyline from '../../assets/gaia-skyline.webp';
 import logoNegative from '../../assets/ispgaya-logo-negative.svg';
 import { useLocale, getLocaleText } from '../../i18n/locale.js';
 
-const ensinoLinks = [
-  'CTeSP',
-  'Licenciaturas',
-  'Mestrados',
-  'Pos-Graduacoes',
-  'Candidaturas',
-  'Bolsas e Financiamento',
-  'Programas Avancados'
-];
-
-const hubLinks = [
-  {
-    name: 'Inforestudante',
-    link: '/inforestudante',
-  },
-  {
-    name: 'Infordocente',
-    link: '/infordocente',
-  },
-  {
-    name: 'Infocultura',
-    link: '/infocultura/resumo',
-  },
-  {
-    name: 'Email',
-    link: '/email',
-  },
-  {
-    name: 'Wi-Fi',
-    link: '/wifi',
-  },
-  {
-    name: 'Password',
-    link: '/password',
-  },
-  {
-    name: 'Cartao ISPGAYA',
-    link: '/cartao-ispgaya',
-  },
-  {
-    name: 'Identidade Visual',
-    link: '/identidade-visual',
-  },
-];
-
-const interesseLinks = [
-  'DGES',
-  'A3ES',
-  'Ciencia Vitae',
-  'Governo de Portugal',
-  'Projetos Cofinanciados',
-  'Repositorio de Documentos'
-];
-
 function Footer() {
   const { locale } = useLocale();
+  const ensinoLinks = [
+    getLocaleText(locale, 'CTeSP', 'HND'),
+    getLocaleText(locale, 'Licenciaturas', 'Bachelor Degrees'),
+    getLocaleText(locale, 'Mestrados', 'Masters'),
+    getLocaleText(locale, 'Pós-Graduações', 'Postgraduate Studies'),
+    getLocaleText(locale, 'Candidaturas', 'Applications'),
+    getLocaleText(locale, 'Bolsas e Financiamento', 'Scholarships and Funding'),
+    getLocaleText(locale, 'Programas Avançados', 'Advanced Programmes')
+  ];
+
+  const hubLinks = [
+    getLocaleText(locale, 'Inforestudante', 'Student Portal'),
+    getLocaleText(locale, 'Infordocente', 'Teacher Portal'),
+    'Infocultura',
+    getLocaleText(locale, 'Email', 'Email'),
+    'Wi-Fi',
+    getLocaleText(locale, 'Palavra-passe', 'Password'),
+    getLocaleText(locale, 'Cartão ISPGAYA', 'ISPGAYA Card'),
+    getLocaleText(locale, 'Identidade Visual', 'Visual Identity')
+  ];
+
+  const interesseLinks = [
+    'DGES',
+    'A3ES',
+    'Ciencia Vitae',
+    getLocaleText(locale, 'Governo de Portugal', 'Government of Portugal'),
+    getLocaleText(locale, 'Projetos Cofinanciados', 'Co-financed Projects'),
+    getLocaleText(locale, 'Repositório de Documentos', 'Document Repository')
+  ];
   const text = {
     follow: getLocaleText(locale, 'Segue-nos', 'Follow us'),
     ensino: getLocaleText(locale, 'Ensino', 'Study'),
@@ -107,8 +82,8 @@ function Footer() {
       'Call charges depend on your tariff plan and are billed as a fixed-line call.'
     ),
     updated: getLocaleText(locale, 'Atualizado em 02/03/2026 - 12:28', 'Updated on 02/03/2026 - 12:28'),
-    terms: getLocaleText(locale, 'Termos e Condicoes', 'Terms and Conditions'),
-    privacy: getLocaleText(locale, 'Politica de Privacidade', 'Privacy Policy')
+    terms: getLocaleText(locale, 'Termos e Condições', 'Terms and Conditions'),
+    privacy: getLocaleText(locale, 'Política de Privacidade', 'Privacy Policy')
   };
 
   return (

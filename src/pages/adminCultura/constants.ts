@@ -41,6 +41,7 @@ export const initialUserForm: UserFormState = {
   name: '',
   email: '',
   role: 'club_admin',
+  club_id: '',
   password: '',
   generate_password: true
 };

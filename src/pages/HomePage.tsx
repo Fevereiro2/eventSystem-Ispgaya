@@ -7,9 +7,9 @@ import NewsHighlightsSection, {
 } from '../components/ui/NewsHighlightsSection';
 import BestBooksSection from '../components/sections/BestBooksSection.js';
 import TopBar from '../components/layout/TopBar';
-import heroWelcomeImage from '../assets/backgroundphotos/bem-vindos-estudantes-ispgaya.webp';
-import heroStudyImage from '../assets/backgroundphotos/estudar-no-ispagaya.webp';
-import heroEmployabilityImage from '../assets/backgroundphotos/empregabilidade-ispgaya.webp';
+import heroWelcomeImage from '../assets/homepage/candidatar/ispg-students-admissions.webp';
+import heroStudyImage from '../assets/homepage/candidatar/ispgaya-students-grants.webp';
+import heroEmployabilityImage from '../assets/homepage/candidatar/ispgaya-students-help.webp';
 import aondefuturo from '../assets/homepage/ondefuturo.webp'
 import helix from '../assets/homepage/destaques/helix-ispgaya-site.webp';
 import mais23 from '../assets/homepage/destaques/3.webp';
@@ -24,6 +24,7 @@ import {
 } from '../api/infoculturaApi';
 import { container, mainContent } from '../styles/ui';
 import { getLocaleText, useLocale } from '../i18n/locale.js';
+import { buildIspgayaUrl } from '../i18n/urls.js';
 
   
 
@@ -54,118 +55,172 @@ type TestimonialSlide = {
   image: string;
 };
 
-const studyLinks = [
-  { label: 'CTeSP', href: 'https://ispgaya.pt/pt/ensino/oferta-formativa/ctesp' },
-  { label: 'Licenciaturas', href: 'https://ispgaya.pt/pt/ensino/oferta-formativa/licenciaturas' },
-  { label: 'Mestrados', href: 'https://ispgaya.pt/pt/ensino/oferta-formativa/mestrados' },
-  {
-    label: 'Pós-Graduações',
-    href: 'https://ispgaya.pt/pt/ensino/programas-avancados/pos-graduacoes'
-  }
-];
+function getStudyLinks(locale: 'pt' | 'en') {
+  return [
+    { label: getLocaleText(locale, 'CTeSP', 'HND'), href: buildIspgayaUrl(locale, '/ensino/oferta-formativa/ctesp') },
+    { label: getLocaleText(locale, 'Licenciaturas', 'Bachelor Degrees'), href: buildIspgayaUrl(locale, '/ensino/oferta-formativa/licenciaturas') },
+    { label: getLocaleText(locale, 'Mestrados', 'Masters'), href: buildIspgayaUrl(locale, '/ensino/oferta-formativa/mestrados') },
+    {
+      label: getLocaleText(locale, 'Pós-Graduações', 'Postgraduate Studies'),
+      href: buildIspgayaUrl(locale, '/ensino/programas-avancados/pos-graduacoes')
+    }
+  ];
+}
 
-const heroSlides: HeroSlide[] = [
-  {
-    title: 'Bem-vindo ao Instituto Superior Politécnico Gaya',
-    text:
-      'Aqui, é onde o teu futuro começa!\nNo ISPGAYA vais adquirir novos conhecimentos, desenvolver novas competências e experienciar um clima académico único.',
-    image: heroWelcomeImage
-  },
-  {
-    title: 'Dinamiza as tuas capacidades connosco',
-    text:
-      'Temos à tua disposição instalações modernas, estreita proximidade entre o corpo docente e os estudantes, assim como, um excelente ambiente académico.',
-    image: heroStudyImage
-  },
-  {
-    title: 'O mercado de trabalho espera por ti',
-    text:
-      'Temos como objetivo dar-te as ferramentas necessárias para criar uma carreira com significado e tomares as melhores decisões para a tua vida profissional e pessoal.',
-    image: heroEmployabilityImage
-  }
-];
+function getHeroSlides(locale: 'pt' | 'en'): HeroSlide[] {
+  return [
+    {
+      title: getLocaleText(locale, 'Bem-vindo ao Instituto Superior Politécnico Gaya', 'Welcome to the Polytechnic Institute of Gaya'),
+      text: getLocaleText(
+        locale,
+        'Aqui, é onde o teu futuro começa!\nNo ISPGAYA vais adquirir novos conhecimentos, desenvolver novas competências e experienciar um clima académico único.',
+        'This is where your future begins!\nAt ISPGAYA you will gain new knowledge, develop new skills and experience a unique academic environment.'
+      ),
+      image: heroWelcomeImage
+    },
+    {
+      title: getLocaleText(locale, 'Dinamiza as tuas capacidades connosco', 'Develop your skills with us'),
+      text: getLocaleText(
+        locale,
+        'Temos à tua disposição instalações modernas, estreita proximidade entre o corpo docente e os estudantes, assim como, um excelente ambiente académico.',
+        'We offer modern facilities, close proximity between faculty and students, and an excellent academic atmosphere.'
+      ),
+      image: heroStudyImage
+    },
+    {
+      title: getLocaleText(locale, 'O mercado de trabalho espera por ti', 'The job market is waiting for you'),
+      text: getLocaleText(
+        locale,
+        'Temos como objetivo dar-te as ferramentas necessárias para criar uma carreira com significado e tomares as melhores decisões para a tua vida profissional e pessoal.',
+        'Our goal is to give you the tools you need to build a meaningful career and make the best decisions for your professional and personal life.'
+      ),
+      image: heroEmployabilityImage
+    }
+  ];
+}
 
-const highlightCards: HighlightCard[] = [
-  {
-    title: 'Laboratório Cultural',
-    text:
-      'Projeto cultural aberto a quem quer participar em atividades nas áreas da musica, teatro e leitura.',
-    href: '/laboratorio-cultural',
-    image: helix
-  },
-  {
-    title: 'Regime M23 - Candidaturas Abertas!',
-    text: 'Estão abertas as candidaturas ao Regime M23!',
-    href: 'https://ispgaya.pt/pt/ensino/candidaturas/licenciaturas/m-23',
-    image: mais23
-  },
-  {
-    title: 'O ISPGAYA junta-se à Q-Helix Alliance!',
-    text:
-      'É com grande satisfação que anunciamos que o ISPGAYA – Instituto Superior Politécnico de Gaia passou a integrar oficialmente a Q-Helix Alliance, uma rede europeia em crescimento dedicada ao reforço da cooperação no ensino superior, investigação e inovação.',
-    href: 'https://ispgaya.pt/pt/vida-academica/noticias/o-ispgaya-junta-se-a-q-helix-alliance',
-    image: helix
-  }
-];
+function getHighlightCards(locale: 'pt' | 'en'): HighlightCard[] {
+  return [
+    {
+      title: getLocaleText(locale, 'Laboratório Cultural', 'Cultural Laboratory'),
+      text: getLocaleText(
+        locale,
+        'Projeto cultural aberto a quem quer participar em atividades nas áreas da musica, teatro e leitura.',
+        'A cultural project open to anyone who wants to take part in activities in music, theatre and reading.'
+      ),
+      href: '/laboratorio-cultural',
+      image: helix
+    },
+    {
+      title: getLocaleText(locale, 'Regime M23 - Candidaturas Abertas!', 'M23 Scheme - Applications Open!'),
+      text: getLocaleText(locale, 'Estão abertas as candidaturas ao Regime M23!', 'Applications for the M23 scheme are now open!'),
+      href: buildIspgayaUrl(locale, '/ensino/candidaturas/licenciaturas/m-23'),
+      image: mais23
+    },
+    {
+      title: getLocaleText(locale, 'O ISPGAYA junta-se à Q-Helix Alliance!', 'ISPGAYA joins Q-Helix Alliance!'),
+      text: getLocaleText(
+        locale,
+        'É com grande satisfação que anunciamos que o ISPGAYA – Instituto Superior Politécnico de Gaia passou a integrar oficialmente a Q-Helix Alliance, uma rede europeia em crescimento dedicada ao reforço da cooperação no ensino superior, investigação e inovação.',
+        'We are pleased to announce that ISPGAYA - Instituto Superior Politécnico de Gaia has officially joined the Q-Helix Alliance, a growing European network dedicated to strengthening cooperation in higher education, research and innovation.'
+      ),
+      href: buildIspgayaUrl(locale, '/vida-academica/noticias/o-ispgaya-junta-se-a-q-helix-alliance'),
+      image: helix
+    }
+  ];
+}
 
-const metrics = [
-  {
-    value: '36',
-    title: 'Experiência',
-    text:
-      'Desde 1990 a formar futuros empreendedores. Somos uma instituição de ensino de referência há mais de 30 anos em Vila Nova de Gaia. Quer pela qualidade dos seus cursos, quer pelo corpo docente qualificado, quer pelo clima académico estimulante e diferenciador.'
-  },
-  {
-    value: '+3.5k',
-    title: 'Profissionais Formados',
-    text:
-      'A formação continua a ser um dos nossos principais pilares. Somos reconhecidos pela formação de excelência e já formamos mais de 3500 profissionais de sucesso. Aqui os estudantes têm oportunidade de construir o seu futuro pessoal e profissional.'
-  },
-  {
-    value: '+200',
-    title: 'Empresas',
-    text:
-      'Trabalhamos em proximidade com as empresas, estando atentos às suas necessidades e a par das suas aspirações. Temos protocolos celebrados com mais de 200 empresas que garantem a qualidade dos estágios e permitem a integração de estudantes no mercado de trabalho.'
-  }
-];
+function getMetrics(locale: 'pt' | 'en') {
+  return [
+    {
+      value: '36',
+      title: getLocaleText(locale, 'Experiência', 'Experience'),
+      text: getLocaleText(
+        locale,
+        'Desde 1990 a formar futuros empreendedores. Somos uma instituição de ensino de referência há mais de 30 anos em Vila Nova de Gaia. Quer pela qualidade dos seus cursos, quer pelo corpo docente qualificado, quer pelo clima académico estimulante e diferenciador.',
+        'Since 1990, we have been shaping future entrepreneurs. We have been a benchmark higher education institution for more than 30 years in Vila Nova de Gaia, known for the quality of our courses, our qualified faculty and our stimulating academic atmosphere.'
+      )
+    },
+    {
+      value: '+3.5k',
+      title: getLocaleText(locale, 'Profissionais Formados', 'Graduates'),
+      text: getLocaleText(
+        locale,
+        'A formação continua a ser um dos nossos principais pilares. Somos reconhecidos pela formação de excelência e já formamos mais de 3500 profissionais de sucesso. Aqui os estudantes têm oportunidade de construir o seu futuro pessoal e profissional.',
+        'Training remains one of our main pillars. We are recognized for excellence in education and have already trained more than 3,500 successful professionals. Here students have the opportunity to build their personal and professional future.'
+      )
+    },
+    {
+      value: '+200',
+      title: getLocaleText(locale, 'Empresas', 'Companies'),
+      text: getLocaleText(
+        locale,
+        'Trabalhamos em proximidade com as empresas, estando atentos às suas necessidades e a par das suas aspirações. Temos protocolos celebrados com mais de 200 empresas que garantem a qualidade dos estágios e permitem a integração de estudantes no mercado de trabalho.',
+        'We work closely with companies, paying attention to their needs and aspirations. We have agreements with more than 200 companies that ensure quality internships and help students enter the job market.'
+      )
+    }
+  ];
+}
 
-const supportSlides: SupportSlide[] = [
-  {
-    title: 'Quero Candidatar-me',
-    text: 'Sabias que podes realizar a tua candidatura online? Começa aqui a candidatura a um dos nossos cursos.',
-    href: 'https://inforestudante.ispgaya.pt/nonio/security/preRegisto.do?origem=CANDIDATURAS',
-    image: heroWelcomeImage
-  },
-  {
-    title: 'Bolsas e Apoios',
-    text: 'Fica a saber como funcionam as bolsas de estudo e os apoios disponíveis para candidatos.',
-    href: 'https://ispgaya.pt/pt/ensino/bolsas-e-financiamento',
-    image: heroStudyImage
-  },
-  {
-    title: 'Acesso ao Ensino Superior',
-    text: 'Existem várias formas de ingressar no ISPGAYA. Aqui tens um ponto de entrada simples para perceber tudo.',
-    href: 'https://ispgaya.pt/pt/ensino/candidaturas',
-    image: heroEmployabilityImage
-  }
-];
+function getSupportSlides(locale: 'pt' | 'en'): SupportSlide[] {
+  return [
+    {
+      title: getLocaleText(locale, 'Quero Candidatar-me', 'I want to apply'),
+      text: getLocaleText(
+        locale,
+        'Sabias que podes realizar a tua candidatura online? Começa aqui a candidatura a um dos nossos cursos.',
+        'Did you know you can submit your application online? Start here for one of our courses.'
+      ),
+      href: 'https://inforestudante.ispgaya.pt/nonio/security/preRegisto.do?origem=CANDIDATURAS',
+      image: heroWelcomeImage
+    },
+    {
+      title: getLocaleText(locale, 'Bolsas e Apoios', 'Scholarships and Support'),
+      text: getLocaleText(
+        locale,
+        'Fica a saber como funcionam as bolsas de estudo e os apoios disponíveis para candidatos.',
+        'Learn how scholarships and support options work for applicants.'
+      ),
+      href: buildIspgayaUrl(locale, '/ensino/bolsas-e-financiamento'),
+      image: heroStudyImage
+    },
+    {
+      title: getLocaleText(locale, 'Acesso ao Ensino Superior', 'Higher Education Access'),
+      text: getLocaleText(
+        locale,
+        'Existem várias formas de ingressar no ISPGAYA. Aqui tens um ponto de entrada simples para perceber tudo.',
+        'There are several ways to join ISPGAYA. Here is a simple entry point to understand everything.'
+      ),
+      href: buildIspgayaUrl(locale, '/ensino/candidaturas'),
+      image: heroEmployabilityImage
+    }
+  ];
+}
 
-const testimonialSlides: TestimonialSlide[] = [
-  {
-    quote:
-      'De forma a consolidar os conhecimentos na área da segurança de informação e cibersegurança, optei pelo mestrado do ISPGAYA pela diversidade de oportunidades e pela transversalidade das competências adquiridas.',
-    name: 'Manuel Oliveira',
-    role: 'Estudante Mestrado',
-    image: manuel
-  },
-  {
-    quote:
-      'Escolhi o ISPGAYA por recomendação de outros alunos e da mesma forma também, eu o recomendo. A maioria dos professores e colaboradores que me acompanharam ao longo da minha licenciatura em gestão foram sempre muito prestáveis e cada um com a sua função proporcionaram me momento inesquecíveis que me enriqueceram para o meu futuro. Por isso quero desde já agradecer a todas as pessoas que me acompanharam, porque em cada dia que estiveram presentes na minha vida deixaram o seu contributo para a minha realização pessoal e profissional, muito obrigada.',
-    name: 'Maribel Carvalho',
-    role: 'Estudante ISPGAYA',
-    image: maribel
-  }
-];
+function getTestimonialSlides(locale: 'pt' | 'en'): TestimonialSlide[] {
+  return [
+    {
+      quote: getLocaleText(
+        locale,
+        'De forma a consolidar os conhecimentos na área da segurança de informação e cibersegurança, optei pelo mestrado do ISPGAYA pela diversidade de oportunidades e pela transversalidade das competências adquiridas.',
+        'To consolidate my knowledge in information security and cybersecurity, I chose ISPGAYA\'s master\'s degree for the diversity of opportunities and the breadth of skills I acquired.'
+      ),
+      name: 'Manuel Oliveira',
+      role: getLocaleText(locale, 'Estudante de Mestrado', 'Master\'s student'),
+      image: manuel
+    },
+    {
+      quote: getLocaleText(
+        locale,
+        'Escolhi o ISPGAYA por recomendação de outros alunos e da mesma forma também, eu o recomendo. A maioria dos professores e colaboradores que me acompanharam ao longo da minha licenciatura em gestão foram sempre muito prestáveis e cada um com a sua função proporcionaram me momento inesquecíveis que me enriqueceram para o meu futuro. Por isso quero desde já agradecer a todas as pessoas que me acompanharam, porque em cada dia que estiveram presentes na minha vida deixaram o seu contributo para a minha realização pessoal e profissional, muito obrigada.',
+        'I chose ISPGAYA on the recommendation of other students and I would recommend it as well. Most of the teachers and staff who supported me throughout my management degree were always very helpful, and each of them contributed unforgettable moments that enriched my future. I would like to thank everyone who supported me, because every day they were present in my life they contributed to my personal and professional growth.'
+      ),
+      name: 'Maribel Carvalho',
+      role: getLocaleText(locale, 'Estudante ISPGAYA', 'ISPGAYA student'),
+      image: maribel
+    }
+  ];
+}
 
 function HomePage() {
   const [activeHero, setActiveHero] = useState(0);
@@ -177,6 +232,12 @@ function HomePage() {
   const [homepageEventHighlights, setHomepageEventHighlights] = useState<NewsHighlightItem[]>([]);
   const [homepageBookHighlights, setHomepageBookHighlights] = useState<InfoCulturaBook[]>([]);
   const { locale } = useLocale();
+  const studyLinks = getStudyLinks(locale);
+  const heroSlides = getHeroSlides(locale);
+  const highlightCards = getHighlightCards(locale);
+  const metrics = getMetrics(locale);
+  const supportSlides = getSupportSlides(locale);
+  const testimonialSlides = getTestimonialSlides(locale);
 
   useEffect(() => {
     const interval = window.setInterval(() => {
@@ -205,7 +266,7 @@ function HomePage() {
         const newsItems = await fetchPublicNews();
         if (!active) return;
 
-        const items = newsItems
+            const items = newsItems
           .slice()
           .sort((left, right) => {
             const leftTime = new Date(left.published_at || left.created_at).getTime();
@@ -213,7 +274,7 @@ function HomePage() {
             return rightTime - leftTime;
           })
           .slice(0, 3)
-          .map((item) => ({
+            .map((item) => ({
             title: item.title,
             href: `/vida-academica/noticias/${item.id}`,
             internal: true,
@@ -221,7 +282,7 @@ function HomePage() {
             image: resolveInfoCulturaAssetUrl(item.image),
             imageAlt: item.title,
             publishedAt: item.published_at || item.created_at,
-            publishedLabel: new Intl.DateTimeFormat('pt-PT', {
+            publishedLabel: new Intl.DateTimeFormat(locale === 'en' ? 'en-GB' : 'pt-PT', {
               day: '2-digit',
               month: 'long',
               year: 'numeric'
@@ -251,7 +312,7 @@ function HomePage() {
             return rightTime - leftTime;
           })
           .slice(0, 3)
-          .map((item) => ({
+            .map((item) => ({
             title: item.title,
             href: `/vida-academica/eventos/${item.id}`,
             internal: true,
@@ -259,7 +320,7 @@ function HomePage() {
             image: resolveInfoCulturaAssetUrl(item.image),
             imageAlt: item.title,
             publishedAt: item.start_date || item.event_date,
-            publishedLabel: new Intl.DateTimeFormat('pt-PT', {
+            publishedLabel: new Intl.DateTimeFormat(locale === 'en' ? 'en-GB' : 'pt-PT', {
               day: '2-digit',
               month: 'long',
               year: 'numeric'
@@ -296,7 +357,7 @@ function HomePage() {
     return () => {
       active = false;
     };
-  }, []);
+  }, [locale]);
 
   const currentHero = heroSlides[activeHero];
   const showStudyLinks = activeHero === 0;
@@ -470,7 +531,7 @@ function HomePage() {
           <div
             className={`${container} mt-10 flex snap-x snap-mandatory gap-4 overflow-x-auto px-6 pb-4 pt-2 sm:px-6 md:justify-center md:gap-6 md:px-0`}
           >
-            {highlightCards.map((item) => (
+              {highlightCards.map((item) => (
               <a
                 key={item.title}
                 href={item.href}
@@ -564,17 +625,17 @@ function HomePage() {
               </p>
 
               <div className="mt-6 flex flex-col sm:flex-row sm:items-center">
-                <a
+                  <a
                   href="https://inforestudante.ispgaya.pt/nonio/security/preRegisto.do?origem=CANDIDATURAS"
                   className="inline-block bg-orange-400 px-6 py-2 text-center font-bold text-white transition hover:bg-orange-500"
                 >
-                  Candidatar-me
+                  {getLocaleText(locale, 'Candidatar-me', 'Apply now')}
                 </a>
                 <a
-                  href="https://ispgaya.pt/pt/ensino/candidaturas"
+                  href={buildIspgayaUrl(locale, '/ensino/candidaturas')}
                   className="mt-3 inline-block border-2 border-orange-700 px-6 py-2 text-center font-bold text-orange-700 transition hover:border-orange-600 hover:bg-orange-600 hover:text-white sm:ml-6 sm:mt-0"
                 >
-                  Quero saber mais
+                  {getLocaleText(locale, 'Quero saber mais', 'I want to know more')}
                 </a>
               </div>
             </div>
@@ -649,14 +710,14 @@ function HomePage() {
           <div className={`${container}`}>
             <div className="mx-auto grid w-full max-w-7xl grid-cols-1 gap-10 lg:grid-cols-2">
               <NewsHighlightsSection
-                title="Notícias"
+                title={getLocaleText(locale, 'Notícias', 'News')}
                 viewAllHref="/vida-academica/noticias"
                 viewAllInternal
                 items={homepageNewsHighlights}
                 className="w-full"
               />
               <NewsHighlightsSection
-                title="Eventos"
+                title={getLocaleText(locale, 'Eventos', 'Events')}
                 viewAllHref="/vida-academica/eventos"
                 viewAllInternal
                 items={homepageEventHighlights}
@@ -688,7 +749,7 @@ function HomePage() {
         <section className="mb-6 mt-8 bg-white md:mb-8 md:mt-10 lg:mb-10 lg:mt-12 xl:mb-16 xl:mt-16">
           <div className="text-center">
             <h2 className="font-heading text-3xl font-bold tracking-tight text-black xl:text-4xl 2xl:text-5xl">
-              Testemunhos
+              {getLocaleText(locale, 'Testemunhos', 'Testimonials')}
             </h2>
           </div>
 

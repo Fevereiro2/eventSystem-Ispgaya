@@ -81,7 +81,8 @@ function ResultCard({
   description,
   href,
   image,
-  status
+  status,
+  locale
 }: {
   title: string;
   meta: string;
@@ -89,6 +90,7 @@ function ResultCard({
   href: string;
   image?: string;
   status?: string;
+  locale: 'pt' | 'en';
 }) {
   return (
     <article className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
@@ -110,7 +112,7 @@ function ResultCard({
       <p className="mb-2 text-sm text-slate-500">{meta}</p>
       <p className="mb-4 text-sm leading-6 text-slate-700">{description}</p>
       <Link to={href} className={labResearchLink}>
-        Ver detalhe
+        {getLocaleText(locale, 'Ver detalhe', 'View details')}
       </Link>
     </article>
   );
@@ -150,7 +152,9 @@ function LaboratorioCultural() {
       } catch (error) {
         if (!active) return;
         const message =
-          error instanceof Error ? error.message : 'Nao foi possivel carregar o laboratorio.';
+          error instanceof Error
+            ? error.message
+            : getLocaleText(locale, 'Nao foi possivel carregar o laboratorio.', 'Unable to load the laboratory.');
         setLoadError(message);
       } finally {
         if (active) {
@@ -164,7 +168,7 @@ function LaboratorioCultural() {
     return () => {
       active = false;
     };
-  }, []);
+  }, [locale]);
 
   const normalizedQuery = useMemo(() => normalizeLabel(searchQuery), [searchQuery]);
   const filteredClubs = useMemo(
@@ -245,7 +249,7 @@ function LaboratorioCultural() {
           image: resolveInfoCulturaAssetUrl(item.image),
           imageAlt: item.title,
           publishedAt: item.published_at || item.created_at,
-          publishedLabel: new Intl.DateTimeFormat('pt-PT', {
+          publishedLabel: new Intl.DateTimeFormat(locale === 'en' ? 'en-GB' : 'pt-PT', {
             day: '2-digit',
             month: 'long',
             year: 'numeric'
@@ -278,7 +282,7 @@ function LaboratorioCultural() {
           image: resolveInfoCulturaAssetUrl(item.image),
           imageAlt: item.title,
           publishedAt: item.start_date || item.event_date,
-          publishedLabel: new Intl.DateTimeFormat('pt-PT', {
+          publishedLabel: new Intl.DateTimeFormat(locale === 'en' ? 'en-GB' : 'pt-PT', {
             day: '2-digit',
             month: 'long',
             year: 'numeric'
@@ -304,11 +308,15 @@ function LaboratorioCultural() {
       <TopBar />
       <HeaderNav />
       <Breadcrumbs
-        title="Laboratorio Cultural"
-        description="O Laboratório Cultural é um espaço vivo onde a criatividade ganha forma e a cultura se torna experiência."
-        parentLabel="Laboratorio Cultural"
+        title={getLocaleText(locale, 'Laboratório Cultural', 'Cultural Laboratory')}
+        description={getLocaleText(
+          locale,
+          'O Laboratório Cultural é um espaço vivo onde a criatividade ganha forma e a cultura se torna experiência.',
+          'The Cultural Laboratory is a living space where creativity takes shape and culture becomes an experience.'
+        )}
+        parentLabel={getLocaleText(locale, 'Laboratório Cultural', 'Cultural Laboratory')}
         parentHref="/laboratorio-cultural"
-        currentLabel="Laboratorio Cultural"
+        currentLabel={getLocaleText(locale, 'Laboratório Cultural', 'Cultural Laboratory')}
         currentHref="/laboratorio-cultural"
       />
 
@@ -318,34 +326,39 @@ function LaboratorioCultural() {
             <div className="space-y-10">
               <article className={contentCard}>
                 <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#dd8609]">
-                  Visão Cultural
+                  {getLocaleText(locale, 'Visão Cultural', 'Cultural Vision')}
                 </p>
-                <h3 className={`${blockTitle} mt-4`}>Missão e Objetivos</h3>
+                <h3 className={`${blockTitle} mt-4`}>
+                  {getLocaleText(locale, 'Missão e Objetivos', 'Mission and Goals')}
+                </h3>
                 <p className={`${blockText} max-w-3xl`}>
-                  O Laboratório Cultural existe para aproximar cultura, comunidade académica e
-                  participação. Esta entrada apresenta de forma clara a missão do espaço, os seus
-                  objetivos e o enquadramento necessário para perceber rapidamente o propósito do
-                  Laboratório Cultural sem procurar essa informação no meio do resto do conteúdo.
+                  {getLocaleText(
+                    locale,
+                    'O Laboratório Cultural existe para aproximar cultura, comunidade académica e participação. Esta entrada apresenta de forma clara a missão do espaço, os seus objetivos e o enquadramento necessário para perceber rapidamente o propósito do Laboratório Cultural sem procurar essa informação no meio do resto do conteúdo.',
+                    'The Cultural Laboratory exists to bring culture, the academic community and participation closer together. This entry clearly presents the mission of the space, its goals and the context needed to quickly understand the purpose of the Cultural Laboratory without searching for that information elsewhere in the content.'
+                  )}
                 </p>
 
                 <div className="mt-6 flex flex-wrap items-center gap-3">
                   <Link to="/laboratorio-cultural/roadmap" className={adminBtnSecondary}>
-                    Abrir página
+                    {getLocaleText(locale, 'Abrir página', 'Open page')}
                   </Link>
-                  <span className="text-sm text-slate-500">Leitura rápida</span>
+                  <span className="text-sm text-slate-500">
+                    {getLocaleText(locale, 'Leitura rápida', 'Quick read')}
+                  </span>
                 </div>
               </article>
 
-              {isLoading ? <p className={contentEmpty}>A carregar laboratorio...</p> : null}
+              {isLoading ? <p className={contentEmpty}>{getLocaleText(locale, 'A carregar laboratório...', 'Loading laboratory...')}</p> : null}
               {!isLoading && loadError ? <p className={contentEmpty}>{loadError}</p> : null}
 
               {!isLoading && !loadError ? (
               <div className="mt-10">
                 <h2 className="mb-4 text-2xl font-semibold text-slate-900">
-                  {hasSearch ? 'Clubes encontrados' : 'Clubes ativos'}
+                  {hasSearch ? getLocaleText(locale, 'Clubes encontrados', 'Found clubs') : getLocaleText(locale, 'Clubes ativos', 'Active clubs')}
                 </h2>
                 {filteredClubs.length === 0 ? (
-                  <p className={contentEmpty}>Ainda nao existem clubes ativos para mostrar.</p>
+                  <p className={contentEmpty}>{getLocaleText(locale, 'Ainda nao existem clubes ativos para mostrar.', 'There are no active clubs to show yet.')}</p>
                 ) : (
                   <div className={labResearchGrid}>
                     {filteredClubs.map((club) => (
@@ -361,10 +374,10 @@ function LaboratorioCultural() {
                         <p className={labResearchSubtext}>
                           {club.mission ||
                             club.description ||
-                            'Clube cultural disponivel no laboratorio.'}
+                            getLocaleText(locale, 'Clube cultural disponivel no laboratorio.', 'Cultural club available in the laboratory.')}
                         </p>
                         <Link to={getClubHref(club)} className={labResearchLink}>
-                          Ver mais
+                          {getLocaleText(locale, 'Ver mais', 'View more')}
                         </Link>
                       </article>
                     ))}
@@ -376,12 +389,12 @@ function LaboratorioCultural() {
             {!isLoading && !loadError && hasSearch ? (
               <div className="mt-10 space-y-10">
                 {totalResults === 0 ? (
-                  <p className={contentEmpty}>Nao existem resultados para a pesquisa atual.</p>
+                  <p className={contentEmpty}>{getLocaleText(locale, 'Nao existem resultados para a pesquisa atual.', 'There are no results for the current search.')}</p>
                 ) : null}
 
                 {filteredNews.length > 0 ? (
                   <section>
-                    <h2 className="mb-4 text-2xl font-semibold text-slate-900">Noticias</h2>
+                    <h2 className="mb-4 text-2xl font-semibold text-slate-900">{getLocaleText(locale, 'Notícias', 'News')}</h2>
                     <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
                       {filteredNews.slice(0, 6).map((item) => (
                         <ResultCard
@@ -392,6 +405,7 @@ function LaboratorioCultural() {
                           href={`/laboratorio-cultural/noticias/${item.id}`}
                           image={item.image}
                           status={item.news_status_name}
+                          locale={locale}
                         />
                       ))}
                     </div>
@@ -400,7 +414,7 @@ function LaboratorioCultural() {
 
                 {filteredEvents.length > 0 ? (
                   <section>
-                    <h2 className="mb-4 text-2xl font-semibold text-slate-900">Eventos</h2>
+                    <h2 className="mb-4 text-2xl font-semibold text-slate-900">{getLocaleText(locale, 'Eventos', 'Events')}</h2>
                     <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
                       {filteredEvents.slice(0, 6).map((item) => (
                         <ResultCard
@@ -411,6 +425,7 @@ function LaboratorioCultural() {
                           href={`/laboratorio-cultural/eventos/${item.id}`}
                           image={item.image}
                           status={item.status}
+                          locale={locale}
                         />
                       ))}
                     </div>
@@ -419,7 +434,7 @@ function LaboratorioCultural() {
 
                 {filteredSessions.length > 0 ? (
                   <section>
-                    <h2 className="mb-4 text-2xl font-semibold text-slate-900">Sessoes</h2>
+                    <h2 className="mb-4 text-2xl font-semibold text-slate-900">{getLocaleText(locale, 'Sessões', 'Sessions')}</h2>
                     <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
                       {filteredSessions.slice(0, 6).map((item) => (
                         <ResultCard
@@ -429,6 +444,7 @@ function LaboratorioCultural() {
                           description={item.description}
                           href={`/laboratorio-cultural/sessoes/${item.id}`}
                           status={item.name}
+                          locale={locale}
                         />
                       ))}
                     </div>
@@ -456,14 +472,14 @@ function LaboratorioCultural() {
                   <section className="mt-12 bg-white lg:mt-16 xl:mt-20">
                     <div className="mx-auto grid w-full max-w-7xl grid-cols-1 gap-10 lg:grid-cols-2">
                       <NewsHighlightsSection
-                        title="Notícias"
+                        title={getLocaleText(locale, 'Notícias', 'News')}
                         viewAllHref="/vida-academica/noticias"
                         viewAllInternal
                         items={homepageStyleNews}
                         className="w-full"
                       />
                       <NewsHighlightsSection
-                        title="Eventos"
+                        title={getLocaleText(locale, 'Eventos', 'Events')}
                         viewAllHref="/vida-academica/eventos"
                         viewAllInternal
                         items={homepageStyleEvents}
@@ -492,7 +508,7 @@ function LaboratorioCultural() {
 
                 {filteredSessions.length > 0 ? (
                   <section>
-                    <h2 className="mb-4 text-2xl font-semibold text-slate-900">Sessoes</h2>
+                    <h2 className="mb-4 text-2xl font-semibold text-slate-900">{getLocaleText(locale, 'Sessões', 'Sessions')}</h2>
                     <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
                       {filteredSessions.slice(0, 6).map((item) => (
                         <ResultCard
@@ -502,6 +518,7 @@ function LaboratorioCultural() {
                           description={item.description}
                           href={`/laboratorio-cultural/sessoes/${item.id}`}
                           status={item.name}
+                          locale={locale}
                         />
                       ))}
                     </div>
@@ -514,14 +531,17 @@ function LaboratorioCultural() {
               <div className="mt-10 rounded-2xl border border-slate-200 bg-slate-50 p-6">
                 <div className="flex flex-wrap items-start justify-between gap-4">
                   <div>
-                    <h2 className="text-2xl font-semibold text-slate-900">Explorar agenda</h2>
+                    <h2 className="text-2xl font-semibold text-slate-900">{getLocaleText(locale, 'Explorar agenda', 'Explore agenda')}</h2>
                     <p className="mt-2 text-sm leading-6 text-slate-600">
-                      Vê todos os eventos numa página própria com filtros e uma leitura geral por
-                      calendário.
+                      {getLocaleText(
+                        locale,
+                        'Vê todos os eventos numa página própria com filtros e uma leitura geral por calendário.',
+                        'See all events on a dedicated page with filters and a calendar overview.'
+                      )}
                     </p>
                   </div>
                   <Link to="/laboratorio-cultural/agenda" className={adminBtnSecondary}>
-                    Ver agenda completa
+                    {getLocaleText(locale, 'Ver agenda completa', 'View full agenda')}
                   </Link>
                 </div>
               </div>

@@ -7,7 +7,7 @@ from ..core.security import (
     generate_temporary_password,
     hash_password,
     normalize_email_address,
-    validate_person_name,
+    validate_entity_name,
     validate_plaintext_password,
 )
 from ..models import AppUser, Club, Role
@@ -89,7 +89,7 @@ class AdminUserWriteSerializer(serializers.ModelSerializer):
 
     def validate_name(self, value):
         try:
-            return validate_person_name(value)
+            return validate_entity_name(value, field_label='O nome do utilizador')
         except ValueError as error:
             raise serializers.ValidationError(str(error)) from error
 
