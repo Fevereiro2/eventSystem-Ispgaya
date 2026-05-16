@@ -7,9 +7,9 @@ import NewsHighlightsSection, {
 } from '../components/ui/NewsHighlightsSection';
 import BestBooksSection from '../components/sections/BestBooksSection.js';
 import TopBar from '../components/layout/TopBar';
-import heroWelcomeImage from '../assets/backgroundphotos/bem-vindos-estudantes-ispgaya.webp';
-import heroStudyImage from '../assets/backgroundphotos/estudar-no-ispagaya.webp';
-import heroEmployabilityImage from '../assets/backgroundphotos/empregabilidade-ispgaya.webp';
+import heroWelcomeImage from '../assets/homepage/candidatar/ispg-students-admissions.webp';
+import heroStudyImage from '../assets/homepage/candidatar/ispgaya-students-grants.webp';
+import heroEmployabilityImage from '../assets/homepage/candidatar/ispgaya-students-help.webp';
 import aondefuturo from '../assets/homepage/ondefuturo.webp'
 import helix from '../assets/homepage/destaques/helix-ispgaya-site.webp';
 import mais23 from '../assets/homepage/destaques/3.webp';
