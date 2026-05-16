@@ -188,14 +188,17 @@ export const adminBtnDanger =
   'rounded-md border border-red-300 px-3 py-1.5 text-xs font-semibold text-red-700 transition-colors hover:bg-red-50';
 export const adminBtnEdit =
   'rounded-md border border-slate-300 px-3 py-1.5 text-xs font-semibold text-slate-700 transition-colors hover:bg-slate-100';
-export const adminList = 'mt-8 space-y-3';
+export const adminList = 'mt-8 space-y-4';
 export const adminListItem =
-  'rounded-lg border border-slate-200 bg-white p-4 shadow-sm';
-export const adminListTop = 'flex flex-wrap items-start justify-between gap-2';
-export const adminListTitle = 'text-base font-semibold text-slate-900';
-export const adminListMeta = 'mt-1 text-xs text-slate-500';
-export const adminListDesc = 'mt-2 text-sm text-slate-700';
-export const adminListTools = 'mt-3 flex gap-2';
+  'relative overflow-hidden rounded-3xl border border-slate-200 bg-white p-6 shadow-sm ring-1 ring-slate-200/70 transition duration-200 hover:-translate-y-0.5 hover:shadow-lg';
+export const adminListTop = 'grid gap-4 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-start';
+export const adminListHeader = 'grid gap-2';
+export const adminListCheckbox = 'inline-flex items-center gap-2 text-sm text-slate-600';
+export const adminListTitle = 'text-base font-semibold tracking-tight text-slate-900';
+export const adminListMeta = 'text-sm text-slate-500';
+export const adminListBadge = 'inline-flex rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-600';
+export const adminListDesc = 'mt-4 border-t border-slate-200 pt-4 text-sm leading-6 text-slate-700';
+export const adminListTools = 'flex flex-wrap items-center justify-end gap-2';
 export const adminDashboardGrid = 'mb-8 grid grid-cols-1 gap-4 xl:grid-cols-[0.95fr_1.05fr]';
 export const adminStatsGrid = 'mt-5 grid grid-cols-1 gap-3 sm:grid-cols-3';
 export const adminStatCard = 'rounded-lg border border-slate-200 bg-slate-50 p-4';

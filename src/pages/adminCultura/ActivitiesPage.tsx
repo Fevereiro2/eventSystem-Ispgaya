@@ -22,11 +22,14 @@ import {
   adminLabel,
   adminList,
   adminListDesc,
+  adminListHeader,
   adminListItem,
   adminListMeta,
   adminListTitle,
   adminListTools,
   adminListTop,
+  adminListBadge,
+  adminListCheckbox,
   adminPanelCard,
   adminPanelForm,
   adminTextarea,
@@ -716,40 +719,42 @@ function ActivitiesPage({
             <div id="activity-list" className={adminList}>
               {isLoadingActivities ? <p className={adminInfo}>A carregar livros...</p> : null}
               {!isLoadingActivities && sortedBooks.length === 0 ? (
-                <p className={adminInfo}>Nao existem livros para o filtro atual.</p>
+                <p className={adminInfo}>Não existem livros para o filtro atual.</p>
               ) : null}
               {sortedBooks.map((item) => (
                 <article key={item.id} className={adminListItem}>
                   <div className={adminListTop}>
-                    <label className="mr-4 flex items-center gap-2 text-sm text-slate-600">
-                      <input
-                        type="checkbox"
-                        checked={selectedBookIds.includes(item.id)}
-                        onChange={() => toggleSelectedId(setSelectedBookIds, item.id)}
-                      />
-                      Selecionar
-                    </label>
-                    <div>
+                    <div className={adminListHeader}>
+                      <label className={adminListCheckbox}>
+                        <input
+                          type="checkbox"
+                          checked={selectedBookIds.includes(item.id)}
+                          onChange={() => toggleSelectedId(setSelectedBookIds, item.id)}
+                        />
+                        Selecionar
+                      </label>
                       <h3 className={adminListTitle}>{item.title}</h3>
                       <p className={adminListMeta}>
-                        {item.club_name} · {item.author} · {item.publication_year}
+                        <span className={adminListBadge}>{item.club_name}</span>
+                        <span className="mx-2 text-slate-300">·</span>
+                        {item.author} · {item.publication_year}
                       </p>
+                    </div>
+                    <div className={adminListTools}>
+                      <button type="button" className={adminBtnEdit} onClick={() => handleEditBook(item)}>
+                        Editar
+                      </button>
+                      <button
+                        type="button"
+                        className={adminBtnDanger}
+                        disabled={deletingBookId === item.id}
+                        onClick={() => handleDeleteBook(item.id)}
+                      >
+                        {deletingBookId === item.id ? 'A apagar...' : 'Apagar'}
+                      </button>
                     </div>
                   </div>
                   <p className={adminListDesc}>{item.summary}</p>
-                  <div className={adminListTools}>
-                    <button type="button" className={adminBtnEdit} onClick={() => handleEditBook(item)}>
-                      Editar
-                    </button>
-                    <button
-                      type="button"
-                      className={adminBtnDanger}
-                      disabled={deletingBookId === item.id}
-                      onClick={() => handleDeleteBook(item.id)}
-                    >
-                      {deletingBookId === item.id ? 'A apagar...' : 'Apagar'}
-                    </button>
-                  </div>
                 </article>
               ))}
             </div>
@@ -976,11 +981,26 @@ function ActivitiesPage({
               {sortedSessions.map((item) => (
                 <article key={item.id} className={adminListItem}>
                   <div className={adminListTop}>
-                    <div>
+                    <div className={adminListHeader}>
                       <h3 className={adminListTitle}>{item.title}</h3>
                       <p className={adminListMeta}>
-                        {item.club_name} · {formatAdminDateTime(item.start_date)}
+                        <span className={adminListBadge}>{item.club_name}</span>
+                        <span className="mx-2 text-slate-300">·</span>
+                        {formatAdminDateTime(item.start_date)}
                       </p>
+                    </div>
+                    <div className={adminListTools}>
+                      <button type="button" className={adminBtnEdit} onClick={() => handleEditSession(item)}>
+                        Editar
+                      </button>
+                      <button
+                        type="button"
+                        className={adminBtnDanger}
+                        disabled={deletingSessionId === item.id}
+                        onClick={() => handleDeleteSession(item.id)}
+                      >
+                        {deletingSessionId === item.id ? 'A apagar...' : 'Apagar'}
+                      </button>
                     </div>
                   </div>
                   <p className={adminListDesc}>{item.description}</p>
@@ -991,19 +1011,6 @@ function ActivitiesPage({
                       ? ` · Lotacao ${item.registration_capacity}`
                       : ''}
                   </p>
-                  <div className={adminListTools}>
-                    <button type="button" className={adminBtnEdit} onClick={() => handleEditSession(item)}>
-                      Editar
-                    </button>
-                    <button
-                      type="button"
-                      className={adminBtnDanger}
-                      disabled={deletingSessionId === item.id}
-                      onClick={() => handleDeleteSession(item.id)}
-                    >
-                      {deletingSessionId === item.id ? 'A apagar...' : 'Apagar'}
-                    </button>
-                  </div>
                 </article>
               ))}
             </div>
@@ -1343,20 +1350,35 @@ function ActivitiesPage({
               {sortedEvents.map((item) => (
                 <article key={item.id} className={adminListItem}>
                   <div className={adminListTop}>
-                    <label className="mr-4 flex items-center gap-2 text-sm text-slate-600">
-                      <input
-                        type="checkbox"
-                        checked={selectedEventIds.includes(item.id)}
-                        onChange={() => toggleSelectedId(setSelectedEventIds, item.id)}
-                      />
-                      Selecionar
-                    </label>
-                    <div>
+                    <div className={adminListHeader}>
+                      <label className={adminListCheckbox}>
+                        <input
+                          type="checkbox"
+                          checked={selectedEventIds.includes(item.id)}
+                          onChange={() => toggleSelectedId(setSelectedEventIds, item.id)}
+                        />
+                        Selecionar
+                      </label>
                       <h3 className={adminListTitle}>{item.title}</h3>
                       <p className={adminListMeta}>
-                        {item.club_name || 'Sem clube'} · {getWorkflowStatusLabel(item.status)} ·{' '}
+                        <span className={adminListBadge}>{item.club_name || 'Sem clube'}</span>
+                        <span className="mx-2 text-slate-300">·</span>
+                        {getWorkflowStatusLabel(item.status)} ·{' '}
                         {formatAdminDateTime(item.start_date)}
                       </p>
+                    </div>
+                    <div className={adminListTools}>
+                      <button type="button" className={adminBtnEdit} onClick={() => handleEditEvent(item)}>
+                        Editar
+                      </button>
+                      <button
+                        type="button"
+                        className={adminBtnDanger}
+                        disabled={deletingEventId === item.id}
+                        onClick={() => handleDeleteEvent(item.id)}
+                      >
+                        {deletingEventId === item.id ? 'A apagar...' : 'Apagar'}
+                      </button>
                     </div>
                   </div>
                   <p className={adminListDesc}>{item.description}</p>
@@ -1386,19 +1408,6 @@ function ActivitiesPage({
                       ))}
                     </div>
                   ) : null}
-                  <div className={adminListTools}>
-                    <button type="button" className={adminBtnEdit} onClick={() => handleEditEvent(item)}>
-                      Editar
-                    </button>
-                    <button
-                      type="button"
-                      className={adminBtnDanger}
-                      disabled={deletingEventId === item.id}
-                      onClick={() => handleDeleteEvent(item.id)}
-                    >
-                      {deletingEventId === item.id ? 'A apagar...' : 'Apagar'}
-                    </button>
-                  </div>
                 </article>
               ))}
             </div>
