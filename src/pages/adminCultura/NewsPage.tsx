@@ -24,7 +24,6 @@ import {
   adminListMeta,
   adminListTitle,
   adminListTools,
-  adminListTop,
   adminPanelCard,
   adminPanelForm,
   adminTextarea,
@@ -158,9 +157,11 @@ function NewsPage({
       />
 
       {showNewsForm ? (
-        <form id="news-form" onSubmit={handleSaveNews} className={adminPanelForm}>
-          <h2 className={blockTitle}>{editingNewsId ? 'Editar Noticia' : 'Nova Noticia'}</h2>
-          <p className={blockText}>Publica novidades de cada clube e controla o respetivo estado.</p>
+        <form id="news-form" onSubmit={handleSaveNews} className={`${adminPanelForm} max-w-none`}>
+          <div className="border-b border-slate-100 pb-4">
+            <h2 className={blockTitle}>{editingNewsId ? 'Editar Noticia' : 'Nova Noticia'}</h2>
+            <p className={blockText}>Publica novidades de cada clube e controla o respetivo estado.</p>
+          </div>
 
           <div className={adminFormGridSpaced}>
             {canManageUsers ? (
@@ -404,8 +405,6 @@ function NewsPage({
               </div>
             </form>
 
-            <div className={adminActions}>
-          </div>
           </div>
 
           <div className={adminFormGridSpaced}>
@@ -508,50 +507,58 @@ function NewsPage({
             ) : null}
             {sortedNews.map((item) => (
               <article key={item.id} className={adminListItem}>
-                <div className={adminListTop}>
-                  <label className="mr-4 flex items-center gap-2 text-sm text-slate-600">
+                <div className="grid gap-4 sm:grid-cols-[auto_minmax(0,1fr)]">
+                  <label className="flex h-10 w-10 shrink-0 cursor-pointer items-center justify-center rounded-lg border border-slate-200 bg-slate-50 text-sm text-slate-600 transition-colors hover:border-[#dd8609] hover:bg-orange-50">
                     <input
                       type="checkbox"
+                      className="h-4 w-4 accent-[#dd8609]"
                       checked={selectedNewsIds.includes(item.id)}
                       onChange={() => toggleSelectedId(setSelectedNewsIds, item.id)}
                     />
-                    Selecionar
+                    <span className="sr-only">Selecionar {item.title}</span>
                   </label>
-                  <div>
-                    <h3 className={adminListTitle}>{item.title}</h3>
-                    <p className={adminListMeta}>
-                      {item.club_name} · {getWorkflowStatusLabel(item.news_status_name)} ·{' '}
-                      {formatAdminDateTime(item.published_at || item.created_at)}
-                    </p>
+
+                  <div className="min-w-0">
+                    <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+                      <div className="min-w-0">
+                        <h3 className={`${adminListTitle} break-words leading-snug`}>{item.title}</h3>
+                        <p className={adminListMeta}>
+                          {item.club_name} · {getWorkflowStatusLabel(item.news_status_name)} ·{' '}
+                          {formatAdminDateTime(item.published_at || item.created_at)}
+                        </p>
+                      </div>
+
+                      <div className={`${adminListTools} mt-0 shrink-0`}>
+                        <button type="button" className={adminBtnEdit} onClick={() => handleEditNews(item)}>
+                          Editar
+                        </button>
+                        <button
+                          type="button"
+                          className={adminBtnDanger}
+                          disabled={deletingNewsId === item.id}
+                          onClick={() => handleDeleteNews(item.id)}
+                        >
+                          {deletingNewsId === item.id ? 'A apagar...' : 'Apagar'}
+                        </button>
+                      </div>
+                    </div>
+
+                    <p className={`${adminListDesc} break-words`}>{item.summary}</p>
+                    {item.editorial_history && item.editorial_history.length > 0 ? (
+                      <div className="mt-3 space-y-1">
+                        {item.editorial_history.slice(0, 3).map((history, index) => (
+                          <p key={`${item.id}-${index}`} className={adminListMeta}>
+                            {history.actor_name} ·{' '}
+                            {history.from_status
+                              ? `${getWorkflowStatusLabel(history.from_status)} -> `
+                              : ''}
+                            {getWorkflowStatusLabel(history.to_status)} ·{' '}
+                            {formatAdminDateTime(history.created_at || '')}
+                          </p>
+                        ))}
+                      </div>
+                    ) : null}
                   </div>
-                </div>
-                <p className={adminListDesc}>{item.summary}</p>
-                {item.editorial_history && item.editorial_history.length > 0 ? (
-                  <div className="mt-3 space-y-1">
-                    {item.editorial_history.slice(0, 3).map((history, index) => (
-                      <p key={`${item.id}-${index}`} className={adminListMeta}>
-                        {history.actor_name} ·{' '}
-                        {history.from_status
-                          ? `${getWorkflowStatusLabel(history.from_status)} -> `
-                          : ''}
-                        {getWorkflowStatusLabel(history.to_status)} ·{' '}
-                        {formatAdminDateTime(history.created_at || '')}
-                      </p>
-                    ))}
-                  </div>
-                ) : null}
-                <div className={adminListTools}>
-                  <button type="button" className={adminBtnEdit} onClick={() => handleEditNews(item)}>
-                    Editar
-                  </button>
-                  <button
-                    type="button"
-                    className={adminBtnDanger}
-                    disabled={deletingNewsId === item.id}
-                    onClick={() => handleDeleteNews(item.id)}
-                  >
-                    {deletingNewsId === item.id ? 'A apagar...' : 'Apagar'}
-                  </button>
                 </div>
               </article>
             ))}

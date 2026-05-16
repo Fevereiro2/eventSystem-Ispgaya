@@ -27,7 +27,6 @@ import {
   blockTitle,
   container,
   contentEmpty,
-  contentCard,
   contentSection,
   labResearchGrid,
   labResearchLink,
@@ -324,7 +323,7 @@ function LaboratorioCultural() {
         <section className={contentSection}>
           <div className={`${container} px-4 sm:px-6 xl:px-8`}>
             <div className="space-y-10">
-              <article className={contentCard}>
+              <article className="max-w-4xl">
                 <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#dd8609]">
                   {getLocaleText(locale, 'Visão Cultural', 'Cultural Vision')}
                 </p>
