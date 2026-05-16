@@ -2360,7 +2360,7 @@ function AdminCultura() {
             <aside className={adminPortalSidebar} aria-label="Menu lateral do painel">
               <div className={adminPortalSidebarHead}>
                 <p className={adminPortalSidebarBrand}>{getLocaleText(locale, 'InfoCultura', 'InfoCultura')}</p>
-                <p className={adminPortalSidebarSub}>{getLocaleText(locale, 'Gestao cultural interna', 'Internal Cultural Management')}</p>
+                <p className={adminPortalSidebarSub}>{getLocaleText(locale, 'Gestão cultural interna', 'Internal Cultural Management')}</p>
               </div>
 
               {visibleSectionGroups.map((group) => (
@@ -2439,7 +2439,7 @@ function AdminCultura() {
             <div className="space-y-6">
               <AdminPageHero
                 icon={Bell}
-                title="Centro de Notificacoes"
+                title="Centro de Notificacões"
                 description="Alertas editoriais, operacionais e de agenda gerados a partir da atividade do sistema."
                 tone="amber"
                 stats={notificationOverviewStats}
@@ -2457,12 +2457,12 @@ function AdminCultura() {
 
               <section className={adminPanelCard}>
                 {isLoadingNotifications ? (
-                  <p className={adminInfo}>{getLocaleText(locale, 'A carregar notificacoes...', 'Loading notifications...')}</p>
+                  <p className={adminInfo}>{getLocaleText(locale, 'A carregar notificações...', 'Loading notifications...')}</p>
                 ) : null}
                 {notificationError ? <p className={adminError}>{notificationError}</p> : null}
 
                 {!isLoadingNotifications && latestNotifications.length === 0 ? (
-                  <p className={adminInfo}>{getLocaleText(locale, 'Nao existem notificacoes para mostrar.', 'There are no notifications to display.')}</p>
+                  <p className={adminInfo}>{getLocaleText(locale, 'Não existem notificações para mostrar.', 'There are no notifications to display.')}</p>
                 ) : null}
 
                 <div className="space-y-4">
