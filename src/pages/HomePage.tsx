@@ -10,11 +10,14 @@ import TopBar from '../components/layout/TopBar';
 import heroWelcomeImage from '../assets/homepage/candidatar/ispg-students-admissions.webp';
 import heroStudyImage from '../assets/homepage/candidatar/ispgaya-students-grants.webp';
 import heroEmployabilityImage from '../assets/homepage/candidatar/ispgaya-students-help.webp';
-import aondefuturo from '../assets/homepage/ondefuturo.webp'
+import imagem1 from '../assets/backgroundphotos/bem-vindos-estudantes-ispgaya.webp';
+import imagem2 from '../assets/homepage/candidatar/ispgaya-students-grants.webp';
+import imagem3 from '../assets/homepage/candidatar/ispgaya-students-help.webp';
+import aondefuturo from '../assets/homepage/ondefuturo.webp';
 import helix from '../assets/homepage/destaques/helix-ispgaya-site.webp';
 import mais23 from '../assets/homepage/destaques/3.webp';
 import manuel from '../assets/homepage/testemunhos/2.webp';
-import maribel from '../assets/homepage/testemunhos/1.webp'
+import maribel from '../assets/homepage/testemunhos/1.webp';
 import {
   fetchPublicBooks,
   fetchPublicEvents,
@@ -76,7 +79,7 @@ function getHeroSlides(locale: 'pt' | 'en'): HeroSlide[] {
         'Aqui, é onde o teu futuro começa!\nNo ISPGAYA vais adquirir novos conhecimentos, desenvolver novas competências e experienciar um clima académico único.',
         'This is where your future begins!\nAt ISPGAYA you will gain new knowledge, develop new skills and experience a unique academic environment.'
       ),
-      image: heroWelcomeImage
+      image: imagem1
     },
     {
       title: getLocaleText(locale, 'Dinamiza as tuas capacidades connosco', 'Develop your skills with us'),
@@ -85,7 +88,7 @@ function getHeroSlides(locale: 'pt' | 'en'): HeroSlide[] {
         'Temos à tua disposição instalações modernas, estreita proximidade entre o corpo docente e os estudantes, assim como, um excelente ambiente académico.',
         'We offer modern facilities, close proximity between faculty and students, and an excellent academic atmosphere.'
       ),
-      image: heroStudyImage
+      image: imagem2
     },
     {
       title: getLocaleText(locale, 'O mercado de trabalho espera por ti', 'The job market is waiting for you'),
@@ -94,7 +97,7 @@ function getHeroSlides(locale: 'pt' | 'en'): HeroSlide[] {
         'Temos como objetivo dar-te as ferramentas necessárias para criar uma carreira com significado e tomares as melhores decisões para a tua vida profissional e pessoal.',
         'Our goal is to give you the tools you need to build a meaningful career and make the best decisions for your professional and personal life.'
       ),
-      image: heroEmployabilityImage
+      image: imagem3
     }
   ];
 }

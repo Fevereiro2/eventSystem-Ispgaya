@@ -42,6 +42,16 @@ import { useLocale, getLocaleText } from '../../i18n/locale.js';
 
 function Footer() {
   const { locale } = useLocale();
+  const hubLinks: { name: string; link: string }[] = [
+    { name: getLocaleText(locale, 'Inforestudante', 'Student Portal'), link: 'https://inforestudante.ispgaya.pt' },
+    { name: getLocaleText(locale, 'Infordocente', 'Teacher Portal'), link: 'https://infordocente.ispgaya.pt' },
+    { name: 'Infocultura', link: '/infocultura' },
+    { name: getLocaleText(locale, 'Email', 'Email'), link: 'https://outlook.office.com' },
+    { name: 'Wi-Fi', link: 'https://ispgaya.pt' },
+    { name: getLocaleText(locale, 'Palavra-passe', 'Password'), link: '#' },
+    { name: getLocaleText(locale, 'Cartão ISPGAYA', 'ISPGAYA Card'), link: '#' },
+    { name: getLocaleText(locale, 'Identidade Visual', 'Visual Identity'), link: '#' }
+  ];
   const ensinoLinks = [
     getLocaleText(locale, 'CTeSP', 'HND'),
     getLocaleText(locale, 'Licenciaturas', 'Bachelor Degrees'),
@@ -50,17 +60,6 @@ function Footer() {
     getLocaleText(locale, 'Candidaturas', 'Applications'),
     getLocaleText(locale, 'Bolsas e Financiamento', 'Scholarships and Funding'),
     getLocaleText(locale, 'Programas Avançados', 'Advanced Programmes')
-  ];
-
-  const hubLinks = [
-    getLocaleText(locale, 'Inforestudante', 'Student Portal'),
-    getLocaleText(locale, 'Infordocente', 'Teacher Portal'),
-    'Infocultura',
-    getLocaleText(locale, 'Email', 'Email'),
-    'Wi-Fi',
-    getLocaleText(locale, 'Palavra-passe', 'Password'),
-    getLocaleText(locale, 'Cartão ISPGAYA', 'ISPGAYA Card'),
-    getLocaleText(locale, 'Identidade Visual', 'Visual Identity')
   ];
 
   const interesseLinks = [
