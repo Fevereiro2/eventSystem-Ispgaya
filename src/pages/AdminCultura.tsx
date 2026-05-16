@@ -2270,7 +2270,7 @@ function AdminCultura() {
                   <div className={infoLegacyBlock}>
                     <h3 className={infoLegacyBlockTitle}>{getLocaleText(locale, 'Primeiro acesso', 'First Access')}</h3>
                     <p className={infoLegacyBlockText}>
-                      {getLocaleText(locale, 'Se é a primeira vez a usar o portal, contacte a equipa tecnica para ', 'If this is your first time using the portal, contact the technical team to')}
+                      {getLocaleText(locale, 'Se é a primeira vez a usar o portal, contacte a equipa técnica para ', 'If this is your first time using the portal, contact the technical team to')}
                       {getLocaleText(locale, 'atribuição de credênciais de administrador.', 'request administrator credentials.')}
                     </p>
                   </div>
