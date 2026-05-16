@@ -126,9 +126,9 @@ function Footer() {
             <p className={footerTitle}>ISPGAYA HUB</p>
             <ul className={footerList}>
               {hubLinks.map((item) => (
-                <li key={item} className={footerListItem}>
-                  <a href="#" className={footerLink}>
-                    {item}
+                <li key={item.name} className={footerListItem}>
+                  <a href={item.link} className={footerLink}>
+                    {item.name}
                   </a>
                 </li>
               ))}

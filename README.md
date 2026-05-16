@@ -1,7 +1,5 @@
 # Event System ISPGAYA - Guia de Organização do Projeto
 
-Olá! Como és estudante de Engenharia Informática, organizei este projeto seguindo as **boas práticas de mercado** (Clean Architecture e Separation of Concerns), mas mantendo a estrutura simples o suficiente para que possas aprender com ela.
-
 ## 📂 Nova Estrutura do Projeto
 
 O projeto está agora dividido de forma lógica para separar as diferentes responsabilidades:
