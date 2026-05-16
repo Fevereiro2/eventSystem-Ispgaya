@@ -706,7 +706,7 @@ function ActivitiesPage({
                     (canManageUsers && activityClubFilter === 'all' && !bookForm.club_id)
                   }
                 >
-                  {isSavingBook ? 'A guardar...' : editingBookId ? 'Atualizar' : 'Criar'}
+                  {isSavingBook ? 'A guardar...' : editingBookId ? 'Atualizar' : 'Salvar'}
                 </button>
                 <button type="button" onClick={resetBookForm} className={adminBtnSecondary}>
                   Limpar
@@ -963,7 +963,7 @@ function ActivitiesPage({
 
               <div className={adminActions}>
                 <button type="submit" className={adminBtnPrimary} disabled={isSavingSession}>
-                  {isSavingSession ? 'A guardar...' : editingSessionId ? 'Atualizar' : 'Criar'}
+                  {isSavingSession ? 'A guardar...' : editingSessionId ? 'Atualizar' : 'Salvar'}
                 </button>
                 <button type="button" onClick={resetSessionForm} className={adminBtnSecondary}>
                   Limpar
@@ -1332,7 +1332,7 @@ function ActivitiesPage({
 
               <div className={adminActions}>
                 <button type="submit" className={adminBtnPrimary} disabled={isSavingEvent}>
-                  {isSavingEvent ? 'A guardar...' : editingEventId ? 'Atualizar' : 'Criar'}
+                  {isSavingEvent ? 'A guardar...' : editingEventId ? 'Atualizar' : 'Salvar'}
                 </button>
                 <button type="button" onClick={resetEventForm} className={adminBtnSecondary}>
                   Limpar

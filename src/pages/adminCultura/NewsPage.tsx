@@ -251,6 +251,9 @@ function NewsPage({
                   setNewsForm((prev) => ({ ...prev, published_at: event.target.value }))
                 }
               />
+              <p className={blockText}>
+                Usa "Publicar agora" para publicar imediatamente ou escolhe data/hora para agendar.
+              </p>
             </div>
           </div>
 
@@ -319,7 +322,25 @@ function NewsPage({
 
           <div className={adminActions}>
             <button type="submit" className={adminBtnPrimary} disabled={isSavingNews}>
-              {isSavingNews ? 'A guardar...' : editingNewsId ? 'Atualizar' : 'Criar'}
+              {isSavingNews ? 'A guardar...' : editingNewsId ? 'Atualizar' : 'Salvar'}
+            </button>
+            <button
+              type="submit"
+              name="newsAction"
+              value="publish_now"
+              className={adminBtnSecondary}
+              disabled={isSavingNews}
+            >
+              Publicar agora
+            </button>
+            <button
+              type="submit"
+              name="newsAction"
+              value="schedule"
+              className={adminBtnSecondary}
+              disabled={isSavingNews}
+            >
+              Agendar
             </button>
             <button type="button" onClick={resetNewsForm} className={adminBtnSecondary}>
               Limpar
