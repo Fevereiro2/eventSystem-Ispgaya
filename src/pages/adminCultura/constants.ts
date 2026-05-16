@@ -22,7 +22,7 @@ export const EVENT_WORKFLOW_ORDER = ['draft', 'review', 'published', 'archived']
 
 export const WORKFLOW_LABELS: Record<string, string> = {
   draft: 'Rascunho',
-  review: 'Em revisao',
+  review: 'Em revisão',
   published: 'Publicado',
   archived: 'Arquivado',
   rascunho: 'Rascunho',

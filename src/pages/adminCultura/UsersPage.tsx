@@ -97,7 +97,7 @@ function UsersPage({
       <AdminPageHero
         icon={Users}
         title="Utilizadores"
-        description="Gestao e consulta dos acessos administrativos do InfoCultura."
+        description="Gestão e consulta dos acessos administrativos do InfoCultura."
         tone="slate"
         stats={userOverviewStats}
         actions={
@@ -127,7 +127,7 @@ function UsersPage({
             </div>
             <div className={adminField}>
               <label className={adminLabel} htmlFor="user-date-to">
-                Criados ate
+                Criados até
               </label>
               <input
                 id="user-date-to"
@@ -167,7 +167,7 @@ function UsersPage({
           <div className={adminUserList}>
             {isLoadingUsers ? <p className={adminInfo}>A carregar utilizadores...</p> : null}
             {!isLoadingUsers && filteredUsers.length === 0 ? (
-              <p className={adminInfo}>Nao existem utilizadores para mostrar.</p>
+              <p className={adminInfo}>Não existem utilizadores para mostrar.</p>
             ) : null}
             {filteredUsers.map((user) => (
               <article key={user.id} className={adminUserItem}>
@@ -176,7 +176,7 @@ function UsersPage({
                   <p className={adminUserEmail}>{user.email}</p>
                   <p className={adminUserMeta}>
                     {user.role}
-                    {currentUser?.id === user.id ? ' · sessao atual' : ''}
+                    {currentUser?.id === user.id ? ' · sessão atual' : ''}
                   </p>
                   <p className={adminUserMeta}>
                     Criado em: {formatAdminDateTime(user.created_at || '')}
@@ -241,7 +241,7 @@ function UsersPage({
         <section className={adminPanelCard}>
           {!selectedUser ? (
             <p className={adminInfo}>
-              {isLoadingUsers ? 'A carregar utilizador...' : 'Utilizador nao encontrado.'}
+              {isLoadingUsers ? 'A carregar utilizador...' : 'Utilizador não encontrado.'}
             </p>
           ) : (
             <div className="space-y-6">
@@ -251,7 +251,7 @@ function UsersPage({
                   <p className={adminUserEmail}>{selectedUser.email}</p>
                   <p className={adminUserMeta}>
                     {selectedUser.role}
-                    {currentUser?.id === selectedUser.id ? ' · sessao atual' : ''}
+                    {currentUser?.id === selectedUser.id ? ' · sessão atual' : ''}
                   </p>
                 </div>
                 <span
@@ -354,7 +354,7 @@ function UsersPage({
         <AdminPageHero
           icon={Users}
           title="Desativar Utilizador"
-          description="Confirma a desativacao do utilizador selecionado antes de remover o acesso."
+          description="Confirma a desativação do utilizador selecionado antes de remover o acesso."
           tone="rose"
           actions={
             <NavLink to="/infocultura/utilizadores" className={adminBtnSecondary}>
@@ -368,7 +368,7 @@ function UsersPage({
             <p className={adminError}>Apenas o superadmin pode aceder a esta pagina.</p>
           ) : !selectedUser ? (
             <p className={adminInfo}>
-              {isLoadingUsers ? 'A carregar utilizador...' : 'Utilizador nao encontrado.'}
+              {isLoadingUsers ? 'A carregar utilizador...' : 'Utilizador não encontrado.'}
             </p>
           ) : (
             <form onSubmit={handleDeactivateUser} className={adminPanelForm}>
@@ -397,7 +397,7 @@ function UsersPage({
                   className={adminBtnDanger}
                   disabled={isDeactivatingUser || !selectedUser.is_active}
                 >
-                  {isDeactivatingUser ? 'A desativar...' : 'Confirmar desativacao'}
+                  {isDeactivatingUser ? 'A desativar...' : 'Confirmar desativação'}
                 </button>
               </div>
             </form>
