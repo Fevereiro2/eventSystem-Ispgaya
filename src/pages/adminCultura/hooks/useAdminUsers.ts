@@ -180,6 +180,7 @@ export function useAdminUsers({
         name: selectedUser.name,
         email: selectedUser.email,
         role: selectedUser.role,
+        club_id: selectedUser.club_id ? String(selectedUser.club_id) : '',
         password: '',
         generate_password: false,
       });

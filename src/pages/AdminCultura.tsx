@@ -1364,11 +1364,17 @@ function AdminCultura() {
       email: userForm.email.trim(),
       role: userForm.role,
       generate_password: userForm.generate_password,
+      ...(userPage.mode === 'create' && userForm.club_id ? { club_id: Number(userForm.club_id) } : {}),
       ...(!userForm.generate_password && manualPassword ? { password: manualPassword } : {})
     };
 
     if (!payload.name || !payload.email || !payload.role) {
       setUserFormError('Preenche nome, email e role.');
+      return;
+    }
+
+    if (userPage.mode === 'create' && !userForm.club_id) {
+      setUserFormError('Seleciona um clube para associar este utilizador.');
       return;
     }
 
@@ -2520,6 +2526,8 @@ function AdminCultura() {
               setUserOrder={setUserOrder}
               isSavingUser={isSavingUser}
               isLoadingRoles={isLoadingRoles}
+              clubs={clubs}
+              isLoadingClubs={isLoadingClubs}
               roles={roles}
               userForm={userForm}
               setUserForm={setUserForm}
