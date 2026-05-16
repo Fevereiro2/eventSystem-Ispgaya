@@ -2255,23 +2255,23 @@ function AdminCultura() {
                 <div className={infoLegacyLeft}>
                   <div className={infoLegacyBlock}>
                     <h3 className={infoLegacyBlockTitle}>
-                      {getLocaleText(locale, 'Laboratorio Cultural', 'Cultural Laboratory')}
+                      {getLocaleText(locale, 'Laboratório Cultural', 'Cultural Laboratory')}
                     </h3>
                     <p className={infoLegacyBlockText}>
-                      {getLocaleText(locale, 'A nossa abordagem cultural e interdisciplinar, promovendo criacao artistica, participacao academica e ligacao com a comunidade.', 'Our cultural approach is interdisciplinary, promoting artistic creation, academic participation and connection with the community.')}
+                      {getLocaleText(locale, 'A nossa abordagem cultural e interdisciplinar, promove a criação artística, participação académica e ligação com a comunidade.', 'Our cultural approach is interdisciplinary, promoting artistic creation, academic participation and connection with the community.')}
                     </p>
                     <ul className={infoLegacyBlockList}>
-                      <li>{getLocaleText(locale, 'Organizar programacao cultural', 'Organize cultural programming')}</li>
-                      <li>{getLocaleText(locale, 'Atualizar noticias por area', 'Update news by area')}</li>
-                      <li>{getLocaleText(locale, 'Gerir conteudo em rascunho e publicado', 'Manage content in draft and published')}</li>
+                      <li>{getLocaleText(locale, 'Organizar programação cultural', 'Organize cultural programming')}</li>
+                      <li>{getLocaleText(locale, 'Atualizar notícias por área', 'Update news by area')}</li>
+                      <li>{getLocaleText(locale, 'Gerir conteúdo em rascunho e publicado', 'Manage content in draft and published')}</li>
                     </ul>
                   </div>
 
                   <div className={infoLegacyBlock}>
                     <h3 className={infoLegacyBlockTitle}>{getLocaleText(locale, 'Primeiro acesso', 'First Access')}</h3>
                     <p className={infoLegacyBlockText}>
-                      {getLocaleText(locale, 'Se e a primeira vez a usar o portal, contacte a equipa tecnica para', 'If this is your first time using the portal, contact the technical team to')}
-                      {getLocaleText(locale, 'atribuicao de credenciais de administrador.', 'request administrator credentials.')}
+                      {getLocaleText(locale, 'Se é a primeira vez a usar o portal, contacte a equipa tecnica para ', 'If this is your first time using the portal, contact the technical team to')}
+                      {getLocaleText(locale, 'atribuição de credênciais de administrador.', 'request administrator credentials.')}
                     </p>
                   </div>
                 </div>
