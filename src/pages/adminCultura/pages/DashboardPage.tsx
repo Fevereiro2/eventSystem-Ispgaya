@@ -98,16 +98,11 @@ function DashboardPage({
                 </p>
               </div>
             </div>
-            {dashboardStats ? (
-              <p className="mt-4 text-sm font-medium text-slate-500">
-                {getLocaleText(locale, 'Ambito atual:', 'Current scope:')} {dashboardStats.scope_label}
-              </p>
-            ) : null}
           </div>
 
           <div className="rounded-2xl border border-slate-200 bg-white px-5 py-4 shadow-sm">
             <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">
-              {getLocaleText(locale, 'Sessao atual', 'Current Session')}
+              {getLocaleText(locale, 'Sessão atual', 'Current Session')}
             </p>
             <p className="mt-2 text-lg font-semibold text-slate-900">
               {currentUser?.name || (isLoadingUsers ? 'A carregar...' : 'Sem dados')}
@@ -127,7 +122,7 @@ function DashboardPage({
           </div>
         </div>
 
-        {isLoadingDashboard ? <p className="mt-4 text-sm text-slate-500">{getLocaleText(locale, 'A carregar metricas...', 'Loading metrics...')}</p> : null}
+        {isLoadingDashboard ? <p className="mt-4 text-sm text-slate-500">{getLocaleText(locale, 'A carregar métricas...', 'Loading metrics...')}</p> : null}
         {dashboardError ? <p className="mt-4 text-sm text-red-600">{dashboardError}</p> : null}
       </section>
 
@@ -166,8 +161,8 @@ function DashboardPage({
               <h3 className="text-2xl font-semibold text-slate-900">{getLocaleText(locale, 'Alertas', 'Alerts')}</h3>
               <p className="mt-1 text-sm text-slate-600">
                 {unreadNotifications > 0
-                  ? `${unreadNotifications} ${getLocaleText(locale, 'notificacoes', 'notifications')} por ler.`
-                  : getLocaleText(locale, 'Itens que merecem atencao imediata.', 'Items that require immediate attention.')}
+                  ? `${unreadNotifications} ${getLocaleText(locale, 'notificações', 'notifications')} por ler.`
+                  : getLocaleText(locale, 'Itens que merecem atenção imediata.', 'Items that require immediate attention.')}
               </p>
             </div>
             <button
@@ -180,7 +175,7 @@ function DashboardPage({
           </div>
 
           {isLoadingNotifications ? (
-            <p className="mt-4 text-sm text-slate-500">{getLocaleText(locale, 'A carregar notificacoes...', 'Loading notifications...')}</p>
+            <p className="mt-4 text-sm text-slate-500">{getLocaleText(locale, 'A carregar notificações...', 'Loading notifications...')}</p>
           ) : null}
           {notificationError ? <p className="mt-4 text-sm text-red-600">{notificationError}</p> : null}
 
@@ -218,8 +213,8 @@ function DashboardPage({
         <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
           <div className="flex items-center justify-between gap-3">
             <div>
-              <h3 className="text-2xl font-semibold text-slate-900">{getLocaleText(locale, 'Acoes Rapidas', 'Quick Actions')}</h3>
-              <p className="mt-1 text-sm text-slate-600">{getLocaleText(locale, 'Atalhos para as operacoes mais frequentes.', 'Shortcuts for the most frequent operations.')}</p>
+              <h3 className="text-2xl font-semibold text-slate-900">{getLocaleText(locale, 'Ações Rápidas', 'Quick Actions')}</h3>
+              <p className="mt-1 text-sm text-slate-600">{getLocaleText(locale, 'Atalhos para as operações mais frequentes.', 'Shortcuts for the most frequent operations.')}</p>
             </div>
             <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-100 text-amber-700">
               <Sparkles className="h-5 w-5" />
@@ -255,7 +250,7 @@ function DashboardPage({
           <div className="flex items-center justify-between gap-3">
             <div>
               <h3 className="text-2xl font-semibold text-slate-900">{getLocaleText(locale, 'Fluxo Editorial', 'Editorial Flow')}</h3>
-              <p className="mt-1 text-sm text-slate-600">{getLocaleText(locale, 'Estado atual das publicacoes e atividades.', 'Current status of publications and activities.')}</p>
+              <p className="mt-1 text-sm text-slate-600">{getLocaleText(locale, 'Estado atual das publicações e atividades.', 'Current status of publications and activities.')}</p>
             </div>
             <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-100 text-slate-700">
               <BookOpen className="h-5 w-5" />
@@ -265,11 +260,11 @@ function DashboardPage({
           <div className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-2">
             <div className={adminStatCard}>
               <p className={adminStatValue}>{dashboardStats?.news_draft ?? 0}</p>
-              <p className={adminStatLabel}>{getLocaleText(locale, 'Noticias em rascunho', 'News in draft')}</p>
+              <p className={adminStatLabel}>{getLocaleText(locale, 'Notícias em rascunho', 'News in draft')}</p>
             </div>
             <div className={adminStatCard}>
               <p className={adminStatValue}>{dashboardStats?.news_review ?? 0}</p>
-              <p className={adminStatLabel}>{getLocaleText(locale, 'Noticias em revisao', 'News in review')}</p>
+              <p className={adminStatLabel}>{getLocaleText(locale, 'Notícias em revisão', 'News in review')}</p>
             </div>
             <div className={adminStatCard}>
               <p className={adminStatValue}>{dashboardStats?.events_draft ?? 0}</p>
@@ -277,7 +272,7 @@ function DashboardPage({
             </div>
             <div className={adminStatCard}>
               <p className={adminStatValue}>{dashboardStats?.events_review ?? 0}</p>
-              <p className={adminStatLabel}>{getLocaleText(locale, 'Eventos em revisao', 'Events in review')}</p>
+              <p className={adminStatLabel}>{getLocaleText(locale, 'Eventos em revisão', 'Events in review')}</p>
             </div>
           </div>
 
@@ -300,7 +295,7 @@ function DashboardPage({
             <div>
               <h3 className="text-2xl font-semibold text-slate-900">{getLocaleText(locale, 'Agenda e Destaques', 'Agenda and Highlights')}</h3>
               <p className="mt-1 text-sm text-slate-600">
-                {getLocaleText(locale, 'Proximos pontos relevantes do panorama cultural.', 'Next relevant points in the cultural landscape.')}
+                {getLocaleText(locale, 'Próximos pontos relevantes do panorama cultural.', 'Next relevant points in the cultural landscape.')}
               </p>
             </div>
             <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-sky-100 text-sky-700">
@@ -326,7 +321,7 @@ function DashboardPage({
                 </button>
               ))
             ) : (
-              <p className={adminInfo}>{getLocaleText(locale, 'Ainda nao existem registos suficientes para mostrar.', 'There are no sufficient records to display.')}</p>
+              <p className={adminInfo}>{getLocaleText(locale, 'Ainda não existem registos suficientes para mostrar.', 'There are no sufficient records to display.')}</p>
             )}
           </div>
         </section>

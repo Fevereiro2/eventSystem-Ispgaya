@@ -88,20 +88,20 @@ export function getActivitySectionCopy(activityTab: ActivityTab) {
   if (activityTab === 'books') {
     return {
       label: 'Livros',
-      description: 'Gestao editorial dos livros associados aos clubes.',
+      description: 'Gestão editorial dos livros associados aos clubes.',
     };
   }
 
   if (activityTab === 'sessions') {
     return {
-      label: 'Sessoes',
-      description: 'Planeamento e acompanhamento das sessoes de cada clube.',
+      label: 'Sessões',
+      description: 'Planeamento e acompanhamento das sessões de cada clube.',
     };
   }
 
   return {
     label: 'Eventos',
-    description: 'Programacao e workflow editorial dos eventos culturais.',
+    description: 'Programação e workflow editorial dos eventos culturais.',
   };
 }
 
@@ -127,8 +127,8 @@ export function getActivityPageLinks(
 
   if (activityTab === 'sessions') {
     return [
-      { label: editingSessionId ? 'Editar Sessao' : 'Nova Sessao', href: getActivityRoute(activityTab, 'form') },
-      { label: 'Sessoes Registadas', href: getActivityRoute(activityTab, 'list') },
+      { label: editingSessionId ? 'Editar Sessao' : 'Nova Sessão', href: getActivityRoute(activityTab, 'form') },
+      { label: 'Sessões Registadas', href: getActivityRoute(activityTab, 'list') },
     ];
   }
 
@@ -141,8 +141,8 @@ export function getActivityPageLinks(
 
 export function getContentPageLinks(editingId: string | null): AdminContextLink[] {
   return [
-    { label: editingId ? 'Editar Conteudo' : 'Novo Conteudo', href: getContentRoute('form') },
-    { label: 'Conteudos Registados', href: getContentRoute('list') },
+    { label: editingId ? 'Editar Conteudo' : 'Novo Conteúdo', href: getContentRoute('form') },
+    { label: 'Conteúdos Registados', href: getContentRoute('list') },
   ];
 }
 
@@ -189,12 +189,12 @@ export function buildDashboardCards(
   return [
     { label: 'Utilizadores ativos', value: dashboardStats.active_users },
     { label: 'Noticias publicadas', value: dashboardStats.news_published },
-    { label: 'Noticias em revisao', value: dashboardStats.news_review },
-    { label: 'Eventos em revisao', value: dashboardStats.events_review },
+    { label: 'Noticias em revisão', value: dashboardStats.news_review },
+    { label: 'Eventos em revisão', value: dashboardStats.events_review },
     { label: 'Livros em destaque', value: dashboardStats.featured_books },
-    { label: 'Sessoes proximas', value: dashboardStats.upcoming_sessions },
-    { label: 'Inscricoes pendentes', value: dashboardStats.registrations_pending },
-    { label: 'Clubes com inscricoes abertas', value: dashboardStats.clubs_with_registrations_open },
+    { label: 'Sessões próximas', value: dashboardStats.upcoming_sessions },
+    { label: 'Inscrições pendentes', value: dashboardStats.registrations_pending },
+    { label: 'Clubes com inscrições abertas', value: dashboardStats.clubs_with_registrations_open },
   ];
 }
 
@@ -213,19 +213,19 @@ export function buildDashboardHighlights(
       icon: Users,
     },
     {
-      label: 'Noticias publicadas',
+      label: 'Notícias publicadas',
       value: dashboardStats?.news_published ?? publishedItems,
       tone: 'amber',
       icon: Newspaper,
     },
     {
-      label: 'Sessoes proximas',
+      label: 'Sessões próximas',
       value: dashboardStats?.upcoming_sessions ?? sessionsLength,
       tone: 'blue',
       icon: CalendarClock,
     },
     {
-      label: 'Inscricoes pendentes',
+      label: 'Inscrições pendentes',
       value: dashboardStats?.registrations_pending ?? pendingRegistrations,
       tone: 'rose',
       icon: Bell,
@@ -254,8 +254,8 @@ export function buildDashboardAlerts(
   return [
     {
       id: 'editorial-review',
-      title: 'Revisao editorial',
-      detail: `${dashboardStats?.news_review ?? 0} noticias e ${dashboardStats?.events_review ?? 0} eventos aguardam revisao.`,
+      title: 'Revisão editorial',
+      detail: `${dashboardStats?.news_review ?? 0} notícias e ${dashboardStats?.events_review ?? 0} eventos aguardam revisão.`,
       href: getNewsRoute('list'),
       level: 'warning',
       is_read: false,
@@ -263,8 +263,8 @@ export function buildDashboardAlerts(
     },
     {
       id: 'registrations-pending',
-      title: 'Inscricoes por validar',
-      detail: `${dashboardStats?.registrations_pending ?? pendingRegistrations} inscricoes pendentes de decisao.`,
+      title: 'Inscrições por validar',
+      detail: `${dashboardStats?.registrations_pending ?? pendingRegistrations} inscrições pendentes de decisão.`,
       href: getAdminSectionHref('inscricoes'),
       level: 'warning',
       is_read: false,
@@ -273,7 +273,7 @@ export function buildDashboardAlerts(
     {
       id: 'clubs-open',
       title: 'Clubes com atividade aberta',
-      detail: `${dashboardStats?.clubs_with_registrations_open ?? 0} clubes com inscricoes atualmente ativas.`,
+      detail: `${dashboardStats?.clubs_with_registrations_open ?? 0} clubes com inscrições atualmente ativas.`,
       href: getAdminSectionHref('clubes'),
       level: 'info',
       is_read: false,
@@ -286,7 +286,7 @@ export function buildDashboardAgenda(dashboardStats: InfoCulturaDashboardStats |
   return [
     dashboardStats?.latest_news
       ? {
-          label: 'Ultima noticia',
+          label: 'Última notícia',
           title: dashboardStats.latest_news.title,
           meta: `${dashboardStats.latest_news.club_name || 'Sem clube'} · ${
             dashboardStats.latest_news.status
@@ -299,7 +299,7 @@ export function buildDashboardAgenda(dashboardStats: InfoCulturaDashboardStats |
       : null,
     dashboardStats?.next_session
       ? {
-          label: 'Proxima sessao',
+          label: 'Próxima sessão',
           title: dashboardStats.next_session.title,
           meta: dashboardStats.next_session.club_name || 'Sem clube',
           date: formatAdminDateTime(dashboardStats.next_session.date || ''),
@@ -308,7 +308,7 @@ export function buildDashboardAgenda(dashboardStats: InfoCulturaDashboardStats |
       : null,
     dashboardStats?.next_event
       ? {
-          label: 'Proximo evento',
+          label: 'Próximo evento',
           title: dashboardStats.next_event.title,
           meta: `${dashboardStats.next_event.club_name || 'Sem clube'}${
             dashboardStats.next_event.status ? ` · ${getWorkflowStatusLabel(dashboardStats.next_event.status)}` : ''
@@ -326,25 +326,25 @@ export function buildDashboardQuickActions(
 ): DashboardAction[] {
   const actions: DashboardAction[] = [
     {
-      label: 'Nova noticia',
-      hint: 'Abrir publicacao editorial',
+      label: 'Nova notícia',
+      hint: 'Abrir publicação editorial',
       href: getNewsRoute('list'),
       icon: Newspaper,
     },
     {
       label: 'Nova atividade',
-      hint: 'Gerir livros, sessoes e eventos',
+      hint: 'Gerir livros, sessões e eventos',
       href: defaultActivityHref,
       icon: CalendarClock,
     },
     {
-      label: 'Conteudos culturais',
+      label: 'Conteúdos culturais',
       hint: 'Atualizar Tuna, Leitura e Teatro',
       href: getAdminSectionHref('conteudos'),
       icon: FilePlus2,
     },
     {
-      label: 'Inscricoes',
+      label: 'Inscrições',
       hint: 'Validar pedidos pendentes',
       href: getAdminSectionHref('inscricoes'),
       icon: Bell,
@@ -394,7 +394,7 @@ export function buildClubOverviewStats(clubs: InfoCulturaClub[]): AdminOverviewS
   return [
     { label: 'Total', value: clubs.length },
     { label: 'Ativos', value: clubs.filter((club) => club.is_active).length },
-    { label: 'Inscricoes abertas', value: clubs.filter((club) => club.enable_registrations).length },
+    { label: 'Inscrições abertas', value: clubs.filter((club) => club.enable_registrations).length },
     { label: 'Com imagem', value: clubs.filter((club) => Boolean(club.image)).length },
   ];
 }
@@ -408,7 +408,7 @@ export function buildNewsOverviewStats(
   return [
     { label: 'Total filtrado', value: newsTotal },
     {
-      label: 'Em revisao',
+      label: 'Em revisão',
       value:
         dashboardStats?.news_review ??
         sortedNews.filter((item) => normalizeWorkflowStatus(item.news_status_name) === 'review').length,
@@ -446,12 +446,12 @@ export function buildActivityOverviewStats(
     return [
       { label: 'Total filtrado', value: activityTotal },
       {
-        label: 'Proximas',
+        label: 'Próximas',
         value: sortedSessions.filter((item) => new Date(item.start_date).getTime() >= Date.now())
           .length,
       },
       {
-        label: 'Inscricoes abertas',
+        label: 'Inscrições abertas',
         value: sortedSessions.filter((item) => item.enable_registrations).length,
       },
       {
@@ -463,7 +463,7 @@ export function buildActivityOverviewStats(
 
   return [
     { label: 'Total filtrado', value: activityTotal },
-    { label: 'Em revisao', value: sortedEvents.filter((item) => normalizeWorkflowStatus(item.status) === 'review').length },
+    { label: 'Em revisão', value: sortedEvents.filter((item) => normalizeWorkflowStatus(item.status) === 'review').length },
     { label: 'Selecionados', value: selectedEventIds.length },
     { label: 'Categorias', value: sortedCategories.length },
   ];
@@ -492,7 +492,7 @@ export function buildContentOverviewStats(
     { label: 'Publicados', value: publishedItems },
     { label: 'Rascunhos', value: Math.max(0, sortedItems.length - publishedItems) },
     {
-      label: 'Areas',
+      label: 'Áreas',
       value: new Set(sortedItems.map((item) => item.area)).size,
     },
   ];
