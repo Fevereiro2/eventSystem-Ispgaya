@@ -127,7 +127,7 @@ function extractApiErrorMessage(body: unknown): string | null {
 }
 
 function notifyApiError(message: string, status: number): void {
-  const tone = status >= 500 ? 'error' : status === 403 ? 'warning' : 'error';
+  const tone = status >= 500 ? 'error' : status === 403 || status === 409 ? 'warning' : 'error';
   const title =
     status === 401
       ? 'Sessão expirada'
@@ -135,7 +135,9 @@ function notifyApiError(message: string, status: number): void {
         ? 'Sem permissão'
         : status === 404
           ? 'Recurso não encontrado'
-          : 'Erro';
+          : status === 409
+            ? 'Ação bloqueada'
+            : 'Erro';
 
   pushToast({
     title,

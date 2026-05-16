@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from django.db import DatabaseError
 from django.db.models import Q
-from rest_framework import generics, permissions
+from rest_framework import generics, permissions, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
@@ -75,10 +75,16 @@ class AdminClubDetailView(AdminAuditDestroyMixin, generics.RetrieveUpdateDestroy
 
     def destroy(self, request, *args, **kwargs):
         club = self.get_object()
-        if AppUser.objects.filter(club=club).exists():
+        member_count = AppUser.objects.filter(club=club).count()
+        if member_count:
             return Response(
-                {'message': 'Nao podes apagar um clube com utilizadores associados.'},
-                status=400,
+                {
+                    'message': (
+                        f'Nao podes apagar o clube "{club.name}" porque tem '
+                        f'{member_count} utilizador(es) associado(s). Remove primeiro esses utilizadores do clube.'
+                    )
+                },
+                status=status.HTTP_409_CONFLICT,
             )
 
         try:
@@ -96,12 +102,12 @@ class AdminClubDetailView(AdminAuditDestroyMixin, generics.RetrieveUpdateDestroy
 class AdminClubMemberAssignView(APIView):
     permission_classes = [permissions.IsAuthenticated, IsSuperAdmin]
 
-    def post(self, request, pk):
+    def post(self, request, pk, user_pk=None):
         club = Club.objects.filter(pk=pk).first()
         if not club:
             return Response({'message': 'Clube nao encontrado.'}, status=404)
 
-        serializer = ClubMemberAssignSerializer(data=request.data)
+        serializer = ClubMemberAssignSerializer(data=request.data or {'user_id': user_pk})
         serializer.is_valid(raise_exception=True)
 
         user = serializer.validated_data['user']
@@ -138,8 +144,9 @@ class AdminClubMemberRemoveView(APIView):
                 status=400,
             )
 
+        AppUser.objects.filter(pk=user.pk, club_id=club.id).update(club_id=None)
+        user.club_id = None
         user.club = None
-        user.save(update_fields=['club'])
         record_admin_audit_action(
             action='remove_member',
             content_type='club',
@@ -150,3 +157,6 @@ class AdminClubMemberRemoveView(APIView):
             metadata={'user_id': user.id, 'user_email': user.email},
         )
         return Response({'user': UserSerializer(user).data})
+
+    def post(self, request, pk, user_pk):
+        return self.delete(request, pk, user_pk)

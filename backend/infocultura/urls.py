@@ -189,4 +189,6 @@ urlpatterns = [
     path('clubs/admin/<int:pk>/', AdminClubDetailView.as_view(), name='clubs-admin-detail'),
     path('clubs/admin/<int:pk>/members/', AdminClubMemberAssignView.as_view(), name='clubs-admin-member-assign'),
     path('clubs/admin/<int:pk>/members/<int:user_pk>/', AdminClubMemberRemoveView.as_view(), name='clubs-admin-member-remove'),
+    path('clubs/admin/<int:pk>/users/<int:user_pk>/assign/', AdminClubMemberAssignView.as_view(), name='clubs-admin-user-assign-compat'),
+    path('clubs/admin/<int:pk>/users/<int:user_pk>/remove/', AdminClubMemberRemoveView.as_view(), name='clubs-admin-user-remove-compat'),
 ]

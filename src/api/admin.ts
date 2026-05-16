@@ -1131,9 +1131,10 @@ export async function assignUserToClub(
   userId: number
 ): Promise<InfoCulturaUser> {
   const data = await request<{ user: InfoCulturaUser }>(
-    `/clubs/admin/${clubId}/users/${userId}/assign/`,
+    `/clubs/admin/${clubId}/members/`,
     {
-      method: 'POST'
+      method: 'POST',
+      body: JSON.stringify({ user_id: userId })
     },
     token
   );
@@ -1147,9 +1148,9 @@ export async function removeUserFromClub(
   userId: number
 ): Promise<InfoCulturaUser> {
   const data = await request<{ user: InfoCulturaUser }>(
-    `/clubs/admin/${clubId}/users/${userId}/remove/`,
+    `/clubs/admin/${clubId}/members/${userId}/`,
     {
-      method: 'POST'
+      method: 'DELETE'
     },
     token
   );

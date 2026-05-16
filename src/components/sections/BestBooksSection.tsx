@@ -254,7 +254,7 @@ function BestBooksSection({
             {resolvedEmptyLabel}
           </p>
         ) : (
-          <div className="relative mx-auto flex max-w-6xl flex-wrap items-end justify-start gap-x-5 gap-y-16 overflow-visible px-4 py-16 pl-2 md:pl-6">
+          <div className="relative mx-auto flex max-w-6xl flex-nowrap items-end justify-start gap-x-5 gap-y-16 overflow-x-auto overflow-y-visible px-2 py-14 pb-20 md:flex-wrap md:overflow-visible md:px-4 md:py-16 md:pl-6">
             {displayedBooks.map((book, index) => (
               <div
                 key={book.id}
