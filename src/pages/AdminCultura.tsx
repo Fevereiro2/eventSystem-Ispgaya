@@ -1640,6 +1640,7 @@ function AdminCultura() {
     event.preventDefault();
     if (!token) return;
 
+    const submitAction = String(new FormData(event.currentTarget).get('newsAction') || '').trim();
     const payload: NewsPayload = {
       title: newsForm.title.trim(),
       summary: newsForm.summary.trim(),
@@ -1649,6 +1650,19 @@ function AdminCultura() {
       published_at: newsForm.published_at || null,
       ...(newsForm.club_id ? { club_id: Number(newsForm.club_id) } : {})
     };
+
+    if (submitAction === 'publish_now') {
+      payload.news_status = 'published';
+      payload.published_at = payload.published_at || toDateTimeLocalValue(new Date().toISOString());
+    }
+
+    if (submitAction === 'schedule') {
+      payload.news_status = payload.news_status || 'published';
+      if (!payload.published_at) {
+        setNewsFormError('Seleciona a data e hora para agendar a publicação.');
+        return;
+      }
+    }
 
     if (!payload.title || !payload.summary || !payload.content || !payload.news_status) {
       setNewsFormError('Preenche o título, resumo, conteúdo e estado.');
