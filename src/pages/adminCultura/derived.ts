@@ -108,7 +108,7 @@ export function getActivitySectionCopy(activityTab: ActivityTab) {
 export function getNewsPageLinks(editingNewsId: number | null): AdminContextLink[] {
   return [
     { label: editingNewsId ? 'Editar Noticia' : 'Nova Noticia', href: getNewsRoute('form') },
-    { label: 'Noticias Registadas', href: getNewsRoute('list') },
+    { label: 'Notícias Registadas', href: getNewsRoute('list') },
   ];
 }
 
@@ -141,7 +141,7 @@ export function getActivityPageLinks(
 
 export function getContentPageLinks(editingId: string | null): AdminContextLink[] {
   return [
-    { label: editingId ? 'Editar Conteudo' : 'Novo Conteúdo', href: getContentRoute('form') },
+    { label: editingId ? 'Editar Conteúdo' : 'Novo Conteúdo', href: getContentRoute('form') },
     { label: 'Conteúdos Registados', href: getContentRoute('list') },
   ];
 }
@@ -188,8 +188,8 @@ export function buildDashboardCards(
 
   return [
     { label: 'Utilizadores ativos', value: dashboardStats.active_users },
-    { label: 'Noticias publicadas', value: dashboardStats.news_published },
-    { label: 'Noticias em revisão', value: dashboardStats.news_review },
+    { label: 'Notícias publicadas', value: dashboardStats.news_published },
+    { label: 'Notícias em revisão', value: dashboardStats.news_review },
     { label: 'Eventos em revisão', value: dashboardStats.events_review },
     { label: 'Livros em destaque', value: dashboardStats.featured_books },
     { label: 'Sessões próximas', value: dashboardStats.upcoming_sessions },

@@ -9,7 +9,7 @@ function TunaAcademica() {
       pageTitle={getLocaleText(locale, 'Tuna Académica', 'Academic Tuna')}
       pageDescription={getLocaleText(
         locale,
-        'Pagina publica da Tuna Academica com noticias, eventos, sessoes e atividades do clube.',
+        'Página pública da Tuna Académica com notícias, eventos, sessões e atividades do clube.',
         'Public page for the Academic Tuna with news, events, sessions and club activities.'
       )}
       routePath="/laboratorio-cultural/tuna"

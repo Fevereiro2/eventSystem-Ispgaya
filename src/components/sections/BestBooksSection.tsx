@@ -103,19 +103,17 @@ function BookSpine({
           <p
             className="absolute left-1/2 top-8 -translate-x-1/2 [writing-mode:vertical-rl] text-[10px] font-bold uppercase tracking-[0.34em]"
             style={{ color: '#f8fafc' }}
-          >
-            ISPGAYA
-          </p>
+          ></p>
 
           <p
-            className="absolute left-1/2 top-24 -translate-x-1/2 [writing-mode:vertical-rl] text-[11px] font-semibold uppercase tracking-[0.18em]"
+            className="absolute left-1/2 top-5 -translate-x-1/2 [writing-mode:vertical-rl] text-[13px] font-bold uppercase tracking-[0.18em]"
             style={{ color: '#f8fafc' }}
           >
             {book.title}
           </p>
 
           <p
-            className="absolute bottom-6 left-1/2 -translate-x-1/2 [writing-mode:vertical-rl] text-[9px] uppercase tracking-[0.26em]"
+            className="absolute bottom-6 left-1/2 -translate-x-1/2 [writing-mode:vertical-rl] text-[9px] font-bold uppercase tracking-[0.26em]"
             style={{ color: '#e2e8f0' }}
           >
             {book.author}
@@ -144,12 +142,12 @@ function BookSpine({
           <div className="pointer-events-none absolute inset-y-0 left-0 w-5 bg-gradient-to-r from-black/20 to-transparent" />
 
           <div className="relative z-10 flex h-full flex-col justify-end p-5 text-slate-900">
-            <p className="mb-3 text-[10px] font-semibold uppercase tracking-[0.24em] text-[#dd8609]">
-              ISPGAYA
+            <p className="mb-3 text-[10px] font-bold uppercase tracking-[0.24em] text-[#dd8609]">
+              {getLocaleText(locale, 'Destaque', 'Featured')}
             </p>
 
             <div className="border-l-4 border-[#dd8609] bg-white/90 px-3 py-3 shadow-sm backdrop-blur-sm">
-              <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-500">
+              <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-500">
                 {getLocaleText(locale, 'Livro', 'Book')}
               </p>
               <h3 className="mt-2 font-heading text-xl font-bold leading-tight text-slate-900">
@@ -160,7 +158,7 @@ function BookSpine({
 
             <Link
               to={href}
-              className="mt-4 inline-flex w-fit items-center text-sm font-semibold text-[#dd8609] underline-offset-2 hover:underline"
+              className="mt-4 inline-flex w-fit items-center text-sm font-bold text-[#dd8609] underline-offset-2 hover:underline"
               onClick={(event) => event.stopPropagation()}
             >
               {getLocaleText(locale, 'Ver detalhe', 'View details')}

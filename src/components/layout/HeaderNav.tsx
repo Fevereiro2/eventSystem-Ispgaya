@@ -82,35 +82,35 @@ function translateMenuLabel(locale: 'pt' | 'en', value: string): string {
   if (locale === 'pt') return value;
 
   const map: Record<string, string> = {
-    Instituicao: 'Institution',
+    Instituição: 'Institution',
     'O ISPGAYA': 'About ISPGAYA',
-    Organizacao: 'Organization',
+    Organização: 'Organization',
     'Corpo Docente': 'Faculty',
     'Qualidade Institucional': 'Institutional Quality',
-    'Etica e Boas Praticas': 'Ethics and Good Practices',
+    'Etica e Boas Práticas': 'Ethics and Good Practices',
     'Emprego e Recrutamento': 'Jobs and Recruitment',
     'Titulo Especialista': 'Specialist Title',
     Contactos: 'Contacts',
     Ensino: 'Study',
     'Oferta Formativa': 'Study Offer',
-    'Programas Avancados': 'Advanced Programmes',
+    'Programas Avançados': 'Advanced Programmes',
     Candidaturas: 'Applications',
     'Bolsas e Financiamento': 'Scholarships and Funding',
     Empregabilidade: 'Employability',
-    'Estagios e Emprego': 'Internships and Jobs',
+    'Estágios e Emprego': 'Internships and Jobs',
     Alumni: 'Alumni',
-    Investigacao: 'Research',
-    'Publicacoes Cientificas': 'Scientific Publications',
-    'Atividades Cientificas': 'Scientific Activities',
+    Investigação: 'Research',
+    'Publicações Científicas': 'Scientific Publications',
+    'Atividades Científicas': 'Scientific Activities',
     Biblioteca: 'Library',
     WIDESKILLS: 'WIDESKILLS',
-    Politecnica: 'Polytechnic',
+    Politécnica: 'Polytechnic',
     Internacional: 'International',
     'Estudantes Internacionais': 'International Students',
     'Guia ECTS': 'ECTS Guide',
-    'Laboratorio Cultural': 'Cultural Lab',
+    'Laboratório Cultural': 'Cultural Lab',
     'Vida Academica': 'Academic Life',
-    Noticias: 'News',
+    Notícias: 'News',
     Eventos: 'Events',
     'Estudante ISPGAYA': 'ISPGAYA Student',
     'Associacao de Estudantes': 'Student Association',
@@ -119,7 +119,7 @@ function translateMenuLabel(locale: 'pt' | 'en', value: string): string {
     'Clube de Teatro': 'Theatre Club',
     'Perguntas Frequentes': 'Frequently Asked Questions',
     'Candidatura Online': 'Online Application',
-    Horarios: 'Timetables',
+    Horários: 'Timetables',
     'Área Privada': 'Private Area',
     'Links de Interesse': 'Useful Links'
   };
@@ -145,10 +145,10 @@ const menuItems: MenuItem[] = [
     href: 'https://ispgaya.pt/pt/instituicao',
     dropdown: [
       { label: 'O ISPGAYA', href: 'https://ispgaya.pt/pt/instituicao/ispgaya' },
-      { label: 'Organizacao', href: 'https://ispgaya.pt/pt/instituicao/organizacao' },
+      { label: 'Organização', href: 'https://ispgaya.pt/pt/instituicao/organizacao' },
       { label: 'Corpo Docente', href: 'https://ispgaya.pt/pt/instituicao/corpo-docente' },
       { label: 'Qualidade Institucional', href: 'https://ispgaya.pt/pt/instituicao/qualidade' },
-      { label: 'Etica e Boas Praticas', href: 'https://ispgaya.pt/pt/instituicao/etica-e-boas-praticas' },
+      { label: 'Etica e Boas Práticas', href: 'https://ispgaya.pt/pt/instituicao/etica-e-boas-praticas' },
       { label: 'Emprego e Recrutamento', href: 'https://forms.office.com' },
       { label: 'Titulo Especialista', href: 'https://ispgaya.pt/pt/instituicao/titulo-especialista' },
       { label: 'Contactos', href: 'https://ispgaya.pt/pt/instituicao/contactos' }
@@ -160,7 +160,7 @@ const menuItems: MenuItem[] = [
     dropdown: [
       { label: 'Oferta Formativa', href: 'https://ispgaya.pt/pt/ensino/oferta-formativa' },
       {
-        label: 'Programas Avancados',
+        label: 'Programas Avançados',
         href: 'https://ispgaya.pt/pt/ensino/programas-avancados'
       },
       { label: 'Candidaturas', href: 'https://ispgaya.pt/pt/ensino/candidaturas' },
@@ -175,22 +175,22 @@ const menuItems: MenuItem[] = [
     href: 'https://ispgaya.pt/pt/empregabilidade',
     dropdown: [
       {
-        label: 'Estagios e Emprego',
+        label: 'Estágios e Emprego',
         href: 'https://ispgaya.pt/pt/empregabilidade/estagios-e-emprego'
       },
       { label: 'Alumni', href: 'https://ispgaya.pt/pt/empregabilidade/alumni' }
     ]
   },
   {
-    label: 'Investigacao',
+    label: 'Investigação',
     href: 'https://ispgaya.pt/pt/investigacao',
     dropdown: [
       {
-        label: 'Publicacoes Cientificas',
+        label: 'Publicações Científicas',
         href: 'https://ispgaya.pt/pt/investigacao/publicacoes-cientificas'
       },
       {
-        label: 'Atividades Cientificas',
+        label: 'Atividades Científicas',
         href: 'https://ispgaya.pt/pt/investigacao/atividades-cientificas'
       },
       { label: 'Biblioteca', href: 'https://ispgaya.pt/pt/investigacao/biblioteca' },

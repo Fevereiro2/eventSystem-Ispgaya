@@ -105,7 +105,7 @@ function NewslettersPage() {
           ? caughtError.message
           : caughtError instanceof Error
             ? caughtError.message
-            : getLocaleText(locale, 'Nao foi possivel carregar as newsletters.', 'Could not load newsletters.');
+            : getLocaleText(locale, 'Não foi possivel carregar as newsletters.', 'Could not load newsletters.');
       setError(message);
     } finally {
       setLoading(false);
@@ -147,7 +147,7 @@ function NewslettersPage() {
           ? caughtError.message
           : caughtError instanceof Error
             ? caughtError.message
-            : getLocaleText(locale, 'Nao foi possivel guardar a newsletter.', 'Could not save the newsletter.');
+            : getLocaleText(locale, 'Não foi possivel guardar a newsletter.', 'Could not save the newsletter.');
       setError(message);
     } finally {
       setSavingNewsletter(false);
@@ -499,7 +499,7 @@ function NewslettersPage() {
                 }
               >
                 <option value="1">Sim</option>
-                <option value="0">Nao</option>
+                <option value="0">Não</option>
               </select>
             </div>
 

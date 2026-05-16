@@ -150,8 +150,8 @@ function NewsPage({
     <div className="space-y-6">
       <AdminPageHero
         icon={Newspaper}
-        title="Noticias"
-        description="Workflow editorial, publicação e acompanhamento das noticias por clube."
+        title="Notícias"
+        description="Workflow editorial, publicação e acompanhamento das Notícias por clube."
         tone="blue"
         stats={newsOverviewStats}
       />
@@ -159,7 +159,7 @@ function NewsPage({
       {showNewsForm ? (
         <form id="news-form" onSubmit={handleSaveNews} className={`${adminPanelForm} max-w-none`}>
           <div className="border-b border-slate-100 pb-4">
-            <h2 className={blockTitle}>{editingNewsId ? 'Editar Noticia' : 'Nova Noticia'}</h2>
+            <h2 className={blockTitle}>{editingNewsId ? 'Editar Notícia' : 'Nova Notícia'}</h2>
             <p className={blockText}>Publica novidades de cada clube e controla o respetivo estado.</p>
           </div>
 
@@ -285,12 +285,12 @@ function NewsPage({
                 ? 'A carregar imagem...'
                 : newsForm.image
                   ? 'Imagem carregada com sucesso.'
-                  : 'Seleciona uma imagem para a notícia.'}
+                  : 'Seleciona uma imagem para a Notícia.'}
             </p>
             {newsForm.image ? (
               <img
                 src={resolveInfoCulturaAssetUrl(newsForm.image)}
-                alt="Preview da noticia"
+                alt="Preview da Notícia"
                 className="mt-3 h-40 w-full rounded-xl object-cover"
               />
             ) : null}
@@ -377,7 +377,7 @@ function NewsPage({
             <form onSubmit={handleApplyNewsSearch} className={adminPanelForm}>
               <div className={adminField}>
                 <label className={adminLabel} htmlFor="news-search">
-                  Pesquisar noticias
+                  Pesquisar Notícias
                 </label>
                 <input
                   id="news-search"
@@ -501,9 +501,9 @@ function NewsPage({
           </div>
 
           <div className={adminList}>
-            {isLoadingNews ? <p className={adminInfo}>A carregar notícias...</p> : null}
+            {isLoadingNews ? <p className={adminInfo}>A carregar Notícias...</p> : null}
             {!isLoadingNews && sortedNews.length === 0 ? (
-              <p className={adminInfo}>Não existem notícias para o filtro atual.</p>
+              <p className={adminInfo}>Não existem Notícias para o filtro atual.</p>
             ) : null}
             {sortedNews.map((item) => (
               <article key={item.id} className={adminListItem}>
@@ -567,7 +567,7 @@ function NewsPage({
           {!isLoadingNews ? (
             <div className={`${adminActions} mt-6`}>
               <p className={adminInfo}>
-                {newsTotal} notícia(s) · página {newsPage} de {newsTotalPages || 1}
+                {newsTotal} Notícia(s) · página {newsPage} de {newsTotalPages || 1}
               </p>
               <button
                 type="button"
