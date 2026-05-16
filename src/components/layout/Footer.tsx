@@ -51,14 +51,38 @@ const ensinoLinks = [
 ];
 
 const hubLinks = [
-  'Inforestudante',
-  'Infordocente',
-  'Infocultura',
-  'Email',
-  'Wi-Fi',
-  'Password',
-  'Cartao ISPGAYA',
-  'Identidade Visual'
+  {
+    name: 'Inforestudante',
+    link: '/inforestudante',
+  },
+  {
+    name: 'Infordocente',
+    link: '/infordocente',
+  },
+  {
+    name: 'Infocultura',
+    link: '/infocultura/resumo',
+  },
+  {
+    name: 'Email',
+    link: '/email',
+  },
+  {
+    name: 'Wi-Fi',
+    link: '/wifi',
+  },
+  {
+    name: 'Password',
+    link: '/password',
+  },
+  {
+    name: 'Cartao ISPGAYA',
+    link: '/cartao-ispgaya',
+  },
+  {
+    name: 'Identidade Visual',
+    link: '/identidade-visual',
+  },
 ];
 
 const interesseLinks = [
@@ -127,9 +151,9 @@ function Footer() {
             <p className={footerTitle}>ISPGAYA HUB</p>
             <ul className={footerList}>
               {hubLinks.map((item) => (
-                <li key={item} className={footerListItem}>
-                  <a href="#" className={footerLink}>
-                    {item}
+                <li key={item.name} className={footerListItem}>
+                  <a href={item.link} className={footerLink}>
+                    {item.name}
                   </a>
                 </li>
               ))}
