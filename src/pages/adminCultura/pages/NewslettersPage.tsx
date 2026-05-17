@@ -41,8 +41,10 @@ import {
   fetchAdminNewsletters,
   getStoredAccessToken,
   sendAdminNewsletter,
+  uploadAdminImage,
   updateAdminNewsletter,
   updateAdminNewsletterSubscriber,
+  resolveInfoCulturaAssetUrl,
 } from '../../../api/infoculturaApi.js';
 import { formatAdminDateTime } from '../utils.js';
 import { getLocaleText, useLocale } from '../../../i18n/locale.js';
@@ -54,6 +56,7 @@ const initialNewsletterForm: NewsletterFormState = {
   title: '',
   subject: '',
   content: '',
+  image: '',
   status: 'draft',
 };
 
@@ -81,6 +84,9 @@ function NewslettersPage() {
   const [sendingNewsletterId, setSendingNewsletterId] = useState<number | null>(null);
   const [deletingNewsletterId, setDeletingNewsletterId] = useState<number | null>(null);
   const [deletingSubscriberId, setDeletingSubscriberId] = useState<number | null>(null);
+  const [newsletterImageFileKey, setNewsletterImageFileKey] = useState(0);
+  const [isUploadingNewsletterImage, setIsUploadingNewsletterImage] = useState(false);
+  const [isDraggingNewsletterImage, setIsDraggingNewsletterImage] = useState(false);
 
   const activeSubscribers = useMemo(
     () => subscribers.filter((subscriber) => subscriber.is_active).length,
@@ -119,6 +125,8 @@ function NewslettersPage() {
   const resetNewsletterForm = () => {
     setNewsletterForm(initialNewsletterForm);
     setEditingNewsletterId(null);
+    setNewsletterImageFileKey((prev) => prev + 1);
+    setIsDraggingNewsletterImage(false);
   };
 
   const resetSubscriberForm = () => {
@@ -188,9 +196,34 @@ function NewslettersPage() {
       title: newsletter.title,
       subject: newsletter.subject,
       content: newsletter.content,
+      image: newsletter.image || '',
       status: newsletter.status,
     });
     setActiveTab('newsletters');
+  };
+
+  const handleUploadNewsletterImage = async (file: File | null) => {
+    if (!token || !file) return;
+
+    setIsUploadingNewsletterImage(true);
+    setError('');
+
+    try {
+      const imagePath = await uploadAdminImage(token, file, 'news');
+      setNewsletterForm((prev) => ({ ...prev, image: imagePath }));
+    } catch (caughtError) {
+      const message =
+        caughtError instanceof InfoCulturaApiError
+          ? caughtError.message
+          : caughtError instanceof Error
+            ? caughtError.message
+            : getLocaleText(locale, 'Não foi possivel carregar a imagem.', 'Could not upload the image.');
+      setError(message);
+    } finally {
+      setIsUploadingNewsletterImage(false);
+      setNewsletterImageFileKey((prev) => prev + 1);
+      setIsDraggingNewsletterImage(false);
+    }
   };
 
   const handleEditSubscriber = (subscriber: InfoCulturaNewsletterSubscriber) => {
@@ -363,6 +396,83 @@ function NewslettersPage() {
                   <option value="cancelled">Cancelada</option>
                 </select>
               </div>
+            </div>
+
+            <div className={adminFieldSpaced}>
+              <p className={adminLabel}>{getLocaleText(locale, 'Imagem', 'Image')}</p>
+              <input
+                id="newsletter-image"
+                key={newsletterImageFileKey}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={(event) => {
+                  const file = event.target.files?.[0] || null;
+                  void handleUploadNewsletterImage(file);
+                }}
+              />
+              <label
+                htmlFor="newsletter-image"
+                className={[
+                  'group relative flex h-40 w-40 cursor-pointer items-center justify-center overflow-hidden rounded-xl border-2 border-dashed transition',
+                  isDraggingNewsletterImage
+                    ? 'border-orange-400 bg-orange-50'
+                    : 'border-slate-200 bg-slate-50 hover:bg-slate-100',
+                  isUploadingNewsletterImage ? 'pointer-events-none opacity-70' : '',
+                ].join(' ')}
+                onDragEnter={(event) => {
+                  event.preventDefault();
+                  setIsDraggingNewsletterImage(true);
+                }}
+                onDragOver={(event) => {
+                  event.preventDefault();
+                  setIsDraggingNewsletterImage(true);
+                }}
+                onDragLeave={(event) => {
+                  event.preventDefault();
+                  setIsDraggingNewsletterImage(false);
+                }}
+                onDrop={(event) => {
+                  event.preventDefault();
+                  setIsDraggingNewsletterImage(false);
+                  const file = event.dataTransfer.files?.[0] || null;
+                  void handleUploadNewsletterImage(file);
+                }}
+              >
+                {newsletterForm.image ? (
+                  <>
+                    <img
+                      src={resolveInfoCulturaAssetUrl(newsletterForm.image)}
+                      alt={getLocaleText(locale, 'Preview da newsletter', 'Newsletter preview')}
+                      className="h-full w-full object-cover"
+                    />
+                    <div className="absolute inset-0 flex items-center justify-center bg-slate-950/40 px-3 text-center text-sm font-medium text-white opacity-0 transition group-hover:opacity-100">
+                      {isUploadingNewsletterImage
+                        ? getLocaleText(locale, 'A carregar...', 'Uploading...')
+                        : getLocaleText(locale, 'Clica para trocar', 'Click to replace')}
+                    </div>
+                  </>
+                ) : (
+                  <div className="flex flex-col items-center gap-2 px-4 text-center text-slate-600">
+                    <Plus size={20} />
+                    <span className="text-sm font-medium">
+                      {isUploadingNewsletterImage
+                        ? getLocaleText(locale, 'A carregar...', 'Uploading...')
+                        : getLocaleText(locale, 'Carregar imagem', 'Upload image')}
+                    </span>
+                    <span className="text-xs text-slate-500">
+                      {getLocaleText(locale, 'Arrasta ou clica aqui', 'Drag or click here')}
+                    </span>
+                  </div>
+                )}
+              </label>
+              <p className={blockText}>
+                {isUploadingNewsletterImage
+                  ? getLocaleText(locale, 'A carregar imagem...', 'Uploading image...')
+                  : newsletterForm.image
+                    ? getLocaleText(locale, 'Imagem carregada com sucesso.', 'Image uploaded successfully.')
+                    : getLocaleText(locale, 'Usa este quadrado para fazer upload da imagem da campanha.', 'Use this square to upload the campaign image.')}
+              </p>
             </div>
 
             <div className={adminFieldSpaced}>
