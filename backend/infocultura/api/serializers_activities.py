@@ -238,6 +238,7 @@ class AdminBookWriteSerializer(ClubScopedWriteSerializer):
             'cover_image',
             'summary',
             'is_featured',
+            'created_at',
             'club_id',
         ]
         read_only_fields = ['id']

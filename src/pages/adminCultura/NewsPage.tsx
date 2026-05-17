@@ -243,16 +243,12 @@ function NewsPage({
                 type="datetime-local"
                 className={adminInput}
                 value={newsForm.published_at}
-                disabled={
-                  !canManageUsers &&
-                  !['published', 'archived'].includes(normalizeWorkflowStatus(newsForm.news_status))
-                }
                 onChange={(event) =>
                   setNewsForm((prev) => ({ ...prev, published_at: event.target.value }))
                 }
               />
               <p className={blockText}>
-                Usa "Publicar agora" para publicar imediatamente ou escolhe data/hora para agendar.
+                Usa "Publicar agora" para publicar imediatamente ou escolhe data/hora futura e clica em "Agendar".
               </p>
             </div>
           </div>

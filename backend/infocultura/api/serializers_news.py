@@ -103,8 +103,14 @@ class AdminNewsWriteSerializer(ClubScopedWriteMixin, serializers.ModelSerializer
             base_statuses=NEWS_WORKFLOW_STATUS_ORDER,
             current_status=current_status,
         )
+        published_at = attrs.get('published_at')
+        is_future_publication = (
+            next_status == 'published'
+            and published_at is not None
+            and published_at > timezone.now()
+        )
 
-        if next_status and next_status not in allowed_statuses:
+        if next_status and next_status not in allowed_statuses and not is_future_publication:
             raise serializers.ValidationError(
                 {'news_status': 'Nao tens permissao para colocar esta noticia nesse estado.'}
             )

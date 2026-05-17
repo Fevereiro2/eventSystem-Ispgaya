@@ -44,6 +44,7 @@ export type BookFormState = {
   cover_image: string;
   summary: string;
   is_featured: boolean;
+  available_at: string;
   club_id: string;
 };
 
