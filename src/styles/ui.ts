@@ -71,9 +71,9 @@ export const contentCard =
   'max-w-4xl rounded-xl border border-slate-200 bg-white p-6 shadow-sm';
 export const contentList = 'mt-5 space-y-2';
 export const contentLink = 'font-medium text-[#dd8609] underline-offset-2 hover:underline';
-export const contentItems = 'mt-8 space-y-4';
+export const contentItems = 'mt-8 grid gap-4';
 export const contentItemCard =
-  'rounded-lg border border-slate-200 bg-slate-50 p-4 shadow-sm';
+  'rounded-3xl border border-slate-200 bg-white p-6 shadow-sm ring-1 ring-slate-200/70 transition duration-200 hover:-translate-y-0.5 hover:shadow-lg';
 export const contentItemHeader = 'flex flex-wrap items-start justify-between gap-3';
 export const contentItemTitle = 'text-lg font-semibold text-slate-900';
 export const contentItemDate = 'text-xs font-medium uppercase tracking-wide text-slate-500';

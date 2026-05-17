@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from django.db import transaction
 from django.db.models import Q
 from django.utils import timezone
 from rest_framework import generics, permissions
@@ -17,7 +18,7 @@ from ...api.serializers import (
     normalize_workflow_status,
 )
 from ...core.permissions import IsClubAdmin
-from ...models import Event, NewsStatus
+from ...models import Event, EventCategory, EventRegistration, NewsStatus
 from ...service_modules.audit import record_admin_audit_action, record_editorial_action
 from ...service_modules.workflow import notify_event_workflow_status
 from ..admin.common import AdminAuditDestroyMixin, AdminAuditMixin, get_allowed_club_id
@@ -128,6 +129,14 @@ class AdminEventDetailView(AdminAuditDestroyMixin, generics.RetrieveUpdateDestro
             return AdminEventReadSerializer
         return AdminEventWriteSerializer
 
+    def destroy(self, request, *args, **kwargs):
+        instance = self.get_object()
+        with transaction.atomic():
+            EventCategory.objects.filter(event=instance).delete()
+            EventRegistration.objects.filter(event=instance).delete()
+            self.write_audit_entry(request, action='delete', instance=instance)
+            return super().destroy(request, *args, **kwargs)
+
 
 class AdminEventBulkStatusUpdateView(APIView):
     permission_classes = [permissions.IsAuthenticated, IsClubAdmin]
@@ -205,8 +214,11 @@ class AdminEventBulkDeleteView(APIView):
 
         deleted_ids = list(queryset.values_list('id', flat=True))
         deleted_count = len(deleted_ids)
-        queryset.delete()
         if deleted_count:
+            with transaction.atomic():
+                EventCategory.objects.filter(event__in=queryset).delete()
+                EventRegistration.objects.filter(event__in=queryset).delete()
+                queryset.delete()
             record_admin_audit_action(
                 action='bulk_delete',
                 content_type='event',

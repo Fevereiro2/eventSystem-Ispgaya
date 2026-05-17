@@ -25,7 +25,9 @@ import {
   adminInput,
   adminLabel,
   adminList,
+  adminListBadge,
   adminListDesc,
+  adminListHeader,
   adminListItem,
   adminListMeta,
   adminListTitle,
@@ -1055,6 +1057,7 @@ function AdminCultura() {
         setActivityPage((prev) => Math.max(1, prev - 1));
       }
     } catch (error) {
+      if (handleAuthError(error)) return;
       const message =
         error instanceof Error ? error.message : 'Não foi possível apagar os eventos selecionados.';
       setActivityError(message);
@@ -2179,8 +2182,9 @@ function AdminCultura() {
         resetEventForm();
       }
     } catch (error) {
+      if (handleAuthError(error)) return;
       const message =
-        error instanceof Error ? error.message : 'Não foi possível apagar o evento.' ;
+        error instanceof Error ? error.message : 'Não foi possível apagar o evento.';
       setActivityError(message);
     } finally {
       setDeletingEventId(null);
@@ -3140,33 +3144,35 @@ function AdminCultura() {
                 {sortedItems.map((item) => (
                   <article key={item.id} className={adminListItem}>
                     <div className={adminListTop}>
-                      <div>
-                        <h3 className={adminListTitle}>{item.title}</h3>
+                      <div className={adminListHeader}>
+                        <h3 className={`${adminListTitle} break-words leading-snug`}>{item.title}</h3>
                         <p className={adminListMeta}>
-                          {getAreaLabel(item.area)} · {item.date} · {item.status}
+                          <span className={adminListBadge}>{getAreaLabel(item.area)}</span>
+                          <span className="mx-2 text-slate-300">·</span>
+                          {item.date} · {item.status}
                         </p>
+                      </div>
+
+                      <div className={`${adminListTools} mt-0 shrink-0`}>
+                        <button
+                          type="button"
+                          className={adminBtnEdit}
+                          onClick={() => handleEditContent(item)}
+                        >
+                          {getLocaleText(locale, 'Editar', 'Edit')}
+                        </button>
+                        <button
+                          type="button"
+                          className={adminBtnDanger}
+                          disabled={deletingId === item.id}
+                          onClick={() => handleDeleteContent(item.id)}
+                        >
+                          {getLocaleText(locale, 'Apagar', 'Delete')}
+                        </button>
                       </div>
                     </div>
 
-                    <p className={adminListDesc}>{item.description}</p>
-
-                    <div className={adminListTools}>
-                      <button
-                        type="button"
-                        className={adminBtnEdit}
-                        onClick={() => handleEditContent(item)}
-                      >
-                        {getLocaleText(locale, 'Editar', 'Edit')}
-                      </button>
-                      <button
-                        type="button"
-                        className={adminBtnDanger}
-                        disabled={deletingId === item.id}
-                        onClick={() => handleDeleteContent(item.id)}
-                      >
-                        {getLocaleText(locale, 'Apagar', 'Delete')}
-                      </button>
-                    </div>
+                    <p className={`${adminListDesc} break-words`}>{item.description}</p>
                   </article>
                 ))}
               </div>
