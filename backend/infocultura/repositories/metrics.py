@@ -4,7 +4,7 @@ import calendar
 from datetime import date, datetime, timedelta
 
 from django.db.models import Count, Max, Q
-from django.db.models.functions import TruncDate, TruncMonth, TruncWeek
+from django.db.models.functions import TruncDate
 from django.utils import timezone
 
 from ..models import Club, MetricView, News
@@ -106,12 +106,12 @@ def _build_series(period: str, counts: dict[date, int], now: datetime) -> list[M
     return points
 
 
-def _bucket_queryset(period: str):
-    if period == 'day':
-        return TruncDate('viewed_at')
-    if period == 'week':
-        return TruncWeek('viewed_at')
-    return TruncMonth('viewed_at')
+def _normalize_week_start(value: date) -> date:
+    return value - timedelta(days=value.weekday())
+
+
+def _normalize_month_start(value: date) -> date:
+    return value.replace(day=1)
 
 
 def _period_start(period: str, now: datetime) -> datetime:
@@ -120,16 +120,6 @@ def _period_start(period: str, now: datetime) -> datetime:
     if period == 'week':
         return _start_of_week(now) - timedelta(weeks=11)
     return _start_of_month(now)
-
-
-def _normalize_bucket_value(period: str, value: date | datetime | None) -> date | None:
-    if value is None:
-        return None
-
-    if isinstance(value, datetime):
-        return value.date()
-
-    return value
 
 
 def get_admin_metrics_overview(*, user, period: str = 'week', limit: int = 8) -> AdminMetricsOverview:
@@ -147,9 +137,8 @@ def get_admin_metrics_overview(*, user, period: str = 'week', limit: int = 8) ->
     clubs_created = Club.objects.filter(created_at__gte=start).count()
     news_created = News.objects.filter(created_at__gte=start).count()
 
-    bucket_field = _bucket_queryset(period)
     grouped_rows = (
-        queryset.annotate(bucket=bucket_field)
+        queryset.annotate(bucket=TruncDate('viewed_at', tzinfo=None))
         .values('bucket')
         .annotate(views=Count('id'))
         .order_by('bucket')
@@ -157,10 +146,18 @@ def get_admin_metrics_overview(*, user, period: str = 'week', limit: int = 8) ->
 
     count_map: dict[date, int] = {}
     for row in grouped_rows:
-        bucket = _normalize_bucket_value(period, row['bucket'])
-        if bucket is None:
+        bucket_value = row['bucket']
+        if bucket_value is None:
             continue
-        count_map[bucket] = row['views']
+
+        if period == 'day':
+            bucket_date = bucket_value
+        elif period == 'week':
+            bucket_date = _normalize_week_start(bucket_value)
+        else:
+            bucket_date = _normalize_month_start(bucket_value)
+
+        count_map[bucket_date] = count_map.get(bucket_date, 0) + row['views']
 
     series = _build_series(period, count_map, now)
 
