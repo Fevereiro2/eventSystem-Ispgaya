@@ -52,7 +52,24 @@ class Command(BaseCommand):
                 self.stdout.write("A adicionar 'updated_at' a 'sessions'...")
                 cursor.execute(f"ALTER TABLE {table_sessions} ADD COLUMN updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP")
 
-            # 3. Adicionar indices se nao existirem
+            # 3. Verificar e atualizar a tabela 'newsletters'
+            self.stdout.write("\nA verificar tabela 'newsletters'...")
+            table_newsletters = 'newsletters'
+            try:
+                columns_newsletters = [
+                    info.name
+                    for info in connection.introspection.get_table_description(cursor, table_newsletters)
+                ]
+            except Exception:
+                columns_newsletters = []
+
+            if columns_newsletters and 'image' not in columns_newsletters:
+                self.stdout.write("A adicionar 'image' a 'newsletters'...")
+                cursor.execute(
+                    f"ALTER TABLE {table_newsletters} ADD COLUMN image VARCHAR(500) NOT NULL DEFAULT ''"
+                )
+
+            # 4. Adicionar indices se nao existirem
             self.stdout.write("\nA adicionar indices de performance...")
             try:
                 cursor.execute("CREATE INDEX idx_event_dates ON event(start_date, end_date)")

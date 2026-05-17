@@ -20,6 +20,7 @@ class NewsletterSerializer(serializers.ModelSerializer):
             'title',
             'subject',
             'content',
+            'image',
             'status',
             'sent_at',
             'created_at',

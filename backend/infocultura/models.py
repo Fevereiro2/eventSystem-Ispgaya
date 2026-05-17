@@ -304,6 +304,7 @@ class Newsletter(models.Model):
     title = models.CharField(max_length=255)
     subject = models.CharField(max_length=255)
     content = models.TextField()
+    image = models.CharField(max_length=500, blank=True, default='', db_column=db_constants.COL_IMAGE)
     status = models.CharField(max_length=50, choices=STATUS_CHOICES, default='draft')
     sent_at = models.DateTimeField(blank=True, null=True)
     user = models.ForeignKey(
