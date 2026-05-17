@@ -75,6 +75,7 @@ export type InfoCulturaNewsletter = {
   title: string;
   subject: string;
   content: string;
+  image?: string | null;
   status: string;
   sent_at: string | null;
   created_at: string;
@@ -321,6 +322,7 @@ export type NewsletterPayload = {
   title: string;
   subject: string;
   content: string;
+  image?: string;
   status: string;
   sent_at?: string | null;
 };

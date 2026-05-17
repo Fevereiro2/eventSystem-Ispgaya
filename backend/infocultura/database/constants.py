@@ -56,3 +56,5 @@ COL_START_DATE = 'start_date'
 COL_END_DATE = 'end_date'
 COL_CREATED_AT = 'created_at'
 COL_UPDATED_AT = 'updated_at'
+
+COL_IMAGE = 'image'
