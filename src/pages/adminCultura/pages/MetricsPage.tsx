@@ -57,10 +57,21 @@ function formatShortDate(value: string | null): string {
 
 function MetricBars({ overview }: { overview: InfoCulturaMetricsOverview | null }) {
   const { locale } = useLocale();
-  const maxValue = Math.max(1, ...(overview?.series.map((point) => point.value) || [1]));
+  const [activeIndex, setActiveIndex] = useState(0);
+  const bars = overview?.series || [];
+  const maxValue = Math.max(1, ...bars.map((point) => point.value));
+
+  useEffect(() => {
+    if (bars.length > 0) {
+      setActiveIndex(bars.length - 1);
+    }
+  }, [bars.length]);
+
+  const activePoint = bars[activeIndex] || null;
+
   return (
     <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-      <div className="flex flex-wrap items-center justify-between gap-3">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h3 className="text-2xl font-semibold text-slate-900">{getLocaleText(locale, 'Evolução', 'Evolution')}</h3>
           <p className="mt-1 text-sm text-slate-600">
@@ -69,36 +80,59 @@ function MetricBars({ overview }: { overview: InfoCulturaMetricsOverview | null 
               : getLocaleText(locale, 'Sem dados.', 'No data.')}
           </p>
         </div>
+        {activePoint ? (
+          <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700">
+            <p className="font-semibold text-slate-900">{activePoint.label}</p>
+            <p>
+              {getLocaleText(locale, 'Visualizações:', 'Views:')} <span className="font-semibold">{activePoint.value}</span>
+            </p>
+            <p className="text-xs text-slate-500">
+              {getLocaleText(locale, 'Passe o rato sobre uma barra para ver o valor.', 'Hover a bar to see the value.')}
+            </p>
+          </div>
+        ) : null}
       </div>
 
-      <div className="mt-6 h-64">
+      <div className="mt-6 overflow-x-auto px-1 pb-3">
         {overview && overview.series.length > 0 ? (
-          <svg viewBox="0 0 1000 280" className="h-full w-full">
-            <defs>
-              <linearGradient id="metrics-gradient" x1="0" x2="0" y1="0" y2="1">
-                <stop offset="0%" stopColor="#dd8609" stopOpacity="0.9" />
-                <stop offset="100%" stopColor="#dd8609" stopOpacity="0.2" />
-              </linearGradient>
-            </defs>
-
-            {overview.series.map((point, index) => {
-              const barWidth = 1000 / overview.series.length;
-              const height = (point.value / maxValue) * 220;
-              const x = index * barWidth + 8;
-              const y = 250 - height;
-              return (
-                <g key={point.label}>
-                  <rect x={x} y={y} width={Math.max(barWidth - 16, 8)} height={height} rx="14" fill="url(#metrics-gradient)" />
-                  <text x={x + 4} y={268} fontSize="16" fill="#475569">
-                    {point.label}
-                  </text>
-                  <text x={x + 4} y={Math.max(y - 10, 18)} fontSize="16" fontWeight="600" fill="#0f172a">
-                    {point.value}
-                  </text>
-                </g>
-              );
-            })}
-          </svg>
+          <div className="relative min-w-[700px] rounded-2xl border border-slate-100 bg-slate-50 px-4 py-6">
+            <div className="absolute inset-x-6 top-10 grid h-px grid-cols-1 gap-8">
+              {[4, 3, 2, 1].map((item) => (
+                <div key={item} className="h-px w-full bg-slate-200" />
+              ))}
+            </div>
+            <div className="relative flex h-56 items-end gap-3">
+              {bars.map((point, index) => {
+                const height = maxValue === 0 ? 12 : Math.max(12, (point.value / maxValue) * 220);
+                const isActive = activeIndex === index;
+                return (
+                  <button
+                    key={point.label}
+                    type="button"
+                    onMouseEnter={() => setActiveIndex(index)}
+                    onFocus={() => setActiveIndex(index)}
+                    className={`group flex h-full flex-col items-center justify-end rounded-3xl transition-all duration-200 ${
+                      isActive ? 'bg-slate-100' : 'bg-transparent'
+                    }`}
+                  >
+                    <div
+                      className={`relative flex h-[calc(100%-32px)] w-12 flex-col justify-end rounded-3xl ${
+                        isActive ? 'bg-orange-500' : 'bg-orange-400/90'
+                      }`}
+                      style={{ height }}
+                    >
+                      <span className="pointer-events-none absolute -top-7 left-1/2 -translate-x-1/2 rounded-full bg-slate-900 px-2 py-1 text-xs font-semibold text-white opacity-0 transition-opacity duration-200 group-hover:opacity-100">
+                        {point.value}
+                      </span>
+                    </div>
+                    <span className="mt-3 w-20 break-words text-center text-xs font-medium text-slate-600">
+                      {point.label}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
         ) : (
           <p className={adminInfo}>{getLocaleText(locale, 'Tente selecionar outro intervalo.', 'Try selecting another time period.')}</p>
         )}
