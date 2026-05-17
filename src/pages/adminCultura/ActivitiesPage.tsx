@@ -678,6 +678,24 @@ function ActivitiesPage({
                     <option value="sim">Sim</option>
                   </select>
                 </div>
+
+                <div className={adminField}>
+                  <label className={adminLabel} htmlFor="book-available-at">
+                    Disponibilizar em
+                  </label>
+                  <input
+                    id="book-available-at"
+                    type="datetime-local"
+                    className={adminInput}
+                    value={bookForm.available_at}
+                    onChange={(event) =>
+                      setBookForm((prev) => ({ ...prev, available_at: event.target.value }))
+                    }
+                  />
+                  <p className={blockText}>
+                    Deixa vazio para disponibilizar imediatamente. Usa uma data futura para agendar.
+                  </p>
+                </div>
               </div>
 
               <div className={adminFieldSpaced}>

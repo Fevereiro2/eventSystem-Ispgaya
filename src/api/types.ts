@@ -354,6 +354,7 @@ export type BookPayload = {
   cover_image: string;
   summary: string;
   is_featured: boolean;
+  created_at?: string | null;
   club_id?: number;
 };
 

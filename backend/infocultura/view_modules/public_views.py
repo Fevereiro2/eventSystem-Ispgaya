@@ -37,6 +37,8 @@ class PublicContentListView(generics.ListAPIView):
             queryset = queryset.filter(area=area)
         if status:
             queryset = queryset.filter(status=status)
+        if status == "publicado":
+            queryset = queryset.filter(date__lte=timezone.localdate())
 
         return queryset
 
@@ -88,7 +90,9 @@ class PublicNewsListView(generics.ListAPIView):
 
     def get_queryset(self):
         queryset = News.objects.select_related("news_status", "club").filter(
-            news_status__name__iexact="published"
+            news_status__name__iexact="published",
+            published_at__isnull=False,
+            published_at__lte=timezone.now(),
         )
         club_id = self.request.query_params.get("club_id")
         if club_id:
@@ -102,7 +106,9 @@ class PublicNewsDetailView(generics.RetrieveAPIView):
 
     def get_queryset(self):
         return News.objects.select_related("news_status", "club").filter(
-            news_status__name__iexact="published"
+            news_status__name__iexact="published",
+            published_at__isnull=False,
+            published_at__lte=timezone.now(),
         )
 
 
@@ -111,7 +117,9 @@ class PublicBookListView(generics.ListAPIView):
     permission_classes = [permissions.AllowAny]
 
     def get_queryset(self):
-        queryset = Book.objects.select_related("club").filter(club__is_active=True)
+        queryset = Book.objects.select_related("club").filter(club__is_active=True).filter(
+            Q(created_at__isnull=True) | Q(created_at__lte=timezone.now())
+        )
         club_id = self.request.query_params.get("club_id")
         if club_id:
             queryset = queryset.filter(club_id=club_id)
@@ -123,7 +131,9 @@ class PublicBookDetailView(generics.RetrieveAPIView):
     permission_classes = [permissions.AllowAny]
 
     def get_queryset(self):
-        return Book.objects.select_related("club").filter(club__is_active=True)
+        return Book.objects.select_related("club").filter(club__is_active=True).filter(
+            Q(created_at__isnull=True) | Q(created_at__lte=timezone.now())
+        )
 
 
 class PublicSessionListView(generics.ListAPIView):

@@ -1643,7 +1643,8 @@ function AdminCultura() {
     event.preventDefault();
     if (!token) return;
 
-    const submitAction = String(new FormData(event.currentTarget).get('newsAction') || '').trim();
+    const submitter = (event.nativeEvent as SubmitEvent).submitter as HTMLButtonElement | null;
+    const submitAction = submitter?.value || '';
     const payload: NewsPayload = {
       title: newsForm.title.trim(),
       summary: newsForm.summary.trim(),
@@ -1660,7 +1661,7 @@ function AdminCultura() {
     }
 
     if (submitAction === 'schedule') {
-      payload.news_status = payload.news_status || 'published';
+      payload.news_status = 'published';
       if (!payload.published_at) {
         setNewsFormError('Seleciona a data e hora para agendar a publicação.');
         return;
@@ -1755,6 +1756,7 @@ function AdminCultura() {
       cover_image: item.cover_image || '',
       summary: item.summary,
       is_featured: item.is_featured,
+      available_at: toDateTimeLocalValue(item.created_at),
       club_id: String(item.club_id)
     });
     setBookFormError('');
@@ -1806,6 +1808,7 @@ function AdminCultura() {
       cover_image: bookForm.cover_image.trim(),
       summary: bookForm.summary.trim(),
       is_featured: bookForm.is_featured,
+      created_at: bookForm.available_at || null,
       ...(resolvedBookClubId ? { club_id: resolvedBookClubId } : {})
     };
 

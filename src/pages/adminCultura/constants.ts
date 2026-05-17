@@ -73,6 +73,7 @@ export const initialBookForm: BookFormState = {
   cover_image: '',
   summary: '',
   is_featured: false,
+  available_at: '',
   club_id: ''
 };
 
