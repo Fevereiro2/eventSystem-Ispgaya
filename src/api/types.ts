@@ -365,6 +365,7 @@ export type SessionPayload = {
   session_date: string;
   start_date: string;
   end_date: string;
+  created_at?: string | null;
   enable_registrations?: boolean;
   registration_capacity?: number | null;
   club_id?: number;
@@ -376,6 +377,7 @@ export type EventPayload = {
   event_date: string;
   start_date: string;
   end_date: string;
+  created_at?: string | null;
   image: string;
   is_external: boolean;
   enable_registrations?: boolean;

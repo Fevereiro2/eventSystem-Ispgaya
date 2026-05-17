@@ -679,10 +679,10 @@ function ActivitiesPage({
                   </select>
                 </div>
 
-                <div className={adminField}>
-                  <label className={adminLabel} htmlFor="book-available-at">
-                    Disponibilizar em
-                  </label>
+	                <div className={adminField}>
+	                  <label className={adminLabel} htmlFor="book-available-at">
+	                    Publicar em
+	                  </label>
                   <input
                     id="book-available-at"
                     type="datetime-local"
@@ -692,10 +692,10 @@ function ActivitiesPage({
                       setBookForm((prev) => ({ ...prev, available_at: event.target.value }))
                     }
                   />
-                  <p className={blockText}>
-                    Deixa vazio para disponibilizar imediatamente. Usa uma data futura para agendar.
-                  </p>
-                </div>
+	                  <p className={blockText}>
+	                    Usa "Publicar agora" para publicar imediatamente ou escolhe data/hora futura e clica em "Agendar".
+	                  </p>
+	                </div>
               </div>
 
               <div className={adminFieldSpaced}>
@@ -723,12 +723,30 @@ function ActivitiesPage({
                     isSavingBook ||
                     (canManageUsers && activityClubFilter === 'all' && !bookForm.club_id)
                   }
-                >
-                  {isSavingBook ? 'A guardar...' : editingBookId ? 'Atualizar' : 'Salvar'}
-                </button>
-                <button type="button" onClick={resetBookForm} className={adminBtnSecondary}>
-                  Limpar
-                </button>
+	                >
+	                  {isSavingBook ? 'A guardar...' : editingBookId ? 'Atualizar' : 'Salvar'}
+	                </button>
+	                <button
+	                  type="submit"
+	                  name="bookAction"
+	                  value="publish_now"
+	                  className={adminBtnSecondary}
+	                  disabled={isSavingBook}
+	                >
+	                  Publicar agora
+	                </button>
+	                <button
+	                  type="submit"
+	                  name="bookAction"
+	                  value="schedule"
+	                  className={adminBtnSecondary}
+	                  disabled={isSavingBook}
+	                >
+	                  Agendar
+	                </button>
+	                <button type="button" onClick={resetBookForm} className={adminBtnSecondary}>
+	                  Limpar
+	                </button>
               </div>
             </form>
           ) : null}
@@ -901,8 +919,8 @@ function ActivitiesPage({
                   />
                 </div>
 
-                <div className={adminField}>
-                  <label className={adminLabel} htmlFor="session-end">
+	                <div className={adminField}>
+	                  <label className={adminLabel} htmlFor="session-end">
                     Fim
                   </label>
                   <input
@@ -913,11 +931,29 @@ function ActivitiesPage({
                     onChange={(event) =>
                       setSessionForm((prev) => ({ ...prev, end_date: event.target.value }))
                     }
-                  />
-                </div>
+	                  />
+	                </div>
 
-                <div className={adminField}>
-                  <label className={adminLabel} htmlFor="session-registrations-enabled">
+	                <div className={adminField}>
+	                  <label className={adminLabel} htmlFor="session-available-at">
+	                    Publicar em
+	                  </label>
+	                  <input
+	                    id="session-available-at"
+	                    type="datetime-local"
+	                    className={adminInput}
+	                    value={sessionForm.available_at}
+	                    onChange={(event) =>
+	                      setSessionForm((prev) => ({ ...prev, available_at: event.target.value }))
+	                    }
+	                  />
+	                  <p className={blockText}>
+	                    Usa "Publicar agora" para publicar imediatamente ou escolhe data/hora futura e clica em "Agendar".
+	                  </p>
+	                </div>
+
+	                <div className={adminField}>
+	                  <label className={adminLabel} htmlFor="session-registrations-enabled">
                     Inscricoes
                   </label>
                   <select
@@ -980,12 +1016,30 @@ function ActivitiesPage({
               {sessionFormError ? <p className={adminError}>{sessionFormError}</p> : null}
 
               <div className={adminActions}>
-                <button type="submit" className={adminBtnPrimary} disabled={isSavingSession}>
-                  {isSavingSession ? 'A guardar...' : editingSessionId ? 'Atualizar' : 'Salvar'}
-                </button>
-                <button type="button" onClick={resetSessionForm} className={adminBtnSecondary}>
-                  Limpar
-                </button>
+	                <button type="submit" className={adminBtnPrimary} disabled={isSavingSession}>
+	                  {isSavingSession ? 'A guardar...' : editingSessionId ? 'Atualizar' : 'Salvar'}
+	                </button>
+	                <button
+	                  type="submit"
+	                  name="sessionAction"
+	                  value="publish_now"
+	                  className={adminBtnSecondary}
+	                  disabled={isSavingSession}
+	                >
+	                  Publicar agora
+	                </button>
+	                <button
+	                  type="submit"
+	                  name="sessionAction"
+	                  value="schedule"
+	                  className={adminBtnSecondary}
+	                  disabled={isSavingSession}
+	                >
+	                  Agendar
+	                </button>
+	                <button type="button" onClick={resetSessionForm} className={adminBtnSecondary}>
+	                  Limpar
+	                </button>
               </div>
             </form>
           ) : null}
@@ -1189,8 +1243,8 @@ function ActivitiesPage({
                   />
                 </div>
 
-                <div className={adminField}>
-                  <label className={adminLabel} htmlFor="event-end">
+	                <div className={adminField}>
+	                  <label className={adminLabel} htmlFor="event-end">
                     Fim
                   </label>
                   <input
@@ -1201,11 +1255,29 @@ function ActivitiesPage({
                     onChange={(event) =>
                       setEventForm((prev) => ({ ...prev, end_date: event.target.value }))
                     }
-                  />
-                </div>
+	                  />
+	                </div>
 
-                <div className={adminField}>
-                  <label className={adminLabel} htmlFor="event-external">
+	                <div className={adminField}>
+	                  <label className={adminLabel} htmlFor="event-publish-at">
+	                    Publicar em
+	                  </label>
+	                  <input
+	                    id="event-publish-at"
+	                    type="datetime-local"
+	                    className={adminInput}
+	                    value={eventForm.publish_at}
+	                    onChange={(event) =>
+	                      setEventForm((prev) => ({ ...prev, publish_at: event.target.value }))
+	                    }
+	                  />
+	                  <p className={blockText}>
+	                    Usa "Publicar agora" para publicar imediatamente ou escolhe data/hora futura e clica em "Agendar".
+	                  </p>
+	                </div>
+
+	                <div className={adminField}>
+	                  <label className={adminLabel} htmlFor="event-external">
                     Externo
                   </label>
                   <select
@@ -1349,12 +1421,30 @@ function ActivitiesPage({
               {eventFormError ? <p className={adminError}>{eventFormError}</p> : null}
 
               <div className={adminActions}>
-                <button type="submit" className={adminBtnPrimary} disabled={isSavingEvent}>
-                  {isSavingEvent ? 'A guardar...' : editingEventId ? 'Atualizar' : 'Salvar'}
-                </button>
-                <button type="button" onClick={resetEventForm} className={adminBtnSecondary}>
-                  Limpar
-                </button>
+	                <button type="submit" className={adminBtnPrimary} disabled={isSavingEvent}>
+	                  {isSavingEvent ? 'A guardar...' : editingEventId ? 'Atualizar' : 'Salvar'}
+	                </button>
+	                <button
+	                  type="submit"
+	                  name="eventAction"
+	                  value="publish_now"
+	                  className={adminBtnSecondary}
+	                  disabled={isSavingEvent}
+	                >
+	                  Publicar agora
+	                </button>
+	                <button
+	                  type="submit"
+	                  name="eventAction"
+	                  value="schedule"
+	                  className={adminBtnSecondary}
+	                  disabled={isSavingEvent}
+	                >
+	                  Agendar
+	                </button>
+	                <button type="button" onClick={resetEventForm} className={adminBtnSecondary}>
+	                  Limpar
+	                </button>
               </div>
             </form>
           ) : null}
