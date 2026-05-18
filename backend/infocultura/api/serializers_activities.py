@@ -288,6 +288,7 @@ class AdminSessionWriteSerializer(ClubScopedWriteSerializer):
             'session_date',
             'start_date',
             'end_date',
+            'created_at',
             'enable_registrations',
             'registration_capacity',
             'club_id',
@@ -387,6 +388,7 @@ class AdminEventWriteSerializer(serializers.ModelSerializer):
             'enable_registrations',
             'registration_capacity',
             'status',
+            'created_at',
             'city',
             'location',
             'club_id',
@@ -460,7 +462,13 @@ class AdminEventWriteSerializer(serializers.ModelSerializer):
             base_statuses=EVENT_WORKFLOW_STATUS_ORDER,
             current_status=current_status,
         )
-        if next_status not in allowed_statuses:
+        created_at = attrs.get('created_at')
+        is_future_publication = (
+            next_status == 'published'
+            and created_at is not None
+            and created_at > timezone.now()
+        )
+        if next_status not in allowed_statuses and not is_future_publication:
             raise serializers.ValidationError(
                 {'status': 'Nao tens permissao para colocar este evento nesse estado.'}
             )

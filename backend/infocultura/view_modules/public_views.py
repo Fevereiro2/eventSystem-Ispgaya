@@ -141,7 +141,9 @@ class PublicSessionListView(generics.ListAPIView):
     permission_classes = [permissions.AllowAny]
 
     def get_queryset(self):
-        queryset = Session.objects.select_related("club").filter(club__is_active=True)
+        queryset = Session.objects.select_related("club").filter(club__is_active=True).filter(
+            Q(created_at__isnull=True) | Q(created_at__lte=timezone.now())
+        )
         club_id = self.request.query_params.get("club_id")
         date_from = (self.request.query_params.get("date_from") or "").strip()
         date_to = (self.request.query_params.get("date_to") or "").strip()
@@ -164,14 +166,21 @@ class PublicSessionDetailView(generics.RetrieveAPIView):
     permission_classes = [permissions.AllowAny]
 
     def get_queryset(self):
-        return Session.objects.select_related("club").filter(club__is_active=True)
+        return Session.objects.select_related("club").filter(club__is_active=True).filter(
+            Q(created_at__isnull=True) | Q(created_at__lte=timezone.now())
+        )
 
 
 class PublicSessionRegistrationCreateView(APIView):
     permission_classes = [permissions.AllowAny]
 
     def post(self, request, pk):
-        session = Session.objects.select_related("club").filter(pk=pk, club__is_active=True).first()
+        session = (
+            Session.objects.select_related("club")
+            .filter(pk=pk, club__is_active=True)
+            .filter(Q(created_at__isnull=True) | Q(created_at__lte=timezone.now()))
+            .first()
+        )
         if not session:
             return Response({"message": "Sessao nao encontrada."}, status=404)
 
@@ -195,7 +204,12 @@ class PublicSessionCalendarView(APIView):
     permission_classes = [permissions.AllowAny]
 
     def get(self, request, pk):
-        session = Session.objects.select_related("club").filter(pk=pk, club__is_active=True).first()
+        session = (
+            Session.objects.select_related("club")
+            .filter(pk=pk, club__is_active=True)
+            .filter(Q(created_at__isnull=True) | Q(created_at__lte=timezone.now()))
+            .first()
+        )
         if not session:
             return Response({"message": "Sessao nao encontrada."}, status=404)
 
@@ -225,7 +239,9 @@ class PublicEventListView(generics.ListAPIView):
     def get_queryset(self):
         queryset = Event.objects.select_related("user__club").prefetch_related("categories").filter(
             user__club__is_active=True
-        ).filter(Q(status__iexact="published") | Q(status__iexact="publicado"))
+        ).filter(Q(status__iexact="published") | Q(status__iexact="publicado")).filter(
+            Q(created_at__isnull=True) | Q(created_at__lte=timezone.now())
+        )
         club_id = self.request.query_params.get("club_id")
         category_id = self.request.query_params.get("category_id")
         city = (self.request.query_params.get("city") or "").strip()
@@ -259,7 +275,9 @@ class PublicEventDetailView(generics.RetrieveAPIView):
     def get_queryset(self):
         return Event.objects.select_related("user__club").prefetch_related("categories").filter(
             user__club__is_active=True
-        ).filter(Q(status__iexact="published") | Q(status__iexact="publicado"))
+        ).filter(Q(status__iexact="published") | Q(status__iexact="publicado")).filter(
+            Q(created_at__isnull=True) | Q(created_at__lte=timezone.now())
+        )
 
 
 class PublicEventRegistrationCreateView(APIView):
@@ -272,6 +290,7 @@ class PublicEventRegistrationCreateView(APIView):
             .filter(pk=pk)
             .filter(user__club__is_active=True)
             .filter(Q(status__iexact="published") | Q(status__iexact="publicado"))
+            .filter(Q(created_at__isnull=True) | Q(created_at__lte=timezone.now()))
             .first()
         )
         if not event:
@@ -303,6 +322,7 @@ class PublicEventCalendarView(APIView):
             .filter(pk=pk)
             .filter(user__club__is_active=True)
             .filter(Q(status__iexact="published") | Q(status__iexact="publicado"))
+            .filter(Q(created_at__isnull=True) | Q(created_at__lte=timezone.now()))
             .first()
         )
         if not event:

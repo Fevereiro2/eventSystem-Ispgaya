@@ -68,8 +68,10 @@ class AdminBulkIdsSerializer(serializers.Serializer):
 
 class AdminClubRegistrationSerializer(serializers.Serializer):
     registration_id = serializers.IntegerField()
-    club_id = serializers.IntegerField()
+    club_id = serializers.IntegerField(allow_null=True)
     club_name = serializers.CharField()
+    registration_type = serializers.CharField(required=False)
+    target_title = serializers.CharField(required=False)
     name = serializers.CharField()
     email = serializers.EmailField()
     phone = serializers.CharField(allow_null=True)
