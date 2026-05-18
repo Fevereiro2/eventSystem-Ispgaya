@@ -41,6 +41,15 @@ import {
 } from './client.js';
 import { CulturalItem } from '../data/culturalContent.js';
 
+function normalizeRegistration<T extends { id?: number; registration_id?: number }>(
+  registration: T
+): T & { id: number } {
+  return {
+    ...registration,
+    id: registration.id ?? registration.registration_id ?? 0,
+  };
+}
+
 export async function fetchAdminContent(token: string): Promise<CulturalItem[]> {
   const data = await request<{ items: CulturalItem[] } | CulturalItem[]>('/content/admin/', {}, token);
   return normalizeItemsResponse(data);
@@ -483,11 +492,18 @@ export async function fetchAdminRegistrations(
   }
 
   const query = search.toString();
-  return request<InfoCulturaRegistrationPage>(
+  const data = await request<InfoCulturaRegistrationPage & {
+    items: Array<InfoCulturaRegistration & { registration_id?: number }>;
+  }>(
     `/registrations/admin/${query ? `?${query}` : ''}`,
     {},
     token
   );
+
+  return {
+    ...data,
+    items: data.items.map((item) => normalizeRegistration(item)),
+  };
 }
 
 export async function exportAdminRegistrationsCsv(
@@ -538,7 +554,7 @@ export async function updateAdminRegistrationStatus(
     token
   );
 
-  return data.registration;
+  return normalizeRegistration(data.registration);
 }
 
 export async function bulkUpdateAdminRegistrationStatus(
@@ -555,7 +571,7 @@ export async function bulkUpdateAdminRegistrationStatus(
     token
   );
 
-  return data.items;
+  return data.items.map((item) => normalizeRegistration(item));
 }
 
 export async function createAdminNews(

@@ -84,4 +84,15 @@ class AdminRegistrationStatusUpdateSerializer(serializers.Serializer):
     registration_status = serializers.SlugRelatedField(
         slug_field='name',
         queryset=RegistrationStatus.objects.all(),
+        required=False,
     )
+
+    def to_internal_value(self, data):
+        if isinstance(data, dict) and 'registration_status' not in data and 'status' in data:
+            data = {**data, 'registration_status': data.get('status')}
+        return super().to_internal_value(data)
+
+    def validate(self, attrs):
+        if 'registration_status' not in attrs:
+            raise serializers.ValidationError({'status': 'Este campo é obrigatório.'})
+        return attrs

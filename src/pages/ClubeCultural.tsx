@@ -14,12 +14,10 @@ import {
   fetchPublicBooks,
   fetchPublicClub,
   fetchPublicClubs,
-  fetchPublicCategories,
   fetchPublicEvents,
   fetchPublicNews,
   fetchPublicSessions,
   InfoCulturaBook,
-  InfoCulturaCategory,
   InfoCulturaClub,
   InfoCulturaEvent,
   InfoCulturaNews,
@@ -29,23 +27,11 @@ import {
 import {
   adminBtnPrimary,
   adminBtnSecondary,
-  adminField,
-  adminFormGridSpaced,
-  adminInput,
-  adminLabel,
   blockTitle,
+  blockText,
   container,
-  contentCard,
-  contentEmpty,
-  contentItemCard,
-  contentItemDate,
-  contentItemDesc,
-  contentItemHeader,
-  contentItemStatus,
-  contentItemTitle,
-  contentItems,
-  contentSection,
-  mainContent
+  mainContent,
+  sectionSpace
 } from '../styles/ui';
 import { getLocaleText, useLocale } from '../i18n/locale.js';
 
@@ -99,12 +85,8 @@ function ClubeCultural({
   const [club, setClub] = useState<InfoCulturaClub | null>(null);
   const [newsItems, setNewsItems] = useState<InfoCulturaNews[]>([]);
   const [books, setBooks] = useState<InfoCulturaBook[]>([]);
-  const [categories, setCategories] = useState<InfoCulturaCategory[]>([]);
   const [sessions, setSessions] = useState<InfoCulturaSession[]>([]);
   const [events, setEvents] = useState<InfoCulturaEvent[]>([]);
-  const [fromDate, setFromDate] = useState('');
-  const [featuredOnly, setFeaturedOnly] = useState(false);
-  const [eventCategoryFilter, setEventCategoryFilter] = useState('all');
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState('');
   const [isRegistrationModalOpen, setIsRegistrationModalOpen] = useState(false);
@@ -136,11 +118,10 @@ function ClubeCultural({
     async function loadClub() {
       try {
         const resolvedClubId = await resolveClubId();
-        const [nextClub, nextNews, nextBooks, nextCategories, nextSessions, nextEvents] = await Promise.all([
+        const [nextClub, nextNews, nextBooks, nextSessions, nextEvents] = await Promise.all([
           fetchPublicClub(resolvedClubId),
           fetchPublicNews(resolvedClubId),
           fetchPublicBooks(resolvedClubId),
-          fetchPublicCategories(),
           fetchPublicSessions(resolvedClubId),
           fetchPublicEvents({ clubId: resolvedClubId })
         ]);
@@ -150,7 +131,6 @@ function ClubeCultural({
         setClub(nextClub);
         setNewsItems(nextNews);
         setBooks(nextBooks);
-        setCategories(nextCategories);
         setSessions(nextSessions);
         setEvents(nextEvents);
       } catch (error) {
@@ -172,27 +152,10 @@ function ClubeCultural({
     };
   }, [clubId, clubSearchTerms, locale]);
 
-  const filteredNews = useMemo(
-    () => newsItems.filter((item) => isOnOrAfterDate(item.published_at, fromDate)),
-    [newsItems, fromDate]
-  );
-  const filteredSessions = useMemo(
-    () => sessions.filter((item) => isOnOrAfterDate(item.session_date, fromDate)),
-    [sessions, fromDate]
-  );
-  const filteredEvents = useMemo(
-    () =>
-      events.filter(
-        (item) =>
-          isOnOrAfterDate(item.event_date, fromDate) &&
-          (eventCategoryFilter === 'all' || item.category_ids.includes(Number(eventCategoryFilter)))
-      ),
-    [events, fromDate, eventCategoryFilter]
-  );
-  const filteredBooks = useMemo(
-    () => books.filter((item) => (featuredOnly ? item.is_featured : true)),
-    [books, featuredOnly]
-  );
+  const filteredNews = useMemo(() => newsItems.filter((item) => isOnOrAfterDate(item.published_at, '')), [newsItems]);
+  const filteredSessions = useMemo(() => sessions.filter((item) => isOnOrAfterDate(item.session_date, '')), [sessions]);
+  const filteredEvents = useMemo(() => events.filter((item) => isOnOrAfterDate(item.event_date, '')), [events]);
+  const filteredBooks = books;
   const highlightedNews = useMemo<NewsHighlightItem[]>(
     () =>
       [...filteredNews]
@@ -296,202 +259,163 @@ function ClubeCultural({
       />
 
       <main className={mainContent}>
-        <section className={contentSection}>
-          <div className={container}>
-            <div className={contentCard}>
+        <div className={`${container} ${sectionSpace}`}>
+          {isLoading ? (
+            <p className="text-sm text-slate-600">
+              {getLocaleText(locale, 'A carregar clube...', 'Loading club...')}
+            </p>
+          ) : loadError ? (
+            <p className="text-sm text-slate-600">{loadError}</p>
+          ) : (
+            <>
+              <h2 className={blockTitle}>{getLocaleText(locale, 'Aqui podes:', 'Here you can:')}</h2>
+              <div className="space-y-4">
+                {description
+                  .split('\n\n')
+                  .filter((para) => para.trim().length > 0)
+                  .map((para, idx) => (
+                    <p key={idx} className={blockText}>
+                      {para.trim()}
+                    </p>
+                  ))}
+              </div>
+
               {club?.image ? (
                 <img
                   src={resolveInfoCulturaAssetUrl(club.image)}
                   alt={title}
-                  className="mb-6 h-64 w-full rounded-2xl object-cover"
+                  className="mx-auto mb-8 mt-8 aspect-[3/1] w-full max-w-5xl rounded-sm object-cover shadow-xl"
                 />
               ) : null}
-              <h2 className={blockTitle}>{title}</h2>
-              
-              <div className="my-8 rounded-xl bg-gradient-to-br from-slate-50 to-slate-100 p-8">
-                <div className="space-y-6">
-                  {description
-                    .split('\n\n')
-                    .filter((para) => para.trim().length > 0)
-                    .map((para, idx) => (
-                      <p 
-                        key={idx} 
-                        className="text-base leading-relaxed text-slate-700"
-                      >
-                        {para.trim()}
-                      </p>
-                    ))}
-                </div>
+
+              <p className={`${blockText} mb-8`}>
+                {getLocaleText(
+                  locale,
+                  'Este clube faz parte do Laboratório Cultural e reúne atividades, conteúdos e momentos de participação ligados à comunidade académica.',
+                  'This club is part of the Cultural Laboratory and brings together activities, content and participation moments connected to the academic community.'
+                )}
+              </p>
+
+              <div className="mb-8 flex max-w-3xl flex-col items-start gap-4 md:flex-row md:items-center">
+                <button
+                  type="button"
+                  className={adminBtnPrimary}
+                  disabled={!club?.enable_registrations}
+                  onClick={() => {
+                    setRegistrationFeedback('');
+                    setRegistrationError('');
+                    setIsRegistrationModalOpen(true);
+                  }}
+                >
+                  {getLocaleText(locale, 'Inscrever-me neste clube', 'Join this club')}
+                </button>
+                <p className="text-sm text-slate-600">
+                  {club?.enable_registrations
+                    ? getLocaleText(
+                        locale,
+                        'O pedido será enviado para validação da equipa do clube.',
+                        'The request will be sent to the club team for validation.'
+                      )
+                    : getLocaleText(
+                        locale,
+                        'As inscrições deste clube estão encerradas neste momento.',
+                        'Registrations for this club are currently closed.'
+                      )}
+                </p>
               </div>
 
-              {!isLoading && !loadError && club?.enable_registrations ? (
-                <div className="mb-8 flex flex-wrap items-center gap-4">
-                  <button
-                    type="button"
-                    className={adminBtnPrimary}
-                    onClick={() => {
-                      setRegistrationFeedback('');
-                      setRegistrationError('');
-                      setIsRegistrationModalOpen(true);
-                    }}
-                  >
-                    {getLocaleText(locale, 'Inscrever-me neste clube', 'Join this club')}
-                  </button>
-                  <p className="text-sm text-slate-600">
-                    {getLocaleText(locale, 'O pedido será enviado para validação da equipa do clube.', 'The request will be sent to the club team for validation.')}
-                  </p>
-                </div>
-              ) : null}
-
               {registrationFeedback ? (
-                <p className="mb-8 rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-700">
+                <p className="mb-8 rounded-sm bg-green-50 px-4 py-3 text-sm text-green-700">
                   {registrationFeedback}
                 </p>
               ) : null}
 
-              {!isLoading && !loadError ? (
-                <div className={`${adminFormGridSpaced} mt-12`}>
-                  <div className={adminField}>
-                    <label className={adminLabel} htmlFor="club-filter-date">
-                      {getLocaleText(locale, 'Mostrar a partir de', 'Show from')}
-                    </label>
-                    <input
-                      id="club-filter-date"
-                      type="date"
-                      className={adminInput}
-                      value={fromDate}
-                      onChange={(event) => setFromDate(event.target.value)}
-                    />
-                  </div>
-
-                  <div className={adminField}>
-                    <label className={adminLabel} htmlFor="club-filter-featured">
-                      {getLocaleText(locale, 'Livros em destaque', 'Featured books')}
-                    </label>
-                    <select
-                      id="club-filter-featured"
-                      className={adminInput}
-                      value={featuredOnly ? 'sim' : 'todos'}
-                      onChange={(event) => setFeaturedOnly(event.target.value === 'sim')}
-                    >
-                      <option value="todos">{getLocaleText(locale, 'Todos', 'All')}</option>
-                      <option value="sim">{getLocaleText(locale, 'Apenas destaque', 'Featured only')}</option>
-                    </select>
-                  </div>
-
-                  <div className={adminField}>
-                    <label className={adminLabel} htmlFor="club-filter-category">
-                      {getLocaleText(locale, 'Categoria de evento', 'Event category')}
-                    </label>
-                    <select
-                      id="club-filter-category"
-                      className={adminInput}
-                      value={eventCategoryFilter}
-                      onChange={(event) => setEventCategoryFilter(event.target.value)}
-                    >
-                      <option value="all">{getLocaleText(locale, 'Todas', 'All')}</option>
-                      {categories.map((category) => (
-                        <option key={category.id} value={category.id}>
-                          {category.name}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div className="flex items-end">
-                    <button
-                      type="button"
-                      className={adminBtnSecondary}
-                      onClick={() => {
-                        setFromDate('');
-                        setFeaturedOnly(false);
-                        setEventCategoryFilter('all');
-                      }}
-                    >
-                      {getLocaleText(locale, 'Limpar filtros', 'Clear filters')}
-                    </button>
-                  </div>
-                </div>
+              {filteredNews.length === 0 &&
+              filteredBooks.length === 0 &&
+              filteredSessions.length === 0 &&
+              filteredEvents.length === 0 ? (
+                <p className="mt-8 text-sm text-slate-600">
+                  {getLocaleText(
+                    locale,
+                    'Ainda não existem conteúdos publicados para este clube.',
+                    'There are no published contents for this club yet.'
+                  )}
+                </p>
               ) : null}
 
-              {isLoading ? (
-                <p className={contentEmpty}>{getLocaleText(locale, 'A carregar clube...', 'Loading club...')}</p>
-              ) : loadError ? (
-                <p className={contentEmpty}>{loadError}</p>
-              ) : (
-                <>
-                  {filteredNews.length === 0 &&
-                  filteredBooks.length === 0 &&
-                  filteredSessions.length === 0 &&
-                  filteredEvents.length === 0 ? (
-                    <p className={contentEmpty}>
-                      {getLocaleText(locale, 'Ainda não existem conteúdos publicados para os filtros atuais.', 'There are no published contents for the current filters.')}
-                    </p>
-                  ) : null}
+              {highlightedNews.length > 0 || highlightedEvents.length > 0 ? (
+                <section className="mb-12 mt-12 bg-white">
+                  <div className="grid w-full grid-cols-1 gap-12 xl:grid-cols-2 xl:gap-14">
+                    <NewsHighlightsSection
+                      title={getLocaleText(locale, 'Notícias', 'News')}
+                      viewAllHref="/vida-academica/noticias"
+                      viewAllInternal
+                      items={highlightedNews}
+                      className="w-full"
+                    />
+                    <NewsHighlightsSection
+                      title={getLocaleText(locale, 'Eventos', 'Events')}
+                      viewAllHref="/vida-academica/eventos"
+                      viewAllInternal
+                      items={highlightedEvents}
+                      className="w-full"
+                    />
+                  </div>
+                </section>
+              ) : null}
 
-	                  {highlightedNews.length > 0 || highlightedEvents.length > 0 ? (
-	                    <section className="mt-10 bg-white">
-	                      <div className="grid w-full grid-cols-1 gap-12 xl:grid-cols-2 xl:gap-14">
-	                        <NewsHighlightsSection
-	                          title={getLocaleText(locale, 'Notícias', 'News')}
-	                          viewAllHref="/vida-academica/noticias"
-	                          viewAllInternal
-	                          items={highlightedNews}
-	                          className="w-full"
-	                        />
-	                        <NewsHighlightsSection
-	                          title={getLocaleText(locale, 'Eventos', 'Events')}
-	                          viewAllHref="/vida-academica/eventos"
-	                          viewAllInternal
-	                          items={highlightedEvents}
-	                          className="w-full"
-	                        />
-	                      </div>
-	                    </section>
-	                  ) : null}
-
-                  {filteredSessions.length > 0 ? (
-                    <div className="mt-8">
-                      <h3 className={blockTitle}>{getLocaleText(locale, 'Sessões', 'Sessions')}</h3>
-                      <div className={contentItems}>
-                        {filteredSessions.map((item) => (
-                          <article key={item.id} className={contentItemCard}>
-                            <div className={contentItemHeader}>
-                              <h4 className={contentItemTitle}>{item.title}</h4>
-                              <span className={contentItemStatus}>{item.name}</span>
-                            </div>
-                            <p className={contentItemDate}>
-                              {formatDate(item.session_date, locale)} · {formatDate(item.start_date, locale)}
-                            </p>
-                            <p className={contentItemDesc}>{item.description}</p>
-                            <Link
-                              to={`/laboratorio-cultural/sessoes/${item.id}`}
-                              className={adminBtnSecondary}
-                            >
-                              {getLocaleText(locale, 'Ver detalhe', 'View details')}
-                            </Link>
-                          </article>
-                        ))}
-                      </div>
+              {filteredSessions.length > 0 ? (
+                <section className="mt-12">
+                  <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
+                    <div>
+                      <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#dd8609]">
+                        {getLocaleText(locale, 'Sessões', 'Sessions')}
+                      </p>
+                      <h2 className="mt-3 font-heading text-3xl font-bold tracking-tight text-black xl:text-4xl">
+                        {getLocaleText(locale, 'Atividades em destaque', 'Featured activities')}
+                      </h2>
                     </div>
-                  ) : null}
+                    <Link to="/laboratorio-cultural/agenda" className={adminBtnSecondary}>
+                      {getLocaleText(locale, 'Explorar agenda', 'Explore agenda')}
+                    </Link>
+                  </div>
 
-	                  <BestBooksSection
-                    books={filteredBooks}
-                    locale={locale}
-                    title={getLocaleText(locale, 'Livros', 'Books')}
-                    description={getLocaleText(
-                      locale,
-                      'Livros filtrados e ordenados por destaque.',
-                      'Books filtered and sorted by relevance.'
-                    )}
-                    detailBaseHref="/laboratorio-cultural/livros"
-                  />
-                </>
-              )}
-            </div>
-          </div>
-        </section>
+                  <div className="grid gap-6 lg:grid-cols-2">
+                    {filteredSessions.slice(0, 4).map((item) => (
+                      <article key={item.id} className="bg-white py-5">
+                        <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#dd8609]">
+                          {formatDate(item.session_date, locale)}
+                        </p>
+                        <h3 className="mt-2 text-2xl font-bold text-slate-900">{item.title}</h3>
+                        <p className="mt-1 text-sm font-semibold text-slate-500">{item.name}</p>
+                        <p className="mt-3 line-clamp-3 text-sm leading-6 text-slate-600">{item.description}</p>
+                        <Link
+                          to={`/laboratorio-cultural/sessoes/${item.id}`}
+                          className="mt-4 inline-flex text-sm font-bold text-[#dd8609] hover:underline"
+                        >
+                          {getLocaleText(locale, 'Ver detalhe', 'View details')}
+                        </Link>
+                      </article>
+                    ))}
+                  </div>
+                </section>
+              ) : null}
+
+              <BestBooksSection
+                books={filteredBooks}
+                locale={locale}
+                title={getLocaleText(locale, 'Livros', 'Books')}
+                description={getLocaleText(
+                  locale,
+                  'Livros selecionados para apoiar as atividades e recomendações deste clube.',
+                  'Books selected to support this club activities and recommendations.'
+                )}
+                detailBaseHref="/laboratorio-cultural/livros"
+                limit={10}
+              />
+            </>
+          )}
+        </div>
       </main>
 
       <ClubRegistrationModal

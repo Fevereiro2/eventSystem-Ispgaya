@@ -125,7 +125,7 @@ class AdminRegistrationBulkStatusUpdateView(APIView):
         serializer.is_valid(raise_exception=True)
 
         status_serializer = AdminRegistrationStatusUpdateSerializer(
-            data={'status': serializer.validated_data['status']}
+            data={'registration_status': serializer.validated_data['status']}
         )
         status_serializer.is_valid(raise_exception=True)
 
