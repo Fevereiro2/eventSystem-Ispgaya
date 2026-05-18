@@ -314,7 +314,7 @@ function HeaderNav({ transparent = false }: HeaderNavProps) {
   }, [isMobileMenuOpen]);
 
   const resolvedMenuItems = menuItems.map((item) =>
-    item.label === 'Laboratorio Cultural'
+    normalizeLabel(item.label) === 'laboratorio cultural'
       ? { ...item, dropdown: laboratorioDropdown }
       : item
   );
