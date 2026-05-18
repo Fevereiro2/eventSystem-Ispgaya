@@ -382,7 +382,13 @@ function RegistrationsPage({
                 <h3 className={adminUserName}>{registration.name}</h3>
                 <p className={adminUserEmail}>{registration.email}</p>
                 <p className={adminUserMeta}>
-                  {registration.club_name} · {formatAdminDateTime(registration.created_at)}
+                  {registration.registration_type === 'event'
+                    ? 'Evento'
+                    : registration.registration_type === 'session'
+                      ? 'Sessão'
+                      : 'Clube'}{' '}
+                  · {registration.target_title || registration.club_name} ·{' '}
+                  {formatAdminDateTime(registration.created_at)}
                 </p>
                 {registration.phone ? (
                   <p className={adminUserMeta}>Telefone: {registration.phone}</p>

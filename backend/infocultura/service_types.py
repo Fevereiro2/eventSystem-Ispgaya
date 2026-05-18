@@ -43,8 +43,10 @@ class ClubRegistrationInput:
 @dataclass(frozen=True, slots=True)
 class AdminClubRegistrationRecord:
     registration_id: int
-    club_id: int
+    club_id: int | None
     club_name: str
+    registration_type: str
+    target_title: str
     name: str
     email: str
     phone: str | None

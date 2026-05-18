@@ -100,7 +100,7 @@ export type InfoCulturaBook = {
   summary: string;
   is_featured: boolean;
   created_at: string | null;
-  club_id: number;
+  club_id: number | null;
   club_name: string;
 };
 
@@ -167,6 +167,8 @@ export type InfoCulturaRegistration = {
   id: number;
   club_id: number;
   club_name: string;
+  registration_type?: 'club' | 'event' | 'session' | string;
+  target_title?: string;
   name: string;
   email: string;
   phone?: string | null;
@@ -365,6 +367,7 @@ export type SessionPayload = {
   session_date: string;
   start_date: string;
   end_date: string;
+  created_at?: string | null;
   enable_registrations?: boolean;
   registration_capacity?: number | null;
   club_id?: number;
@@ -376,6 +379,7 @@ export type EventPayload = {
   event_date: string;
   start_date: string;
   end_date: string;
+  created_at?: string | null;
   image: string;
   is_external: boolean;
   enable_registrations?: boolean;

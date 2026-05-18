@@ -55,6 +55,7 @@ export type SessionFormState = {
   session_date: string;
   start_date: string;
   end_date: string;
+  available_at: string;
   enable_registrations: boolean;
   registration_capacity: string;
   club_id: string;
@@ -66,6 +67,7 @@ export type EventFormState = {
   event_date: string;
   start_date: string;
   end_date: string;
+  publish_at: string;
   image: string;
   is_external: boolean;
   enable_registrations: boolean;

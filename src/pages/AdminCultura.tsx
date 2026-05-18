@@ -1294,9 +1294,23 @@ function AdminCultura() {
     navigate(notification.href);
   }
 
+  function getSubmitAction(event: FormEvent<HTMLFormElement>) {
+    const submitter = (event.nativeEvent as SubmitEvent).submitter as HTMLButtonElement | null;
+    return submitter?.value || '';
+  }
+
+  function getTodayInputValue() {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const day = String(now.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  }
+
   async function handleSaveContent(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!token) return;
+    const submitAction = getSubmitAction(event);
 
     const payload = {
       area: contentForm.area,
@@ -1305,6 +1319,19 @@ function AdminCultura() {
       date: contentForm.date,
       status: contentForm.status
     };
+
+    if (submitAction === 'publish_now') {
+      payload.status = 'publicado';
+      payload.date = getTodayInputValue();
+    }
+
+    if (submitAction === 'schedule') {
+      payload.status = 'publicado';
+      if (!payload.date) {
+        setPanelError('Escolhe a data para agendar o conteúdo.');
+        return;
+      }
+    }
 
     if (!payload.title || !payload.description || !payload.date) {
       setPanelError('Preenche todos os campos obrigatorios.');
@@ -1786,6 +1813,7 @@ function AdminCultura() {
   async function handleSaveBook(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!token) return;
+    const submitAction = getSubmitAction(event);
 
     const resolvedBookClubId = canManageUsers
       ? (bookForm.club_id
@@ -1811,6 +1839,15 @@ function AdminCultura() {
       created_at: bookForm.available_at || null,
       ...(resolvedBookClubId ? { club_id: resolvedBookClubId } : {})
     };
+
+    if (submitAction === 'publish_now') {
+      payload.created_at = toDateTimeLocalValue(new Date().toISOString());
+    }
+
+    if (submitAction === 'schedule' && !payload.created_at) {
+      setBookFormError('Escolhe a data/hora para agendar o livro.');
+      return;
+    }
 
     if (!payload.title || !payload.author || !payload.summary || !payload.publication_year) {
       setBookFormError('Preenche o título, autor, ano e resumo.');
@@ -1961,6 +1998,7 @@ function AdminCultura() {
       session_date: toDateInputValue(item.session_date),
       start_date: toDateTimeLocalValue(item.start_date),
       end_date: toDateTimeLocalValue(item.end_date),
+      available_at: toDateTimeLocalValue(item.created_at),
       enable_registrations: Boolean(item.enable_registrations),
       registration_capacity:
         item.registration_capacity === null || item.registration_capacity === undefined
@@ -1976,6 +2014,7 @@ function AdminCultura() {
   async function handleSaveSession(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!token) return;
+    const submitAction = getSubmitAction(event);
 
     const resolvedSessionClubId = canManageUsers
       ? (sessionForm.club_id ? Number(sessionForm.club_id) : null)
@@ -1988,12 +2027,22 @@ function AdminCultura() {
       session_date: sessionForm.session_date,
       start_date: sessionForm.start_date,
       end_date: sessionForm.end_date,
+      created_at: sessionForm.available_at || null,
       enable_registrations: sessionForm.enable_registrations,
       registration_capacity: sessionForm.registration_capacity
         ? Number(sessionForm.registration_capacity)
         : null,
       ...(resolvedSessionClubId ? { club_id: resolvedSessionClubId } : {})
     };
+
+    if (submitAction === 'publish_now') {
+      payload.created_at = toDateTimeLocalValue(new Date().toISOString());
+    }
+
+    if (submitAction === 'schedule' && !payload.created_at) {
+      setSessionFormError('Escolhe a data/hora para agendar a sessão.');
+      return;
+    }
 
     if (
       !payload.name ||
@@ -2068,6 +2117,7 @@ function AdminCultura() {
       event_date: toDateInputValue(item.event_date),
       start_date: toDateTimeLocalValue(item.start_date),
       end_date: toDateTimeLocalValue(item.end_date),
+      publish_at: toDateTimeLocalValue(item.created_at),
       image: item.image || '',
       is_external: item.is_external,
       enable_registrations: Boolean(item.enable_registrations),
@@ -2089,6 +2139,7 @@ function AdminCultura() {
   async function handleSaveEvent(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!token) return;
+    const submitAction = getSubmitAction(event);
 
     const payload: EventPayload = {
       title: eventForm.title.trim(),
@@ -2096,6 +2147,7 @@ function AdminCultura() {
       event_date: eventForm.event_date,
       start_date: eventForm.start_date,
       end_date: eventForm.end_date,
+      created_at: eventForm.publish_at || null,
       image: eventForm.image.trim(),
       is_external: eventForm.is_external,
       enable_registrations: eventForm.enable_registrations,
@@ -2108,6 +2160,19 @@ function AdminCultura() {
       ...(eventForm.club_id ? { club_id: Number(eventForm.club_id) } : {}),
       category_ids: eventForm.category_ids.map(Number)
     };
+
+    if (submitAction === 'publish_now') {
+      payload.status = 'published';
+      payload.created_at = toDateTimeLocalValue(new Date().toISOString());
+    }
+
+    if (submitAction === 'schedule') {
+      payload.status = 'published';
+      if (!payload.created_at) {
+        setEventFormError('Escolhe a data/hora para agendar o evento.');
+        return;
+      }
+    }
 
     if (
       !payload.title ||
@@ -3056,19 +3121,26 @@ function AdminCultura() {
                   </div>
 
                   <div className={adminField}>
-                    <label className={adminLabel} htmlFor="date">
-                      {getLocaleText(locale, 'Data', 'Date')}
-                    </label>
+	                    <label className={adminLabel} htmlFor="date">
+	                      {getLocaleText(locale, 'Publicar em', 'Publish on')}
+	                    </label>
                     <input
                       id="date"
                       type="date"
                       className={adminInput}
                       value={contentForm.date}
-                      onChange={(event) =>
-                        setContentForm((prev) => ({ ...prev, date: event.target.value }))
-                      }
-                    />
-                  </div>
+	                      onChange={(event) =>
+	                        setContentForm((prev) => ({ ...prev, date: event.target.value }))
+	                      }
+	                    />
+	                    <p className={blockText}>
+	                      {getLocaleText(
+	                        locale,
+	                        'Usa "Publicar agora" para publicar imediatamente ou escolhe uma data futura e clica em "Agendar".',
+	                        'Use "Publish now" to publish immediately or choose a future date and click "Schedule".'
+	                      )}
+	                    </p>
+	                  </div>
 
                   <div className={adminField}>
                     <label className={adminLabel} htmlFor="title">
@@ -3125,11 +3197,29 @@ function AdminCultura() {
                     type="submit"
                     className={adminBtnPrimary}
                     disabled={isSavingContent}
-                  >
-                    {isSavingContent ? 'A guardar...'  : editingId ? 'Atualizar' : 'Criar'}
-                  </button>
-                  <button
-                    type="button"
+	                  >
+	                    {isSavingContent ? 'A guardar...'  : editingId ? 'Atualizar' : 'Criar'}
+	                  </button>
+	                  <button
+	                    type="submit"
+	                    name="contentAction"
+	                    value="publish_now"
+	                    className={adminBtnSecondary}
+	                    disabled={isSavingContent}
+	                  >
+	                    {getLocaleText(locale, 'Publicar agora', 'Publish now')}
+	                  </button>
+	                  <button
+	                    type="submit"
+	                    name="contentAction"
+	                    value="schedule"
+	                    className={adminBtnSecondary}
+	                    disabled={isSavingContent}
+	                  >
+	                    {getLocaleText(locale, 'Agendar', 'Schedule')}
+	                  </button>
+	                  <button
+	                    type="button"
                     onClick={resetContentForm}
                     className={adminBtnSecondary}
                   >
