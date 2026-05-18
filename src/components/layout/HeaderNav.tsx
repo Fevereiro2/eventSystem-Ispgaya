@@ -141,7 +141,7 @@ function localizeExternalUrl(locale: 'pt' | 'en', href: string): string {
 
 const menuItems: MenuItem[] = [
   {
-    label: 'Instituicao',
+    label: 'Instituição',
     href: 'https://ispgaya.pt/pt/instituicao',
     dropdown: [
       { label: 'O ISPGAYA', href: 'https://ispgaya.pt/pt/instituicao/ispgaya' },
@@ -208,13 +208,13 @@ const menuItems: MenuItem[] = [
     ]
   },
   {
-    label: 'Laboratorio Cultural',
+    label: 'Laboratório Cultural',
     href: '/laboratorio-cultural',
     internal: true,
     dropdown: undefined
   },
   {
-    label: 'Vida Academica',
+    label: 'Vida Acadêmica',
     href: 'https://ispgaya.pt/pt/vida-academica',
     dropdown: [
       { label: 'Noticias', href: 'https://ispgaya.pt/pt/vida-academica/noticias' },
@@ -224,10 +224,10 @@ const menuItems: MenuItem[] = [
         href: 'https://ispgaya.pt/pt/vida-academica/estudante-ispgaya'
       },
       {
-        label: 'Associacao de Estudantes',
+        label: 'Associação de Estudantes',
         href: 'https://ispgaya.pt/pt/vida-academica/associacao-estudantes'
       },
-      { label: 'Tuna Academica', href: 'https://ispgaya.pt/pt/vida-academica/tuna-academica' }
+      { label: 'Tuna Acadêmica', href: 'https://ispgaya.pt/pt/vida-academica/tuna-academica' }
     ]
   }
 ];
