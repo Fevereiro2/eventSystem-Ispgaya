@@ -446,34 +446,31 @@ function HeaderNav({ transparent = false }: HeaderNavProps) {
           />
 
           <div className="absolute inset-0 overflow-y-auto bg-white text-slate-900">
-            <div className={`${container} px-6 py-4 sm:px-6 lg:px-3`}>
-              <div className="mx-auto flex w-full max-w-md items-center justify-between gap-4">
-                <Link to="/" className="flex items-center justify-center" onClick={closeMobileMenu}>
+            <div className={`${container} px-6 py-5 sm:px-8 lg:px-3`}>
+              <div className="flex w-full items-center justify-between gap-4">
+                <Link to="/" className="flex items-center" onClick={closeMobileMenu}>
                   <img src={logo} alt="ISPGAYA" className="h-12 w-auto" />
                 </Link>
 
-                <div className="flex items-center gap-4">
-
-                  <button
-                    type="button"
-                    onClick={closeMobileMenu}
-                    className="inline-flex h-11 w-11 items-center justify-center rounded-md text-slate-700 transition hover:bg-slate-100"
-                    aria-label="Fechar menu"
-                  >
-                    <X className="h-5 w-5" />
-                  </button>
-                </div>
+                <button
+                  type="button"
+                  onClick={closeMobileMenu}
+                  className="inline-flex h-11 w-11 items-center justify-center rounded-md text-slate-700 transition hover:text-[#dd8609]"
+                  aria-label="Fechar menu"
+                >
+                  <X className="h-5 w-5" />
+                </button>
               </div>
             </div>
 
-            <div className="border-t border-slate-200">
-              <div className={`${container} px-6 sm:px-6 lg:px-3`}>
-                <div className="mx-auto w-full max-w-md divide-y divide-slate-200">
-                  <div className="flex items-right justify-right gap-3 text-sm font-semibold text-slate-700">
+            <div>
+              <div className={`${container} px-6 pb-8 sm:px-8 lg:px-3`}>
+                <div className="w-full">
+                  <div className="mb-7 flex items-center justify-start gap-3 text-sm font-semibold text-slate-700">
                     <button
                       type="button"
                       title={localeLabel}
-                      className={locale === 'pt' ? 'text-slate-900' : 'text-slate-500 hover:text-slate-700'}
+                      className={locale === 'pt' ? 'text-[#dd8609]' : 'text-slate-500 hover:text-[#dd8609]'}
                       onClick={() => setLocale('pt')}
                       aria-pressed={locale === 'pt'}
                     >
@@ -482,7 +479,7 @@ function HeaderNav({ transparent = false }: HeaderNavProps) {
                     <button
                       type="button"
                       title={localeLabel}
-                      className={locale === 'en' ? 'text-slate-900' : 'text-slate-500 hover:text-slate-700'}
+                      className={locale === 'en' ? 'text-[#dd8609]' : 'text-slate-500 hover:text-[#dd8609]'}
                       onClick={() => setLocale('en')}
                       aria-pressed={locale === 'en'}
                     >
@@ -493,19 +490,19 @@ function HeaderNav({ transparent = false }: HeaderNavProps) {
                   const isExpanded = activeMobileSection === item.label;
                   const hasDropdown = Boolean(item.dropdown && item.dropdown.length > 0);
 
-                  return (
-                    <div key={item.label} className="py-3">
-                      <div className="flex items-center justify-between gap-3">
-                        {renderMenuLink(
+	                  return (
+	                    <div key={item.label} className="py-1.5">
+	                      <div className="flex items-center justify-between gap-3">
+	                        {renderMenuLink(
                           {
                             ...item,
                             label: translateMenuLabel(locale, item.label),
                             href: localizeExternalUrl(locale, item.href)
                           },
-                          'text-[15px] font-medium text-slate-800 text-left',
-                          closeMobileMenu
-                        )}
-                        {hasDropdown ? (
+	                          'block flex-1 py-2 text-left text-[18px] font-medium leading-tight text-[#3f4a58] transition-colors hover:text-[#dd8609]',
+	                          closeMobileMenu
+	                        )}
+	                        {hasDropdown ? (
                           <button
                             type="button"
                             onClick={() =>
@@ -513,8 +510,8 @@ function HeaderNav({ transparent = false }: HeaderNavProps) {
                                 current === item.label ? null : item.label
                               )
                             }
-                            className="inline-flex h-10 w-10 items-center justify-center rounded-md text-slate-600 transition hover:bg-slate-100"
-                            aria-expanded={isExpanded}
+	                            className="inline-flex h-10 w-10 items-center justify-center rounded-md text-slate-500 transition hover:text-[#dd8609]"
+	                            aria-expanded={isExpanded}
                             aria-label={
                               isExpanded
                                 ? getLocaleText(locale, 'Fechar submenu', 'Close submenu')
@@ -528,19 +525,19 @@ function HeaderNav({ transparent = false }: HeaderNavProps) {
                         ) : null}
                       </div>
 
-                      {hasDropdown && isExpanded ? (
-                        <div className="mt-3 rounded-lg bg-slate-50 py-2">
-                          {item.dropdown?.map((child) => (
-                            <div key={child.label} className="border-t border-slate-200 first:border-t-0">
-                              {renderMenuLink(
+	                      {hasDropdown && isExpanded ? (
+	                        <div className="mt-1 pb-2 pl-4">
+	                          {item.dropdown?.map((child) => (
+	                            <div key={child.label}>
+	                              {renderMenuLink(
                                 {
                                   ...child,
                                   label: translateMenuLabel(locale, child.label),
                                   href: localizeExternalUrl(locale, child.href)
                                 },
-                                'flex items-center gap-3 px-4 py-3 text-[14px] text-slate-700 hover:text-[#dd8609]',
-                                closeMobileMenu
-                              )}
+	                                'block py-2 text-left text-[15px] font-medium text-slate-600 transition-colors hover:text-[#dd8609]',
+	                                closeMobileMenu
+	                              )}
                             </div>
                           ))}
                         </div>
@@ -550,35 +547,35 @@ function HeaderNav({ transparent = false }: HeaderNavProps) {
                 })}
 
                 
-                  <div className="flex items-left justify-left gap-2 text-left text-[11px] font-semibold  text-slate-500">
-                    <Lock className="h-4 w-4" />
-                    <span>{privateAreaLabel}</span>
-                  </div>
-                  <div className="mt-3 grid gap-2 text-left">
-                    {mobilePrivateLinks.map((item) => (
-                      <div key={item.label}>
-                        {renderMenuLink(
-                          item,
-                          'block px-2 text-[14px] text-slate-700 hover:text-[#dd8609]',
-                          closeMobileMenu
-                        )}
+	                  <div className="mt-8 flex items-center justify-start gap-2 text-left text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">
+	                    <Lock className="h-4 w-4" />
+	                    <span>{privateAreaLabel}</span>
+	                  </div>
+	                  <div className="mt-3 grid gap-2 text-left">
+	                    {mobilePrivateLinks.map((item) => (
+	                      <div key={item.label}>
+	                        {renderMenuLink(
+	                          item,
+	                          'block py-1 text-left text-[15px] font-medium text-[#3f4a58] transition-colors hover:text-[#dd8609]',
+	                          closeMobileMenu
+	                        )}
                       </div>
                     ))}
                   </div>
                 
 
-                  <div className="flex items-left justify-left gap-2 text-left text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">
-                    <Zap className="h-4 w-4" />
-                    <span>{interestLinksLabel}</span>
-                  </div>
+	                  <div className="mt-8 flex items-center justify-start gap-2 text-left text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">
+	                    <Zap className="h-4 w-4" />
+	                    <span>{interestLinksLabel}</span>
+	                  </div>
                   <div className="mt-3 grid gap-2 text-left">
                     {mobileInterestLinks.map((item) => (
                       <div key={item.label}>
-                        {renderMenuLink(
-                          item,
-                          'block px-2 text-[14px] text-slate-700 hover:text-[#dd8609]',
-                          closeMobileMenu
-                        )}
+	                        {renderMenuLink(
+	                          item,
+	                          'block py-1 text-left text-[15px] font-medium text-[#3f4a58] transition-colors hover:text-[#dd8609]',
+	                          closeMobileMenu
+	                        )}
                       </div>
                     ))}
                   </div>

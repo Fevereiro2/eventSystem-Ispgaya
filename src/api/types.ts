@@ -100,7 +100,7 @@ export type InfoCulturaBook = {
   summary: string;
   is_featured: boolean;
   created_at: string | null;
-  club_id: number;
+  club_id: number | null;
   club_name: string;
 };
 
@@ -167,6 +167,8 @@ export type InfoCulturaRegistration = {
   id: number;
   club_id: number;
   club_name: string;
+  registration_type?: 'club' | 'event' | 'session' | string;
+  target_title?: string;
   name: string;
   email: string;
   phone?: string | null;

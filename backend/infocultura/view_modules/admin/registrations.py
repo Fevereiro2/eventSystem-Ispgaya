@@ -58,6 +58,8 @@ class AdminRegistrationListView(APIView):
             rows = [
                 [
                     item.registration_id,
+                    item.registration_type,
+                    item.target_title,
                     item.club_name,
                     item.name,
                     item.email,
@@ -70,7 +72,7 @@ class AdminRegistrationListView(APIView):
             ]
             return build_csv_response(
                 rows=rows,
-                headers=['id', 'club', 'name', 'email', 'phone', 'message', 'status', 'created_at'],
+                headers=['id', 'type', 'target', 'club', 'name', 'email', 'phone', 'message', 'status', 'created_at'],
                 filename='infocultura_registrations.csv',
             )
 

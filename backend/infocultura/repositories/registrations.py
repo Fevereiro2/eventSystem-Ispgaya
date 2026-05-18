@@ -305,12 +305,55 @@ def create_club_registration(
     return registration
 
 
+def _admin_registration_scope_sql() -> str:
+    return f"""
+        SELECT
+            cr.{db_constants.COL_ID_REGISTRATIONS} AS registration_id,
+            cr.{db_constants.COL_ID_CLUBS} AS club_id,
+            c.name AS club_name,
+            'club' AS registration_type,
+            c.name AS target_title
+        FROM {db_constants.TABLE_CLUB_REGISTRATION} cr
+        INNER JOIN {db_constants.TABLE_CLUB} c
+            ON c.{db_constants.COL_ID_CLUBS} = cr.{db_constants.COL_ID_CLUBS}
+
+        UNION ALL
+
+        SELECT
+            er.{db_constants.COL_ID_REGISTRATIONS} AS registration_id,
+            u.{db_constants.COL_ID_CLUBS} AS club_id,
+            c.name AS club_name,
+            'event' AS registration_type,
+            e.title AS target_title
+        FROM {db_constants.TABLE_EVENT_REGISTRATION} er
+        INNER JOIN {db_constants.TABLE_EVENT} e
+            ON e.{db_constants.COL_ID_EVENT} = er.{db_constants.COL_ID_EVENT}
+        LEFT JOIN {db_constants.TABLE_USER} u
+            ON u.id = e.{db_constants.COL_USER_ID}
+        LEFT JOIN {db_constants.TABLE_CLUB} c
+            ON c.{db_constants.COL_ID_CLUBS} = u.{db_constants.COL_ID_CLUBS}
+
+        UNION ALL
+
+        SELECT
+            sr.{db_constants.COL_ID_REGISTRATIONS} AS registration_id,
+            s.{db_constants.COL_CLUB_ID} AS club_id,
+            c.name AS club_name,
+            'session' AS registration_type,
+            s.title AS target_title
+        FROM {db_constants.TABLE_SESSION_REGISTRATION} sr
+        INNER JOIN {db_constants.TABLE_SESSION} s
+            ON s.{db_constants.COL_ID_SESSIONS} = sr.{db_constants.COL_ID_SESSIONS}
+        LEFT JOIN {db_constants.TABLE_CLUB} c
+            ON c.{db_constants.COL_ID_CLUBS} = s.{db_constants.COL_CLUB_ID}
+    """
+
+
 def _admin_registration_joins() -> str:
     return "\n".join(
         [
-            f"FROM {db_constants.TABLE_CLUB_REGISTRATION} cr",
-            f"INNER JOIN {db_constants.TABLE_REGISTRATION} r ON r.{db_constants.COL_ID_REGISTRATIONS} = cr.{db_constants.COL_ID_REGISTRATIONS}",
-            f"INNER JOIN {db_constants.TABLE_CLUB} c ON c.{db_constants.COL_ID_CLUBS} = cr.{db_constants.COL_ID_CLUBS}",
+            f"FROM ({_admin_registration_scope_sql()}) ar",
+            f"INNER JOIN {db_constants.TABLE_REGISTRATION} r ON r.{db_constants.COL_ID_REGISTRATIONS} = ar.registration_id",
             f"LEFT JOIN {db_constants.TABLE_REGISTRATION_STATUS} rs ON rs.{db_constants.COL_ID_RSTATUS} = r.{db_constants.COL_ID_RSTATUS}",
         ]
     )
@@ -320,8 +363,10 @@ def _build_admin_registration_select_sql(*, joins: str, where_sql: str, order_by
     return f"""
         SELECT
             r.{db_constants.COL_ID_REGISTRATIONS} AS registration_id,
-            cr.{db_constants.COL_ID_CLUBS} AS club_id,
-            c.name AS club_name,
+            ar.club_id,
+            COALESCE(ar.club_name, 'Sem clube') AS club_name,
+            ar.registration_type,
+            ar.target_title,
             r.name,
             r.email,
             r.phone,
@@ -339,6 +384,8 @@ def _row_to_admin_club_registration_record(row: dict[str, Any]) -> AdminClubRegi
         registration_id=row["registration_id"],
         club_id=row["club_id"],
         club_name=row["club_name"],
+        registration_type=row["registration_type"],
+        target_title=row["target_title"],
         name=row["name"],
         email=row["email"],
         phone=row["phone"],
@@ -641,10 +688,10 @@ def list_admin_club_registrations(
     params: list[Any] = []
 
     if allowed_club_id is not None:
-        filters.append(f"cr.{db_constants.COL_ID_CLUBS} = %s")
+        filters.append("ar.club_id = %s")
         params.append(allowed_club_id)
     if club_id is not None:
-        filters.append(f"cr.{db_constants.COL_ID_CLUBS} = %s")
+        filters.append("ar.club_id = %s")
         params.append(club_id)
     if status:
         filters.append("LOWER(COALESCE(rs.name, r.status)) = LOWER(%s)")
@@ -667,8 +714,8 @@ def list_admin_club_registrations(
         "name_desc": "r.name DESC",
         "email_asc": "r.email ASC",
         "email_desc": "r.email DESC",
-        "club_asc": "c.name ASC",
-        "club_desc": "c.name DESC",
+        "club_asc": "ar.club_name ASC",
+        "club_desc": "ar.club_name DESC",
     }
     order_by = ordering_map.get(ordering, "r.created_at DESC")
     where_sql = "WHERE " + " AND ".join(filters)
@@ -715,7 +762,7 @@ def get_admin_club_registration(
     if allowed_club_id is not None:
         sql = sql.replace(
             f"WHERE r.{db_constants.COL_ID_REGISTRATIONS} = %s",
-            f"WHERE r.{db_constants.COL_ID_REGISTRATIONS} = %s AND cr.{db_constants.COL_ID_CLUBS} = %s",
+            f"WHERE r.{db_constants.COL_ID_REGISTRATIONS} = %s AND ar.club_id = %s",
         )
         params.append(allowed_club_id)
 
@@ -751,7 +798,7 @@ def update_admin_club_registration_status(
     )
     if updated_record:
         _send_mail_message(
-            subject=f"Inscricao atualizada no clube {updated_record.club_name}",
+            subject=f"Inscricao atualizada em {updated_record.club_name}",
             body=f"Ola {updated_record.name},\n\nO estado da tua inscricao mudou para {updated_record.status}.",
             recipient_list=[updated_record.email],
         )
