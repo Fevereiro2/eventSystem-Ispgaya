@@ -140,13 +140,13 @@ def enforce_activity_registration_rate_limit(
         cache.set(key, current_attempts + 1, timeout=window_seconds)
 
 
-def _build_registration_exists_sql(*, link_table: str, activity_id_field: str) -> str:
+def _build_registration_exists_sql(*, link_table: str, activity_id_field: str, alias: str) -> str:
     return f"""
         SELECT 1
-        FROM {link_table} link
+        FROM {link_table} {alias}
         INNER JOIN {db_constants.TABLE_REGISTRATION} r
-            ON r.{db_constants.COL_ID_REGISTRATIONS} = link.{db_constants.COL_ID_REGISTRATIONS}
-        WHERE link.{activity_id_field} = %s
+            ON r.{db_constants.COL_ID_REGISTRATIONS} = {alias}.{db_constants.COL_ID_REGISTRATIONS}
+        WHERE {alias}.{activity_id_field} = %s
           AND LOWER(r.email) = %s
         LIMIT 1
     """
@@ -157,7 +157,8 @@ def club_registration_exists(*, club_id: int, email: str) -> bool:
     sql = _build_registration_exists_sql(
         link_table=db_constants.TABLE_CLUB_REGISTRATION,
         activity_id_field=db_constants.COL_ID_CLUBS,
-    ).replace("link", "cr", 1)
+        alias="cr",
+    )
     return bool(fetch_all_dict_rows(sql, (club_id, normalized_email)))
 
 
@@ -166,7 +167,8 @@ def event_registration_exists(*, event_id: int, email: str) -> bool:
     sql = _build_registration_exists_sql(
         link_table=db_constants.TABLE_EVENT_REGISTRATION,
         activity_id_field=db_constants.COL_ID_EVENT,
-    ).replace("link", "er", 1)
+        alias="er",
+    )
     return bool(fetch_all_dict_rows(sql, (event_id, normalized_email)))
 
 
@@ -175,7 +177,8 @@ def session_registration_exists(*, session_id: int, email: str) -> bool:
     sql = _build_registration_exists_sql(
         link_table=db_constants.TABLE_SESSION_REGISTRATION,
         activity_id_field=db_constants.COL_ID_SESSIONS,
-    ).replace("link", "sr", 1)
+        alias="sr",
+    )
     return bool(fetch_all_dict_rows(sql, (session_id, normalized_email)))
 
 
