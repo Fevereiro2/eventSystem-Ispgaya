@@ -14,13 +14,14 @@ import {
 } from '../api/infoculturaApi.js';
 import BestBooksSection from '../components/sections/BestBooksSection.js';
 import Breadcrumbs from '../components/ui/Breadcrumbs';
+import ClubCallToAction from '../components/ui/ClubCallToAction';
 import ClubRegistrationModal, { ClubRegistrationFormData } from '../components/ui/ClubRegistrationModal';
 import NewsHighlightsSection, { type NewsHighlightItem } from '../components/ui/NewsHighlightsSection';
 import Footer from '../components/layout/Footer';
 import HeaderNav from '../components/layout/HeaderNav';
 import TopBar from '../components/layout/TopBar';
 import heroImage from '../assets/img/clube_leitura_ispgaya.jpg';
-import { adminBtnPrimary, blockText, blockTitle, container, mainContent, sectionSpace } from '../styles/ui';
+import { blockText, blockTitle, container, mainContent, sectionSpace } from '../styles/ui';
 import { getLocaleText, useLocale } from '../i18n/locale.js';
 
 function normalizeClubName(value: string): string {
@@ -215,35 +216,28 @@ function ClubeLeitura() {
               'If you like reading, reflecting and talking about books in a relaxed environment, this is your place.'
             )}
           </p>
+        </div>
 
-          <div className="mb-8 flex max-w-3xl flex-col items-center gap-4 md:flex-row">
-            <button
-              type="button"
-              className={adminBtnPrimary}
-              disabled={!club?.enable_registrations}
-              onClick={() => {
-                setRegistrationFeedback('');
-                setRegistrationError('');
-                setIsRegistrationModalOpen(true);
-              }}
-            >
-              {getLocaleText(locale, 'Inscrever-me neste clube', 'Join this club')}
-            </button>
-            <p className="text-sm text-slate-600">
-              {club?.enable_registrations
-                ? getLocaleText(
-                    locale,
-                    'O pedido sera enviado para validacao da equipa do clube.',
-                    'The request will be sent to the club team for validation.'
-                  )
-                : getLocaleText(
-                    locale,
-                    'As inscrições deste clube estão encerradas neste momento.',
-                    'Registrations for this club are currently closed.'
-                  )}
-            </p>
-          </div>
+        <ClubCallToAction
+          locale={locale}
+          enabled={Boolean(club?.enable_registrations)}
+          onClick={() => {
+            setRegistrationFeedback('');
+            setRegistrationError('');
+            setIsRegistrationModalOpen(true);
+          }}
+          statusText={
+            club?.enable_registrations
+              ? undefined
+              : getLocaleText(
+                  locale,
+                  'As inscrições deste clube estão encerradas neste momento.',
+                  'Registrations for this club are currently closed.'
+                )
+          }
+        />
 
+        <div className={`${container} ${sectionSpace}`}>
           {registrationFeedback ? (
             <p className="mb-8 rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-700">
               {registrationFeedback}

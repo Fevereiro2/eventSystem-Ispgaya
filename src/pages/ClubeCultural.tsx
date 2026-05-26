@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import Breadcrumbs from '../components/ui/Breadcrumbs';
+import ClubCallToAction from '../components/ui/ClubCallToAction';
 import ClubRegistrationModal, {
   ClubRegistrationFormData
 } from '../components/ui/ClubRegistrationModal';
@@ -304,70 +305,25 @@ function ClubeCultural({
                 </div>
               </div>
 
-              {!isLoading && !loadError && club?.enable_registrations ? (
-                <section
-                  className="w-full"
-                  style={{
-                    backgroundColor: 'rgb(255 247 237)',
-                    paddingTop: '5rem',
-                    paddingBottom: '5rem',
-                    backgroundImage: "url('/images/stripes-pattern.svg')",
-                    backgroundPosition: 'top',
-                    backgroundRepeat: 'repeat',
-                    backgroundSize: 'auto'
+{!isLoading && !loadError && club ? (
+                <ClubCallToAction
+                  locale={locale}
+                  enabled={Boolean(club.enable_registrations)}
+                  onClick={() => {
+                    setRegistrationFeedback('');
+                    setRegistrationError('');
+                    setIsRegistrationModalOpen(true);
                   }}
-                >
-                  <section className="relative w-full px-4 sm:px-6 xl:px-8 z-10">
-                    <div className="text-center">
-                      <h3 className="font-serif text-3xl font-bold tracking-tight text-slate-900 lg:text-4xl">
-                        {getLocaleText(locale, 'Inscreve-te já neste clube', 'Join this club')}
-                      </h3>
-                      <div className="mt-3 mx-auto max-w-5xl text-lg text-slate-700">
-                        <p>
-                          {getLocaleText(
-                            locale,
-                            'Vem fazer parte da nossa comunidade de artistas, junta-te a nós!',
-                            'Come be part of our community of artists, join us!'
-                          )}
-                        </p>
-                        <p>
-                          {getLocaleText(
-                            locale,
-                            'Vive uma experiência desafiante, enriquecedora e artistica.',
-                            'Live a challenging, enriching and artistic experience.'
-                          )}
-                        </p>
-                      </div> 
-                    </div>
-
-                    <div className="mt-8 text-center">
-                      <button
-                        type="button"
-                        className="group inline-flex items-center px-7 py-5 bg-orange-700 text-white text-xl font-medium rounded-sm shadow-lg transition ease-in-out duration-200 hover:shadow-xl hover:bg-orange-600"
-                        onClick={() => {
-                          setRegistrationFeedback('');
-                          setRegistrationError('');
-                          setIsRegistrationModalOpen(true);
-                        }}
-                      >
-                        {getLocaleText(locale, 'Inscrever-me neste clube', 'Join this club')}
-                        <svg
-                          xmlns="http://www.w3.org/2000/svg"
-                          className="mt-1 ml-4 h-7 w-7 transition-transform ease-in-out duration-200 group-hover:translate-x-1"
-                          fill="none"
-                          viewBox="0 0 24 24"
-                          stroke="currentColor"
-                          strokeWidth="2"
-                        >
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M17 8l4 4m0 0l-4 4m4-4H3" />
-                        </svg>
-                      </button>
-                      <p className="mt-2 text-sm text-slate-600">
-                        {getLocaleText(locale, 'O pedido será enviado para validação da equipa do clube.', 'The request will be sent to the club team for validation.')}
-                      </p>
-                    </div>
-                  </section>
-                </section>
+                  statusText={
+                    club.enable_registrations
+                      ? undefined
+                      : getLocaleText(
+                          locale,
+                          'As inscrições deste clube estão encerradas neste momento.',
+                          'Registrations for this club are currently closed.'
+                        )
+                  }
+                />
               ) : null}
 
               {registrationFeedback ? (
