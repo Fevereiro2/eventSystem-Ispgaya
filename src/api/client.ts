@@ -7,7 +7,7 @@ import {
 import { pushToast } from '../utils/toast.js';
 
 const clientEnv = (import.meta as ImportMeta & { env?: Record<string, string> }).env;
-const API_BASE = (clientEnv?.VITE_INFOCULTURA_API || 'http://127.0.0.1:8001/api').replace(
+const API_BASE = (clientEnv?.VITE_INFOCULTURA_API || 'http://127.0.0.1:8001/api/').replace(
   /\/$/,
   ''
 );

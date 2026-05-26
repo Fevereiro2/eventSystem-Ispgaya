@@ -343,7 +343,7 @@ function LaboratorioCultural() {
                     {getLocaleText(locale, 'Abrir página', 'Open page')}
                   </Link>
                   <span className="text-sm text-slate-500">
-                    {getLocaleText(locale, 'Leitura rápida', 'Quick read')}
+                    {getLocaleText(locale, ' ', 'Quick read')}
                   </span>
                 </div>
               </article>
