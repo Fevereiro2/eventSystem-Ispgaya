@@ -1,8 +1,21 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
-import { fetchPublicBooks, InfoCulturaBook } from '../api/infoculturaApi.js';
+import {
+  createClubRegistration,
+  fetchPublicBooks,
+  fetchPublicClubs,
+  fetchPublicEvents,
+  fetchPublicNews,
+  InfoCulturaBook,
+  InfoCulturaClub,
+  InfoCulturaEvent,
+  InfoCulturaNews,
+  resolveInfoCulturaAssetUrl
+} from '../api/infoculturaApi.js';
 import BestBooksSection from '../components/sections/BestBooksSection.js';
 import Breadcrumbs from '../components/ui/Breadcrumbs';
+import ClubRegistrationModal, { ClubRegistrationFormData } from '../components/ui/ClubRegistrationModal';
+import NewsHighlightsSection, { type NewsHighlightItem } from '../components/ui/NewsHighlightsSection';
 import Footer from '../components/layout/Footer';
 import HeaderNav from '../components/layout/HeaderNav';
 import TopBar from '../components/layout/TopBar';
@@ -10,30 +23,158 @@ import heroImage from '../assets/img/clube_leitura_ispgaya.jpg';
 import { adminBtnPrimary, blockText, blockTitle, container, mainContent, sectionSpace } from '../styles/ui';
 import { getLocaleText, useLocale } from '../i18n/locale.js';
 
+function normalizeClubName(value: string): string {
+  return value
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .trim();
+}
+
+function formatHighlightDate(value: string, locale: 'pt' | 'en') {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return value;
+
+  return new Intl.DateTimeFormat(locale === 'en' ? 'en-GB' : 'pt-PT', {
+    day: '2-digit',
+    month: 'long',
+    year: 'numeric'
+  }).format(date);
+}
+
 function ClubeLeitura() {
   const { locale } = useLocale();
   const [books, setBooks] = useState<InfoCulturaBook[]>([]);
+  const [newsItems, setNewsItems] = useState<InfoCulturaNews[]>([]);
+  const [events, setEvents] = useState<InfoCulturaEvent[]>([]);
+  const [club, setClub] = useState<InfoCulturaClub | null>(null);
+  const [isRegistrationModalOpen, setIsRegistrationModalOpen] = useState(false);
+  const [isSubmittingRegistration, setIsSubmittingRegistration] = useState(false);
+  const [registrationError, setRegistrationError] = useState('');
+  const [registrationFeedback, setRegistrationFeedback] = useState('');
 
   useEffect(() => {
     let active = true;
 
-    async function loadBooks() {
+    async function loadPageData() {
       try {
-        const nextBooks = await fetchPublicBooks();
+        const clubs = await fetchPublicClubs();
+        if (!active) return;
+
+        const readingClub = clubs.find((item) => normalizeClubName(item.name).includes('leitura')) || null;
+        setClub(readingClub);
+
+        if (!readingClub) {
+          setBooks([]);
+          setNewsItems([]);
+          setEvents([]);
+          return;
+        }
+
+        const [nextBooks, nextNews, nextEvents] = await Promise.all([
+          fetchPublicBooks(readingClub.id),
+          fetchPublicNews(readingClub.id),
+          fetchPublicEvents({ clubId: readingClub.id })
+        ]);
+
         if (!active) return;
         setBooks(nextBooks);
+        setNewsItems(nextNews);
+        setEvents(nextEvents);
       } catch {
         if (!active) return;
         setBooks([]);
+        setNewsItems([]);
+        setEvents([]);
+        setClub(null);
       }
     }
 
-    void loadBooks();
+    void loadPageData();
 
     return () => {
       active = false;
     };
   }, []);
+
+  const highlightedNews = useMemo<NewsHighlightItem[]>(
+    () =>
+      [...newsItems]
+        .sort((left, right) => {
+          const leftTime = new Date(left.published_at || left.created_at).getTime();
+          const rightTime = new Date(right.published_at || right.created_at).getTime();
+          return rightTime - leftTime;
+        })
+        .slice(0, 3)
+        .map((item) => ({
+          title: item.title,
+          href: `/vida-academica/noticias/${item.id}`,
+          internal: true,
+          excerpt: item.summary,
+          image: item.image ? resolveInfoCulturaAssetUrl(item.image) : '',
+          imageAlt: item.title,
+          publishedAt: item.published_at || item.created_at,
+          publishedLabel: formatHighlightDate(item.published_at || item.created_at, locale),
+          tags: [{ label: '#clubedeleitura', href: '/vida-academica/noticias' }]
+        })),
+    [newsItems, locale]
+  );
+
+  const highlightedEvents = useMemo<NewsHighlightItem[]>(
+    () =>
+      [...events]
+        .sort((left, right) => {
+          const leftTime = new Date(left.start_date || left.event_date).getTime();
+          const rightTime = new Date(right.start_date || right.event_date).getTime();
+          return rightTime - leftTime;
+        })
+        .slice(0, 3)
+        .map((item) => ({
+          title: item.title,
+          href: `/vida-academica/eventos/${item.id}`,
+          internal: true,
+          excerpt: item.description,
+          image: item.image ? resolveInfoCulturaAssetUrl(item.image) : '',
+          imageAlt: item.title,
+          publishedAt: item.start_date || item.event_date,
+          publishedLabel: formatHighlightDate(item.start_date || item.event_date, locale),
+          tags: item.categories.map((category) => ({
+            label: `#${normalizeClubName(category.name).replace(/\s+/g, '')}`,
+            href: '/vida-academica/eventos'
+          }))
+        })),
+    [events, locale]
+  );
+
+  async function handleSubmitRegistration(data: ClubRegistrationFormData) {
+    if (!club) {
+      setRegistrationError(getLocaleText(locale, 'Clube de Leitura não encontrado.', 'Reading Club not found.'));
+      return;
+    }
+
+    setIsSubmittingRegistration(true);
+    setRegistrationError('');
+
+    try {
+      await createClubRegistration(club.id, data);
+      setRegistrationFeedback(
+        getLocaleText(
+          locale,
+          'Inscrição enviada com sucesso. Aguarda validação pela equipa do clube.',
+          'Registration sent successfully. Wait for club validation.'
+        )
+      );
+      setIsRegistrationModalOpen(false);
+    } catch (error) {
+      setRegistrationError(
+        error instanceof Error
+          ? error.message
+          : getLocaleText(locale, 'Não foi possível enviar a inscrição.', 'Unable to submit the registration.')
+      );
+    } finally {
+      setIsSubmittingRegistration(false);
+    }
+  }
 
   return (
     <>
@@ -76,17 +217,59 @@ function ClubeLeitura() {
           </p>
 
           <div className="mb-8 flex max-w-3xl flex-col items-center gap-4 md:flex-row">
-            <button type="button" className={adminBtnPrimary}>
+            <button
+              type="button"
+              className={adminBtnPrimary}
+              disabled={!club?.enable_registrations}
+              onClick={() => {
+                setRegistrationFeedback('');
+                setRegistrationError('');
+                setIsRegistrationModalOpen(true);
+              }}
+            >
               {getLocaleText(locale, 'Inscrever-me neste clube', 'Join this club')}
             </button>
             <p className="text-sm text-slate-600">
-              {getLocaleText(
-                locale,
-                'O pedido sera enviado para validacao da equipa do clube.',
-                'The request will be sent to the club team for validation.'
-              )}
+              {club?.enable_registrations
+                ? getLocaleText(
+                    locale,
+                    'O pedido sera enviado para validacao da equipa do clube.',
+                    'The request will be sent to the club team for validation.'
+                  )
+                : getLocaleText(
+                    locale,
+                    'As inscrições deste clube estão encerradas neste momento.',
+                    'Registrations for this club are currently closed.'
+                  )}
             </p>
           </div>
+
+          {registrationFeedback ? (
+            <p className="mb-8 rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-700">
+              {registrationFeedback}
+            </p>
+          ) : null}
+
+          {highlightedNews.length > 0 || highlightedEvents.length > 0 ? (
+            <section className="mb-12 mt-12 bg-white">
+              <div className="grid w-full grid-cols-1 gap-12 xl:grid-cols-2 xl:gap-14">
+                <NewsHighlightsSection
+                  title={getLocaleText(locale, 'Notícias', 'News')}
+                  viewAllHref="/vida-academica/noticias"
+                  viewAllInternal
+                  items={highlightedNews}
+                  className="w-full"
+                />
+                <NewsHighlightsSection
+                  title={getLocaleText(locale, 'Eventos', 'Events')}
+                  viewAllHref="/vida-academica/eventos"
+                  viewAllInternal
+                  items={highlightedEvents}
+                  className="w-full"
+                />
+              </div>
+            </section>
+          ) : null}
 
           <BestBooksSection
             books={books}
@@ -104,6 +287,20 @@ function ClubeLeitura() {
           />
         </div>
       </main>
+
+      <ClubRegistrationModal
+        clubName={getLocaleText(locale, 'Clube de Leitura', 'Reading Club')}
+        isOpen={isRegistrationModalOpen}
+        isSubmitting={isSubmittingRegistration}
+        submitError={registrationError}
+        onClose={() => {
+          if (!isSubmittingRegistration) {
+            setIsRegistrationModalOpen(false);
+            setRegistrationError('');
+          }
+        }}
+        onSubmit={handleSubmitRegistration}
+      />
 
       <Footer />
     </>

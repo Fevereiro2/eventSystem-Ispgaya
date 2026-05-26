@@ -2,6 +2,7 @@ import {
   Dispatch,
   FormEvent,
   SetStateAction,
+  useCallback,
   useEffect,
   useMemo,
   useState,
@@ -649,6 +650,87 @@ function AdminCultura() {
     [users]
   );
 
+  const clearAuth = useCallback(() => {
+    setToken('');
+    setItems([]);
+    setUsers([]);
+    setClubs([]);
+    setRoles([]);
+    setNewsItems([]);
+    setNewsStatuses([]);
+    setDashboardStats(null);
+    setNotifications([]);
+    setBooks([]);
+    setCategories([]);
+    setSessions([]);
+    setEvents([]);
+    setRegistrations([]);
+    setRegistrationStatuses([]);
+    setUserDateFrom('');
+    setUserDateTo('');
+    setUserOrder('active_name');
+    setClubDateFrom('');
+    setClubDateTo('');
+    setClubOrder('active_name');
+    setRegistrationSearchInput('');
+    setRegistrationSearch('');
+    setRegistrationOrder('newest');
+    setRegistrationDateFrom('');
+    setRegistrationDateTo('');
+    setRegistrationPage(1);
+    setRegistrationTotal(0);
+    setRegistrationTotalPages(0);
+    setSelectedRegistrationIds([]);
+    setNewsClubFilter('all');
+    setNewsStatusFilter('all');
+    setNewsSearchInput('');
+    setNewsSearch('');
+    setNewsOrder('newest');
+    setNewsDateFrom('');
+    setNewsDateTo('');
+    setNewsPage(1);
+    setNewsTotal(0);
+    setNewsTotalPages(0);
+    setSelectedNewsIds([]);
+    setActivityClubFilter('all');
+    setActivityCategoryFilter('all');
+    setActivityStatusFilter('all');
+    setActivitySearchInput('');
+    setActivitySearch('');
+    setActivityOrder(getDefaultActivityOrdering('books'));
+    setActivityDateFrom('');
+    setActivityDateTo('');
+    setActivityPage(1);
+    setActivityTotal(0);
+    setActivityTotalPages(0);
+    setSelectedBookIds([]);
+    setSelectedEventIds([]);
+    setCurrentUser(null);
+    setPanelError('');
+    setDashboardError('');
+    setNotificationError('');
+    setNewsError('');
+    setActivityError('');
+    setRegistrationError('');
+    setUserFormError('');
+    setClubFormError('');
+    setNewsFormError('');
+    setBookFormError('');
+    setCategoryFormError('');
+    setSessionFormError('');
+    setEventFormError('');
+    sessionStorage.removeItem(TOKEN_KEY);
+  }, []);
+
+  const handleAuthError = useCallback((error: unknown): boolean => {
+    if (isInfoCulturaAuthError(error)) {
+      clearAuth();
+      return true;
+    }
+
+    return false;
+  }, [clearAuth]);
+
   const { handleLogin: authHandleLogin, handleLogout: authHandleLogout } = useAdminAuth({
     authUser,
     authPass,
@@ -755,87 +837,6 @@ function AdminCultura() {
     handleAuthError,
     pageSize: REGISTRATION_PAGE_SIZE,
   });
-
-  function handleAuthError(error: unknown): boolean {
-    if (isInfoCulturaAuthError(error)) {
-      clearAuth();
-      return true;
-    }
-
-    return false;
-  }
-
-  function clearAuth() {
-    setToken('');
-    setItems([]);
-    setUsers([]);
-    setClubs([]);
-    setRoles([]);
-    setNewsItems([]);
-    setNewsStatuses([]);
-    setDashboardStats(null);
-    setNotifications([]);
-    setBooks([]);
-    setCategories([]);
-    setSessions([]);
-    setEvents([]);
-    setRegistrations([]);
-    setRegistrationStatuses([]);
-    setUserDateFrom('');
-    setUserDateTo('');
-    setUserOrder('active_name');
-    setClubDateFrom('');
-    setClubDateTo('');
-    setClubOrder('active_name');
-    setRegistrationSearchInput('');
-    setRegistrationSearch('');
-    setRegistrationOrder('newest');
-    setRegistrationDateFrom('');
-    setRegistrationDateTo('');
-    setRegistrationPage(1);
-    setRegistrationTotal(0);
-    setRegistrationTotalPages(0);
-    setSelectedRegistrationIds([]);
-    setNewsClubFilter('all');
-    setNewsStatusFilter('all');
-    setNewsSearchInput('');
-    setNewsSearch('');
-    setNewsOrder('newest');
-    setNewsDateFrom('');
-    setNewsDateTo('');
-    setNewsPage(1);
-    setNewsTotal(0);
-    setNewsTotalPages(0);
-    setSelectedNewsIds([]);
-    setActivityClubFilter('all');
-    setActivityCategoryFilter('all');
-    setActivityStatusFilter('all');
-    setActivitySearchInput('');
-    setActivitySearch('');
-    setActivityOrder(getDefaultActivityOrdering('books'));
-    setActivityDateFrom('');
-    setActivityDateTo('');
-    setActivityPage(1);
-    setActivityTotal(0);
-    setActivityTotalPages(0);
-    setSelectedBookIds([]);
-    setSelectedEventIds([]);
-    setCurrentUser(null);
-    setPanelError('');
-    setDashboardError('');
-    setNotificationError('');
-    setNewsError('');
-    setActivityError('');
-    setRegistrationError('');
-    setUserFormError('');
-    setClubFormError('');
-    setNewsFormError('');
-    setBookFormError('');
-    setCategoryFormError('');
-    setSessionFormError('');
-    setEventFormError('');
-    sessionStorage.removeItem(TOKEN_KEY);
-  }
 
   function resetContentForm() {
     setContentForm(initialContentForm);

@@ -165,6 +165,7 @@ export type InfoCulturaRegistrationStatus = {
 
 export type InfoCulturaRegistration = {
   id: number;
+  registration_id?: number;
   club_id: number;
   club_name: string;
   registration_type?: 'club' | 'event' | 'session' | string;

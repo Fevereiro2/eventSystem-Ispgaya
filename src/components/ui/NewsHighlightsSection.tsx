@@ -88,16 +88,18 @@ function NewsHighlightsSection({
             key={item.href}
             className="group relative overflow-hidden border-b-2 border-gray-200 p-3.5"
           >
-            <div className="absolute inset-0 z-20 hidden group-hover:block">
-              <img
-                className="pointer-events-none z-10 aspect-[16/9] w-full object-cover"
-                src={item.image}
-                alt={item.imageAlt}
-                loading="lazy"
-                decoding="async"
-              />
-              <span className="absolute inset-0 z-10 h-full w-full bg-black bg-opacity-70" />
-            </div>
+            {item.image ? (
+              <div className="absolute inset-0 z-20 hidden group-hover:block">
+                <img
+                  className="pointer-events-none z-10 aspect-[16/9] w-full object-cover"
+                  src={item.image}
+                  alt={item.imageAlt}
+                  loading="lazy"
+                  decoding="async"
+                />
+                <span className="absolute inset-0 z-10 h-full w-full bg-black bg-opacity-70" />
+              </div>
+            ) : null}
 
             <div className="relative z-30">
               <time
