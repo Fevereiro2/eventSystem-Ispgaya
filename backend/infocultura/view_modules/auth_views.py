@@ -146,10 +146,7 @@ class AdminUserListCreateView(AdminAuditMixin, generics.ListCreateAPIView):
     audit_content_type = "user"
 
     def get_permissions(self):
-        if self.request.method == "GET":
-            permission_classes = [permissions.IsAuthenticated, IsClubAdmin]
-        else:
-            permission_classes = [permissions.IsAuthenticated, IsSuperAdmin]
+        permission_classes = [permissions.IsAuthenticated, IsSuperAdmin]
         return [permission() for permission in permission_classes]
 
     def get_serializer_class(self):
@@ -207,10 +204,7 @@ class AdminUserDetailView(AdminAuditMixin, generics.RetrieveUpdateAPIView):
     audit_content_type = "user"
 
     def get_permissions(self):
-        if self.request.method == "GET":
-            permission_classes = [permissions.IsAuthenticated, IsClubAdmin]
-        else:
-            permission_classes = [permissions.IsAuthenticated, IsSuperAdmin]
+        permission_classes = [permissions.IsAuthenticated, IsSuperAdmin]
         return [permission() for permission in permission_classes]
 
     def get_serializer_class(self):

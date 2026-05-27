@@ -63,7 +63,7 @@ export type DashboardAgendaEntry = {
 
 export function getVisibleSections(canManageUsers: boolean, allowedActivityTabs: ActivityTab[]) {
   return adminSections.filter((section) => {
-    if (section.id === 'clubes') {
+    if (section.id === 'logs' || section.id === 'utilizadores' || section.id === 'clubes') {
       return canManageUsers;
     }
 
