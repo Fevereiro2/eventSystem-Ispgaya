@@ -9,7 +9,7 @@ import {
   useMemo,
   useState,
 } from 'react';
-import { Bell, FolderKanban } from 'lucide-react';
+import { Bell, CalendarClock, FolderKanban } from 'lucide-react';
 import { NavLink, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import infoCulturaBg from '../assets/19825874_uqliU.jpeg';
 import ispgayaLogo from '../assets/ispgaya-logo.svg';
@@ -49,9 +49,10 @@ import {
   adminPortalSidebarSection,
   adminPortalSidebarSub,
   adminPortalSidebarTitle,
-  adminUserStatus,
-  adminUserStatusActive,
-  adminUserStatusInactive,
+  adminHeaderRow,
+  adminSectionNav,
+  adminSectionLink,
+  adminSectionLinkActive,
   adminTextarea,
   blockText,
   blockTitle,
@@ -116,8 +117,6 @@ import {
   deleteAdminNews,
   deleteAdminSession,
   fetchAdminDashboard,
-  fetchAdminEventbriteConnection,
-  fetchAdminEventbriteOrders,
   fetchAdminNotifications,
   InfoCulturaAdminNotification,
   InfoCulturaBook,
@@ -125,9 +124,6 @@ import {
   InfoCulturaClub,
   InfoCulturaDashboardStats,
   InfoCulturaEvent,
-  EventbriteOrdersPage,
-  EventbriteRefundStatus,
-  EventbriteConnectionStatus,
   InfoCulturaNews,
   InfoCulturaNewsStatus,
   InfoCulturaRegistration,
@@ -154,11 +150,9 @@ import {
   updateAdminSession,
   updateAdminUser,
 } from '../api/infoculturaApi';
+import { resolveInfoCulturaAssetUrl } from '../api/client';
 import DashboardPage from './adminCultura/pages/DashboardPage';
-import ActivitiesPage from './adminCultura/ActivitiesPage';
 import ClubsPage from './adminCultura/pages/ClubsPage';
-import EventbritePage from './adminCultura/pages/EventbritePage';
-import EventsPage from './adminCultura/pages/EventsPage';
 import LogsPage from './adminCultura/pages/LogsPage';
 import MetricsPage from './adminCultura/pages/MetricsPage';
 import NewsPage from './adminCultura/pages/NewsPage';
@@ -178,7 +172,6 @@ import {
   buildUserOverviewStats,
   buildSidebarContextNav,
   getActivityPageLinks,
-  getActivitySectionCopy,
   getContentPageLinks,
   getNewsPageLinks,
   getVisibleSectionGroups,
@@ -234,6 +227,7 @@ import {
   getNewsSubpage,
   getStoredReadNotificationIds,
   getUserPage,
+  getWorkflowStatusLabel,
   getWorkflowStatusOptions,
   isWithinDateRange,
   normalizeWorkflowStatus,
@@ -244,20 +238,6 @@ import {
   toDateInputValue,
   toDateTimeLocalValue
 } from './adminCultura/utils';
-
-function getRegistrationStatusBadge(status: string): string {
-  const normalized = status.trim().toLowerCase();
-
-  if (normalized === 'approved') {
-    return `${adminUserStatus} ${adminUserStatusActive}`;
-  }
-
-  if (normalized === 'rejected' || normalized === 'cancelled') {
-    return `${adminUserStatus} ${adminUserStatusInactive}`;
-  }
-
-  return `${adminUserStatus} bg-amber-100 text-amber-700`;
-}
 
 type AdminHeroTone = 'amber' | 'blue' | 'slate' | 'rose' | 'emerald';
 
@@ -456,6 +436,7 @@ function AdminCultura() {
   const [activityTab, setActivityTab] = useState<ActivityTab>('books');
   const [selectedEventIds, setSelectedEventIds] = useState<number[]>([]);
   const [bulkEventStatus, setBulkEventStatus] = useState('review');
+  const [isExportingActivities, setIsExportingActivities] = useState(false);
   const [registrationStatusFilter, setRegistrationStatusFilter] = useState('pending');
   const [registrationClubFilter, setRegistrationClubFilter] = useState('all');
   const [registrationSearchInput, setRegistrationSearchInput] = useState('');
@@ -471,15 +452,6 @@ function AdminCultura() {
   const [isApplyingBulkNews, setIsApplyingBulkNews] = useState(false);
   const [isApplyingBulkEvents, setIsApplyingBulkEvents] = useState(false);
   const [isApplyingBulkRegistrations, setIsApplyingBulkRegistrations] = useState(false);
-  const [syncingEventbriteId, setSyncingEventbriteId] = useState<number | null>(null);
-  const [loadingEventbriteOrdersId, setLoadingEventbriteOrdersId] = useState<number | null>(null);
-  const [eventbriteRefundStatus, setEventbriteRefundStatus] = useState<EventbriteRefundStatus>('');
-  const [eventbriteConnection, setEventbriteConnection] =
-    useState<EventbriteConnectionStatus | null>(null);
-  const [isCheckingEventbriteConnection, setIsCheckingEventbriteConnection] = useState(false);
-  const [eventbriteOrdersByEventId, setEventbriteOrdersByEventId] = useState<
-    Record<number, EventbriteOrdersPage>
-  >({});
   const [isDeletingBulkNews, setIsDeletingBulkNews] = useState(false);
   const [isDeletingBulkBooks, setIsDeletingBulkBooks] = useState(false);
   const [isDeletingBulkEvents, setIsDeletingBulkEvents] = useState(false);
@@ -639,8 +611,6 @@ function AdminCultura() {
     pendingRegistrations,
     sessions.length
   );
-  const { label: activitySectionLabel, description: activitySectionDescription } =
-    getActivitySectionCopy(activityTab);
   const newsPageHref = activeNewsSubpage ? getNewsRoute(activeNewsSubpage) : null;
   const activityPageHref = activeActivitySubpage
     ? getActivityRoute(activityTab, activeActivitySubpage)
@@ -648,9 +618,6 @@ function AdminCultura() {
   const contentPageHref = activeContentSubpage ? getContentRoute(activeContentSubpage) : null;
   const showNewsForm = activeNewsSubpage === 'form';
   const showNewsList = activeNewsSubpage === 'list';
-  const showActivityFiltersAndList = activeActivitySubpage === 'list';
-  const showActivityForm = activeActivitySubpage === 'form';
-  const showEventCategories = activityTab === 'events' && activeActivitySubpage === 'categories';
   const showContentForm = activeContentSubpage === 'form';
   const showContentList = activeContentSubpage === 'list';
   const newsPageLinks = getNewsPageLinks(editingNewsId);
@@ -2434,61 +2401,71 @@ function AdminCultura() {
     }
   }
 
-  async function handleSyncEventbrite(id: number, publish = false) {
-    if (!token) return;
-
-    setSyncingEventbriteId(id);
-    setActivityError('');
+  async function handleExportActivitiesCsv() {
+    setIsExportingActivities(true);
 
     try {
-      const syncedEvent = await syncAdminEventToEventbrite(token, id, publish);
-      setEvents((prev) => prev.map((item) => (item.id === syncedEvent.id ? syncedEvent : item)));
-    } catch (error) {
-      if (handleAuthError(error)) return;
-      const message =
-        error instanceof Error ? error.message : 'Nao foi possivel sincronizar com a Eventbrite.';
-      setActivityError(message);
+      const escapeValue = (value: string | number | boolean | null | undefined) => {
+        const text = value === null || value === undefined ? '' : String(value);
+        return /[",\n;]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text;
+      };
+
+      const rows: string[] = [];
+
+      if (activityTab === 'books') {
+        rows.push(['id', 'title', 'author', 'club', 'featured', 'created_at'].join(','));
+        sortedBooks.forEach((item) => {
+          rows.push(
+            [
+              item.id,
+              item.title,
+              item.author,
+              item.club_name || '',
+              item.is_featured ? 'sim' : 'nao',
+              item.created_at || ''
+            ]
+              .map(escapeValue)
+              .join(',')
+          );
+        });
+      } else if (activityTab === 'sessions') {
+        rows.push(['id', 'name', 'club', 'date', 'created_at'].join(','));
+        sortedSessions.forEach((item) => {
+          rows.push(
+            [item.id, item.name, item.club_name || '', item.session_date || '', item.created_at || '']
+              .map(escapeValue)
+              .join(',')
+          );
+        });
+      } else {
+        rows.push(['id', 'title', 'club', 'status', 'date', 'created_at'].join(','));
+        sortedEvents.forEach((item) => {
+          rows.push(
+            [
+              item.id,
+              item.title,
+              item.club_name || '',
+              item.status,
+              item.event_date || '',
+              item.created_at || ''
+            ]
+              .map(escapeValue)
+              .join(',')
+          );
+        });
+      }
+
+      const blob = new Blob([rows.join('\n')], { type: 'text/csv;charset=utf-8;' });
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `infocultura_${activityTab}.csv`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
     } finally {
-      setSyncingEventbriteId(null);
-    }
-  }
-
-  async function handleCheckEventbriteConnection() {
-    if (!token) return;
-
-    setIsCheckingEventbriteConnection(true);
-    setActivityError('');
-
-    try {
-      const connection = await fetchAdminEventbriteConnection(token);
-      setEventbriteConnection(connection);
-    } catch (error) {
-      if (handleAuthError(error)) return;
-      const message =
-        error instanceof Error ? error.message : 'Nao foi possivel verificar a Eventbrite.';
-      setEventbriteConnection({ connected: false, message });
-      setActivityError(message);
-    } finally {
-      setIsCheckingEventbriteConnection(false);
-    }
-  }
-
-  async function handleLoadEventbriteOrders(id: number, refundStatus = eventbriteRefundStatus) {
-    if (!token) return;
-
-    setLoadingEventbriteOrdersId(id);
-    setActivityError('');
-
-    try {
-      const ordersPage = await fetchAdminEventbriteOrders(token, id, refundStatus);
-      setEventbriteOrdersByEventId((prev) => ({ ...prev, [id]: ordersPage }));
-    } catch (error) {
-      if (handleAuthError(error)) return;
-      const message =
-        error instanceof Error ? error.message : 'Nao foi possivel carregar os pedidos da Eventbrite.';
-      setActivityError(message);
-    } finally {
-      setLoadingEventbriteOrdersId(null);
+      setIsExportingActivities(false);
     }
   }
 
@@ -2966,422 +2943,6 @@ function AdminCultura() {
               isLoadingNews={isLoadingNews}
               toggleSelectedId={toggleSelectedId}
             />
-          ) : null}
-
-                  <div className={adminField}>
-                    <label className={adminLabel} htmlFor="news-title">
-                      Titulo
-                    </label>
-                    <input
-                      id="news-title"
-                      className={adminInput}
-                      value={newsForm.title}
-                      onChange={(event) =>
-                        setNewsForm((prev) => ({ ...prev, title: event.target.value }))
-                      }
-                    />
-                  </div>
-
-                  <div className={adminField}>
-                    <label className={adminLabel} htmlFor="news-status">
-                      Estado
-                    </label>
-                    <select
-                      id="news-status"
-                      className={adminInput}
-                      value={newsForm.news_status}
-                      onChange={(event) =>
-                        setNewsForm((prev) => ({
-                          ...prev,
-                          news_status: normalizeWorkflowStatus(event.target.value)
-                        }))
-                      }
-                    >
-                      {isLoadingNewsStatuses ? (
-                        <option value="">A carregar estados...</option>
-                      ) : null}
-                      {availableNewsStatuses.map((status) => (
-                        <option key={status.id} value={status.name}>
-                          {getWorkflowStatusLabel(status.name)}
-                        </option>
-                      ))}
-                    </select>
-                    <p className={blockText}>
-                      {canManageUsers
-                        ? 'O superadmin pode publicar ou arquivar diretamente.'
-                        : 'O club_admin trabalha em rascunho ou envia para revisao.'}
-                    </p>
-                  </div>
-
-                  <div className={adminField}>
-                    <label className={adminLabel} htmlFor="news-published-at">
-                      Publicado em
-                    </label>
-                    <input
-                      id="news-published-at"
-                      type="datetime-local"
-                      className={adminInput}
-                      value={newsForm.published_at}
-                      disabled={
-                        !canManageUsers &&
-                        !['published', 'archived'].includes(normalizeWorkflowStatus(newsForm.news_status))
-                      }
-                      onChange={(event) =>
-                        setNewsForm((prev) => ({ ...prev, published_at: event.target.value }))
-                      }
-                    />
-                  </div>
-                </div>
-
-                <div className={adminFieldSpaced}>
-                  <label className={adminLabel} htmlFor="news-summary">
-                    Resumo
-                  </label>
-                  <textarea
-                    id="news-summary"
-                    rows={3}
-                    className={adminTextarea}
-                    value={newsForm.summary}
-                    onChange={(event) =>
-                      setNewsForm((prev) => ({ ...prev, summary: event.target.value }))
-                    }
-                  />
-                </div>
-
-                <div className={adminFieldSpaced}>
-                  <label className={adminLabel} htmlFor="news-image">
-                    Imagem
-                  </label>
-                  <input
-                    id="news-image"
-                    key={newsImageFileKey}
-                    type="file"
-                    accept="image/*"
-                    className={adminInput}
-                    onChange={(event) => {
-                      const file = event.target.files?.[0] || null;
-                      void handleUploadNewsImage(file);
-                    }}
-                  />
-                  <p className={blockText}>
-                    {isUploadingNewsImage
-                      ? 'A carregar imagem...'
-                      : newsForm.image
-                        ? 'Imagem carregada com sucesso.'
-                        : 'Seleciona uma imagem para a noticia.'}
-                  </p>
-                  {newsForm.image ? (
-                    <img
-                      src={resolveInfoCulturaAssetUrl(newsForm.image)}
-                      alt="Preview da noticia"
-                      className="mt-3 h-40 w-full rounded-xl object-cover"
-                    />
-                  ) : null}
-                </div>
-
-                <div className={adminFieldSpaced}>
-                  <label className={adminLabel} htmlFor="news-content">
-                    Conteudo
-                  </label>
-                  <textarea
-                    id="news-content"
-                    rows={6}
-                    className={adminTextarea}
-                    value={newsForm.content}
-                    onChange={(event) =>
-                      setNewsForm((prev) => ({ ...prev, content: event.target.value }))
-                    }
-                  />
-                </div>
-
-                {newsFormError ? <p className={adminError}>{newsFormError}</p> : null}
-
-                <div className={adminActions}>
-                  <button type="submit" className={adminBtnPrimary} disabled={isSavingNews}>
-                    {isSavingNews ? 'A guardar...' : editingNewsId ? 'Atualizar' : 'Criar'}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={resetNewsForm}
-                    className={adminBtnSecondary}
-                  >
-                    Limpar
-                  </button>
-                </div>
-              </form>
-
-              <section className={adminPanelCard}>
-                <div className={adminHeaderRow}>
-                  <div>
-                    <h2 className={blockTitle}>Noticias registadas</h2>
-                    <p className={blockText}>
-                      Lista das noticias criadas no InfoCultura.
-                    </p>
-                  </div>
-                  {canManageUsers ? (
-                    <div className={adminField}>
-                      <label className={adminLabel} htmlFor="news-club-filter">
-                        Filtrar por clube
-                      </label>
-                      <select
-                        id="news-club-filter"
-                        className={adminInput}
-                        value={newsClubFilter}
-                        onChange={(event) => setNewsClubFilter(event.target.value)}
-                      >
-                        <option value="all">Todos os clubes</option>
-                        {clubs.map((club) => (
-                          <option key={club.id} value={club.id}>
-                            {club.name}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                  ) : null}
-                  <div className={adminField}>
-                    <label className={adminLabel} htmlFor="news-status-filter">
-                      Estado editorial
-                    </label>
-                    <select
-                      id="news-status-filter"
-                      className={adminInput}
-                      value={newsStatusFilter}
-                      onChange={(event) => setNewsStatusFilter(event.target.value)}
-                    >
-                      <option value="all">Todos os estados</option>
-                      {newsStatuses.map((status) => (
-                        <option key={status.id} value={normalizeWorkflowStatus(status.name)}>
-                          {getWorkflowStatusLabel(status.name)}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
-
-                {newsError ? <p className={adminError}>{newsError}</p> : null}
-
-                <div className={`${adminFormGridSpaced} mt-6`}>
-                  <form onSubmit={handleApplyNewsSearch} className={adminPanelForm}>
-                    <div className={adminField}>
-                      <label className={adminLabel} htmlFor="news-search">
-                        Pesquisar noticias
-                      </label>
-                      <input
-                        id="news-search"
-                        className={adminInput}
-                        value={newsSearchInput}
-                        onChange={(event) => setNewsSearchInput(event.target.value)}
-                        placeholder="Titulo, resumo, conteudo ou clube"
-                      />
-                    </div>
-                    <div className={adminActions}>
-                      <button type="submit" className={adminBtnPrimary}>
-                        Pesquisar
-                      </button>
-                      <button
-                        type="button"
-                        className={adminBtnSecondary}
-                        onClick={() => {
-                          setNewsSearchInput('');
-                          setNewsSearch('');
-                          setNewsPage(1);
-                        }}
-                      >
-                        Limpar
-                      </button>
-                    </div>
-                  </form>
-
-                  <div className={adminActions}>
-                    <button
-                      type="button"
-                      className={adminBtnSecondary}
-                      disabled={isExportingNews}
-                      onClick={() => void handleExportNewsCsv()}
-                    >
-                      {isExportingNews ? 'A exportar...' : 'Exportar CSV'}
-                    </button>
-                  </div>
-                </div>
-
-                <div className={adminFormGridSpaced}>
-                  <div className={adminField}>
-                    <label className={adminLabel} htmlFor="news-date-from">
-                      Criadas desde
-                    </label>
-                    <input
-                      id="news-date-from"
-                      type="date"
-                      className={adminInput}
-                      value={newsDateFrom}
-                      onChange={(event) => setNewsDateFrom(event.target.value)}
-                    />
-                  </div>
-                  <div className={adminField}>
-                    <label className={adminLabel} htmlFor="news-date-to">
-                      Criadas ate
-                    </label>
-                    <input
-                      id="news-date-to"
-                      type="date"
-                      className={adminInput}
-                      value={newsDateTo}
-                      onChange={(event) => setNewsDateTo(event.target.value)}
-                    />
-                  </div>
-                  <div className={adminField}>
-                    <label className={adminLabel} htmlFor="news-order">
-                      Ordenar por
-                    </label>
-                    <select
-                      id="news-order"
-                      className={adminInput}
-                      value={newsOrder}
-                      onChange={(event) => setNewsOrder(event.target.value)}
-                    >
-                      <option value="newest">Mais recentes</option>
-                      <option value="oldest">Mais antigas</option>
-                      <option value="title_asc">Titulo A-Z</option>
-                      <option value="title_desc">Titulo Z-A</option>
-                      <option value="club_asc">Clube A-Z</option>
-                      <option value="club_desc">Clube Z-A</option>
-                      <option value="status_asc">Estado A-Z</option>
-                      <option value="status_desc">Estado Z-A</option>
-                    </select>
-                  </div>
-                </div>
-
-                <div className={adminActions}>
-                  <button
-                    type="button"
-                    className={adminBtnSecondary}
-                    onClick={() =>
-                      setSelectedNewsIds(
-                        selectedNewsIds.length === sortedNews.length
-                          ? []
-                          : sortedNews.map((item) => item.id)
-                      )
-                    }
-                    disabled={sortedNews.length === 0}
-                  >
-                    {selectedNewsIds.length === sortedNews.length && sortedNews.length > 0
-                      ? 'Limpar selecao'
-                      : 'Selecionar pagina'}
-                  </button>
-                  <select
-                    className={adminInput}
-                    value={bulkNewsStatus}
-                    onChange={(event) => setBulkNewsStatus(event.target.value)}
-                  >
-                    {availableNewsStatuses.map((status) => (
-                      <option key={status.id} value={normalizeWorkflowStatus(status.name)}>
-                        {getWorkflowStatusLabel(status.name)}
-                      </option>
-                    ))}
-                  </select>
-                  <button
-                    type="button"
-                    className={adminBtnPrimary}
-                    disabled={selectedNewsIds.length === 0 || isApplyingBulkNews}
-                    onClick={() => void handleApplyBulkNewsStatus()}
-                  >
-                    {isApplyingBulkNews ? 'A aplicar...' : 'Aplicar em lote'}
-                  </button>
-                  <button
-                    type="button"
-                    className={adminBtnDanger}
-                    disabled={selectedNewsIds.length === 0 || isDeletingBulkNews}
-                    onClick={() => void handleBulkDeleteNews()}
-                  >
-                    {isDeletingBulkNews ? 'A apagar...' : 'Apagar selecionadas'}
-                  </button>
-                </div>
-
-                <div className={adminList}>
-                  {isLoadingNews ? <p className={adminInfo}>A carregar noticias...</p> : null}
-                  {!isLoadingNews && sortedNews.length === 0 ? (
-                    <p className={adminInfo}>Nao existem noticias para o filtro atual.</p>
-                  ) : null}
-                  {sortedNews.map((item) => (
-                    <article key={item.id} className={adminListItem}>
-                      <div className={adminListTop}>
-                        <label className="mr-4 flex items-center gap-2 text-sm text-slate-600">
-                          <input
-                            type="checkbox"
-                            checked={selectedNewsIds.includes(item.id)}
-                            onChange={() => toggleSelectedId(setSelectedNewsIds, item.id)}
-                          />
-                          Selecionar
-                        </label>
-                        <div>
-                            <h3 className={adminListTitle}>{item.title}</h3>
-                            <p className={adminListMeta}>
-                              {item.club_name} · {getWorkflowStatusLabel(item.news_status_name)} ·{' '}
-                              {formatAdminDateTime(item.published_at || item.created_at)}
-                            </p>
-                        </div>
-                      </div>
-                      <p className={adminListDesc}>{item.summary}</p>
-                      {item.editorial_history && item.editorial_history.length > 0 ? (
-                        <div className="mt-3 space-y-1">
-                          {item.editorial_history.slice(0, 3).map((history, index) => (
-                            <p key={`${item.id}-${index}`} className={adminListMeta}>
-                              {history.actor_name} ·{' '}
-                              {history.from_status
-                                ? `${getWorkflowStatusLabel(history.from_status)} -> `
-                                : ''}
-                              {getWorkflowStatusLabel(history.to_status)} ·{' '}
-                              {formatAdminDateTime(history.created_at || '')}
-                            </p>
-                          ))}
-                        </div>
-                      ) : null}
-                      <div className={adminListTools}>
-                        <button
-                          type="button"
-                          className={adminBtnEdit}
-                          onClick={() => handleEditNews(item)}
-                        >
-                          Editar
-                        </button>
-                        <button
-                          type="button"
-                          className={adminBtnDanger}
-                          disabled={deletingNewsId === item.id}
-                          onClick={() => handleDeleteNews(item.id)}
-                        >
-                          {deletingNewsId === item.id ? 'A apagar...' : 'Apagar'}
-                        </button>
-                      </div>
-                    </article>
-                  ))}
-                </div>
-
-                {!isLoadingNews ? (
-                  <div className={`${adminActions} mt-6`}>
-                    <p className={adminInfo}>
-                      {newsTotal} noticia(s) · pagina {newsPage} de {newsTotalPages || 1}
-                    </p>
-                    <button
-                      type="button"
-                      className={adminBtnSecondary}
-                      disabled={newsPage <= 1}
-                      onClick={() => setNewsPage((prev) => Math.max(1, prev - 1))}
-                    >
-                      Anterior
-                    </button>
-                    <button
-                      type="button"
-                      className={adminBtnSecondary}
-                      disabled={newsTotalPages === 0 || newsPage >= newsTotalPages}
-                      onClick={() => setNewsPage((prev) => prev + 1)}
-                    >
-                      Seguinte
-                    </button>
-                  </div>
-                ) : null}
-              </section>
-            </div>
           ) : null}
 
           {activeSection === 'atividades' ? (
