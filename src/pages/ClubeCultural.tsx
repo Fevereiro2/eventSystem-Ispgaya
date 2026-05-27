@@ -1,51 +1,39 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import Breadcrumbs from '../components/Breadcrumbs';
+import Breadcrumbs from '../components/ui/Breadcrumbs';
+import ClubCallToAction from '../components/ui/ClubCallToAction';
 import ClubRegistrationModal, {
   ClubRegistrationFormData
-} from '../components/ClubRegistrationModal';
-import Footer from '../components/Footer';
-import HeaderNav from '../components/HeaderNav';
-import TopBar from '../components/TopBar';
+} from '../components/ui/ClubRegistrationModal';
+import NewsHighlightsSection, { type NewsHighlightItem } from '../components/ui/NewsHighlightsSection';
+import Footer from '../components/layout/Footer';
+import HeaderNav from '../components/layout/HeaderNav';
+import BestBooksSection from '../components/sections/BestBooksSection.js';
+import TopBar from '../components/layout/TopBar';
 import {
   createClubRegistration,
   fetchPublicBooks,
   fetchPublicClub,
   fetchPublicClubs,
-  fetchPublicCategories,
   fetchPublicEvents,
   fetchPublicNews,
   fetchPublicSessions,
   InfoCulturaBook,
-  InfoCulturaCategory,
   InfoCulturaClub,
   InfoCulturaEvent,
   InfoCulturaNews,
   InfoCulturaSession,
   resolveInfoCulturaAssetUrl
-} from '../data/infoculturaApi';
+} from '../api/infoculturaApi';
 import {
-  adminBtnPrimary,
   adminBtnSecondary,
-  adminField,
-  adminFormGridSpaced,
-  adminInput,
-  adminLabel,
-  blockText,
   blockTitle,
+  blockText,
   container,
-  contentCard,
-  contentEmpty,
-  contentItemCard,
-  contentItemDate,
-  contentItemDesc,
-  contentItemHeader,
-  contentItemStatus,
-  contentItemTitle,
-  contentItems,
-  contentSection,
-  mainContent
+  mainContent,
+  sectionSpace
 } from '../styles/ui';
+import { getLocaleText, useLocale } from '../i18n/locale.js';
 
 type ClubeCulturalProps = {
   pageTitle?: string;
@@ -67,15 +55,15 @@ function matchesClubTerms(name: string, terms: string[]): boolean {
   return terms.some((term) => label.includes(normalizeLabel(term)));
 }
 
-function formatDate(value?: string | null): string {
-  if (!value) return 'Sem data';
+function formatDate(value?: string | null, locale: 'pt' | 'en' = 'pt'): string {
+  if (!value) return getLocaleText(locale, 'Sem data', 'No date');
 
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) {
     return value;
   }
 
-  return new Intl.DateTimeFormat('pt-PT', {
+  return new Intl.DateTimeFormat(locale === 'en' ? 'en-GB' : 'pt-PT', {
     dateStyle: 'medium',
     timeStyle: value.includes('T') ? 'short' : undefined
   }).format(date);
@@ -92,16 +80,13 @@ function ClubeCultural({
   routePath,
   clubSearchTerms
 }: ClubeCulturalProps) {
+  const { locale } = useLocale();
   const { clubId } = useParams();
   const [club, setClub] = useState<InfoCulturaClub | null>(null);
   const [newsItems, setNewsItems] = useState<InfoCulturaNews[]>([]);
   const [books, setBooks] = useState<InfoCulturaBook[]>([]);
-  const [categories, setCategories] = useState<InfoCulturaCategory[]>([]);
   const [sessions, setSessions] = useState<InfoCulturaSession[]>([]);
   const [events, setEvents] = useState<InfoCulturaEvent[]>([]);
-  const [fromDate, setFromDate] = useState('');
-  const [featuredOnly, setFeaturedOnly] = useState(false);
-  const [eventCategoryFilter, setEventCategoryFilter] = useState('all');
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState('');
   const [isRegistrationModalOpen, setIsRegistrationModalOpen] = useState(false);
@@ -118,13 +103,13 @@ function ClubeCultural({
       }
 
       if (!clubSearchTerms || clubSearchTerms.length === 0) {
-        throw new Error('Clube invalido.');
+        throw new Error(getLocaleText(locale, 'Clube ínvalido.', 'Invalid club.'));
       }
 
       const clubs = await fetchPublicClubs();
       const matchedClub = clubs.find((item) => matchesClubTerms(item.name, clubSearchTerms));
       if (!matchedClub) {
-        throw new Error('Clube nao encontrado.');
+        throw new Error(getLocaleText(locale, 'Clube Não encontrado.', 'Club not found.'));
       }
 
       return matchedClub.id;
@@ -133,11 +118,10 @@ function ClubeCultural({
     async function loadClub() {
       try {
         const resolvedClubId = await resolveClubId();
-        const [nextClub, nextNews, nextBooks, nextCategories, nextSessions, nextEvents] = await Promise.all([
+        const [nextClub, nextNews, nextBooks, nextSessions, nextEvents] = await Promise.all([
           fetchPublicClub(resolvedClubId),
           fetchPublicNews(resolvedClubId),
           fetchPublicBooks(resolvedClubId),
-          fetchPublicCategories(),
           fetchPublicSessions(resolvedClubId),
           fetchPublicEvents({ clubId: resolvedClubId })
         ]);
@@ -147,13 +131,12 @@ function ClubeCultural({
         setClub(nextClub);
         setNewsItems(nextNews);
         setBooks(nextBooks);
-        setCategories(nextCategories);
         setSessions(nextSessions);
         setEvents(nextEvents);
       } catch (error) {
         if (!active) return;
         const message =
-          error instanceof Error ? error.message : 'Nao foi possivel carregar o clube.';
+          error instanceof Error ? error.message : getLocaleText(locale, 'Não foi possivel carregar o clube.', 'Unable to load the club.');
         setLoadError(message);
       } finally {
         if (active) {
@@ -167,36 +150,73 @@ function ClubeCultural({
     return () => {
       active = false;
     };
-  }, [clubId, clubSearchTerms]);
+  }, [clubId, clubSearchTerms, locale]);
 
-  const filteredNews = useMemo(
-    () => newsItems.filter((item) => isOnOrAfterDate(item.published_at, fromDate)),
-    [newsItems, fromDate]
-  );
-  const filteredSessions = useMemo(
-    () => sessions.filter((item) => isOnOrAfterDate(item.session_date, fromDate)),
-    [sessions, fromDate]
-  );
-  const filteredEvents = useMemo(
+  const filteredNews = useMemo(() => newsItems.filter((item) => isOnOrAfterDate(item.published_at, '')), [newsItems]);
+  const filteredSessions = useMemo(() => sessions.filter((item) => isOnOrAfterDate(item.session_date, '')), [sessions]);
+  const filteredEvents = useMemo(() => events.filter((item) => isOnOrAfterDate(item.event_date, '')), [events]);
+  const filteredBooks = books;
+  const highlightedNews = useMemo<NewsHighlightItem[]>(
     () =>
-      events.filter(
-        (item) =>
-          isOnOrAfterDate(item.event_date, fromDate) &&
-          (eventCategoryFilter === 'all' || item.category_ids.includes(Number(eventCategoryFilter)))
-      ),
-    [events, fromDate, eventCategoryFilter]
+      [...filteredNews]
+        .sort((left, right) => {
+          const leftTime = new Date(left.published_at || left.created_at).getTime();
+          const rightTime = new Date(right.published_at || right.created_at).getTime();
+          return rightTime - leftTime;
+        })
+        .slice(0, 3)
+        .map((item) => ({
+          title: item.title,
+          href: `/vida-academica/noticias/${item.id}`,
+          internal: true,
+          excerpt: item.summary,
+          image: item.image ? resolveInfoCulturaAssetUrl(item.image) : '',
+          imageAlt: item.title,
+          publishedAt: item.published_at || item.created_at,
+          publishedLabel: formatDate(item.published_at || item.created_at, locale),
+          tags: item.club_name
+            ? [
+                {
+                  label: `#${normalizeLabel(item.club_name).replace(/\s+/g, '')}`,
+                  href: '/vida-academica/noticias'
+                }
+              ]
+            : []
+        })),
+    [filteredNews, locale]
   );
-  const filteredBooks = useMemo(
-    () => books.filter((item) => (featuredOnly ? item.is_featured : true)),
-    [books, featuredOnly]
+  const highlightedEvents = useMemo<NewsHighlightItem[]>(
+    () =>
+      [...filteredEvents]
+        .sort((left, right) => {
+          const leftTime = new Date(left.start_date || left.event_date).getTime();
+          const rightTime = new Date(right.start_date || right.event_date).getTime();
+          return rightTime - leftTime;
+        })
+        .slice(0, 3)
+        .map((item) => ({
+          title: item.title,
+          href: `/vida-academica/eventos/${item.id}`,
+          internal: true,
+          excerpt: item.description,
+          image: item.image ? resolveInfoCulturaAssetUrl(item.image) : '',
+          imageAlt: item.title,
+          publishedAt: item.start_date || item.event_date,
+          publishedLabel: formatDate(item.start_date || item.event_date, locale),
+          tags: item.categories.map((category) => ({
+            label: `#${normalizeLabel(category.name).replace(/\s+/g, '')}`,
+            href: '/vida-academica/eventos'
+          }))
+        })),
+    [filteredEvents, locale]
   );
 
-  const title = pageTitle || club?.name || 'Clube Cultural';
+  const title = pageTitle || club?.name || getLocaleText(locale, 'Clube Cultural', 'Cultural Club');
   const description =
     pageDescription ||
     club?.mission ||
     club?.description ||
-    'Pagina publica do clube cultural.';
+    getLocaleText(locale, 'Página pública do clube cultural.', 'Public page for the cultural club.');
   const currentHref =
     routePath || (clubId ? `/laboratorio-cultural/clubes/${clubId}` : '/laboratorio-cultural');
 
@@ -208,11 +228,17 @@ function ClubeCultural({
 
     try {
       await createClubRegistration(club.id, data);
-      setRegistrationFeedback('Inscricao enviada com sucesso. Aguarda validacao pelo clube.');
+      setRegistrationFeedback(
+        getLocaleText(
+          locale,
+          'Inscrição enviada com sucesso. Aguarda validação pelo clube.',
+          'Registration sent successfully. Wait for club validation.'
+        )
+      );
       setIsRegistrationModalOpen(false);
     } catch (error) {
       const message =
-        error instanceof Error ? error.message : 'Nao foi possivel enviar a inscricao.';
+        error instanceof Error ? error.message : getLocaleText(locale, 'Não foi possivel enviar a inscrição.', 'Unable to submit the registration.');
       setRegistrationError(message);
     } finally {
       setIsSubmittingRegistration(false);
@@ -226,266 +252,172 @@ function ClubeCultural({
       <Breadcrumbs
         title={title}
         description={description}
-        parentLabel="Laboratorio Cultural"
+        parentLabel={getLocaleText(locale, 'Laboratório Cultural', 'Cultural Lab')}
         parentHref="/laboratorio-cultural"
         currentLabel={title}
         currentHref={currentHref}
       />
 
       <main className={mainContent}>
-        <section className={contentSection}>
-          <div className={container}>
-            <div className={contentCard}>
+        <div className={`${container} ${sectionSpace}`}>
+          {isLoading ? (
+            <p className="text-sm text-slate-600">
+              {getLocaleText(locale, 'A carregar clube...', 'Loading club...')}
+            </p>
+          ) : loadError ? (
+            <p className="text-sm text-slate-600">{loadError}</p>
+          ) : (
+            <>
+              <h2 className={blockTitle}>{getLocaleText(locale, 'Aqui podes:', 'Here you can:')}</h2>
+              <div className="space-y-4">
+                {description
+                  .split('\n\n')
+                  .filter((para) => para.trim().length > 0)
+                  .map((para, idx) => (
+                    <p key={idx} className={blockText}>
+                      {para.trim()}
+                    </p>
+                  ))}
+              </div>
+
               {club?.image ? (
                 <img
                   src={resolveInfoCulturaAssetUrl(club.image)}
                   alt={title}
-                  className="mb-6 h-64 w-full rounded-2xl object-cover"
+                  className="mx-auto mb-8 mt-8 aspect-[3/1] w-full max-w-5xl rounded-sm object-cover shadow-xl"
                 />
               ) : null}
               <h2 className={blockTitle}>{title}</h2>
-              <p className={blockText}>{description}</p>
-
-              {!isLoading && !loadError && club?.enable_registrations ? (
-                <div className="mt-6 flex flex-wrap items-center gap-3">
-                  <button
-                    type="button"
-                    className={adminBtnPrimary}
-                    onClick={() => {
-                      setRegistrationFeedback('');
-                      setRegistrationError('');
-                      setIsRegistrationModalOpen(true);
-                    }}
-                  >
-                    Inscrever-me neste clube
-                  </button>
-                  <p className="text-sm text-slate-600">
-                    O pedido sera enviado para validacao da equipa do clube.
-                  </p>
+              
+              <div className="my-8 rounded-xl p-8">
+                <div className="space-y-6">
+                  {description
+                    .split('\n\n')
+                    .filter((para) => para.trim().length > 0)
+                    .map((para, idx) => (
+                      <p 
+                        key={idx} 
+                        className="text-base leading-relaxed text-slate-700"
+                      >
+                        {para.trim()}
+                      </p>
+                    ))}
                 </div>
+              </div>
+
+{!isLoading && !loadError && club ? (
+                <ClubCallToAction
+                  locale={locale}
+                  enabled={Boolean(club.enable_registrations)}
+                  onClick={() => {
+                    setRegistrationFeedback('');
+                    setRegistrationError('');
+                    setIsRegistrationModalOpen(true);
+                  }}
+                  statusText={
+                    club.enable_registrations
+                      ? undefined
+                      : getLocaleText(
+                          locale,
+                          'As inscrições deste clube estão encerradas neste momento.',
+                          'Registrations for this club are currently closed.'
+                        )
+                  }
+                />
               ) : null}
 
               {registrationFeedback ? (
-                <p className="mt-4 rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-700">
+                <p className="mb-8 rounded-sm bg-green-50 px-4 py-3 text-sm text-green-700">
                   {registrationFeedback}
                 </p>
               ) : null}
 
-              {!isLoading && !loadError ? (
-                <div className={`${adminFormGridSpaced} mt-8`}>
-                  <div className={adminField}>
-                    <label className={adminLabel} htmlFor="club-filter-date">
-                      Mostrar a partir de
-                    </label>
-                    <input
-                      id="club-filter-date"
-                      type="date"
-                      className={adminInput}
-                      value={fromDate}
-                      onChange={(event) => setFromDate(event.target.value)}
-                    />
-                  </div>
-
-                  <div className={adminField}>
-                    <label className={adminLabel} htmlFor="club-filter-featured">
-                      Livros em destaque
-                    </label>
-                    <select
-                      id="club-filter-featured"
-                      className={adminInput}
-                      value={featuredOnly ? 'sim' : 'todos'}
-                      onChange={(event) => setFeaturedOnly(event.target.value === 'sim')}
-                    >
-                      <option value="todos">Todos</option>
-                      <option value="sim">Apenas destaque</option>
-                    </select>
-                  </div>
-
-                  <div className={adminField}>
-                    <label className={adminLabel} htmlFor="club-filter-category">
-                      Categoria de evento
-                    </label>
-                    <select
-                      id="club-filter-category"
-                      className={adminInput}
-                      value={eventCategoryFilter}
-                      onChange={(event) => setEventCategoryFilter(event.target.value)}
-                    >
-                      <option value="all">Todas</option>
-                      {categories.map((category) => (
-                        <option key={category.id} value={category.id}>
-                          {category.name}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div className="flex items-end">
-                    <button
-                      type="button"
-                      className={adminBtnSecondary}
-                      onClick={() => {
-                        setFromDate('');
-                        setFeaturedOnly(false);
-                        setEventCategoryFilter('all');
-                      }}
-                    >
-                      Limpar filtros
-                    </button>
-                  </div>
-                </div>
+              {filteredNews.length === 0 &&
+              filteredBooks.length === 0 &&
+              filteredSessions.length === 0 &&
+              filteredEvents.length === 0 ? (
+                <p className="mt-8 text-sm text-slate-600">
+                  {getLocaleText(
+                    locale,
+                    'Ainda não existem conteúdos publicados para este clube.',
+                    'There are no published contents for this club yet.'
+                  )}
+                </p>
               ) : null}
 
-              {isLoading ? (
-                <p className={contentEmpty}>A carregar clube...</p>
-              ) : loadError ? (
-                <p className={contentEmpty}>{loadError}</p>
-              ) : (
-                <>
-                  {filteredNews.length === 0 &&
-                  filteredBooks.length === 0 &&
-                  filteredSessions.length === 0 &&
-                  filteredEvents.length === 0 ? (
-                    <p className={contentEmpty}>
-                      Ainda nao existem conteudos publicados para os filtros atuais.
-                    </p>
-                  ) : null}
+              {highlightedNews.length > 0 || highlightedEvents.length > 0 ? (
+                <section className="mb-12 mt-12 bg-white">
+                  <div className="grid w-full grid-cols-1 gap-12 xl:grid-cols-2 xl:gap-14">
+                    <NewsHighlightsSection
+                      title={getLocaleText(locale, 'Notícias', 'News')}
+                      viewAllHref="/vida-academica/noticias"
+                      viewAllInternal
+                      items={highlightedNews}
+                      className="w-full"
+                    />
+                    <NewsHighlightsSection
+                      title={getLocaleText(locale, 'Eventos', 'Events')}
+                      viewAllHref="/vida-academica/eventos"
+                      viewAllInternal
+                      items={highlightedEvents}
+                      className="w-full"
+                    />
+                  </div>
+                </section>
+              ) : null}
 
-                  {filteredNews.length > 0 ? (
-                    <div className="mt-8">
-                      <h3 className={blockTitle}>Noticias</h3>
-                      <div className={contentItems}>
-                        {filteredNews.map((item) => (
-                          <article key={item.id} className={contentItemCard}>
-                            {item.image ? (
-                              <img
-                                src={resolveInfoCulturaAssetUrl(item.image)}
-                                alt={item.title}
-                                className="mb-4 h-44 w-full rounded-xl object-cover"
-                              />
-                            ) : null}
-                            <div className={contentItemHeader}>
-                              <h4 className={contentItemTitle}>{item.title}</h4>
-                              <span className={contentItemStatus}>{item.news_status_name}</span>
-                            </div>
-                            <p className={contentItemDate}>{formatDate(item.published_at)}</p>
-                            <p className={contentItemDesc}>{item.summary}</p>
-                            <Link
-                              to={`/laboratorio-cultural/noticias/${item.id}`}
-                              className={adminBtnSecondary}
-                            >
-                              Ver detalhe
-                            </Link>
-                          </article>
-                        ))}
-                      </div>
+              {filteredSessions.length > 0 ? (
+                <section className="mt-12">
+                  <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
+                    <div>
+                      <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#dd8609]">
+                        {getLocaleText(locale, 'Sessões', 'Sessions')}
+                      </p>
+                      <h2 className="mt-3 font-heading text-3xl font-bold tracking-tight text-black xl:text-4xl">
+                        {getLocaleText(locale, 'Atividades em destaque', 'Featured activities')}
+                      </h2>
                     </div>
-                  ) : null}
+                    <Link to="/laboratorio-cultural/agenda" className={adminBtnSecondary}>
+                      {getLocaleText(locale, 'Explorar agenda', 'Explore agenda')}
+                    </Link>
+                  </div>
 
-                  {filteredSessions.length > 0 ? (
-                    <div className="mt-8">
-                      <h3 className={blockTitle}>Sessoes</h3>
-                      <div className={contentItems}>
-                        {filteredSessions.map((item) => (
-                          <article key={item.id} className={contentItemCard}>
-                            <div className={contentItemHeader}>
-                              <h4 className={contentItemTitle}>{item.title}</h4>
-                              <span className={contentItemStatus}>{item.name}</span>
-                            </div>
-                            <p className={contentItemDate}>
-                              {formatDate(item.session_date)} · {formatDate(item.start_date)}
-                            </p>
-                            <p className={contentItemDesc}>{item.description}</p>
-                            <Link
-                              to={`/laboratorio-cultural/sessoes/${item.id}`}
-                              className={adminBtnSecondary}
-                            >
-                              Ver detalhe
-                            </Link>
-                          </article>
-                        ))}
-                      </div>
-                    </div>
-                  ) : null}
+                  <div className="grid gap-6 lg:grid-cols-2">
+                    {filteredSessions.slice(0, 4).map((item) => (
+                      <article key={item.id} className="bg-white py-5">
+                        <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#dd8609]">
+                          {formatDate(item.session_date, locale)}
+                        </p>
+                        <h3 className="mt-2 text-2xl font-bold text-slate-900">{item.title}</h3>
+                        <p className="mt-1 text-sm font-semibold text-slate-500">{item.name}</p>
+                        <p className="mt-3 line-clamp-3 text-sm leading-6 text-slate-600">{item.description}</p>
+                        <Link
+                          to={`/laboratorio-cultural/sessoes/${item.id}`}
+                          className="mt-4 inline-flex text-sm font-bold text-[#dd8609] hover:underline"
+                        >
+                          {getLocaleText(locale, 'Ver detalhe', 'View details')}
+                        </Link>
+                      </article>
+                    ))}
+                  </div>
+                </section>
+              ) : null}
 
-                  {filteredEvents.length > 0 ? (
-                    <div className="mt-8">
-                      <h3 className={blockTitle}>Eventos</h3>
-                      <div className={contentItems}>
-                        {filteredEvents.map((item) => (
-                          <article key={item.id} className={contentItemCard}>
-                            {item.image ? (
-                              <img
-                                src={resolveInfoCulturaAssetUrl(item.image)}
-                                alt={item.title}
-                                className="mb-4 h-44 w-full rounded-xl object-cover"
-                              />
-                            ) : null}
-                            <div className={contentItemHeader}>
-                              <h4 className={contentItemTitle}>{item.title}</h4>
-                              <span className={contentItemStatus}>{item.status}</span>
-                            </div>
-                            <p className={contentItemDate}>
-                              {formatDate(item.event_date)} ·{' '}
-                              {item.location || item.city || 'Local por definir'}
-                            </p>
-                            <p className={contentItemDesc}>{item.description}</p>
-                            {item.categories.length > 0 ? (
-                              <p className={contentItemDate}>
-                                {item.categories.map((category) => category.name).join(', ')}
-                              </p>
-                            ) : null}
-                            <Link
-                              to={`/laboratorio-cultural/eventos/${item.id}`}
-                              className={adminBtnSecondary}
-                            >
-                              Ver detalhe
-                            </Link>
-                          </article>
-                        ))}
-                      </div>
-                    </div>
-                  ) : null}
-
-                  {filteredBooks.length > 0 ? (
-                    <div className="mt-8">
-                      <h3 className={blockTitle}>Livros</h3>
-                      <div className={contentItems}>
-                        {filteredBooks.map((item) => (
-                          <article key={item.id} className={contentItemCard}>
-                            {item.cover_image ? (
-                              <img
-                                src={resolveInfoCulturaAssetUrl(item.cover_image)}
-                                alt={item.title}
-                                className="mb-4 h-44 w-full rounded-xl object-cover"
-                              />
-                            ) : null}
-                            <div className={contentItemHeader}>
-                              <h4 className={contentItemTitle}>{item.title}</h4>
-                              <span className={contentItemStatus}>
-                                {item.is_featured ? 'Destaque' : 'Livro'}
-                              </span>
-                            </div>
-                            <p className={contentItemDate}>
-                              {item.author} · {item.publication_year}
-                            </p>
-                            <p className={contentItemDesc}>{item.summary}</p>
-                            <Link
-                              to={`/laboratorio-cultural/livros/${item.id}`}
-                              className={adminBtnSecondary}
-                            >
-                              Ver detalhe
-                            </Link>
-                          </article>
-                        ))}
-                      </div>
-                    </div>
-                  ) : null}
-                </>
-              )}
-            </div>
-          </div>
-        </section>
+              <BestBooksSection
+                books={filteredBooks}
+                locale={locale}
+                title={getLocaleText(locale, 'Livros', 'Books')}
+                description={getLocaleText(
+                  locale,
+                  'Livros selecionados para apoiar as atividades e recomendações deste clube.',
+                  'Books selected to support this club activities and recommendations.'
+                )}
+                detailBaseHref="/laboratorio-cultural/livros"
+                limit={10}
+              />
+            </>
+          )}
+        </div>
       </main>
 
       <ClubRegistrationModal
