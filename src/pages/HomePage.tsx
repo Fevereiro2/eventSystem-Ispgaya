@@ -1,26 +1,35 @@
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
-import Footer from '../components/Footer';
-import HeaderNav from '../components/HeaderNav';
+import Footer from '../components/layout/Footer';
+import HeaderNav from '../components/layout/HeaderNav';
 import NewsHighlightsSection, {
   type NewsHighlightItem
-} from '../components/NewsHighlightsSection';
-import TopBar from '../components/TopBar';
-import heroWelcomeImage from '../assets/backgroundphotos/bem-vindos-estudantes-ispgaya.webp';
-import heroStudyImage from '../assets/backgroundphotos/estudar-no-ispagaya.webp';
-import heroEmployabilityImage from '../assets/backgroundphotos/empregabilidade-ispgaya.webp';
-import aondefuturo from '../assets/homepage/ondefuturo.webp'
+} from '../components/ui/NewsHighlightsSection';
+import BestBooksSection from '../components/sections/BestBooksSection.js';
+import TopBar from '../components/layout/TopBar';
+import heroWelcomeImage from '../assets/homepage/candidatar/ispg-students-admissions.webp';
+import heroStudyImage from '../assets/homepage/candidatar/ispgaya-students-grants.webp';
+import heroEmployabilityImage from '../assets/homepage/candidatar/ispgaya-students-help.webp';
+import imagem1 from '../assets/backgroundphotos/bem-vindos-estudantes-ispgaya.webp';
+import imagem2 from '../assets/backgroundphotos/empregabilidade-ispgaya.webp';
+import imagem3 from '../assets/backgroundphotos/estudar-no-ispagaya.webp';
+import aondefuturo from '../assets/homepage/ondefuturo.webp';
 import helix from '../assets/homepage/destaques/helix-ispgaya-site.webp';
-import internacionalStudents from '../assets/homepage/destaques/2.webp';
 import mais23 from '../assets/homepage/destaques/3.webp';
 import manuel from '../assets/homepage/testemunhos/2.webp';
-import maribel from '../assets/homepage/testemunhos/1.webp'
+import maribel from '../assets/homepage/testemunhos/1.webp';
 import {
+  fetchPublicBooks,
   fetchPublicEvents,
   fetchPublicNews,
+  InfoCulturaBook,
   resolveInfoCulturaAssetUrl
-} from '../data/infoculturaApi';
+} from '../api/infoculturaApi';
 import { container, mainContent } from '../styles/ui';
+import { getLocaleText, useLocale } from '../i18n/locale.js';
+import { buildIspgayaUrl } from '../i18n/urls.js';
+
+  
 
 type HeroSlide = {
   title: string;
@@ -49,117 +58,172 @@ type TestimonialSlide = {
   image: string;
 };
 
-const studyLinks = [
-  { label: 'CTeSP', href: 'https://ispgaya.pt/pt/ensino/oferta-formativa/ctesp' },
-  { label: 'Licenciaturas', href: 'https://ispgaya.pt/pt/ensino/oferta-formativa/licenciaturas' },
-  { label: 'Mestrados', href: 'https://ispgaya.pt/pt/ensino/oferta-formativa/mestrados' },
-  {
-    label: 'Pós-Graduações',
-    href: 'https://ispgaya.pt/pt/ensino/programas-avancados/pos-graduacoes'
-  }
-];
+function getStudyLinks(locale: 'pt' | 'en') {
+  return [
+    { label: getLocaleText(locale, 'CTeSP', 'HND'), href: buildIspgayaUrl(locale, '/ensino/oferta-formativa/ctesp') },
+    { label: getLocaleText(locale, 'Licenciaturas', 'Bachelor Degrees'), href: buildIspgayaUrl(locale, '/ensino/oferta-formativa/licenciaturas') },
+    { label: getLocaleText(locale, 'Mestrados', 'Masters'), href: buildIspgayaUrl(locale, '/ensino/oferta-formativa/mestrados') },
+    {
+      label: getLocaleText(locale, 'Pós-Graduações', 'Postgraduate Studies'),
+      href: buildIspgayaUrl(locale, '/ensino/programas-avancados/pos-graduacoes')
+    }
+  ];
+}
 
-const heroSlides: HeroSlide[] = [
-  {
-    title: 'Bem-vindo ao Instituto Superior Politécnico Gaya',
-    text:
-      'Aqui, é onde o teu futuro começa!\nNo ISPGAYA vais adquirir novos conhecimentos, desenvolver novas competências e experienciar um clima académico único.',
-    image: heroWelcomeImage
-  },
-  {
-    title: 'Dinamiza as tuas capacidades connosco',
-    text:
-      'Temos à tua disposição instalações modernas, estreita proximidade entre o corpo docente e os estudantes, assim como, um excelente ambiente académico.',
-    image: heroStudyImage
-  },
-  {
-    title: 'O mercado de trabalho espera por ti',
-    text:
-      'Temos como objetivo dar-te as ferramentas necessárias para criar uma carreira com significado e tomares as melhores decisões para a tua vida profissional e pessoal.',
-    image: heroEmployabilityImage
-  }
-];
+function getHeroSlides(locale: 'pt' | 'en'): HeroSlide[] {
+  return [
+    {
+      title: getLocaleText(locale, 'Bem-vindo ao Instituto Superior Politécnico Gaya', 'Welcome to the Polytechnic Institute of Gaya'),
+      text: getLocaleText(
+        locale,
+        'Aqui, é onde o teu futuro começa!\nNo ISPGAYA vais adquirir novos conhecimentos, desenvolver novas competências e experienciar um clima académico único.',
+        'This is where your future begins!\nAt ISPGAYA you will gain new knowledge, develop new skills and experience a unique academic environment.'
+      ),
+      image: imagem1
+    },
+    {
+      title: getLocaleText(locale, 'Dinamiza as tuas capacidades connosco', 'Develop your skills with us'),
+      text: getLocaleText(
+        locale,
+        'Temos à tua disposição instalações modernas, estreita proximidade entre o corpo docente e os estudantes, assim como, um excelente ambiente académico.',
+        'We offer modern facilities, close proximity between faculty and students, and an excellent academic atmosphere.'
+      ),
+      image: imagem2
+    },
+    {
+      title: getLocaleText(locale, 'O mercado de trabalho espera por ti', 'The job market is waiting for you'),
+      text: getLocaleText(
+        locale,
+        'Temos como objetivo dar-te as ferramentas necessárias para criar uma carreira com significado e tomares as melhores decisões para a tua vida profissional e pessoal.',
+        'Our goal is to give you the tools you need to build a meaningful career and make the best decisions for your professional and personal life.'
+      ),
+      image: imagem3
+    }
+  ];
+}
 
-const highlightCards: HighlightCard[] = [
-  {
-    title: 'O ISPGAYA integra a AMBA e BGA',
-    text: 'ISPGAYA tem o orgulho de anunciar a sua filiação oficial na Association of MBAs (AMBA) e na Business Graduates Association (BGA).',
-    href: 'https://ispgaya.pt/pt/vida-academica/noticias/o-ispgaya-integra-a-amba-e-bga',
-    image: internacionalStudents
-  },
-  {
-    title: 'Regime M23 - Candidaturas Abertas!',
-    text: 'Estão abertas as candidaturas ao Regime M23!',
-    href: 'https://ispgaya.pt/pt/ensino/candidaturas/licenciaturas/m-23',
-    image: mais23
-  },
-  {
-    title: 'O ISPGAYA junta-se à Q-Helix Alliance!',
-    text:
-      'É com grande satisfação que anunciamos que o ISPGAYA – Instituto Superior Politécnico de Gaia passou a integrar oficialmente a Q-Helix Alliance, uma rede europeia em crescimento dedicada ao reforço da cooperação no ensino superior, investigação e inovação.',
-    href: 'https://ispgaya.pt/pt/vida-academica/noticias/o-ispgaya-junta-se-a-q-helix-alliance',
-    image: helix
-  }
-];
+function getHighlightCards(locale: 'pt' | 'en'): HighlightCard[] {
+  return [
+    {
+      title: getLocaleText(locale, 'Laboratório Cultural', 'Cultural Laboratory'),
+      text: getLocaleText(
+        locale,
+        'Projeto cultural aberto a quem quer participar em atividades nas áreas da musica, teatro e leitura.',
+        'A cultural project open to anyone who wants to take part in activities in music, theatre and reading.'
+      ),
+      href: '/laboratorio-cultural',
+      image: helix
+    },
+    {
+      title: getLocaleText(locale, 'Regime M23 - Candidaturas Abertas!', 'M23 Scheme - Applications Open!'),
+      text: getLocaleText(locale, 'Estão abertas as candidaturas ao Regime M23!', 'Applications for the M23 scheme are now open!'),
+      href: buildIspgayaUrl(locale, '/ensino/candidaturas/licenciaturas/m-23'),
+      image: mais23
+    },
+    {
+      title: getLocaleText(locale, 'O ISPGAYA junta-se à Q-Helix Alliance!', 'ISPGAYA joins Q-Helix Alliance!'),
+      text: getLocaleText(
+        locale,
+        'É com grande satisfação que anunciamos que o ISPGAYA – Instituto Superior Politécnico de Gaia passou a integrar oficialmente a Q-Helix Alliance, uma rede europeia em crescimento dedicada ao reforço da cooperação no ensino superior, investigação e inovação.',
+        'We are pleased to announce that ISPGAYA - Instituto Superior Politécnico de Gaia has officially joined the Q-Helix Alliance, a growing European network dedicated to strengthening cooperation in higher education, research and innovation.'
+      ),
+      href: buildIspgayaUrl(locale, '/vida-academica/noticias/o-ispgaya-junta-se-a-q-helix-alliance'),
+      image: helix
+    }
+  ];
+}
 
-const metrics = [
-  {
-    value: '36',
-    title: 'Experiência',
-    text:
-      'Desde 1990 a formar futuros empreendedores. Somos uma instituição de ensino de referência há mais de 30 anos em Vila Nova de Gaia. Quer pela qualidade dos seus cursos, quer pelo corpo docente qualificado, quer pelo clima académico estimulante e diferenciador.'
-  },
-  {
-    value: '+3.5k',
-    title: 'Profissionais Formados',
-    text:
-      'A formação continua a ser um dos nossos principais pilares. Somos reconhecidos pela formação de excelência e já formamos mais de 3500 profissionais de sucesso. Aqui os estudantes têm oportunidade de construir o seu futuro pessoal e profissional.'
-  },
-  {
-    value: '+200',
-    title: 'Empresas',
-    text:
-      'Trabalhamos em proximidade com as empresas, estando atentos às suas necessidades e a par das suas aspirações. Temos protocolos celebrados com mais de 200 empresas que garantem a qualidade dos estágios e permitem a integração de estudantes no mercado de trabalho.'
-  }
-];
+function getMetrics(locale: 'pt' | 'en') {
+  return [
+    {
+      value: '36',
+      title: getLocaleText(locale, 'Experiência', 'Experience'),
+      text: getLocaleText(
+        locale,
+        'Desde 1990 a formar futuros empreendedores. Somos uma instituição de ensino de referência há mais de 30 anos em Vila Nova de Gaia. Quer pela qualidade dos seus cursos, quer pelo corpo docente qualificado, quer pelo clima académico estimulante e diferenciador.',
+        'Since 1990, we have been shaping future entrepreneurs. We have been a benchmark higher education institution for more than 30 years in Vila Nova de Gaia, known for the quality of our courses, our qualified faculty and our stimulating academic atmosphere.'
+      )
+    },
+    {
+      value: '+3.5k',
+      title: getLocaleText(locale, 'Profissionais Formados', 'Graduates'),
+      text: getLocaleText(
+        locale,
+        'A formação continua a ser um dos nossos principais pilares. Somos reconhecidos pela formação de excelência e já formamos mais de 3500 profissionais de sucesso. Aqui os estudantes têm oportunidade de construir o seu futuro pessoal e profissional.',
+        'Training remains one of our main pillars. We are recognized for excellence in education and have already trained more than 3,500 successful professionals. Here students have the opportunity to build their personal and professional future.'
+      )
+    },
+    {
+      value: '+200',
+      title: getLocaleText(locale, 'Empresas', 'Companies'),
+      text: getLocaleText(
+        locale,
+        'Trabalhamos em proximidade com as empresas, estando atentos às suas necessidades e a par das suas aspirações. Temos protocolos celebrados com mais de 200 empresas que garantem a qualidade dos estágios e permitem a integração de estudantes no mercado de trabalho.',
+        'We work closely with companies, paying attention to their needs and aspirations. We have agreements with more than 200 companies that ensure quality internships and help students enter the job market.'
+      )
+    }
+  ];
+}
 
-const supportSlides: SupportSlide[] = [
-  {
-    title: 'Quero Candidatar-me',
-    text: 'Sabias que podes realizar a tua candidatura online? Começa aqui a candidatura a um dos nossos cursos.',
-    href: 'https://inforestudante.ispgaya.pt/nonio/security/preRegisto.do?origem=CANDIDATURAS',
-    image: heroWelcomeImage
-  },
-  {
-    title: 'Bolsas e Apoios',
-    text: 'Fica a saber como funcionam as bolsas de estudo e os apoios disponíveis para candidatos.',
-    href: 'https://ispgaya.pt/pt/ensino/bolsas-e-financiamento',
-    image: heroStudyImage
-  },
-  {
-    title: 'Acesso ao Ensino Superior',
-    text: 'Existem várias formas de ingressar no ISPGAYA. Aqui tens um ponto de entrada simples para perceber tudo.',
-    href: 'https://ispgaya.pt/pt/ensino/candidaturas',
-    image: heroEmployabilityImage
-  }
-];
+function getSupportSlides(locale: 'pt' | 'en'): SupportSlide[] {
+  return [
+    {
+      title: getLocaleText(locale, 'Quero Candidatar-me', 'I want to apply'),
+      text: getLocaleText(
+        locale,
+        'Sabias que podes realizar a tua candidatura online? Começa aqui a candidatura a um dos nossos cursos.',
+        'Did you know you can submit your application online? Start here for one of our courses.'
+      ),
+      href: 'https://inforestudante.ispgaya.pt/nonio/security/preRegisto.do?origem=CANDIDATURAS',
+      image: heroWelcomeImage
+    },
+    {
+      title: getLocaleText(locale, 'Bolsas e Apoios', 'Scholarships and Support'),
+      text: getLocaleText(
+        locale,
+        'Fica a saber como funcionam as bolsas de estudo e os apoios disponíveis para candidatos.',
+        'Learn how scholarships and support options work for applicants.'
+      ),
+      href: buildIspgayaUrl(locale, '/ensino/bolsas-e-financiamento'),
+      image: heroStudyImage
+    },
+    {
+      title: getLocaleText(locale, 'Acesso ao Ensino Superior', 'Higher Education Access'),
+      text: getLocaleText(
+        locale,
+        'Existem várias formas de ingressar no ISPGAYA. Aqui tens um ponto de entrada simples para perceber tudo.',
+        'There are several ways to join ISPGAYA. Here is a simple entry point to understand everything.'
+      ),
+      href: buildIspgayaUrl(locale, '/ensino/candidaturas'),
+      image: heroEmployabilityImage
+    }
+  ];
+}
 
-const testimonialSlides: TestimonialSlide[] = [
-  {
-    quote:
-      'De forma a consolidar os conhecimentos na área da segurança de informação e cibersegurança, optei pelo mestrado do ISPGAYA pela diversidade de oportunidades e pela transversalidade das competências adquiridas.',
-    name: 'Manuel Oliveira',
-    role: 'Estudante Mestrado',
-    image: manuel
-  },
-  {
-    quote:
-      'Escolhi o ISPGAYA por recomendação de outros alunos e da mesma forma também, eu o recomendo. A maioria dos professores e colaboradores que me acompanharam ao longo da minha licenciatura em gestão foram sempre muito prestáveis e cada um com a sua função proporcionaram me momento inesquecíveis que me enriqueceram para o meu futuro. Por isso quero desde já agradecer a todas as pessoas que me acompanharam, porque em cada dia que estiveram presentes na minha vida deixaram o seu contributo para a minha realização pessoal e profissional, muito obrigada.',
-    name: 'Maribel Carvalho',
-    role: 'Estudante ISPGAYA',
-    image: maribel
-  }
-];
+function getTestimonialSlides(locale: 'pt' | 'en'): TestimonialSlide[] {
+  return [
+    {
+      quote: getLocaleText(
+        locale,
+        'De forma a consolidar os conhecimentos na área da segurança de informação e cibersegurança, optei pelo mestrado do ISPGAYA pela diversidade de oportunidades e pela transversalidade das competências adquiridas.',
+        'To consolidate my knowledge in information security and cybersecurity, I chose ISPGAYA\'s master\'s degree for the diversity of opportunities and the breadth of skills I acquired.'
+      ),
+      name: 'Manuel Oliveira',
+      role: getLocaleText(locale, 'Estudante de Mestrado', 'Master\'s student'),
+      image: manuel
+    },
+    {
+      quote: getLocaleText(
+        locale,
+        'Escolhi o ISPGAYA por recomendação de outros alunos e da mesma forma também, eu o recomendo. A maioria dos professores e colaboradores que me acompanharam ao longo da minha licenciatura em gestão foram sempre muito prestáveis e cada um com a sua função proporcionaram me momento inesquecíveis que me enriqueceram para o meu futuro. Por isso quero desde já agradecer a todas as pessoas que me acompanharam, porque em cada dia que estiveram presentes na minha vida deixaram o seu contributo para a minha realização pessoal e profissional, muito obrigada.',
+        'I chose ISPGAYA on the recommendation of other students and I would recommend it as well. Most of the teachers and staff who supported me throughout my management degree were always very helpful, and each of them contributed unforgettable moments that enriched my future. I would like to thank everyone who supported me, because every day they were present in my life they contributed to my personal and professional growth.'
+      ),
+      name: 'Maribel Carvalho',
+      role: getLocaleText(locale, 'Estudante ISPGAYA', 'ISPGAYA student'),
+      image: maribel
+    }
+  ];
+}
 
 function HomePage() {
   const [activeHero, setActiveHero] = useState(0);
@@ -169,6 +233,14 @@ function HomePage() {
   const testimonialTouchStartX = useRef<number | null>(null);
   const [homepageNewsHighlights, setHomepageNewsHighlights] = useState<NewsHighlightItem[]>([]);
   const [homepageEventHighlights, setHomepageEventHighlights] = useState<NewsHighlightItem[]>([]);
+  const [homepageBookHighlights, setHomepageBookHighlights] = useState<InfoCulturaBook[]>([]);
+  const { locale } = useLocale();
+  const studyLinks = getStudyLinks(locale);
+  const heroSlides = getHeroSlides(locale);
+  const highlightCards = getHighlightCards(locale);
+  const metrics = getMetrics(locale);
+  const supportSlides = getSupportSlides(locale);
+  const testimonialSlides = getTestimonialSlides(locale);
 
   useEffect(() => {
     const interval = window.setInterval(() => {
@@ -197,7 +269,7 @@ function HomePage() {
         const newsItems = await fetchPublicNews();
         if (!active) return;
 
-        const items = newsItems
+            const items = newsItems
           .slice()
           .sort((left, right) => {
             const leftTime = new Date(left.published_at || left.created_at).getTime();
@@ -205,7 +277,7 @@ function HomePage() {
             return rightTime - leftTime;
           })
           .slice(0, 3)
-          .map((item) => ({
+            .map((item) => ({
             title: item.title,
             href: `/vida-academica/noticias/${item.id}`,
             internal: true,
@@ -213,7 +285,7 @@ function HomePage() {
             image: resolveInfoCulturaAssetUrl(item.image),
             imageAlt: item.title,
             publishedAt: item.published_at || item.created_at,
-            publishedLabel: new Intl.DateTimeFormat('pt-PT', {
+            publishedLabel: new Intl.DateTimeFormat(locale === 'en' ? 'en-GB' : 'pt-PT', {
               day: '2-digit',
               month: 'long',
               year: 'numeric'
@@ -243,7 +315,7 @@ function HomePage() {
             return rightTime - leftTime;
           })
           .slice(0, 3)
-          .map((item) => ({
+            .map((item) => ({
             title: item.title,
             href: `/vida-academica/eventos/${item.id}`,
             internal: true,
@@ -251,7 +323,7 @@ function HomePage() {
             image: resolveInfoCulturaAssetUrl(item.image),
             imageAlt: item.title,
             publishedAt: item.start_date || item.event_date,
-            publishedLabel: new Intl.DateTimeFormat('pt-PT', {
+            publishedLabel: new Intl.DateTimeFormat(locale === 'en' ? 'en-GB' : 'pt-PT', {
               day: '2-digit',
               month: 'long',
               year: 'numeric'
@@ -269,13 +341,26 @@ function HomePage() {
       }
     }
 
+    async function loadHomepageBooks() {
+      try {
+        const books = await fetchPublicBooks();
+        if (!active) return;
+
+        setHomepageBookHighlights(books);
+      } catch {
+        if (!active) return;
+        setHomepageBookHighlights([]);
+      }
+    }
+
     void loadHomepageNews();
     void loadHomepageEvents();
+    void loadHomepageBooks();
 
     return () => {
       active = false;
     };
-  }, []);
+  }, [locale]);
 
   const currentHero = heroSlides[activeHero];
   const showStudyLinks = activeHero === 0;
@@ -334,7 +419,7 @@ function HomePage() {
   return (
     <>
       <main className={mainContent}>
-        <section className="relative h-screen overflow-hidden bg-[#10263b]">
+        <section className="relative h-[100svh] min-h-[640px] overflow-hidden bg-[#10263b] sm:min-h-[720px] lg:min-h-screen">
           <div className="absolute inset-0 overflow-hidden">
             <div
               className="flex h-full w-full transition-transform duration-700 ease-in-out"
@@ -364,18 +449,48 @@ function HomePage() {
             <HeaderNav transparent={!isHeaderSolid} />
           </div>
 
-          <div className={`relative z-10 flex h-full flex-col ${container}`}>
+          <div className={`relative z-10 flex h-full min-h-[640px] flex-col px-4 sm:min-h-[720px] sm:px-6 lg:min-h-screen lg:px-3 ${container}`}>
             <div className="flex-1" />
 
-            <div className="pb-[7vh] text-white">
+            <div className="pb-10 pt-32 text-white sm:pb-[7vh]">
               <div className="grid grid-cols-12 gap-y-8">
                 <div className="col-span-12 lg:col-span-6 xl:col-span-7">
                   <h1 className="font-heading text-3xl font-bold leading-snug sm:text-5xl sm:leading-snug lg:text-4xl lg:leading-snug xl:pr-[8vw] xl:text-5xl xl:leading-snug 2xl:pr-[5vw] 2xl:text-6xl">
                     {currentHero.title}
                   </h1>
-                  <p className="mt-4 max-w-2xl whitespace-pre-line text-base font-medium sm:text-lg">
+                  <p className={`mt-4 max-w-2xl whitespace-pre-line text-base font-medium sm:text-lg ${showStudyLinks ? 'hidden lg:block' : ''}`}>
                     {currentHero.text}
                   </p>
+
+                  {showStudyLinks ? (
+                    <div className="mt-7 lg:hidden">
+                      <p className="text-sm font-semibold uppercase tracking-[0.08em] text-white/80">
+                        {getLocaleText(locale, 'Fica a conhecer a nossa oferta formativa:', 'Discover our training programs:')}
+                      </p>
+                      <ul className="mt-3 divide-y divide-white/70 border-y border-white/70">
+                        {studyLinks.map((item) => (
+                          <li key={item.label}>
+                            <a
+                              href={item.href}
+                              className="flex items-center justify-between py-3 text-xl font-bold text-white"
+                            >
+                              <span>{item.label}</span>
+                              <span aria-hidden="true">&#10230;</span>
+                            </a>
+                          </li>
+                        ))}
+                      </ul>
+                      <a
+                        href="#content-start"
+                        className="mt-6 inline-flex items-center text-sm font-bold uppercase tracking-tight text-white"
+                      >
+                        <span>{getLocaleText(locale, 'Descobre Mais', 'Find out more')}</span>
+                        <span className="ml-4 flex h-10 w-10 items-center justify-center rounded-full border-2 border-white">
+                          <ChevronRight className="h-5 w-5 rotate-90" />
+                        </span>
+                      </a>
+                    </div>
+                  ) : null}
                 </div>
 
                 <div className="col-span-12 hidden lg:block lg:col-span-6 xl:col-span-5">
@@ -383,7 +498,7 @@ function HomePage() {
                     className={showStudyLinks ? '' : 'invisible pointer-events-none select-none'}
                     aria-hidden={!showStudyLinks}
                   >
-                    <p className="font-medium">Fica a conhecer a nossa oferta formativa:</p>
+                    <p className="font-medium">{getLocaleText(locale, 'Fica a conhecer a nossa oferta formativa:', 'Discover our training programs:')}</p>
                     <ul className="mt-1 divide-y-2 divide-white">
                       {studyLinks.map((item) => (
                         <li key={item.label}>
@@ -411,7 +526,7 @@ function HomePage() {
                       href="#content-start"
                       className="inline-flex items-center justify-end opacity-70 transition-opacity hover:opacity-100"
                     >
-                      <span className="text-sm font-bold uppercase tracking-tight">Descobre Mais</span>
+                      <span className="text-sm font-bold uppercase tracking-tight">{getLocaleText(locale, 'Descobre Mais', 'Find out more')}</span>
                       <span className="ml-4 flex h-10 w-10 items-center justify-center rounded-full border-2 border-white transition hover:scale-110 hover:border-dashed">
                         <ChevronRight className="h-5 w-5 rotate-90" />
                       </span>
@@ -440,20 +555,20 @@ function HomePage() {
         </section>
 
         <section id="content-start" className="scroll-mt-36 bg-white pt-10 lg:pt-12 xl:pt-16 2xl:pt-20">
-          <div className={`${container} text-center`}>
+          <div className={`${container} px-4 text-center sm:px-6 lg:px-3`}>
             <h2 className="font-heading text-3xl font-bold tracking-tight text-black xl:text-4xl 2xl:text-5xl">
-              Destaques
+                {getLocaleText(locale, 'Destaques', 'Highlights')}
             </h2>
           </div>
 
           <div
-            className={`${container} mt-10 flex snap-x snap-mandatory gap-4 overflow-x-auto px-6 pb-4 pt-2 sm:px-6 md:justify-center md:gap-6 md:px-0`}
+            className={`${container} mt-8 flex snap-x snap-mandatory gap-4 overflow-x-auto px-4 pb-4 pt-2 sm:px-6 md:mt-10 md:justify-center md:gap-6 lg:px-3`}
           >
-            {highlightCards.map((item) => (
+              {highlightCards.map((item) => (
               <a
                 key={item.title}
                 href={item.href}
-                className="group relative flex min-h-[500px] min-w-[78vw] max-w-[78vw] snap-center flex-col overflow-hidden rounded bg-gray-200 first:ml-0 md:min-w-0 md:max-w-none md:basis-6/12 lg:basis-4/12 2xl:basis-3/12"
+                className="group relative flex min-h-[380px] min-w-[82vw] max-w-[82vw] snap-center flex-col overflow-hidden rounded bg-gray-200 first:ml-0 sm:min-h-[440px] sm:min-w-[70vw] sm:max-w-[70vw] md:min-w-0 md:max-w-none md:basis-6/12 lg:min-h-[500px] lg:basis-4/12 2xl:basis-3/12"
               >
                 <div className="absolute inset-0">
                   <img
@@ -473,7 +588,7 @@ function HomePage() {
                 </div>
                 <div className="relative z-10 flex items-center px-6 py-6 text-white">
                   <ChevronRight className="h-7 w-7" />
-                  <p className="ml-3 font-medium">Fica a saber mais</p>
+                  <p className="ml-3 font-medium">{getLocaleText(locale, 'Fica a saber mais', 'Find out more')}</p>
                 </div>
               </a>
             ))}
@@ -481,12 +596,12 @@ function HomePage() {
         </section>
 
         <section className="relative mt-20 bg-gray-50 py-16 before:absolute before:-top-5 before:h-14 before:w-full before:-skew-y-1 before:bg-gray-50 after:absolute after:-bottom-5 after:h-14 after:w-full after:-skew-y-1 after:bg-gray-50 lg:mt-24 xl:mt-28">
-          <div className={`${container} grid grid-cols-2 gap-y-10 lg:gap-x-4 xl:gap-x-6 2xl:gap-x-8`}>
+          <div className={`${container} grid grid-cols-1 gap-y-10 px-4 sm:px-6 lg:grid-cols-2 lg:gap-x-4 lg:px-3 xl:gap-x-6 2xl:gap-x-8`}>
             <div className="relative col-span-1 hidden lg:block">
               <div className="sticky top-36">
                 <img
                   src={aondefuturo}
-                  alt="Onde o Futuro Te Leva"
+                  alt={getLocaleText(locale, 'Onde o Futuro Te Leva', 'Where the Future Takes You')}
                   className="relative z-10 mx-auto block shadow-2xl lg:w-10/12 xl:w-auto"
                 />
               </div>
@@ -500,14 +615,14 @@ function HomePage() {
               </div>
 
               {metrics.map((item, index) => (
-                <div key={item.title} className="flex">
+                <div key={item.title} className="flex min-w-0 items-start">
                   {index % 2 === 1 ? (
                     <>
-                      <div className="mr-4 border-b-2 border-l-2 border-gray-300 pb-6 pl-6 pr-2 pt-2">
+                      <div className="mr-3 min-w-0 border-b-2 border-l-2 border-gray-300 pb-4 pl-4 pr-2 pt-2 sm:mr-4 sm:pb-6 sm:pl-6">
                         <p className="text-lg font-bold xl:text-2xl">{item.title}</p>
                         <p className="mt-3 max-w-md text-sm sm:text-base">{item.text}</p>
                       </div>
-                      <div>
+                      <div className="shrink-0">
                         <p className="mt-2 font-heading text-3xl font-bold text-orange-400 sm:text-4xl lg:text-5xl xl:text-6xl">
                           {item.value}
                         </p>
@@ -515,12 +630,12 @@ function HomePage() {
                     </>
                   ) : (
                     <>
-                      <div>
+                      <div className="shrink-0">
                         <p className="mt-2 font-heading text-3xl font-bold text-orange-400 sm:text-4xl lg:text-5xl xl:text-6xl">
                           {item.value}
                         </p>
                       </div>
-                      <div className="ml-2 border-b-2 border-r-2 border-gray-300 pb-2 pl-2 pr-2 pt-2 sm:ml-4 sm:pb-6 sm:pl-6">
+                      <div className="ml-2 min-w-0 border-b-2 border-r-2 border-gray-300 pb-2 pl-2 pr-2 pt-2 sm:ml-4 sm:pb-6 sm:pl-6">
                         <p className="text-lg font-bold xl:text-2xl">{item.title}</p>
                         <p className="mt-3 max-w-md text-sm sm:text-base">{item.text}</p>
                       </div>
@@ -533,29 +648,27 @@ function HomePage() {
         </section>
 
         <section className="relative mt-16 overflow-hidden lg:mt-28 xl:mt-32 2xl:mt-32">
-          <div className={`${container} grid grid-cols-2 gap-x-10 bg-white`}>
+          <div className={`${container} grid grid-cols-1 gap-x-10 bg-white px-4 sm:px-6 lg:grid-cols-2 lg:px-3`}>
             <div className="relative z-10 col-span-2 bg-white py-6 lg:col-span-1">
               <h2 className="max-w-2xl font-heading text-3xl font-bold tracking-tight text-black xl:text-4xl 2xl:text-5xl">
-                Ainda queres saber mais? Nós podemos ajudar-te.
+                {getLocaleText(locale, 'Ainda queres saber mais? Nós podemos ajudar-te.', 'Do you still want to know more? We can help you')}
               </h2>
               <p className="mt-4">
-                A candidatura ao ensino superior é um passo muito importante. O ISPGAYA dispõe da
-                modalidade de acesso ideal para ti, quer tenhas terminado o ensino secundário ou já
-                estejas a trabalhar e queiras aperfeiçoar os teus conhecimentos.
+                {getLocaleText(locale, 'A candidatura ao ensino superior é um passo muito importante. O ISPGAYA dispõe da modalidade de acesso ideal para ti, quer tenhas terminado o ensino secundário ou já estejas a trabalhar e queiras aperfeiçoar os teus conhecimentos.', 'Applying for higher education is a very important step, it is the starting point for becoming a successful professional. ISPGAYA has the ideal access modality for you, whether you have finished secondary education or are already working and want to improve your knowledge.')}
               </p>
 
               <div className="mt-6 flex flex-col sm:flex-row sm:items-center">
-                <a
+                  <a
                   href="https://inforestudante.ispgaya.pt/nonio/security/preRegisto.do?origem=CANDIDATURAS"
-                  className="inline-block bg-orange-400 px-6 py-2 text-center font-bold text-white transition hover:bg-orange-500"
+                  className="inline-block w-full bg-orange-400 px-6 py-2 text-center font-bold text-white transition hover:bg-orange-500 sm:w-auto"
                 >
-                  Candidatar-me
+                  {getLocaleText(locale, 'Candidatar-me', 'Apply now')}
                 </a>
                 <a
-                  href="https://ispgaya.pt/pt/ensino/candidaturas"
-                  className="mt-3 inline-block border-2 border-orange-700 px-6 py-2 text-center font-bold text-orange-700 transition hover:border-orange-600 hover:bg-orange-600 hover:text-white sm:ml-6 sm:mt-0"
+                  href={buildIspgayaUrl(locale, '/ensino/candidaturas')}
+                  className="mt-3 inline-block w-full border-2 border-orange-700 px-6 py-2 text-center font-bold text-orange-700 transition hover:border-orange-600 hover:bg-orange-600 hover:text-white sm:ml-6 sm:mt-0 sm:w-auto"
                 >
-                  Quero saber mais
+                  {getLocaleText(locale, 'Quero saber mais', 'I want to know more')}
                 </a>
               </div>
             </div>
@@ -565,25 +678,26 @@ function HomePage() {
                 <div className="flex items-center py-4">
                   <button
                     type="button"
-                    onClick={() =>
-                      setActiveSupport((current) =>
-                        current === 0 ? supportSlides.length - 1 : current - 1
-                      )
-                    }
-                    className="p-2 text-gray-700 transition hover:text-gray-600"
+                    onClick={() => setActiveSupport((current) => Math.max(current - 1, 0))}
+                    disabled={activeSupport === 0}
+                    className="swiper-button-prev p-2 text-gray-700 transition hover:text-gray-600 disabled:cursor-not-allowed disabled:opacity-30"
+                    aria-label={getLocaleText(locale, 'Slide anterior', 'Previous slide')}
                   >
+                    <span className="sr-only">{getLocaleText(locale, 'Anterior', 'Previous')}</span>
                     <ChevronLeft className="h-7 w-7" />
                   </button>
 
-                  <div className="mx-2 flex items-center space-x-3">
+                  <div className="swiper-pagination swiper-pagination-clickable swiper-pagination-bullets swiper-pagination-horizontal mx-2 flex items-center space-x-3">
                     {supportSlides.map((item, index) => (
                       <button
                         key={item.title}
                         type="button"
                         onClick={() => setActiveSupport(index)}
-                        className={`h-2.5 w-2.5 rounded-full ${
-                          index === activeSupport ? 'bg-orange-400' : 'bg-gray-300'
+                        className={`h-5 w-5 rounded-full bg-orange-200 transition-transform ${
+                          index === activeSupport ? 'scale-125 bg-orange-400' : ''
                         }`}
+                        aria-label={`Slide ${index + 1}`}
+                        aria-current={index === activeSupport ? 'true' : undefined}
                       >
                         <span className="sr-only">Slide {index + 1}</span>
                       </button>
@@ -592,9 +706,14 @@ function HomePage() {
 
                   <button
                     type="button"
-                    onClick={() => setActiveSupport((current) => (current + 1) % supportSlides.length)}
-                    className="p-2 text-gray-700 transition hover:text-gray-600"
+                    onClick={() =>
+                      setActiveSupport((current) => Math.min(current + 1, supportSlides.length - 1))
+                    }
+                    disabled={activeSupport === supportSlides.length - 1}
+                    className="swiper-button-next p-2 text-gray-700 transition hover:text-gray-600 disabled:cursor-not-allowed disabled:opacity-30"
+                    aria-label={getLocaleText(locale, 'Slide seguinte', 'Next slide')}
                   >
+                    <span className="sr-only">{getLocaleText(locale, 'Seguinte', 'Next')}</span>
                     <ChevronRight className="h-7 w-7" />
                   </button>
                 </div>
@@ -604,7 +723,7 @@ function HomePage() {
                     <a
                       key={item.title}
                       href={item.href}
-                      className={`border px-6 py-8 text-center transition ${
+                      className={`border px-6 py-8 text-center transition ${index === activeSupport ? 'block' : 'hidden md:block'} ${
                         index === activeSupport
                           ? 'border-orange-200 bg-orange-100'
                           : 'border-orange-50 bg-orange-50 hover:border-orange-200 hover:bg-orange-100'
@@ -627,17 +746,17 @@ function HomePage() {
         </section>
 
         <section className="mt-12 bg-white lg:mt-16 xl:mt-20">
-          <div className={`${container}`}>
+          <div className={`${container} px-4 sm:px-6 lg:px-3`}>
             <div className="mx-auto grid w-full max-w-7xl grid-cols-1 gap-10 lg:grid-cols-2">
               <NewsHighlightsSection
-                title="Notícias"
+                title={getLocaleText(locale, 'Notícias', 'News')}
                 viewAllHref="/vida-academica/noticias"
                 viewAllInternal
                 items={homepageNewsHighlights}
                 className="w-full"
               />
               <NewsHighlightsSection
-                title="Eventos"
+                title={getLocaleText(locale, 'Eventos', 'Events')}
                 viewAllHref="/vida-academica/eventos"
                 viewAllInternal
                 items={homepageEventHighlights}
@@ -647,10 +766,30 @@ function HomePage() {
           </div>
         </section>
 
+        <section className="mt-12 bg-slate-50 py-16 lg:mt-16 lg:py-20 xl:mt-20">
+          <div className={`${container} px-4 sm:px-6 lg:px-3`}>
+            <BestBooksSection
+              books={homepageBookHighlights}
+              locale={locale}
+              title={getLocaleText(locale, 'Livros em destaque', 'Featured books')}
+              description={getLocaleText(
+                locale,
+                'Uma seleção de livros do Laboratório Cultural e dos clubes.',
+                'A curated selection of books from the Cultural Lab and clubs.'
+              )}
+              viewAllHref="/laboratorio-cultural"
+              viewAllLabel={getLocaleText(locale, 'Explorar o laboratório', 'Explore the lab')}
+              detailBaseHref="/laboratorio-cultural/livros"
+              limit={10}
+            />
+            
+          </div>
+        </section>
+
         <section className="mb-6 mt-8 bg-white md:mb-8 md:mt-10 lg:mb-10 lg:mt-12 xl:mb-16 xl:mt-16">
           <div className="text-center">
             <h2 className="font-heading text-3xl font-bold tracking-tight text-black xl:text-4xl 2xl:text-5xl">
-              Testemunhos
+              {getLocaleText(locale, 'Testemunhos', 'Testimonials')}
             </h2>
           </div>
 
