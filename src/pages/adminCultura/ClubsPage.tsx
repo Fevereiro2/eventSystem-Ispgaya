@@ -152,7 +152,7 @@ function ClubsPage({
               id="club-image"
               key={clubImageFileKey}
               type="file"
-              accept="image/*"
+              accept="image/png, image/jpeg"
               className={adminInput}
               onChange={(event) => {
                 const file = event.target.files?.[0] || null;
@@ -164,7 +164,7 @@ function ClubsPage({
                 ? 'A carregar imagem...'
                 : clubForm.image
                   ? 'Imagem carregada com sucesso.'
-                  : 'Seleciona uma imagem do computador ou telemóvel.'}
+                  : 'Seleciona uma imagem PNG ou JPG do computador ou telemóvel.'}
             </p>
             {clubForm.image ? (
               <img
