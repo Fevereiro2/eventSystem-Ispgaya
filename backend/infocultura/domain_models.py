@@ -208,6 +208,11 @@ class Event(AuditMixin):
     status: str = EventStatus.DRAFT.value
     city: str = ""
     location: str = ""
+    eventbrite_event_id: str = ""
+    eventbrite_url: str = ""
+    eventbrite_status: str = ""
+    eventbrite_last_synced_at: Optional[datetime] = None
+    eventbrite_last_error: str = ""
 
     user_id: int
 

@@ -315,7 +315,16 @@ class Event(Base, AuditMixin, ReprMixin):
     status: Mapped[str] = mapped_column(String(50), nullable=False)
     city: Mapped[str] = mapped_column(String(120), nullable=False, server_default=text("''"))
     location: Mapped[str] = mapped_column(String(255), nullable=False, server_default=text("''"))
+<<<<<<< Updated upstream:backend/infocultura/sqlalchemy_live_models.py
     user_id: Mapped[int] = mapped_column(
+=======
+    eventbrite_event_id: Mapped[str] = mapped_column(String(64), nullable=False, server_default=text("''"))
+    eventbrite_url: Mapped[str] = mapped_column(String(500), nullable=False, server_default=text("''"))
+    eventbrite_status: Mapped[str] = mapped_column(String(32), nullable=False, server_default=text("''"))
+    eventbrite_last_synced_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+    eventbrite_last_error: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    user_id: Mapped[Optional[int]] = mapped_column(
+>>>>>>> Stashed changes:backend/infocultura/database/sqlalchemy_live_models.py
         Integer,
         ForeignKey("users.id"),
         nullable=False,

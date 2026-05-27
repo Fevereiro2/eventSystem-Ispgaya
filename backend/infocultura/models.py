@@ -316,6 +316,15 @@ class Event(models.Model):
     updated_at = models.DateTimeField(blank=True, null=True)
     city = models.CharField(max_length=120, blank=True, default='')
     location = models.CharField(max_length=255, blank=True, default='')
+    # Eventbrite integration fields - populated automatically after event creation
+    eventbrite_event_id = models.CharField(max_length=64, blank=True, null=True, default=None)
+    eventbrite_url = models.CharField(max_length=500, blank=True, null=True, default=None)
+    eventbrite_status = models.CharField(max_length=32, blank=True, null=True, default=None)
+    eventbrite_last_synced_at = models.DateTimeField(blank=True, null=True)
+    eventbrite_last_error = models.TextField(blank=True, null=True, default=None)
+    eventbrite_venue_id = models.CharField(max_length=64, blank=True, default='')
+    eventbrite_venue = models.JSONField(blank=True, null=True, default=dict)
+    eventbrite_ticket_classes = models.JSONField(blank=True, null=True, default=list)
     categories = models.ManyToManyField(
         Category,
         through='EventCategory',

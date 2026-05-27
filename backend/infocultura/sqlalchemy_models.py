@@ -3,7 +3,7 @@ from __future__ import annotations
 from datetime import date, datetime
 from typing import ClassVar, Optional
 
-from sqlalchemy import Boolean, Date, DateTime, ForeignKey, Integer, String, Text
+from sqlalchemy import Boolean, Date, DateTime, ForeignKey, Integer, JSON, String, Text
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
 
@@ -161,6 +161,14 @@ class Event(Base, AuditMixin, ReprMixin):
     status: Mapped[str] = mapped_column(String(50), nullable=False)
     city: Mapped[str] = mapped_column(String(120), nullable=False, default="")
     location: Mapped[str] = mapped_column(String(255), nullable=False, default="")
+    eventbrite_event_id: Mapped[str] = mapped_column(String(64), nullable=False, default="")
+    eventbrite_url: Mapped[str] = mapped_column(String(500), nullable=False, default="")
+    eventbrite_status: Mapped[str] = mapped_column(String(32), nullable=False, default="")
+    eventbrite_last_synced_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+    eventbrite_last_error: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    eventbrite_venue_id: Mapped[str] = mapped_column(String(64), nullable=False, default="")
+    eventbrite_venue: Mapped[Optional[dict]] = mapped_column(JSON, nullable=True)
+    eventbrite_ticket_classes: Mapped[Optional[list]] = mapped_column(JSON, nullable=True)
 
     user_id: Mapped[int] = mapped_column(
         "user_id",

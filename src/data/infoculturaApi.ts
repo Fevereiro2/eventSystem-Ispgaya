@@ -1,4 +1,55 @@
+<<<<<<< Updated upstream:src/data/infoculturaApi.ts
 import { CulturalArea, CulturalItem } from './culturalContent';
+=======
+import {
+  ContentPayload,
+  BookPayload,
+  CategoryPayload,
+  ClubPayload,
+  EventPayload,
+  EventbriteAttendeesPage,
+  EventbriteConnectionStatus,
+  EventbriteEventDetail,
+  EventbriteTicketClassPayload,
+  EventbriteOrdersPage,
+  EventbriteRefundStatus,
+  InfoCulturaAdminCollectionPage,
+  InfoCulturaAdminNotification,
+  InfoCulturaActivityLog,
+  InfoCulturaBook,
+  InfoCulturaCategory,
+  InfoCulturaClub,
+  InfoCulturaDashboardStats,
+  InfoCulturaEvent,
+  InfoCulturaNews,
+  InfoCulturaNewsletter,
+  InfoCulturaNewsletterSubscriber,
+  InfoCulturaNewsStatus,
+  InfoCulturaRegistration,
+  InfoCulturaRegistrationPage,
+  InfoCulturaRegistrationStatus,
+  InfoCulturaSession,
+  InfoCulturaMetricsOverview,
+  NewsPayload,
+  NewsletterPayload,
+  NewsletterSubscriberPayload,
+  SessionPayload,
+  InfoCulturaUser,
+} from './types.js';
+import {
+  normalizeItemResponse,
+  normalizeItemsResponse,
+  request,
+  requestBlob,
+  ApiBulkDeleteResponse,
+  ApiBulkEventResponse,
+  ApiBulkNewsResponse,
+  ApiBulkRegistrationResponse,
+  ApiImageUploadResponse,
+  ApiItemResponse,
+} from './client.js';
+import { CulturalItem } from '../data/culturalContent.js';
+>>>>>>> Stashed changes:src/api/admin.ts
 
 const API_BASE = (
   import.meta.env.VITE_INFOCULTURA_API || 'http://127.0.0.1:8001/api'
@@ -1521,6 +1572,85 @@ export async function deleteAdminEvent(token: string, id: number): Promise<void>
     {
       method: 'DELETE'
     },
+    token
+  );
+}
+
+export async function fetchAdminEventbriteConnection(
+  token: string
+): Promise<EventbriteConnectionStatus> {
+  return request<EventbriteConnectionStatus>('/events/admin/eventbrite/connection/', {}, token);
+}
+
+export async function syncAdminEventToEventbrite(
+  token: string,
+  id: number,
+  publish = false
+): Promise<InfoCulturaEvent> {
+  const data = await request<ApiItemResponse<InfoCulturaEvent> | InfoCulturaEvent>(
+    `/events/admin/${id}/eventbrite/sync/`,
+    {
+      method: 'POST',
+      body: JSON.stringify({ publish })
+    },
+    token
+  );
+
+  return normalizeItemResponse(data);
+}
+
+export async function fetchAdminEventbriteEventDetail(
+  token: string,
+  id: number
+): Promise<EventbriteEventDetail> {
+  return request<EventbriteEventDetail>(`/events/admin/${id}/eventbrite/`, {}, token);
+}
+
+export async function createAdminEventbriteTicketClass(
+  token: string,
+  id: number,
+  payload: EventbriteTicketClassPayload
+): Promise<{ ticket_class: Record<string, unknown> }> {
+  return request<{ ticket_class: Record<string, unknown> }>(
+    `/events/admin/${id}/eventbrite/ticket-classes/`,
+    {
+      method: 'POST',
+      body: JSON.stringify({ ticket_class: payload })
+    },
+    token
+  );
+}
+
+export async function fetchAdminEventbriteAttendees(
+  token: string,
+  id: number,
+  continuation = ''
+): Promise<EventbriteAttendeesPage> {
+  const search = new URLSearchParams();
+  if (continuation) {
+    search.set('continuation', continuation);
+  }
+  const query = search.toString();
+  return request<EventbriteAttendeesPage>(
+    `/events/admin/${id}/eventbrite/attendees/${query ? `?${query}` : ''}`,
+    {},
+    token
+  );
+}
+
+export async function fetchAdminEventbriteOrders(
+  token: string,
+  id: number,
+  refundStatus: EventbriteRefundStatus = ''
+): Promise<EventbriteOrdersPage> {
+  const search = new URLSearchParams();
+  if (refundStatus) {
+    search.set('refund_request_statuses', refundStatus);
+  }
+  const query = search.toString();
+  return request<EventbriteOrdersPage>(
+    `/events/admin/${id}/eventbrite/orders/${query ? `?${query}` : ''}`,
+    {},
     token
   );
 }

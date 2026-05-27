@@ -1,4 +1,11 @@
 from django.urls import path
+from .view_modules.api.eventbrite_views import (
+    create_event,
+    update_event,
+    delete_event,
+    publish_event,
+    unpublish_event,
+)
 from .views import (
     AdminBookDetailView,
     AdminBookBulkDeleteView,
@@ -18,6 +25,12 @@ from .views import (
     AdminEventBulkDeleteView,
     AdminEventBulkStatusUpdateView,
     AdminEventListCreateView,
+    AdminEventEventbriteAttendeesView,
+    AdminEventEventbriteDetailView,
+    AdminEventEventbriteOrdersView,
+    AdminEventEventbriteSyncView,
+    AdminEventEventbriteTicketClassView,
+    AdminEventbriteConnectionView,
     AdminImageUploadView,
     AdminNewsDetailView,
     AdminNewsBulkDeleteView,
@@ -104,6 +117,7 @@ urlpatterns = [
         PublicEventCalendarView.as_view(),
         name='events-public-calendar',
     ),
+    # Simple Event endpoints that sync with Eventbrite
     path('content/', PublicContentListView.as_view(), name='content-public-list'),
     path('content/admin/', AdminContentListCreateView.as_view(), name='content-admin-list-create'),
     path('content/admin/<uuid:pk>/', AdminContentDetailView.as_view(), name='content-admin-detail'),
@@ -126,8 +140,44 @@ urlpatterns = [
     path('sessions/admin/', AdminSessionListCreateView.as_view(), name='sessions-admin-list-create'),
     path('sessions/admin/<int:pk>/', AdminSessionDetailView.as_view(), name='sessions-admin-detail'),
     path('events/admin/', AdminEventListCreateView.as_view(), name='events-admin-list-create'),
+    path(
+        'events/admin/eventbrite/connection/',
+        AdminEventbriteConnectionView.as_view(),
+        name='events-admin-eventbrite-connection',
+    ),
+    # Additional convenience Eventbrite action endpoints
+    path('events/admin/eventbrite/create/', create_event, name='events-admin-eventbrite-create'),
+    path('events/admin/eventbrite/<int:pk>/update/', update_event, name='events-admin-eventbrite-update'),
+    path('events/admin/eventbrite/<int:pk>/delete/', delete_event, name='events-admin-eventbrite-delete'),
+    path('events/admin/eventbrite/<int:pk>/publish/', publish_event, name='events-admin-eventbrite-publish'),
+    path('events/admin/eventbrite/<int:pk>/unpublish/', unpublish_event, name='events-admin-eventbrite-unpublish'),
     path('events/admin/bulk-delete/', AdminEventBulkDeleteView.as_view(), name='events-admin-bulk-delete'),
     path('events/admin/bulk-status/', AdminEventBulkStatusUpdateView.as_view(), name='events-admin-bulk-status'),
+    path(
+        'events/admin/<int:pk>/eventbrite/sync/',
+        AdminEventEventbriteSyncView.as_view(),
+        name='events-admin-eventbrite-sync',
+    ),
+    path(
+        'events/admin/<int:pk>/eventbrite/',
+        AdminEventEventbriteDetailView.as_view(),
+        name='events-admin-eventbrite-detail',
+    ),
+    path(
+        'events/admin/<int:pk>/eventbrite/ticket-classes/',
+        AdminEventEventbriteTicketClassView.as_view(),
+        name='events-admin-eventbrite-ticket-classes',
+    ),
+    path(
+        'events/admin/<int:pk>/eventbrite/attendees/',
+        AdminEventEventbriteAttendeesView.as_view(),
+        name='events-admin-eventbrite-attendees',
+    ),
+    path(
+        'events/admin/<int:pk>/eventbrite/orders/',
+        AdminEventEventbriteOrdersView.as_view(),
+        name='events-admin-eventbrite-orders',
+    ),
     path('events/admin/<int:pk>/', AdminEventDetailView.as_view(), name='events-admin-detail'),
     path('categories/admin/', AdminCategoryListCreateView.as_view(), name='categories-admin-list-create'),
     path('categories/admin/<int:pk>/', AdminCategoryDetailView.as_view(), name='categories-admin-detail'),
