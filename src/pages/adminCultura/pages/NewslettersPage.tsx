@@ -404,7 +404,7 @@ function NewslettersPage() {
                 id="newsletter-image"
                 key={newsletterImageFileKey}
                 type="file"
-                accept="image/*"
+                accept="image/png, image/jpeg"
                 className="hidden"
                 onChange={(event) => {
                   const file = event.target.files?.[0] || null;
@@ -471,7 +471,7 @@ function NewslettersPage() {
                   ? getLocaleText(locale, 'A carregar imagem...', 'Uploading image...')
                   : newsletterForm.image
                     ? getLocaleText(locale, 'Imagem carregada com sucesso.', 'Image uploaded successfully.')
-                    : getLocaleText(locale, 'Usa este quadrado para fazer upload da imagem da campanha.', 'Use this square to upload the campaign image.')}
+                    : getLocaleText(locale, 'Usa este quadrado para fazer upload de uma imagem PNG ou JPG para a campanha.', 'Use this square to upload a PNG or JPG image for the campaign.')}
               </p>
             </div>
 

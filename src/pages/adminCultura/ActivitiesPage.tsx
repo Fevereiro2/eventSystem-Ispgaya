@@ -636,7 +636,7 @@ function ActivitiesPage({
                     id="book-cover"
                     key={bookImageFileKey}
                     type="file"
-                    accept="image/*"
+                    accept="image/png, image/jpeg"
                     className={adminInput}
                     onChange={(event) => {
                       const file = event.target.files?.[0] || null;
@@ -648,7 +648,7 @@ function ActivitiesPage({
                       ? 'A carregar capa...'
                       : bookForm.cover_image
                         ? 'Capa carregada com sucesso.'
-                        : 'Seleciona uma imagem do computador ou telemovel.'}
+                        : 'Seleciona uma imagem PNG ou JPG para a capa do livro.'}
                   </p>
                   {bookForm.cover_image ? (
                     <img
@@ -693,7 +693,7 @@ function ActivitiesPage({
                     }
                   />
 	                  <p className={blockText}>
-	                    Usa "Publicar agora" para publicar imediatamente ou escolhe data/hora futura e clica em "Agendar".
+	                    Escolhe a data/hora de publicação. Para publicar imediatamente, usa "Publicar agora"; para agendar, escolhe um momento futuro e clica em "Agendar".
 	                  </p>
 	                </div>
               </div>
@@ -948,7 +948,7 @@ function ActivitiesPage({
 	                    }
 	                  />
 	                  <p className={blockText}>
-	                    Usa "Publicar agora" para publicar imediatamente ou escolhe data/hora futura e clica em "Agendar".
+	                    Escolhe a data/hora de publicação. Para publicar imediatamente, usa "Publicar agora"; para agendar, escolhe um momento futuro e clica em "Agendar".
 	                  </p>
 	                </div>
 
@@ -1272,7 +1272,7 @@ function ActivitiesPage({
 	                    }
 	                  />
 	                  <p className={blockText}>
-	                    Usa "Publicar agora" para publicar imediatamente ou escolhe data/hora futura e clica em "Agendar".
+	                    Escolhe a data/hora de publicação. Para publicar imediatamente, usa "Publicar agora"; para agendar, escolhe um momento futuro e clica em "Agendar".
 	                  </p>
 	                </div>
 
@@ -1376,7 +1376,7 @@ function ActivitiesPage({
                     id="event-image"
                     key={eventImageFileKey}
                     type="file"
-                    accept="image/*"
+                    accept="image/png, image/jpeg"
                     className={adminInput}
                     onChange={(event) => {
                       const file = event.target.files?.[0] || null;
@@ -1388,7 +1388,7 @@ function ActivitiesPage({
                       ? 'A carregar imagem...'
                       : eventForm.image
                         ? 'Imagem carregada com sucesso.'
-                        : 'Seleciona uma imagem para o evento.'}
+                        : 'Seleciona uma imagem PNG ou JPG para o evento.'}
                   </p>
                   {eventForm.image ? (
                     <img

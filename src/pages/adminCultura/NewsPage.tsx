@@ -248,7 +248,7 @@ function NewsPage({
                 }
               />
               <p className={blockText}>
-                Usa "Publicar agora" para publicar imediatamente ou escolhe data/hora futura e clica em "Agendar".
+                Escolhe a data/hora de publicação. Para publicar imediatamente, usa "Publicar agora"; para agendar, escolhe um momento futuro e clica em "Agendar".
               </p>
             </div>
           </div>
@@ -276,7 +276,7 @@ function NewsPage({
               id="news-image"
               key={newsImageFileKey}
               type="file"
-              accept="image/*"
+              accept="image/png, image/jpeg"
               className={adminInput}
               onChange={(event) => {
                 const file = event.target.files?.[0] || null;
@@ -288,7 +288,7 @@ function NewsPage({
                 ? 'A carregar imagem...'
                 : newsForm.image
                   ? 'Imagem carregada com sucesso.'
-                  : 'Seleciona uma imagem para a Notícia.'}
+                  : 'Seleciona uma imagem PNG ou JPG para a notícia.'}
             </p>
             {newsForm.image ? (
               <img

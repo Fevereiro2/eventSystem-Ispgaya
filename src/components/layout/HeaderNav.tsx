@@ -40,7 +40,8 @@ function getDefaultLaboratorioDropdown(locale: 'pt' | 'en'): LinkItem[] {
       href: '/laboratorio-cultural/clube-leitura',
       internal: true
     },
-    { label: getLocaleText(locale, 'Clube de Teatro', 'Theatre Club'), href: '/laboratorio-cultural/teatro', internal: true }
+    { label: getLocaleText(locale, 'Clube de Teatro', 'Theatre Club'), href: '/laboratorio-cultural/teatro', internal: true },
+    { label: 'PNA', href: 'https://www.pna.gov.pt/' }
   ];
 }
 
@@ -283,7 +284,9 @@ function HeaderNav({ transparent = false }: HeaderNavProps) {
         if (!active) return;
 
         setLaboratorioDropdown(
-          clubs.length > 0 ? clubs.map(mapClubToLinkItem) : getDefaultLaboratorioDropdown(locale)
+          clubs.length > 0
+            ? [...clubs.map(mapClubToLinkItem), { label: 'PNA', href: 'https://www.pna.gov.pt/' }]
+            : getDefaultLaboratorioDropdown(locale)
         );
       } catch {
         if (!active) return;
