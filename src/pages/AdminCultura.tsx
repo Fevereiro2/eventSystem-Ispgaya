@@ -153,6 +153,7 @@ import {
 import { resolveInfoCulturaAssetUrl } from '../api/client';
 import DashboardPage from './adminCultura/pages/DashboardPage';
 import ClubsPage from './adminCultura/pages/ClubsPage';
+import EventbritePage from './adminCultura/pages/EventbritePage';
 import LogsPage from './adminCultura/pages/LogsPage';
 import MetricsPage from './adminCultura/pages/MetricsPage';
 import NewsPage from './adminCultura/pages/NewsPage';
@@ -2945,7 +2946,7 @@ function AdminCultura() {
             />
           ) : null}
 
-          {activeSection === 'atividades' ? (
+          {activeSection === 'atividades' || activeSection === 'livros' || activeSection === 'sessoes' || activeSection === 'eventos' ? (
             <div className="space-y-6">
               <AdminPageHero
                 icon={CalendarClock}
@@ -4270,6 +4271,17 @@ function AdminCultura() {
                 </section>
               ) : null}
             </div>
+          ) : null}
+
+          {activeSection === 'eventbrite' && currentUser ? (
+            <EventbritePage
+              token={token}
+              currentUser={currentUser}
+              canManageUsers={canManageUsers}
+              clubs={clubs}
+              events={events}
+              setEvents={setEvents}
+            />
           ) : null}
 
           {activeSection === 'inscricoes' ? (
