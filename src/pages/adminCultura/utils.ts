@@ -289,6 +289,13 @@ export function getUserPage(pathname: string): UserPage | null {
     return { mode: 'deactivate', userId: Number(deactivateMatch[1]) };
   }
 
+  const activateMatch = pathname.match(
+    /^\/infocultura\/utilizadores\/(\d+)\/ativar\/?$/
+  );
+  if (activateMatch) {
+    return { mode: 'activate', userId: Number(activateMatch[1]) };
+  }
+
   return null;
 }
 

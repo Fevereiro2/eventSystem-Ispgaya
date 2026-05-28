@@ -60,6 +60,8 @@ type UsersPageProps = {
   selectedUser: InfoCulturaUser | null;
   isDeactivatingUser: boolean;
   handleDeactivateUser: (event: FormEvent<HTMLFormElement>) => void;
+  isActivatingUser: boolean;
+  handleActivateUser: (event: FormEvent<HTMLFormElement>) => void;
 };
 
 function UsersPage({
@@ -88,6 +90,8 @@ function UsersPage({
   selectedUser,
   isDeactivatingUser,
   handleDeactivateUser,
+  isActivatingUser,
+  handleActivateUser,
 }: UsersPageProps) {
   if (!userPage) return null;
 
@@ -210,6 +214,14 @@ function UsersPage({
                           className={adminBtnDanger}
                         >
                           Desativar
+                        </NavLink>
+                      ) : null}
+                      {!user.is_active ? (
+                        <NavLink
+                          to={`/infocultura/utilizadores/${user.id}/ativar`}
+                          className={adminBtnPrimary}
+                        >
+                          Ativar
                         </NavLink>
                       ) : null}
                     </>
@@ -398,6 +410,65 @@ function UsersPage({
                   disabled={isDeactivatingUser || !selectedUser.is_active}
                 >
                   {isDeactivatingUser ? 'A desativar...' : 'Confirmar desativação'}
+                </button>
+              </div>
+            </form>
+          )}
+        </section>
+      </div>
+    );
+  }
+
+  if (userPage.mode === 'activate') {
+    return (
+      <div className="space-y-6">
+        <AdminPageHero
+          icon={Users}
+          title="Ativar Utilizador"
+          description="Confirma a ativação do utilizador selecionado para restaurar o acesso."
+          tone="emerald"
+          actions={
+            <NavLink to="/infocultura/utilizadores" className={adminBtnSecondary}>
+              Voltar aos utilizadores
+            </NavLink>
+          }
+        />
+
+        <section className={adminPanelCard}>
+          {!canManageUsers ? (
+            <p className={adminError}>Apenas o superadmin pode aceder a esta pagina.</p>
+          ) : !selectedUser ? (
+            <p className={adminInfo}>
+              {isLoadingUsers ? 'A carregar utilizador...' : 'Utilizador não encontrado.'}
+            </p>
+          ) : (
+            <form onSubmit={handleActivateUser} className={adminPanelForm}>
+              <div className={adminUserItem}>
+                <div>
+                  <h3 className={adminUserName}>{selectedUser.name}</h3>
+                  <p className={adminUserEmail}>{selectedUser.email}</p>
+                  <p className={adminUserMeta}>{selectedUser.role}</p>
+                </div>
+                <span
+                  className={`${adminUserStatus} ${
+                    selectedUser.is_active
+                      ? adminUserStatusActive
+                      : adminUserStatusInactive
+                  }`}
+                >
+                  {selectedUser.is_active ? 'Ativo' : 'Inativo'}
+                </span>
+              </div>
+
+              {userFormError ? <p className={adminError}>{userFormError}</p> : null}
+
+              <div className={adminActions}>
+                <button
+                  type="submit"
+                  className={adminBtnPrimary}
+                  disabled={isActivatingUser || selectedUser.is_active}
+                >
+                  {isActivatingUser ? 'A ativar...' : 'Confirmar ativação'}
                 </button>
               </div>
             </form>

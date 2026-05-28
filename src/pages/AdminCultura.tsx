@@ -109,6 +109,7 @@ import {
   createAdminSession,
   createAdminUser,
   deactivateAdminUser,
+  activateAdminUser,
   deleteAdminBook,
   deleteAdminCategory,
   deleteAdminClub,
@@ -381,6 +382,7 @@ function AdminCultura() {
   const [updatingRegistrationId, setUpdatingRegistrationId] = useState<number | null>(null);
   const [isAssigningClubUser, setIsAssigningClubUser] = useState(false);
   const [isDeactivatingUser, setIsDeactivatingUser] = useState(false);
+  const [isActivatingUser, setIsActivatingUser] = useState(false);
   const [deletingNewsId, setDeletingNewsId] = useState<number | null>(null);
   const [deletingBookId, setDeletingBookId] = useState<number | null>(null);
   const [deletingCategoryId, setDeletingCategoryId] = useState<number | null>(null);
@@ -1583,6 +1585,29 @@ function AdminCultura() {
       setUserFormError(message);
     } finally {
       setIsDeactivatingUser(false);
+    }
+  }
+
+  async function handleActivateUser(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    if (!token || !canManageUsers || !selectedUser) return;
+
+    setIsActivatingUser(true);
+    setUserFormError('');
+
+    try {
+      const updatedUser = await activateAdminUser(token, selectedUser.id);
+      setUsers((prev) =>
+        sortUsers(prev.map((user) => (user.id === updatedUser.id ? updatedUser : user)))
+      );
+      navigate('/infocultura/utilizadores');
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : 'Não foi possível ativar o utilizador.';
+      setUserFormError(message);
+    } finally {
+      setIsActivatingUser(false);
     }
   }
 
@@ -2915,6 +2940,8 @@ function AdminCultura() {
               selectedUser={selectedUser}
               isDeactivatingUser={isDeactivatingUser}
               handleDeactivateUser={handleDeactivateUser}
+              isActivatingUser={isActivatingUser}
+              handleActivateUser={handleActivateUser}
             />
           ) : null}
 

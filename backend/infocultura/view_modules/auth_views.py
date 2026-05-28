@@ -253,3 +253,24 @@ class AdminUserDeactivateView(APIView):
             club_id=user.club_id,
         )
         return Response({"user": UserSerializer(user).data})
+
+
+class AdminUserActivateView(APIView):
+    permission_classes = [permissions.IsAuthenticated, IsSuperAdmin]
+
+    def post(self, request, pk):
+        user = AppUser.objects.select_related("role", "club").filter(pk=pk).first()
+        if not user:
+            return Response({"message": "Utilizador nao encontrado."}, status=404)
+
+        user.is_active = True
+        user.save(update_fields=["is_active"])
+        record_admin_audit_action(
+            action="activate",
+            content_type="user",
+            object_id=user.id,
+            summary=user.email,
+            actor_user=request.user,
+            club_id=user.club_id,
+        )
+        return Response({"user": UserSerializer(user).data})

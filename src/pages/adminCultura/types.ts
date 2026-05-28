@@ -124,7 +124,8 @@ export type UserPage =
   | { mode: 'create' }
   | { mode: 'profile'; userId: number }
   | { mode: 'edit'; userId: number }
-  | { mode: 'deactivate'; userId: number };
+  | { mode: 'deactivate'; userId: number }
+  | { mode: 'activate'; userId: number };
 
 export type NewsSubpage = 'form' | 'list';
 export type ActivitySubpage = 'form' | 'list' | 'categories';
