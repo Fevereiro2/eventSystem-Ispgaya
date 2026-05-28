@@ -69,12 +69,14 @@ export function useAdminUsers({
     setIsLoadingUsers(true);
     setPanelError('');
 
-    void Promise.all([
-      fetchAdminContent(token),
-      fetchAdminUsers(token),
-      fetchInfoCulturaMe(token),
-    ])
-      .then(([nextItems, nextUsers, nextCurrentUser]) => {
+    void fetchInfoCulturaMe(token)
+      .then(async (nextCurrentUser) => {
+        const nextItems = await fetchAdminContent(token);
+        const nextUsers =
+          nextCurrentUser.role === 'superadmin'
+            ? await fetchAdminUsers(token)
+            : [nextCurrentUser];
+
         if (!isMounted) return;
         setItems(nextItems);
         setUsers(nextUsers);

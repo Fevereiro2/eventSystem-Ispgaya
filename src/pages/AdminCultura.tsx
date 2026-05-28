@@ -117,6 +117,7 @@ import {
   deleteAdminNews,
   deleteAdminSession,
   fetchAdminDashboard,
+  fetchAdminEventbriteOrders,
   fetchAdminNotifications,
   InfoCulturaAdminNotification,
   InfoCulturaBook,
@@ -124,6 +125,8 @@ import {
   InfoCulturaClub,
   InfoCulturaDashboardStats,
   InfoCulturaEvent,
+  EventbriteOrdersPage,
+  EventbriteRefundStatus,
   InfoCulturaNews,
   InfoCulturaNewsStatus,
   InfoCulturaRegistration,
@@ -152,8 +155,10 @@ import {
 } from '../api/infoculturaApi';
 import { resolveInfoCulturaAssetUrl } from '../api/client';
 import DashboardPage from './adminCultura/pages/DashboardPage';
+import ActivitiesPage from './adminCultura/ActivitiesPage';
 import ClubsPage from './adminCultura/pages/ClubsPage';
 import EventbritePage from './adminCultura/pages/EventbritePage';
+import EventsPage from './adminCultura/pages/EventsPage';
 import LogsPage from './adminCultura/pages/LogsPage';
 import MetricsPage from './adminCultura/pages/MetricsPage';
 import NewsPage from './adminCultura/pages/NewsPage';
@@ -167,6 +172,7 @@ import {
   buildDashboardHighlights,
   buildDashboardQuickActions,
   buildClubOverviewStats,
+  getActivitySectionCopy,
   buildNewsOverviewStats,
   buildNotificationOverviewStats,
   buildRegistrationOverviewStats,
@@ -180,10 +186,12 @@ import {
 } from './adminCultura/derived.js';
 import { useAdminActivities } from './adminCultura/hooks/useAdminActivities';
 import { useAdminAuth } from './adminCultura/hooks/useAdminAuth';
+import { useSessionStorageState } from './adminCultura/hooks/useSessionStorageState';
 import { useAdminNews } from './adminCultura/hooks/useAdminNews';
 import { useAdminRegistrations } from './adminCultura/hooks/useAdminRegistrations';
 import { useAdminUsers } from './adminCultura/hooks/useAdminUsers';
 import RegistrationsPage from './adminCultura/pages/RegistrationsPage';
+import SessionsPage from './adminCultura/pages/SessionsPage';
 import UsersPage from './adminCultura/pages/UsersPage';
 import {
   ACTIVITY_PAGE_SIZE,
@@ -321,10 +329,7 @@ function AdminCultura() {
   const [authUser, setAuthUser] = useState('');
   const [authPass, setAuthPass] = useState('');
   const [authError, setAuthError] = useState('');
-  const [token, setToken] = useState<string>(() => {
-    if (typeof window === 'undefined') return '';
-    return sessionStorage.getItem(TOKEN_KEY) || '';
-  });
+  const [token, setToken] = useSessionStorageState(TOKEN_KEY, '');
   const isAuth = token.length > 0;
   const [items, setItems] = useState<CulturalItem[]>([]);
   const [users, setUsers] = useState<InfoCulturaUser[]>([]);
@@ -453,6 +458,12 @@ function AdminCultura() {
   const [isApplyingBulkNews, setIsApplyingBulkNews] = useState(false);
   const [isApplyingBulkEvents, setIsApplyingBulkEvents] = useState(false);
   const [isApplyingBulkRegistrations, setIsApplyingBulkRegistrations] = useState(false);
+  const [syncingEventbriteId, setSyncingEventbriteId] = useState<number | null>(null);
+  const [loadingEventbriteOrdersId, setLoadingEventbriteOrdersId] = useState<number | null>(null);
+  const [eventbriteRefundStatus, setEventbriteRefundStatus] = useState<EventbriteRefundStatus>('');
+  const [eventbriteOrdersByEventId, setEventbriteOrdersByEventId] = useState<
+    Record<number, EventbriteOrdersPage>
+  >({});
   const [isDeletingBulkNews, setIsDeletingBulkNews] = useState(false);
   const [isDeletingBulkBooks, setIsDeletingBulkBooks] = useState(false);
   const [isDeletingBulkEvents, setIsDeletingBulkEvents] = useState(false);
@@ -613,29 +624,41 @@ function AdminCultura() {
     sessions.length
   );
   const newsPageHref = activeNewsSubpage ? getNewsRoute(activeNewsSubpage) : null;
-  const activityPageHref = activeActivitySubpage
-    ? getActivityRoute(activityTab, activeActivitySubpage)
-    : null;
+  const bookPageHref =
+    activeSection === 'livros' && activeActivitySubpage
+      ? getActivityRoute('books', activeActivitySubpage)
+      : null;
+  const sessionPageHref =
+    activeSection === 'sessoes' && activeActivitySubpage
+      ? getActivityRoute('sessions', activeActivitySubpage)
+      : null;
+  const eventPageHref =
+    activeSection === 'eventos' && activeActivitySubpage
+      ? getActivityRoute('events', activeActivitySubpage)
+      : null;
   const contentPageHref = activeContentSubpage ? getContentRoute(activeContentSubpage) : null;
   const showNewsForm = activeNewsSubpage === 'form';
   const showNewsList = activeNewsSubpage === 'list';
+  const showActivityForm = activeActivitySubpage === 'form';
+  const showActivityFiltersAndList = activeActivitySubpage === 'list';
+  const showEventCategories = activeSection === 'eventos' && activeActivitySubpage === 'categories';
   const showContentForm = activeContentSubpage === 'form';
   const showContentList = activeContentSubpage === 'list';
   const newsPageLinks = getNewsPageLinks(editingNewsId);
-  const activityPageLinks = getActivityPageLinks(
-    activityTab,
-    editingBookId,
-    editingSessionId,
-    editingEventId
-  );
+  const bookPageLinks = getActivityPageLinks('books', editingBookId, editingSessionId, editingEventId);
+  const sessionPageLinks = getActivityPageLinks('sessions', editingBookId, editingSessionId, editingEventId);
+  const eventPageLinks = getActivityPageLinks('events', editingBookId, editingSessionId, editingEventId);
   const contentPageLinks = getContentPageLinks(editingId);
   const sidebarContextNavBySection = buildSidebarContextNav(
-    activityTab,
     newsPageLinks,
-    activityPageLinks,
+    bookPageLinks,
+    sessionPageLinks,
+    eventPageLinks,
     contentPageLinks,
     newsPageHref,
-    activityPageHref,
+    bookPageHref,
+    sessionPageHref,
+    eventPageHref,
     contentPageHref
   );
   const readNotificationIdSet = useMemo(
@@ -672,6 +695,8 @@ function AdminCultura() {
   }
   const dashboardAgenda = buildDashboardAgenda(dashboardStats);
   const dashboardQuickActions = buildDashboardQuickActions(canManageUsers, defaultActivityHref);
+  const { label: activitySectionLabel, description: activitySectionDescription } =
+    getActivitySectionCopy(activityTab);
   const latestNotifications = useMemo(
     () =>
       notifications.map((notification) => ({
@@ -2402,6 +2427,44 @@ function AdminCultura() {
     }
   }
 
+  async function handleSyncEventbrite(id: number, publish = false) {
+    if (!token) return;
+
+    setSyncingEventbriteId(id);
+    setActivityError('');
+
+    try {
+      const syncedEvent = await syncAdminEventToEventbrite(token, id, publish);
+      setEvents((prev) => prev.map((item) => (item.id === syncedEvent.id ? syncedEvent : item)));
+    } catch (error) {
+      if (handleAuthError(error)) return;
+      const message =
+        error instanceof Error ? error.message : 'Nao foi possivel sincronizar com a Eventbrite.';
+      setActivityError(message);
+    } finally {
+      setSyncingEventbriteId(null);
+    }
+  }
+
+  async function handleLoadEventbriteOrders(id: number, refundStatus = eventbriteRefundStatus) {
+    if (!token) return;
+
+    setLoadingEventbriteOrdersId(id);
+    setActivityError('');
+
+    try {
+      const ordersPage = await fetchAdminEventbriteOrders(token, id, refundStatus);
+      setEventbriteOrdersByEventId((prev) => ({ ...prev, [id]: ordersPage }));
+    } catch (error) {
+      if (handleAuthError(error)) return;
+      const message =
+        error instanceof Error ? error.message : 'Nao foi possivel carregar os pedidos da Eventbrite.';
+      setActivityError(message);
+    } finally {
+      setLoadingEventbriteOrdersId(null);
+    }
+  }
+
   async function handleExportActivitiesCsv() {
     setIsExportingActivities(true);
 
@@ -2946,7 +3009,329 @@ function AdminCultura() {
             />
           ) : null}
 
-          {activeSection === 'atividades' || activeSection === 'livros' || activeSection === 'sessoes' || activeSection === 'eventos' ? (
+          {activeSection === 'livros' ? (
+            <ActivitiesPage
+              activitySectionLabel={activitySectionLabel}
+              activitySectionDescription={activitySectionDescription}
+              activityOverviewStats={activityOverviewStats}
+              showActivityFiltersAndList={showActivityFiltersAndList}
+              canManageUsers={canManageUsers}
+              clubs={clubs}
+              activityClubFilter={activityClubFilter}
+              setActivityClubFilter={setActivityClubFilter}
+              activityCategoryFilter={activityCategoryFilter}
+              setActivityCategoryFilter={setActivityCategoryFilter}
+              activityStatusFilter={activityStatusFilter}
+              setActivityStatusFilter={setActivityStatusFilter}
+              activityError={activityError}
+              handleApplyActivitySearch={handleApplyActivitySearch}
+              activitySearchInput={activitySearchInput}
+              setActivitySearchInput={setActivitySearchInput}
+              setActivitySearch={setActivitySearch}
+              setActivityPage={setActivityPage}
+              activityDateFrom={activityDateFrom}
+              setActivityDateFrom={setActivityDateFrom}
+              activityDateTo={activityDateTo}
+              setActivityDateTo={setActivityDateTo}
+              activityOrder={activityOrder}
+              setActivityOrder={setActivityOrder}
+              activityTab="books"
+              selectedBookIds={selectedBookIds}
+              setSelectedBookIds={setSelectedBookIds}
+              sortedBooks={sortedBooks}
+              isDeletingBulkBooks={isDeletingBulkBooks}
+              handleBulkDeleteBooks={handleBulkDeleteBooks}
+              selectedEventIds={selectedEventIds}
+              setSelectedEventIds={setSelectedEventIds}
+              sortedEvents={sortedEvents}
+              bulkEventStatus={bulkEventStatus}
+              setBulkEventStatus={setBulkEventStatus}
+              availableEventStatuses={availableEventStatuses}
+              isApplyingBulkEvents={isApplyingBulkEvents}
+              handleApplyBulkEventStatus={handleApplyBulkEventStatus}
+              isDeletingBulkEvents={isDeletingBulkEvents}
+              handleBulkDeleteEvents={handleBulkDeleteEvents}
+              showActivityForm={showActivityForm}
+              handleSaveBook={handleSaveBook}
+              editingBookId={editingBookId}
+              bookForm={bookForm}
+              setBookForm={setBookForm}
+              bookImageFileKey={bookImageFileKey}
+              isUploadingBookImage={isUploadingBookImage}
+              handleUploadBookImage={handleUploadBookImage}
+              bookFormError={bookFormError}
+              isSavingBook={isSavingBook}
+              resetBookForm={resetBookForm}
+              handleEditBook={handleEditBook}
+              deletingBookId={deletingBookId}
+              handleDeleteBook={handleDeleteBook}
+              isLoadingActivities={isLoadingActivities}
+              activityTotal={activityTotal}
+              activityPage={activityPage}
+              activityTotalPages={activityTotalPages}
+              handleSaveSession={handleSaveSession}
+              editingSessionId={editingSessionId}
+              sessionForm={sessionForm}
+              setSessionForm={setSessionForm}
+              sessionFormError={sessionFormError}
+              isSavingSession={isSavingSession}
+              resetSessionForm={resetSessionForm}
+              handleEditSession={handleEditSession}
+              deletingSessionId={deletingSessionId}
+              handleDeleteSession={handleDeleteSession}
+              sortedSessions={sortedSessions}
+              handleSaveEvent={handleSaveEvent}
+              editingEventId={editingEventId}
+              eventForm={eventForm}
+              setEventForm={setEventForm}
+              eventImageFileKey={eventImageFileKey}
+              isUploadingEventImage={isUploadingEventImage}
+              handleUploadEventImage={handleUploadEventImage}
+              eventFormError={eventFormError}
+              isSavingEvent={isSavingEvent}
+              resetEventForm={resetEventForm}
+              handleEditEvent={handleEditEvent}
+              deletingEventId={deletingEventId}
+              handleDeleteEvent={handleDeleteEvent}
+              syncingEventbriteId={syncingEventbriteId}
+              handleSyncEventbrite={handleSyncEventbrite}
+              loadingEventbriteOrdersId={loadingEventbriteOrdersId}
+              eventbriteRefundStatus={eventbriteRefundStatus}
+              setEventbriteRefundStatus={setEventbriteRefundStatus}
+              eventbriteOrdersByEventId={eventbriteOrdersByEventId}
+              handleLoadEventbriteOrders={handleLoadEventbriteOrders}
+              showEventCategories={false}
+              handleSaveCategory={handleSaveCategory}
+              categoryForm={categoryForm}
+              setCategoryForm={setCategoryForm}
+              categoryFormError={categoryFormError}
+              isSavingCategory={isSavingCategory}
+              editingCategoryId={editingCategoryId}
+              resetCategoryForm={resetCategoryForm}
+              sortedCategories={sortedCategories}
+              isLoadingCategories={isLoadingCategories}
+              handleEditCategory={handleEditCategory}
+              deletingCategoryId={deletingCategoryId}
+              handleDeleteCategory={handleDeleteCategory}
+              toggleSelectedId={toggleSelectedId}
+            />
+          ) : null}
+
+          {activeSection === 'sessoes' ? (
+            <SessionsPage
+              activitySectionLabel={activitySectionLabel}
+              activitySectionDescription={activitySectionDescription}
+              activityOverviewStats={activityOverviewStats}
+              showActivityFiltersAndList={showActivityFiltersAndList}
+              canManageUsers={canManageUsers}
+              clubs={clubs}
+              activityClubFilter={activityClubFilter}
+              setActivityClubFilter={setActivityClubFilter}
+              activityCategoryFilter={activityCategoryFilter}
+              setActivityCategoryFilter={setActivityCategoryFilter}
+              activityStatusFilter={activityStatusFilter}
+              setActivityStatusFilter={setActivityStatusFilter}
+              activityError={activityError}
+              handleApplyActivitySearch={handleApplyActivitySearch}
+              activitySearchInput={activitySearchInput}
+              setActivitySearchInput={setActivitySearchInput}
+              setActivitySearch={setActivitySearch}
+              setActivityPage={setActivityPage}
+              activityDateFrom={activityDateFrom}
+              setActivityDateFrom={setActivityDateFrom}
+              activityDateTo={activityDateTo}
+              setActivityDateTo={setActivityDateTo}
+              activityOrder={activityOrder}
+              setActivityOrder={setActivityOrder}
+              selectedBookIds={selectedBookIds}
+              setSelectedBookIds={setSelectedBookIds}
+              sortedBooks={sortedBooks}
+              isDeletingBulkBooks={isDeletingBulkBooks}
+              handleBulkDeleteBooks={handleBulkDeleteBooks}
+              selectedEventIds={selectedEventIds}
+              setSelectedEventIds={setSelectedEventIds}
+              sortedEvents={sortedEvents}
+              bulkEventStatus={bulkEventStatus}
+              setBulkEventStatus={setBulkEventStatus}
+              availableEventStatuses={availableEventStatuses}
+              isApplyingBulkEvents={isApplyingBulkEvents}
+              handleApplyBulkEventStatus={handleApplyBulkEventStatus}
+              isDeletingBulkEvents={isDeletingBulkEvents}
+              handleBulkDeleteEvents={handleBulkDeleteEvents}
+              showActivityForm={showActivityForm}
+              handleSaveBook={handleSaveBook}
+              editingBookId={editingBookId}
+              bookForm={bookForm}
+              setBookForm={setBookForm}
+              bookImageFileKey={bookImageFileKey}
+              isUploadingBookImage={isUploadingBookImage}
+              handleUploadBookImage={handleUploadBookImage}
+              bookFormError={bookFormError}
+              isSavingBook={isSavingBook}
+              resetBookForm={resetBookForm}
+              handleEditBook={handleEditBook}
+              deletingBookId={deletingBookId}
+              handleDeleteBook={handleDeleteBook}
+              isLoadingActivities={isLoadingActivities}
+              activityTotal={activityTotal}
+              activityPage={activityPage}
+              activityTotalPages={activityTotalPages}
+              handleSaveSession={handleSaveSession}
+              editingSessionId={editingSessionId}
+              sessionForm={sessionForm}
+              setSessionForm={setSessionForm}
+              sessionFormError={sessionFormError}
+              isSavingSession={isSavingSession}
+              resetSessionForm={resetSessionForm}
+              handleEditSession={handleEditSession}
+              deletingSessionId={deletingSessionId}
+              handleDeleteSession={handleDeleteSession}
+              sortedSessions={sortedSessions}
+              handleSaveEvent={handleSaveEvent}
+              editingEventId={editingEventId}
+              eventForm={eventForm}
+              setEventForm={setEventForm}
+              eventImageFileKey={eventImageFileKey}
+              isUploadingEventImage={isUploadingEventImage}
+              handleUploadEventImage={handleUploadEventImage}
+              eventFormError={eventFormError}
+              isSavingEvent={isSavingEvent}
+              resetEventForm={resetEventForm}
+              handleEditEvent={handleEditEvent}
+              deletingEventId={deletingEventId}
+              handleDeleteEvent={handleDeleteEvent}
+              syncingEventbriteId={syncingEventbriteId}
+              handleSyncEventbrite={handleSyncEventbrite}
+              loadingEventbriteOrdersId={loadingEventbriteOrdersId}
+              eventbriteRefundStatus={eventbriteRefundStatus}
+              setEventbriteRefundStatus={setEventbriteRefundStatus}
+              eventbriteOrdersByEventId={eventbriteOrdersByEventId}
+              handleLoadEventbriteOrders={handleLoadEventbriteOrders}
+              showEventCategories={false}
+              handleSaveCategory={handleSaveCategory}
+              categoryForm={categoryForm}
+              setCategoryForm={setCategoryForm}
+              categoryFormError={categoryFormError}
+              isSavingCategory={isSavingCategory}
+              editingCategoryId={editingCategoryId}
+              resetCategoryForm={resetCategoryForm}
+              sortedCategories={sortedCategories}
+              isLoadingCategories={isLoadingCategories}
+              handleEditCategory={handleEditCategory}
+              deletingCategoryId={deletingCategoryId}
+              handleDeleteCategory={handleDeleteCategory}
+              toggleSelectedId={toggleSelectedId}
+            />
+          ) : null}
+
+          {activeSection === 'eventos' ? (
+            <EventsPage
+              activitySectionLabel={activitySectionLabel}
+              activitySectionDescription={activitySectionDescription}
+              activityOverviewStats={activityOverviewStats}
+              showActivityFiltersAndList={showActivityFiltersAndList}
+              canManageUsers={canManageUsers}
+              clubs={clubs}
+              activityClubFilter={activityClubFilter}
+              setActivityClubFilter={setActivityClubFilter}
+              activityCategoryFilter={activityCategoryFilter}
+              setActivityCategoryFilter={setActivityCategoryFilter}
+              activityStatusFilter={activityStatusFilter}
+              setActivityStatusFilter={setActivityStatusFilter}
+              activityError={activityError}
+              handleApplyActivitySearch={handleApplyActivitySearch}
+              activitySearchInput={activitySearchInput}
+              setActivitySearchInput={setActivitySearchInput}
+              setActivitySearch={setActivitySearch}
+              setActivityPage={setActivityPage}
+              activityDateFrom={activityDateFrom}
+              setActivityDateFrom={setActivityDateFrom}
+              activityDateTo={activityDateTo}
+              setActivityDateTo={setActivityDateTo}
+              activityOrder={activityOrder}
+              setActivityOrder={setActivityOrder}
+              selectedBookIds={selectedBookIds}
+              setSelectedBookIds={setSelectedBookIds}
+              sortedBooks={sortedBooks}
+              isDeletingBulkBooks={isDeletingBulkBooks}
+              handleBulkDeleteBooks={handleBulkDeleteBooks}
+              selectedEventIds={selectedEventIds}
+              setSelectedEventIds={setSelectedEventIds}
+              sortedEvents={sortedEvents}
+              bulkEventStatus={bulkEventStatus}
+              setBulkEventStatus={setBulkEventStatus}
+              availableEventStatuses={availableEventStatuses}
+              isApplyingBulkEvents={isApplyingBulkEvents}
+              handleApplyBulkEventStatus={handleApplyBulkEventStatus}
+              isDeletingBulkEvents={isDeletingBulkEvents}
+              handleBulkDeleteEvents={handleBulkDeleteEvents}
+              showActivityForm={showActivityForm}
+              handleSaveBook={handleSaveBook}
+              editingBookId={editingBookId}
+              bookForm={bookForm}
+              setBookForm={setBookForm}
+              bookImageFileKey={bookImageFileKey}
+              isUploadingBookImage={isUploadingBookImage}
+              handleUploadBookImage={handleUploadBookImage}
+              bookFormError={bookFormError}
+              isSavingBook={isSavingBook}
+              resetBookForm={resetBookForm}
+              handleEditBook={handleEditBook}
+              deletingBookId={deletingBookId}
+              handleDeleteBook={handleDeleteBook}
+              isLoadingActivities={isLoadingActivities}
+              activityTotal={activityTotal}
+              activityPage={activityPage}
+              activityTotalPages={activityTotalPages}
+              handleSaveSession={handleSaveSession}
+              editingSessionId={editingSessionId}
+              sessionForm={sessionForm}
+              setSessionForm={setSessionForm}
+              sessionFormError={sessionFormError}
+              isSavingSession={isSavingSession}
+              resetSessionForm={resetSessionForm}
+              handleEditSession={handleEditSession}
+              deletingSessionId={deletingSessionId}
+              handleDeleteSession={handleDeleteSession}
+              sortedSessions={sortedSessions}
+              handleSaveEvent={handleSaveEvent}
+              editingEventId={editingEventId}
+              eventForm={eventForm}
+              setEventForm={setEventForm}
+              eventImageFileKey={eventImageFileKey}
+              isUploadingEventImage={isUploadingEventImage}
+              handleUploadEventImage={handleUploadEventImage}
+              eventFormError={eventFormError}
+              isSavingEvent={isSavingEvent}
+              resetEventForm={resetEventForm}
+              handleEditEvent={handleEditEvent}
+              deletingEventId={deletingEventId}
+              handleDeleteEvent={handleDeleteEvent}
+              syncingEventbriteId={syncingEventbriteId}
+              handleSyncEventbrite={handleSyncEventbrite}
+              loadingEventbriteOrdersId={loadingEventbriteOrdersId}
+              eventbriteRefundStatus={eventbriteRefundStatus}
+              setEventbriteRefundStatus={setEventbriteRefundStatus}
+              eventbriteOrdersByEventId={eventbriteOrdersByEventId}
+              handleLoadEventbriteOrders={handleLoadEventbriteOrders}
+              showEventCategories={showEventCategories}
+              handleSaveCategory={handleSaveCategory}
+              categoryForm={categoryForm}
+              setCategoryForm={setCategoryForm}
+              categoryFormError={categoryFormError}
+              isSavingCategory={isSavingCategory}
+              editingCategoryId={editingCategoryId}
+              resetCategoryForm={resetCategoryForm}
+              sortedCategories={sortedCategories}
+              isLoadingCategories={isLoadingCategories}
+              handleEditCategory={handleEditCategory}
+              deletingCategoryId={deletingCategoryId}
+              handleDeleteCategory={handleDeleteCategory}
+              toggleSelectedId={toggleSelectedId}
+            />
+          ) : null}
+
+          {activeSection === 'atividades' ? (
             <div className="space-y-6">
               <AdminPageHero
                 icon={CalendarClock}

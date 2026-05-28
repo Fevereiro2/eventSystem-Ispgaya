@@ -147,12 +147,15 @@ export function getContentPageLinks(editingId: string | null): AdminContextLink[
 }
 
 export function buildSidebarContextNav(
-  activityTab: ActivityTab,
   newsPageLinks: AdminContextLink[],
-  activityPageLinks: AdminContextLink[],
+  bookPageLinks: AdminContextLink[],
+  sessionPageLinks: AdminContextLink[],
+  eventPageLinks: AdminContextLink[],
   contentPageLinks: AdminContextLink[],
   newsPageHref: string | null,
-  activityPageHref: string | null,
+  bookPageHref: string | null,
+  sessionPageHref: string | null,
+  eventPageHref: string | null,
   contentPageHref: string | null
 ): Partial<Record<AdminSection, { links: AdminContextLink[]; activeHref?: string | null }>> {
   return {
@@ -161,16 +164,16 @@ export function buildSidebarContextNav(
       activeHref: newsPageHref,
     },
     livros: {
-      links: activityTab === 'books' ? activityPageLinks : [],
-      activeHref: activityTab === 'books' ? activityPageHref : null,
+      links: bookPageLinks,
+      activeHref: bookPageHref,
     },
     sessoes: {
-      links: activityTab === 'sessions' ? activityPageLinks : [],
-      activeHref: activityTab === 'sessions' ? activityPageHref : null,
+      links: sessionPageLinks,
+      activeHref: sessionPageHref,
     },
     eventos: {
-      links: activityTab === 'events' ? activityPageLinks : [],
-      activeHref: activityTab === 'events' ? activityPageHref : null,
+      links: eventPageLinks,
+      activeHref: eventPageHref,
     },
     conteudos: {
       links: contentPageLinks,
