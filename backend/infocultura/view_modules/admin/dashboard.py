@@ -19,7 +19,7 @@ from .common import AdminAuditMixin
 class AdminImageUploadView(APIView):
     permission_classes = [permissions.IsAuthenticated, IsClubAdmin]
 
-    allowed_folders = {'news', 'events', 'books', 'clubs'}
+    allowed_folders = {'news', 'events', 'books', 'clubs', 'photos'}
 
     def post(self, request):
         uploaded_file = request.FILES.get('file')

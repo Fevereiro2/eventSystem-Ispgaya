@@ -11,7 +11,9 @@ import {
   ActivityTab,
   AdminSection,
   ContentSubpage,
+  EventbriteSubpage,
   NewsSubpage,
+  PhotoSubpage,
   UserPage
 } from './types.js';
 
@@ -141,6 +143,22 @@ export function getContentSubpage(pathname: string): ContentSubpage | null {
   return null;
 }
 
+export function getPhotoSubpage(pathname: string): PhotoSubpage | null {
+  if (pathname === '/infocultura/galeria/nova') return 'form';
+  if (pathname === '/infocultura/galeria/registadas') return 'list';
+  return null;
+}
+
+export function getEventbriteSubpage(pathname: string): EventbriteSubpage | null {
+  if (pathname === '/infocultura/eventbrite' || pathname === '/infocultura/eventbrite/') {
+    return 'overview';
+  }
+  if (pathname === '/infocultura/eventbrite/salas') return 'venues';
+  if (pathname === '/infocultura/eventbrite/lugares') return 'seating';
+  if (pathname === '/infocultura/eventbrite/tickets') return 'tickets';
+  return null;
+}
+
 export function getNewsRoute(page: NewsSubpage): string {
   return page === 'form' ? '/infocultura/noticias/nova' : '/infocultura/noticias/registadas';
 }
@@ -157,6 +175,23 @@ export function getContentRoute(page: ContentSubpage): string {
   return page === 'form' ? '/infocultura/conteudos/novo' : '/infocultura/conteudos/registados';
 }
 
+export function getPhotoRoute(page: PhotoSubpage): string {
+  return page === 'form' ? '/infocultura/galeria/nova' : '/infocultura/galeria/registadas';
+}
+
+export function getEventbriteRoute(page: EventbriteSubpage): string {
+  switch (page) {
+    case 'venues':
+      return '/infocultura/eventbrite/salas';
+    case 'seating':
+      return '/infocultura/eventbrite/lugares';
+    case 'tickets':
+      return '/infocultura/eventbrite/tickets';
+    default:
+      return '/infocultura/eventbrite';
+  }
+}
+
 export function getAdminSectionHref(section: AdminSection): string {
   switch (section) {
     case 'resumo':
@@ -169,6 +204,8 @@ export function getAdminSectionHref(section: AdminSection): string {
       return '/infocultura/notificacoes';
     case 'newsletters':
       return '/infocultura/newsletters';
+    case 'galeria':
+      return '/infocultura/galeria';
     case 'utilizadores':
       return '/infocultura/utilizadores';
     case 'conteudos':
@@ -181,6 +218,8 @@ export function getAdminSectionHref(section: AdminSection): string {
       return '/infocultura/sessoes';
     case 'eventos':
       return '/infocultura/eventos';
+    case 'eventbrite':
+      return '/infocultura/eventbrite';
     case 'atividades':
       return '/infocultura/atividades';
     case 'inscricoes':
@@ -230,6 +269,10 @@ export function getAdminSection(pathname: string): AdminSection | null {
     return 'newsletters';
   }
 
+  if (pathname === '/infocultura/galeria' || pathname.startsWith('/infocultura/galeria/')) {
+    return 'galeria';
+  }
+
   if (pathname === '/infocultura/livros' || pathname.startsWith('/infocultura/livros/')) {
     return 'livros';
   }
@@ -240,6 +283,10 @@ export function getAdminSection(pathname: string): AdminSection | null {
 
   if (pathname === '/infocultura/eventos' || pathname.startsWith('/infocultura/eventos/')) {
     return 'eventos';
+  }
+
+  if (pathname === '/infocultura/eventbrite' || pathname.startsWith('/infocultura/eventbrite/')) {
+    return 'eventbrite';
   }
 
   if (pathname === '/infocultura/atividades') {
@@ -281,6 +328,13 @@ export function getUserPage(pathname: string): UserPage | null {
   );
   if (deactivateMatch) {
     return { mode: 'deactivate', userId: Number(deactivateMatch[1]) };
+  }
+
+  const activateMatch = pathname.match(
+    /^\/infocultura\/utilizadores\/(\d+)\/ativar\/?$/
+  );
+  if (activateMatch) {
+    return { mode: 'activate', userId: Number(activateMatch[1]) };
   }
 
   return null;

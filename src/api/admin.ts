@@ -21,10 +21,18 @@ import {
   InfoCulturaRegistrationStatus,
   InfoCulturaSession,
   InfoCulturaMetricsOverview,
+  EventbriteAttendeesPage,
+  EventbriteConnectionStatus,
+  EventbriteEventDetail,
+  EventbriteOrdersPage,
+  EventbriteRefundStatus,
+  EventbriteTicketClassPayload,
   NewsPayload,
   NewsletterPayload,
   NewsletterSubscriberPayload,
+  PhotoPayload,
   SessionPayload,
+  InfoCulturaPhoto,
   InfoCulturaUser,
 } from './types.js';
 import {
@@ -93,6 +101,63 @@ export async function deleteAdminContent(token: string, id: string): Promise<voi
     `/content/admin/${id}/`,
     {
       method: 'DELETE'
+    },
+    token
+  );
+}
+
+export async function fetchAdminPhotos(
+  token: string,
+  filters?: {
+    section?: string;
+    isActive?: boolean;
+  }
+): Promise<InfoCulturaPhoto[]> {
+  const search = new URLSearchParams();
+  if (filters?.section?.trim()) {
+    search.set('section', filters.section.trim());
+  }
+  if (typeof filters?.isActive === 'boolean') {
+    search.set('is_active', filters.isActive ? 'true' : 'false');
+  }
+  const query = search.toString();
+  return request<InfoCulturaPhoto[]>(`/photos/admin/${query ? `?${query}` : ''}`, {}, token);
+}
+
+export async function createAdminPhoto(
+  token: string,
+  payload: PhotoPayload
+): Promise<InfoCulturaPhoto> {
+  return request<InfoCulturaPhoto>(
+    '/photos/admin/',
+    {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    },
+    token
+  );
+}
+
+export async function updateAdminPhoto(
+  token: string,
+  id: string,
+  payload: PhotoPayload
+): Promise<InfoCulturaPhoto> {
+  return request<InfoCulturaPhoto>(
+    `/photos/admin/${id}/`,
+    {
+      method: 'PUT',
+      body: JSON.stringify(payload),
+    },
+    token
+  );
+}
+
+export async function deleteAdminPhoto(token: string, id: string): Promise<void> {
+  await request<void>(
+    `/photos/admin/${id}/`,
+    {
+      method: 'DELETE',
     },
     token
   );
@@ -680,7 +745,7 @@ export async function bulkDeleteAdminNews(token: string, ids: number[]): Promise
 export async function uploadAdminImage(
   token: string,
   file: File,
-  folder: 'news' | 'events' | 'books' | 'clubs'
+  folder: 'news' | 'events' | 'books' | 'clubs' | 'photos'
 ): Promise<string> {
   const body = new FormData();
   body.append('file', file);
@@ -1034,6 +1099,85 @@ export async function deleteAdminEvent(token: string, id: number): Promise<void>
   );
 }
 
+export async function fetchAdminEventbriteConnection(
+  token: string
+): Promise<EventbriteConnectionStatus> {
+  return request<EventbriteConnectionStatus>('/events/admin/eventbrite/connection/', {}, token);
+}
+
+export async function syncAdminEventToEventbrite(
+  token: string,
+  id: number,
+  publish = false
+): Promise<InfoCulturaEvent> {
+  const data = await request<ApiItemResponse<InfoCulturaEvent> | InfoCulturaEvent>(
+    `/events/admin/${id}/eventbrite/sync/`,
+    {
+      method: 'POST',
+      body: JSON.stringify({ publish })
+    },
+    token
+  );
+
+  return normalizeItemResponse(data);
+}
+
+export async function fetchAdminEventbriteEventDetail(
+  token: string,
+  id: number
+): Promise<EventbriteEventDetail> {
+  return request<EventbriteEventDetail>(`/events/admin/${id}/eventbrite/`, {}, token);
+}
+
+export async function createAdminEventbriteTicketClass(
+  token: string,
+  id: number,
+  payload: EventbriteTicketClassPayload
+): Promise<{ ticket_class: Record<string, unknown> }> {
+  return request<{ ticket_class: Record<string, unknown> }>(
+    `/events/admin/${id}/eventbrite/ticket-classes/`,
+    {
+      method: 'POST',
+      body: JSON.stringify({ ticket_class: payload })
+    },
+    token
+  );
+}
+
+export async function fetchAdminEventbriteAttendees(
+  token: string,
+  id: number,
+  continuation = ''
+): Promise<EventbriteAttendeesPage> {
+  const search = new URLSearchParams();
+  if (continuation) {
+    search.set('continuation', continuation);
+  }
+  const query = search.toString();
+  return request<EventbriteAttendeesPage>(
+    `/events/admin/${id}/eventbrite/attendees/${query ? `?${query}` : ''}`,
+    {},
+    token
+  );
+}
+
+export async function fetchAdminEventbriteOrders(
+  token: string,
+  id: number,
+  refundStatus: EventbriteRefundStatus = ''
+): Promise<EventbriteOrdersPage> {
+  const search = new URLSearchParams();
+  if (refundStatus) {
+    search.set('refund_request_statuses', refundStatus);
+  }
+  const query = search.toString();
+  return request<EventbriteOrdersPage>(
+    `/events/admin/${id}/eventbrite/orders/${query ? `?${query}` : ''}`,
+    {},
+    token
+  );
+}
+
 export async function exportAdminEventsCsv(
   token: string,
   filters?: {
@@ -1158,6 +1302,175 @@ export async function assignUserToClub(
   return data.user;
 }
 
+// ============================================================================
+// SOFT-DELETE OPERATIONS (Deactivate/Activate)
+// ============================================================================
+
+export async function deactivateAdminClub(
+  token: string,
+  id: number
+): Promise<InfoCulturaClub> {
+  const data = await request<{ club: InfoCulturaClub }>(
+    `/clubs/admin/${id}/deactivate/`,
+    {
+      method: 'POST'
+    },
+    token
+  );
+
+  return data.club;
+}
+
+export async function activateAdminClub(
+  token: string,
+  id: number
+): Promise<InfoCulturaClub> {
+  const data = await request<{ club: InfoCulturaClub }>(
+    `/clubs/admin/${id}/activate/`,
+    {
+      method: 'POST'
+    },
+    token
+  );
+
+  return data.club;
+}
+
+export async function deactivateAdminEvent(
+  token: string,
+  id: number
+): Promise<InfoCulturaEvent> {
+  const data = await request<{ event: InfoCulturaEvent }>(
+    `/events/admin/${id}/deactivate/`,
+    {
+      method: 'POST'
+    },
+    token
+  );
+
+  return data.event;
+}
+
+export async function activateAdminEvent(
+  token: string,
+  id: number
+): Promise<InfoCulturaEvent> {
+  const data = await request<{ event: InfoCulturaEvent }>(
+    `/events/admin/${id}/activate/`,
+    {
+      method: 'POST'
+    },
+    token
+  );
+
+  return data.event;
+}
+
+export async function deactivateAdminNews(
+  token: string,
+  id: number
+): Promise<InfoCulturaNews> {
+  const data = await request<{ news: InfoCulturaNews }>(
+    `/news/admin/${id}/deactivate/`,
+    {
+      method: 'POST'
+    },
+    token
+  );
+
+  return data.news;
+}
+
+export async function activateAdminNews(
+  token: string,
+  id: number
+): Promise<InfoCulturaNews> {
+  const data = await request<{ news: InfoCulturaNews }>(
+    `/news/admin/${id}/activate/`,
+    {
+      method: 'POST'
+    },
+    token
+  );
+
+  return data.news;
+}
+
+export async function deactivateAdminBook(
+  token: string,
+  id: number
+): Promise<InfoCulturaBook> {
+  const data = await request<{ book: InfoCulturaBook }>(
+    `/books/admin/${id}/deactivate/`,
+    {
+      method: 'POST'
+    },
+    token
+  );
+
+  return data.book;
+}
+
+export async function activateAdminBook(
+  token: string,
+  id: number
+): Promise<InfoCulturaBook> {
+  const data = await request<{ book: InfoCulturaBook }>(
+    `/books/admin/${id}/activate/`,
+    {
+      method: 'POST'
+    },
+    token
+  );
+
+  return data.book;
+}
+
+export async function deactivateAdminSession(
+  token: string,
+  id: number
+): Promise<InfoCulturaSession> {
+  const data = await request<{ session: InfoCulturaSession }>(
+    `/sessions/admin/${id}/deactivate/`,
+    {
+      method: 'POST'
+    },
+    token
+  );
+
+  return data.session;
+}
+
+export async function activateAdminSession(
+  token: string,
+  id: number
+): Promise<InfoCulturaSession> {
+  const data = await request<{ session: InfoCulturaSession }>(
+    `/sessions/admin/${id}/activate/`,
+    {
+      method: 'POST'
+    },
+    token
+  );
+
+  return data.session;
+}
+
+export async function deactivateAdminClubMember(
+  token: string,
+  clubId: number,
+  userId: number
+): Promise<InfoCulturaUser> {
+  const data = await request<{ user: InfoCulturaUser }>(
+    `/clubs/admin/${clubId}/members/${userId}/deactivate/`,
+    {
+      method: 'POST'
+    },
+    token
+  );
+
+  return data.user;
+}
 export async function removeUserFromClub(
   token: string,
   clubId: number,

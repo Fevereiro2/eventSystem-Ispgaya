@@ -3,7 +3,7 @@ from __future__ import annotations
 from datetime import date, datetime
 from typing import ClassVar, Optional
 
-from sqlalchemy import Boolean, Date, DateTime, ForeignKey, Integer, String, Text
+from sqlalchemy import Boolean, Date, DateTime, ForeignKey, Integer, JSON, String, Text
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
 
@@ -155,12 +155,21 @@ class Event(Base, AuditMixin, ReprMixin):
     start_date: Mapped[datetime] = mapped_column(DateTime, nullable=False)
     end_date: Mapped[datetime] = mapped_column(DateTime, nullable=False)
     image: Mapped[str] = mapped_column(String(500), nullable=False, default="")
+    is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
     is_external: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     enable_registrations: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     registration_capacity: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
     status: Mapped[str] = mapped_column(String(50), nullable=False)
     city: Mapped[str] = mapped_column(String(120), nullable=False, default="")
     location: Mapped[str] = mapped_column(String(255), nullable=False, default="")
+    eventbrite_event_id: Mapped[str] = mapped_column(String(64), nullable=False, default="")
+    eventbrite_url: Mapped[str] = mapped_column(String(500), nullable=False, default="")
+    eventbrite_status: Mapped[str] = mapped_column(String(32), nullable=False, default="")
+    eventbrite_last_synced_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+    eventbrite_last_error: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    eventbrite_venue_id: Mapped[str] = mapped_column(String(64), nullable=False, default="")
+    eventbrite_venue: Mapped[Optional[dict]] = mapped_column(JSON, nullable=True)
+    eventbrite_ticket_classes: Mapped[Optional[list]] = mapped_column(JSON, nullable=True)
 
     user_id: Mapped[Optional[int]] = mapped_column(
         "user_id",
@@ -212,6 +221,7 @@ class Book(Base, CreatedAtMixin, ReprMixin):
     publication_year: Mapped[int] = mapped_column(Integer, nullable=False)
     cover_image: Mapped[str] = mapped_column(String(500), nullable=False, default="")
     summary: Mapped[str] = mapped_column(Text, nullable=False, default="")
+    is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
     is_featured: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
 
     club_id: Mapped[Optional[int]] = mapped_column(
@@ -236,6 +246,7 @@ class Session(Base, AuditMixin, ReprMixin):
     session_date: Mapped[date] = mapped_column(Date, nullable=False)
     start_date: Mapped[datetime] = mapped_column(DateTime, nullable=False)
     end_date: Mapped[datetime] = mapped_column(DateTime, nullable=False)
+    is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
     enable_registrations: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     registration_capacity: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
 
@@ -353,6 +364,7 @@ class News(Base, AuditMixin, ReprMixin):
     title: Mapped[str] = mapped_column(String(255), nullable=False)
     summary: Mapped[str] = mapped_column(Text, nullable=False, default="")
     image: Mapped[str] = mapped_column(String(500), nullable=False, default="")
+    is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
     published_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
     content: Mapped[str] = mapped_column(Text, nullable=False)
 

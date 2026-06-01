@@ -18,6 +18,7 @@ TABLE_EVENT_REGISTRATION = 'event_registrations'
 TABLE_SESSION_REGISTRATION = 'session_registrations'
 TABLE_CLUB_REGISTRATION = 'clubs_registrations'
 TABLE_CULTURAL_CONTENT = 'infocultura_culturalcontent'
+TABLE_PHOTO_CAROUSEL_ITEM = 'infocultura_photo_carousel_item'
 TABLE_EDITORIAL_ACTION = 'editorial_actions'
 TABLE_ADMIN_AUDIT_LOG = 'admin_audit_logs'
 

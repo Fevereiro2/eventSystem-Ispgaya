@@ -8,7 +8,7 @@ from alembic import context
 from sqlalchemy import engine_from_config, pool
 from dotenv import load_dotenv
 
-from infocultura.sqlalchemy_live_models import Base
+from infocultura.database.sqlalchemy_live_models import Base
 
 
 config = context.config

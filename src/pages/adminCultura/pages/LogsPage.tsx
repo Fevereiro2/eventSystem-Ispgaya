@@ -1,21 +1,26 @@
-import { Activity, ShieldAlert, ScrollText, Clock3, BadgeInfo } from 'lucide-react';
-import { useEffect, useMemo, useState } from 'react';
+import { Activity, BadgeInfo, Clock3, FilterX, ScrollText, Search, ShieldAlert } from 'lucide-react';
+import { FormEvent, useEffect, useMemo, useState } from 'react';
 
 import AdminPageHero from '../components/AdminPageHero.js';
 import {
+  adminBtnPrimary,
   adminBtnSecondary,
   adminError,
   adminInfo,
+  adminInput,
+  adminLabel,
   adminPanelCard,
   adminStatCard,
   adminStatLabel,
   adminStatValue,
 } from '../../../styles/ui.js';
 import {
+  fetchAdminClubs,
   fetchAdminActivityLogs,
   getStoredAccessToken,
   InfoCulturaActivityLog,
   InfoCulturaApiError,
+  InfoCulturaClub,
 } from '../../../api/infoculturaApi.js';
 import { getLocaleText, useLocale } from '../../../i18n/locale';
 
@@ -62,11 +67,45 @@ function getSourceLabel(value: string): string {
 function LogsPage() {
   const token = getStoredAccessToken();
   const [source, setSource] = useState<'all' | 'audit' | 'editorial'>('all');
+  const [searchInput, setSearchInput] = useState('');
   const [search, setSearch] = useState('');
+  const [contentType, setContentType] = useState('all');
+  const [action, setAction] = useState('all');
+  const [clubId, setClubId] = useState('all');
   const [logs, setLogs] = useState<InfoCulturaActivityLog[]>([]);
+  const [clubs, setClubs] = useState<InfoCulturaClub[]>([]);
   const [loading, setLoading] = useState(false);
+  const [loadingClubs, setLoadingClubs] = useState(false);
   const [error, setError] = useState('');
- const { locale } = useLocale();
+  const { locale } = useLocale();
+
+  useEffect(() => {
+    let active = true;
+
+    async function loadClubs() {
+      if (!token) return;
+
+      setLoadingClubs(true);
+      try {
+        const response = await fetchAdminClubs(token);
+        if (!active) return;
+        setClubs(response);
+      } catch {
+        if (!active) return;
+        setClubs([]);
+      } finally {
+        if (active) {
+          setLoadingClubs(false);
+        }
+      }
+    }
+
+    void loadClubs();
+
+    return () => {
+      active = false;
+    };
+  }, [token]);
 
   useEffect(() => {
     let active = true;
@@ -80,7 +119,10 @@ function LogsPage() {
       try {
         const response = await fetchAdminActivityLogs(token, {
           source: source === 'all' ? undefined : source,
+          action: action === 'all' ? undefined : action,
+          contentType: contentType === 'all' ? undefined : contentType,
           search,
+          clubId: clubId !== 'all' && Number.isFinite(Number(clubId)) ? Number(clubId) : undefined,
           limit: 100,
         });
         if (!active) return;
@@ -106,7 +148,37 @@ function LogsPage() {
     return () => {
       active = false;
     };
-  }, [search, source, token]);
+  }, [action, clubId, contentType, search, source, token]);
+
+  function handleApplyFilters(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setSearch(searchInput.trim());
+  }
+
+  function handleResetFilters() {
+    setSource('all');
+    setSearchInput('');
+    setSearch('');
+    setContentType('all');
+    setAction('all');
+    setClubId('all');
+  }
+
+  const availableActions = useMemo(
+    () =>
+      Array.from(new Set(logs.map((item) => item.action).filter(Boolean))).sort((left, right) =>
+        left.localeCompare(right)
+      ),
+    [logs]
+  );
+
+  const availableContentTypes = useMemo(
+    () =>
+      Array.from(new Set(logs.map((item) => item.content_type).filter(Boolean))).sort((left, right) =>
+        getContentLabel(left).localeCompare(getContentLabel(right))
+      ),
+    [logs]
+  );
 
   const stats = useMemo(
     () => ({
@@ -136,9 +208,9 @@ function LogsPage() {
       <section className={adminPanelCard}>
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div>
-            <h2 className="text-2xl font-semibold text-slate-900">{getLocaleText(locale, 'Filtro', 'Filter')}</h2>
+            <h2 className="text-2xl font-semibold text-slate-900">{getLocaleText(locale, 'Filtros', 'Filters')}</h2>
             <p className="mt-1 text-sm text-slate-600">
-              {getLocaleText(locale, 'Pesquisa rápida no feed de ações do portal.', 'Quick search in the portal actions feed.')}
+              {getLocaleText(locale, 'Refina o histórico por origem, ação, conteúdo, clube e texto.', 'Refine history by source, action, content, club and text.')}
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
@@ -159,17 +231,75 @@ function LogsPage() {
           </div>
         </div>
 
-        <label className="mt-4 block">
-          <span className="mb-2 block text-sm font-medium text-slate-700">{getLocaleText(locale, 'Pesquisa', 'Search')}</span>
-          <input
-            value={search}
-            onChange={(event) => setSearch(event.target.value)}
-            className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-[#dd8609]"
-            placeholder={getLocaleText(locale, 'Procurar por notícia, clube, utilizador ou resumo...', 'Search for news, club, user or summary...')}
-          />
-        </label>
+        <form className="mt-5 grid grid-cols-1 gap-4 lg:grid-cols-2 xl:grid-cols-5" onSubmit={handleApplyFilters}>
+          <label className="block">
+            <span className={adminLabel}>{getLocaleText(locale, 'Pesquisa', 'Search')}</span>
+            <input
+              value={searchInput}
+              onChange={(event) => setSearchInput(event.target.value)}
+              className={`${adminInput} mt-2`}
+              placeholder={getLocaleText(locale, 'Resumo, utilizador ou conteúdo...', 'Summary, user or content...')}
+            />
+          </label>
+
+          <label className="block">
+            <span className={adminLabel}>{getLocaleText(locale, 'Tipo de conteúdo', 'Content type')}</span>
+            <select
+              value={contentType}
+              onChange={(event) => setContentType(event.target.value)}
+              className={`${adminInput} mt-2`}
+            >
+              <option value="all">{getLocaleText(locale, 'Todos', 'All')}</option>
+              {availableContentTypes.map((item) => (
+                <option key={item} value={item}>
+                  {getContentLabel(item)}
+                </option>
+              ))}
+            </select>
+          </label>
+
+          <label className="block">
+            <span className={adminLabel}>{getLocaleText(locale, 'Ação', 'Action')}</span>
+            <select value={action} onChange={(event) => setAction(event.target.value)} className={`${adminInput} mt-2`}>
+              <option value="all">{getLocaleText(locale, 'Todas', 'All')}</option>
+              {availableActions.map((item) => (
+                <option key={item} value={item}>
+                  {item}
+                </option>
+              ))}
+            </select>
+          </label>
+
+          <label className="block">
+            <span className={adminLabel}>{getLocaleText(locale, 'Clube', 'Club')}</span>
+            <select value={clubId} onChange={(event) => setClubId(event.target.value)} className={`${adminInput} mt-2`}>
+              <option value="all">{getLocaleText(locale, 'Todos', 'All')}</option>
+              {clubs.map((club) => (
+                <option key={club.id} value={String(club.id)}>
+                  {club.name}
+                </option>
+              ))}
+            </select>
+          </label>
+
+          <div className="flex items-end gap-2">
+            <button type="submit" className={adminBtnPrimary}>
+              <span className="inline-flex items-center gap-2">
+                <Search className="h-4 w-4" />
+                {getLocaleText(locale, 'Aplicar', 'Apply')}
+              </span>
+            </button>
+            <button type="button" className={adminBtnSecondary} onClick={handleResetFilters}>
+              <span className="inline-flex items-center gap-2">
+                <FilterX className="h-4 w-4" />
+                {getLocaleText(locale, 'Limpar', 'Reset')}
+              </span>
+            </button>
+          </div>
+        </form>
 
         {loading ? <p className="mt-4 text-sm text-slate-500">{getLocaleText(locale, 'A carregar logs...', 'Loading logs...')}</p> : null}
+        {loadingClubs ? <p className="mt-2 text-sm text-slate-500">{getLocaleText(locale, 'A carregar clubes...', 'Loading clubs...')}</p> : null}
         {error ? <p className={`mt-4 ${adminError}`}>{error}</p> : null}
       </section>
 

@@ -6,10 +6,12 @@ import {
   fetchPublicClubs,
   fetchPublicEvents,
   fetchPublicNews,
+  fetchPublicPhotos,
   InfoCulturaBook,
   InfoCulturaClub,
   InfoCulturaEvent,
   InfoCulturaNews,
+  InfoCulturaPhoto,
   resolveInfoCulturaAssetUrl
 } from '../api/infoculturaApi.js';
 import BestBooksSection from '../components/sections/BestBooksSection.js';
@@ -17,12 +19,14 @@ import Breadcrumbs from '../components/ui/Breadcrumbs';
 import ClubCallToAction from '../components/ui/ClubCallToAction';
 import ClubRegistrationModal, { ClubRegistrationFormData } from '../components/ui/ClubRegistrationModal';
 import NewsHighlightsSection, { type NewsHighlightItem } from '../components/ui/NewsHighlightsSection';
+import PhotoCarousel from '../components/ui/PhotoCarousel';
 import Footer from '../components/layout/Footer';
 import HeaderNav from '../components/layout/HeaderNav';
 import TopBar from '../components/layout/TopBar';
 import heroImage from '../assets/img/clube_leitura_ispgaya.jpg';
 import { blockText, blockTitle, container, mainContent, sectionSpace } from '../styles/ui';
 import { getLocaleText, useLocale } from '../i18n/locale.js';
+import { buildClubPhotoSectionAliases, filterPhotosBySections } from '../utils/photoSections';
 
 function normalizeClubName(value: string): string {
   return value
@@ -49,6 +53,7 @@ function ClubeLeitura() {
   const [newsItems, setNewsItems] = useState<InfoCulturaNews[]>([]);
   const [events, setEvents] = useState<InfoCulturaEvent[]>([]);
   const [club, setClub] = useState<InfoCulturaClub | null>(null);
+  const [photos, setPhotos] = useState<InfoCulturaPhoto[]>([]);
   const [isRegistrationModalOpen, setIsRegistrationModalOpen] = useState(false);
   const [isSubmittingRegistration, setIsSubmittingRegistration] = useState(false);
   const [registrationError, setRegistrationError] = useState('');
@@ -72,16 +77,18 @@ function ClubeLeitura() {
           return;
         }
 
-        const [nextBooks, nextNews, nextEvents] = await Promise.all([
+        const [nextBooks, nextNews, nextEvents, nextPhotos] = await Promise.all([
           fetchPublicBooks(readingClub.id),
           fetchPublicNews(readingClub.id),
-          fetchPublicEvents({ clubId: readingClub.id })
+          fetchPublicEvents({ clubId: readingClub.id }),
+          fetchPublicPhotos()
         ]);
 
         if (!active) return;
         setBooks(nextBooks);
         setNewsItems(nextNews);
         setEvents(nextEvents);
+        setPhotos(nextPhotos);
       } catch {
         if (!active) return;
         setBooks([]);
@@ -145,6 +152,20 @@ function ClubeLeitura() {
           }))
         })),
     [events, locale]
+  );
+  const clubPhotoItems = useMemo(
+    () =>
+      filterPhotosBySections(
+        photos,
+        buildClubPhotoSectionAliases(club?.name, ['leitura', 'clube leitura', 'clube de leitura'])
+      ).map((photo) => ({
+        id: photo.id,
+        title: photo.title,
+        caption: photo.caption,
+        image: photo.image,
+        alt_text: photo.alt_text,
+      })),
+    [photos, club?.name]
   );
 
   async function handleSubmitRegistration(data: ClubRegistrationFormData) {
@@ -216,6 +237,24 @@ function ClubeLeitura() {
               'If you like reading, reflecting and talking about books in a relaxed environment, this is your place.'
             )}
           </p>
+
+          {clubPhotoItems.length > 0 ? (
+            <section className="mb-12 mt-12">
+              <div className="mb-5">
+                <h2 className={blockTitle}>
+                  {getLocaleText(locale, 'Momentos do Laboratório Cultural', 'Cultural Lab moments')}
+                </h2>
+                <p className={blockText}>
+                  {getLocaleText(
+                    locale,
+                    'Imagens de sessões, encontros e atividades partilhadas pelo clube.',
+                    'Images from sessions, gatherings and activities shared by the club.'
+                  )}
+                </p>
+              </div>
+              <PhotoCarousel items={clubPhotoItems} />
+            </section>
+          ) : null}
         </div>
 
         <ClubCallToAction

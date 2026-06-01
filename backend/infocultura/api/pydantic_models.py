@@ -154,6 +154,7 @@ class EventModel(AuditSchema):
     start_date: datetime
     end_date: datetime
     image: str = ""
+    is_active: bool = True
     is_external: bool = False
     status: str = EventStatus.DRAFT.value
     city: str = ""
@@ -212,6 +213,7 @@ class BookModel(CreatedAtSchema):
     publication_year: int
     cover_image: str
     summary: str
+    is_active: bool = True
     is_featured: bool
     club_id: Optional[int] = None
 
@@ -228,6 +230,7 @@ class SessionModel(AuditSchema):
     session_date: date
     start_date: datetime
     end_date: datetime
+    is_active: bool = True
     club_id: Optional[int] = None
 
     club: Optional[ClubModel] = None
@@ -271,6 +274,7 @@ class NewsModel(AuditSchema):
     title: str
     summary: str
     image: str
+    is_active: bool = True
     published_at: Optional[datetime] = None
     content: str
     news_status_id: int

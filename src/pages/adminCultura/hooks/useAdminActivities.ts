@@ -70,7 +70,7 @@ export function useAdminActivities({
       !token ||
       !currentUser ||
       !activeSection ||
-      !['atividades', 'livros', 'sessoes', 'eventos'].includes(activeSection)
+      !['atividades', 'livros', 'sessoes', 'eventos', 'eventbrite'].includes(activeSection)
     ) {
       return;
     }
@@ -86,8 +86,9 @@ export function useAdminActivities({
       activityCategoryFilter !== 'all' ? Number(activityCategoryFilter) : undefined;
     const status = activityStatusFilter && activityStatusFilter !== 'all' ? activityStatusFilter : undefined;
 
+    const effectiveTab = activeSection === 'eventbrite' ? 'events' : activityTab;
     const activityRequest =
-      activityTab === 'books'
+      effectiveTab === 'books'
         ? fetchAdminBooks(token, {
             clubId,
             search: activitySearch,
@@ -97,7 +98,7 @@ export function useAdminActivities({
             page: activityPage,
             pageSize,
           })
-        : activityTab === 'sessions'
+        : effectiveTab === 'sessions'
           ? fetchAdminSessions(token, {
               clubId,
               search: activitySearch,
@@ -125,9 +126,9 @@ export function useAdminActivities({
         setCategories(nextCategories);
         setActivityTotal(activityPageData.total);
         setActivityTotalPages(activityPageData.total_pages);
-        if (activityTab === 'books') {
+        if (effectiveTab === 'books') {
           setBooks(activityPageData.items as InfoCulturaBook[]);
-        } else if (activityTab === 'sessions') {
+        } else if (effectiveTab === 'sessions') {
           setSessions(activityPageData.items as InfoCulturaSession[]);
         } else {
           setEvents(activityPageData.items as InfoCulturaEvent[]);

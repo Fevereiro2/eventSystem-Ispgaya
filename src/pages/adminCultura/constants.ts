@@ -8,6 +8,7 @@ import {
   EventFormState,
   FormState,
   NewsFormState,
+  PhotoFormState,
   SessionFormState,
   UserFormState
 } from './types.js';
@@ -104,6 +105,21 @@ export const initialEventForm: EventFormState = {
   status: 'draft',
   city: '',
   location: '',
+  eventbrite_venue_id: '',
+  eventbrite_venue_name: '',
+  eventbrite_venue_address_1: '',
+  eventbrite_venue_address_2: '',
+  eventbrite_venue_city: '',
+  eventbrite_venue_region: '',
+  eventbrite_venue_postal_code: '',
+  eventbrite_venue_country: 'PT',
+  eventbrite_venue_capacity: '',
+  eventbrite_ticket_name: 'Entrada geral',
+  eventbrite_ticket_type: 'free',
+  eventbrite_ticket_quantity: '',
+  eventbrite_ticket_price: '',
+  sync_eventbrite_on_save: false,
+  publish_eventbrite_on_save: false,
   club_id: '',
   category_ids: []
 };
@@ -111,6 +127,16 @@ export const initialEventForm: EventFormState = {
 export const initialCategoryForm: CategoryFormState = {
   name: '',
   description: ''
+};
+
+export const initialPhotoForm: PhotoFormState = {
+  section: 'laboratorio-cultural',
+  title: '',
+  caption: '',
+  image: '',
+  alt_text: '',
+  display_order: '0',
+  is_active: true,
 };
 
 export const activitySectionByTab: Record<ActivityTab, ActivitySection> = {
@@ -133,11 +159,13 @@ export const adminSections: { id: AdminSection; label: string; href: string }[] 
   { id: 'logs', label: 'Logs', href: '/infocultura/logs' },
   { id: 'notificacoes', label: 'Notificações', href: '/infocultura/notificacoes' },
   { id: 'newsletters', label: 'Newsletters', href: '/infocultura/newsletters' },
+  { id: 'galeria', label: 'Galeria', href: '/infocultura/galeria' },
   { id: 'utilizadores', label: 'Utilizadores', href: '/infocultura/utilizadores' },
   { id: 'noticias', label: 'Notícias', href: '/infocultura/noticias' },
   { id: 'livros', label: 'Livros', href: '/infocultura/livros' },
   { id: 'sessoes', label: 'Sessões', href: '/infocultura/sessoes' },
   { id: 'eventos', label: 'Eventos', href: '/infocultura/eventos' },
+  { id: 'eventbrite', label: 'Eventbrite', href: '/infocultura/eventbrite' },
   { id: 'conteudos', label: 'Conteúdos', href: '/infocultura/conteudos' },
   { id: 'inscricoes', label: 'Inscrições', href: '/infocultura/inscricoes' },
   { id: 'clubes', label: 'Clubes', href: '/infocultura/clubes' }
@@ -148,6 +176,6 @@ export const adminSectionGroups: {
   ids: AdminSection[];
 }[] = [
   { title: 'Painel', ids: ['resumo', 'metricas', 'logs', 'notificacoes'] },
-  { title: 'Gestão', ids: ['newsletters', 'utilizadores', 'clubes', 'inscricoes'] },
-  { title: 'Conteúdos', ids: ['noticias', 'livros', 'sessoes', 'eventos', 'conteudos'] }
+  { title: 'Gestão', ids: ['newsletters', 'galeria', 'utilizadores', 'clubes', 'inscricoes'] },
+  { title: 'Conteúdos', ids: ['noticias', 'livros', 'sessoes', 'eventos', 'eventbrite', 'conteudos'] }
 ];

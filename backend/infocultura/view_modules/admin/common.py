@@ -3,6 +3,14 @@ from __future__ import annotations
 from ...service_modules.audit import record_admin_audit_action
 
 
+def normalize_audit_object_id(value) -> int | None:
+    if isinstance(value, bool):
+        return None
+    if isinstance(value, int):
+        return value
+    return None
+
+
 def describe_audit_target(instance) -> str:
     for field_name in ("title", "name", "email"):
         value = getattr(instance, field_name, None)
@@ -51,8 +59,12 @@ class AdminAuditMixin:
         metadata: dict[str, object] | None = None,
     ) -> None:
         target_instance = instance
-        resolved_object_id = object_id if object_id is not None else getattr(target_instance, "pk", None)
+        raw_object_id = object_id if object_id is not None else getattr(target_instance, "pk", None)
+        resolved_object_id = normalize_audit_object_id(raw_object_id)
         resolved_summary = summary or describe_audit_target(target_instance)
+        resolved_metadata = dict(metadata or {})
+        if raw_object_id is not None and resolved_object_id is None:
+            resolved_metadata["object_pk"] = str(raw_object_id)
         record_admin_audit_action(
             action=action,
             content_type=self.audit_content_type,
@@ -60,7 +72,7 @@ class AdminAuditMixin:
             summary=resolved_summary,
             actor_user=request.user,
             club_id=resolve_audit_club_id(target_instance) if target_instance is not None else None,
-            metadata=metadata,
+            metadata=resolved_metadata or None,
         )
 
     def perform_create(self, serializer):

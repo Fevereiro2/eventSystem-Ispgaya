@@ -70,6 +70,8 @@ type ClubsPageProps = {
   setClubOrder: Dispatch<SetStateAction<string>>;
   filteredClubs: InfoCulturaClub[];
   isLoadingClubs: boolean;
+  changingClubStatusId: number | null;
+  handleToggleClubActive: (id: number, shouldActivate: boolean) => void | Promise<void>;
   deletingClubId: number | null;
   handleEditClub: (club: InfoCulturaClub) => void;
   handleDeleteClub: (id: number) => void | Promise<void>;
@@ -103,6 +105,8 @@ function ClubsPage({
   setClubOrder,
   filteredClubs,
   isLoadingClubs,
+  changingClubStatusId,
+  handleToggleClubActive,
   deletingClubId,
   handleEditClub,
   handleDeleteClub,
@@ -409,6 +413,18 @@ function ClubsPage({
                 </span>
                 <button type="button" className={adminBtnEdit} onClick={() => handleEditClub(club)}>
                   Editar
+                </button>
+                <button
+                  type="button"
+                  className={club.is_active ? adminBtnSecondary : adminBtnPrimary}
+                  disabled={changingClubStatusId === club.id}
+                  onClick={() => void handleToggleClubActive(club.id, !club.is_active)}
+                >
+                  {changingClubStatusId === club.id
+                    ? 'A atualizar...'
+                    : club.is_active
+                      ? 'Desativar'
+                      : 'Ativar'}
                 </button>
                 <button
                   type="button"

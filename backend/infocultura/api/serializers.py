@@ -20,7 +20,7 @@ from .serializers_admin import (
 )
 from .serializers_auth import LoginSerializer
 from .serializers_clubs import ClubMemberAssignSerializer, ClubSerializer
-from .serializers_content import CulturalContentSerializer
+from .serializers_content import CulturalContentSerializer, PhotoCarouselItemSerializer
 from .serializers_news import (
     AdminNewsReadSerializer,
     AdminNewsWriteSerializer,
@@ -66,6 +66,7 @@ __all__ = [
     'ClubRegistrationCreateSerializer',
     'ClubSerializer',
     'CulturalContentSerializer',
+    'PhotoCarouselItemSerializer',
     'EditorialHistorySerializer',
     'EventRegistrationCreateSerializer',
     'EventSerializer',

@@ -16,12 +16,14 @@ import {
   adminSections,
   activityTabBySection,
 } from './constants.js';
-import type { ActivityTab, AdminContextLink, AdminSection } from './types.js';
+import type { ActivityTab, AdminContextLink, AdminSection, UserPage } from './types.js';
 import {
   formatAdminDateTime,
   getActivityRoute,
   getContentRoute,
+  getEventbriteRoute,
   getNewsRoute,
+  getPhotoRoute,
   getWorkflowStatusLabel,
   normalizeWorkflowStatus,
   getAdminSectionHref,
@@ -63,7 +65,7 @@ export type DashboardAgendaEntry = {
 
 export function getVisibleSections(canManageUsers: boolean, allowedActivityTabs: ActivityTab[]) {
   return adminSections.filter((section) => {
-    if (section.id === 'clubes') {
+    if (section.id === 'logs' || section.id === 'utilizadores' || section.id === 'clubes') {
       return canManageUsers;
     }
 
@@ -146,14 +148,68 @@ export function getContentPageLinks(editingId: string | null): AdminContextLink[
   ];
 }
 
+export function getPhotoPageLinks(editingId: string | null): AdminContextLink[] {
+  return [
+    { label: editingId ? 'Editar Foto' : 'Nova Foto', href: getPhotoRoute('form') },
+    { label: 'Fotos Registadas', href: getPhotoRoute('list') },
+  ];
+}
+
+export function getUserPageLinks(userPage: UserPage | null): AdminContextLink[] {
+  const links: AdminContextLink[] = [
+    {
+      label: userPage?.mode === 'create' ? 'Criar Utilizador' : 'Novo Utilizador',
+      href: '/infocultura/utilizadores/novo',
+    },
+    {
+      label: 'Utilizadores Registados',
+      href: '/infocultura/utilizadores',
+    },
+  ];
+
+  if (userPage?.mode === 'deactivate') {
+    links.push({
+      label: 'Desativar Conta',
+      href: `/infocultura/utilizadores/${userPage.userId}/desativar`,
+    });
+  }
+
+  if (userPage?.mode === 'activate') {
+    links.push({
+      label: 'Ativar Conta',
+      href: `/infocultura/utilizadores/${userPage.userId}/ativar`,
+    });
+  }
+
+  return links;
+}
+
+export function getEventbritePageLinks(): AdminContextLink[] {
+  return [
+    { label: 'Visão Geral', href: getEventbriteRoute('overview') },
+    { label: 'Salas', href: getEventbriteRoute('venues') },
+    { label: 'Lugares', href: getEventbriteRoute('seating') },
+    { label: 'Tickets', href: getEventbriteRoute('tickets') },
+  ];
+}
+
 export function buildSidebarContextNav(
-  activityTab: ActivityTab,
   newsPageLinks: AdminContextLink[],
-  activityPageLinks: AdminContextLink[],
+  bookPageLinks: AdminContextLink[],
+  sessionPageLinks: AdminContextLink[],
+  eventPageLinks: AdminContextLink[],
   contentPageLinks: AdminContextLink[],
+  photoPageLinks: AdminContextLink[],
+  eventbritePageLinks: AdminContextLink[],
+  userPageLinks: AdminContextLink[],
   newsPageHref: string | null,
-  activityPageHref: string | null,
-  contentPageHref: string | null
+  bookPageHref: string | null,
+  sessionPageHref: string | null,
+  eventPageHref: string | null,
+  contentPageHref: string | null,
+  photoPageHref: string | null,
+  eventbritePageHref: string | null,
+  userPageHref: string | null
 ): Partial<Record<AdminSection, { links: AdminContextLink[]; activeHref?: string | null }>> {
   return {
     noticias: {
@@ -161,20 +217,32 @@ export function buildSidebarContextNav(
       activeHref: newsPageHref,
     },
     livros: {
-      links: activityTab === 'books' ? activityPageLinks : [],
-      activeHref: activityTab === 'books' ? activityPageHref : null,
+      links: bookPageLinks,
+      activeHref: bookPageHref,
     },
     sessoes: {
-      links: activityTab === 'sessions' ? activityPageLinks : [],
-      activeHref: activityTab === 'sessions' ? activityPageHref : null,
+      links: sessionPageLinks,
+      activeHref: sessionPageHref,
     },
     eventos: {
-      links: activityTab === 'events' ? activityPageLinks : [],
-      activeHref: activityTab === 'events' ? activityPageHref : null,
+      links: eventPageLinks,
+      activeHref: eventPageHref,
     },
     conteudos: {
       links: contentPageLinks,
       activeHref: contentPageHref,
+    },
+    galeria: {
+      links: photoPageLinks,
+      activeHref: photoPageHref,
+    },
+    eventbrite: {
+      links: eventbritePageLinks,
+      activeHref: eventbritePageHref,
+    },
+    utilizadores: {
+      links: userPageLinks,
+      activeHref: userPageHref,
     },
   };
 }
