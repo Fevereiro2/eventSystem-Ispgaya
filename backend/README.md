@@ -72,7 +72,25 @@ INFOCULTURA_JWT_EXPIRES_HOURS=12
 INFOCULTURA_ADMIN_USER=admin
 INFOCULTURA_ADMIN_EMAIL=admin@ispgaya.pt
 INFOCULTURA_ADMIN_PASS=cultura2026
+
+# Eventbrite
+EVENTBRITE_API_KEY=
+EVENTBRITE_CLIENT_SECRET=
+EVENTBRITE_PRIVATE_TOKEN=
+EVENTBRITE_PUBLIC_TOKEN=
+EVENTBRITE_ORGANIZATION_ID=
+EVENTBRITE_DEFAULT_CURRENCY=EUR
+EVENTBRITE_DEFAULT_TIMEZONE=Europe/Lisbon
+EVENTBRITE_DEFAULT_COUNTRY=PT
+EVENTBRITE_DEFAULT_VENUE_ID=
+EVENTBRITE_TICKET_NAME=Entrada geral
 ```
+
+Para ativar a integração Eventbrite, aplica a migration Alembic mais recente e configura
+`EVENTBRITE_PRIVATE_TOKEN` e `EVENTBRITE_ORGANIZATION_ID`. O endpoint admin
+`POST /api/events/admin/<id>/eventbrite/sync/` cria/atualiza o evento na Eventbrite; envia
+`{"publish": true}` para publicar também.
+`GET /api/events/admin/eventbrite/connection/` verifica se a organização configurada responde.
 
 ## 3) Como autentica
 

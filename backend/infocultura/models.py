@@ -78,6 +78,26 @@ class CulturalContent(models.Model):
         return f'{self.title} ({self.area})'
 
 
+class PhotoCarouselItem(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    section = models.CharField(max_length=80, default='homepage')
+    title = models.CharField(max_length=180)
+    caption = models.TextField(blank=True, default='')
+    image = models.CharField(max_length=500)
+    alt_text = models.CharField(max_length=255, blank=True, default='')
+    display_order = models.PositiveIntegerField(default=0)
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = db_constants.TABLE_PHOTO_CAROUSEL_ITEM
+        ordering = ['section', 'display_order', '-updated_at']
+
+    def __str__(self):
+        return f'{self.section}: {self.title}'
+
+
 class Club(models.Model):
     id = models.AutoField(primary_key=True, db_column=db_constants.COL_ID_CLUBS)
     name = models.CharField(max_length=100)
@@ -116,6 +136,7 @@ class News(models.Model):
     title = models.CharField(max_length=255)
     summary = models.TextField()
     image = models.CharField(max_length=500)
+    is_active = models.BooleanField(default=True)
     news_status = models.ForeignKey(
         NewsStatus,
         on_delete=models.DO_NOTHING,
@@ -152,6 +173,7 @@ class Book(models.Model):
     publication_year = models.IntegerField()
     cover_image = models.CharField(max_length=500, blank=True, default='')
     summary = models.TextField()
+    is_active = models.BooleanField(default=True)
     is_featured = models.BooleanField(default=False)
     created_at = models.DateTimeField(blank=True, null=True)
     club = models.ForeignKey(
@@ -186,6 +208,7 @@ class Session(models.Model):
     session_date = models.DateField()
     start_date = models.DateTimeField(db_column=db_constants.COL_START_DATE)
     end_date = models.DateTimeField(db_column=db_constants.COL_END_DATE)
+    is_active = models.BooleanField(default=True)
     status = models.CharField(max_length=16, choices=STATUS_CHOICES, default='active')
     enable_registrations = models.BooleanField(default=False)
     registration_capacity = models.IntegerField(blank=True, null=True)
@@ -248,6 +271,7 @@ class Event(models.Model):
     start_date = models.DateTimeField(db_column=db_constants.COL_START_DATE)
     end_date = models.DateTimeField(db_column=db_constants.COL_END_DATE)
     image = models.CharField(max_length=500, blank=True, default='')
+    is_active = models.BooleanField(default=True)
     is_external = models.BooleanField(default=False)
     enable_registrations = models.BooleanField(default=False)
     registration_capacity = models.IntegerField(blank=True, null=True)
@@ -264,6 +288,15 @@ class Event(models.Model):
     updated_at = models.DateTimeField(blank=True, null=True, db_column=db_constants.COL_UPDATED_AT)
     city = models.CharField(max_length=120, blank=True, default='')
     location = models.CharField(max_length=255, blank=True, default='')
+    # Eventbrite integration fields - populated automatically after event creation
+    eventbrite_event_id = models.CharField(max_length=64, blank=True, null=True, default=None)
+    eventbrite_url = models.CharField(max_length=500, blank=True, null=True, default=None)
+    eventbrite_status = models.CharField(max_length=32, blank=True, null=True, default=None)
+    eventbrite_last_synced_at = models.DateTimeField(blank=True, null=True)
+    eventbrite_last_error = models.TextField(blank=True, null=True, default=None)
+    eventbrite_venue_id = models.CharField(max_length=64, blank=True, default='')
+    eventbrite_venue = models.JSONField(blank=True, null=True, default=dict)
+    eventbrite_ticket_classes = models.JSONField(blank=True, null=True, default=list)
     categories = models.ManyToManyField(
         Category,
         through='EventCategory',

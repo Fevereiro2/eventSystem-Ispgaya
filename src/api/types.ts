@@ -38,6 +38,19 @@ export type InfoCulturaCategory = {
   updated_at?: string | null;
 };
 
+export type InfoCulturaPhoto = {
+  id: string;
+  section: string;
+  title: string;
+  caption: string;
+  image: string;
+  alt_text: string;
+  display_order: number;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+};
+
 export type InfoCulturaNewsStatus = {
   id: number;
   name: string;
@@ -60,6 +73,7 @@ export type InfoCulturaNews = {
   summary: string;
   image: string;
   content: string;
+  is_active: boolean;
   published_at: string | null;
   created_at: string;
   updated_at: string;
@@ -98,6 +112,7 @@ export type InfoCulturaBook = {
   publication_year: number;
   cover_image: string;
   summary: string;
+  is_active: boolean;
   is_featured: boolean;
   created_at: string | null;
   club_id: number | null;
@@ -109,6 +124,7 @@ export type InfoCulturaSession = {
   name: string;
   title: string;
   description: string;
+  is_active: boolean;
   session_date: string;
   start_date: string;
   end_date: string;
@@ -130,6 +146,7 @@ export type InfoCulturaEvent = {
   id: number;
   title: string;
   description: string;
+  is_active: boolean;
   event_date: string;
   start_date: string;
   end_date: string;
@@ -142,6 +159,14 @@ export type InfoCulturaEvent = {
   updated_at: string | null;
   city: string;
   location: string;
+  eventbrite_event_id?: string;
+  eventbrite_url?: string;
+  eventbrite_status?: string;
+  eventbrite_last_synced_at?: string | null;
+  eventbrite_last_error?: string;
+  eventbrite_venue_id?: string;
+  eventbrite_venue?: EventbriteVenuePayload | null;
+  eventbrite_ticket_classes?: EventbriteTicketClassPayload[] | null;
   user_id: number;
   club_id?: number | null;
   club_name?: string | null;
@@ -155,6 +180,111 @@ export type InfoCulturaEvent = {
   google_calendar_url: string;
   outlook_calendar_url: string;
   editorial_history?: InfoCulturaEditorialHistory[];
+};
+
+export type EventbriteVenuePayload = {
+  name: string;
+  address_1: string;
+  address_2?: string;
+  city: string;
+  region?: string;
+  postal_code?: string;
+  country: string;
+  capacity?: number | null;
+  age_restriction?: string;
+};
+
+export type EventbriteTicketClassPayload = {
+  name: string;
+  type: 'free' | 'paid' | 'donation';
+  quantity_total: number;
+  price?: number | null;
+  minimum_quantity?: number | null;
+  maximum_quantity?: number | null;
+};
+
+export type EventbriteConnectionStatus = {
+  connected: boolean;
+  organization_id?: string;
+  organization_name?: string;
+  message?: string;
+};
+
+export type EventbriteOrder = {
+  id: string;
+  name: string;
+  email: string;
+  status: string;
+  created: string;
+  changed: string;
+  costs?: Record<string, unknown>;
+  refund_request?: Record<string, unknown>;
+};
+
+export type EventbriteAttendee = {
+  id: string;
+  name: string;
+  email: string;
+  status: string;
+  checked_in: boolean;
+  ticket_class_name: string;
+  ticket_class_id: string;
+  order_id: string;
+  created: string;
+};
+
+export type EventbriteAttendeesPage = {
+  attendees: EventbriteAttendee[];
+  pagination: {
+    object_count?: number;
+    page_number?: number;
+    page_size?: number;
+    page_count?: number;
+    has_more_items?: boolean;
+    continuation?: string;
+  };
+  eventbrite_manage_attendees_url: string;
+};
+
+export type EventbriteEventDetail = {
+  id: string;
+  name: string;
+  status: string;
+  url: string;
+  capacity?: number | null;
+  ticket_classes: Array<Record<string, unknown>>;
+  venue: Record<string, unknown>;
+};
+
+export type EventbriteOrdersPage = {
+  orders: EventbriteOrder[];
+  pagination: {
+    object_count?: number;
+    page_number?: number;
+    page_size?: number;
+    page_count?: number;
+    has_more_items?: boolean;
+    continuation?: string;
+  };
+  eventbrite_manage_orders_url: string;
+};
+
+export type EventbriteRefundStatus =
+  | ''
+  | 'pending'
+  | 'completed'
+  | 'outside_policy'
+  | 'disputed'
+  | 'denied';
+
+export type PhotoPayload = {
+  section: string;
+  title: string;
+  caption?: string;
+  image: string;
+  alt_text?: string;
+  display_order?: number;
+  is_active: boolean;
 };
 
 export type InfoCulturaRegistrationStatus = {
@@ -388,6 +518,9 @@ export type EventPayload = {
   status: string;
   city: string;
   location: string;
+  eventbrite_venue_id?: string;
+  eventbrite_venue?: EventbriteVenuePayload | null;
+  eventbrite_ticket_classes?: EventbriteTicketClassPayload[] | null;
   club_id?: number;
   category_ids?: number[];
 };

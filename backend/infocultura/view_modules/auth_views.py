@@ -146,10 +146,7 @@ class AdminUserListCreateView(AdminAuditMixin, generics.ListCreateAPIView):
     audit_content_type = "user"
 
     def get_permissions(self):
-        if self.request.method == "GET":
-            permission_classes = [permissions.IsAuthenticated, IsClubAdmin]
-        else:
-            permission_classes = [permissions.IsAuthenticated, IsSuperAdmin]
+        permission_classes = [permissions.IsAuthenticated, IsSuperAdmin]
         return [permission() for permission in permission_classes]
 
     def get_serializer_class(self):
@@ -207,10 +204,7 @@ class AdminUserDetailView(AdminAuditMixin, generics.RetrieveUpdateAPIView):
     audit_content_type = "user"
 
     def get_permissions(self):
-        if self.request.method == "GET":
-            permission_classes = [permissions.IsAuthenticated, IsClubAdmin]
-        else:
-            permission_classes = [permissions.IsAuthenticated, IsSuperAdmin]
+        permission_classes = [permissions.IsAuthenticated, IsSuperAdmin]
         return [permission() for permission in permission_classes]
 
     def get_serializer_class(self):
@@ -252,6 +246,27 @@ class AdminUserDeactivateView(APIView):
         user.save(update_fields=["is_active"])
         record_admin_audit_action(
             action="deactivate",
+            content_type="user",
+            object_id=user.id,
+            summary=user.email,
+            actor_user=request.user,
+            club_id=user.club_id,
+        )
+        return Response({"user": UserSerializer(user).data})
+
+
+class AdminUserActivateView(APIView):
+    permission_classes = [permissions.IsAuthenticated, IsSuperAdmin]
+
+    def post(self, request, pk):
+        user = AppUser.objects.select_related("role", "club").filter(pk=pk).first()
+        if not user:
+            return Response({"message": "Utilizador nao encontrado."}, status=404)
+
+        user.is_active = True
+        user.save(update_fields=["is_active"])
+        record_admin_audit_action(
+            action="activate",
             content_type="user",
             object_id=user.id,
             summary=user.email,

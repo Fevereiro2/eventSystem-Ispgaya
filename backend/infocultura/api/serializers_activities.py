@@ -11,7 +11,9 @@ from ..services import (
     record_editorial_action,
     validate_date_interval,
 )
+from ..service_modules.eventbrite import sync_event_to_eventbrite
 from ..core.security import validate_entity_name
+from ..core.sanitizers import clean_text
 from .serializers_news import EditorialHistorySerializer
 from .serializers_shared import ClubScopedWriteMixin
 from .serializers_workflow import (
@@ -41,6 +43,7 @@ class BookSerializer(serializers.ModelSerializer):
             'publication_year',
             'cover_image',
             'summary',
+            'is_active',
             'is_featured',
             'created_at',
             'club_id',
@@ -67,6 +70,7 @@ class SessionSerializer(serializers.ModelSerializer):
             'name',
             'title',
             'description',
+            'is_active',
             'session_date',
             'start_date',
             'end_date',
@@ -140,6 +144,7 @@ class EventSerializer(serializers.ModelSerializer):
             'id',
             'title',
             'description',
+            'is_active',
             'event_date',
             'start_date',
             'end_date',
@@ -152,6 +157,14 @@ class EventSerializer(serializers.ModelSerializer):
             'updated_at',
             'city',
             'location',
+            'eventbrite_event_id',
+            'eventbrite_url',
+            'eventbrite_status',
+            'eventbrite_last_synced_at',
+            'eventbrite_last_error',
+            'eventbrite_venue_id',
+            'eventbrite_venue',
+            'eventbrite_ticket_classes',
             'user_id',
             'club_id',
             'club_name',
@@ -373,6 +386,8 @@ class AdminEventWriteSerializer(serializers.ModelSerializer):
         required=False,
         source='categories_payload',
     )
+    eventbrite_venue = serializers.JSONField(required=False, allow_null=True)
+    eventbrite_ticket_classes = serializers.JSONField(required=False, allow_null=True)
 
     class Meta:
         model = Event
@@ -391,6 +406,9 @@ class AdminEventWriteSerializer(serializers.ModelSerializer):
             'created_at',
             'city',
             'location',
+            'eventbrite_venue_id',
+            'eventbrite_venue',
+            'eventbrite_ticket_classes',
             'club_id',
             'category_ids',
         ]
@@ -452,6 +470,44 @@ class AdminEventWriteSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError(
                 {'registration_capacity': 'Define a lotacao para ativar inscricoes.'}
             )
+        venue = attrs.get('eventbrite_venue')
+        if venue is not None and not isinstance(venue, dict):
+            raise serializers.ValidationError({'eventbrite_venue': 'A sala tem de ser um objeto JSON.'})
+        # sanitize text inputs to prevent XSS
+        for field in ('title', 'description', 'city', 'location'):
+            if field in attrs:
+                attrs[field] = clean_text(attrs[field], allowed_tags=None)
+        # sanitize eventbrite venue fields
+        if isinstance(venue, dict):
+            for k, v in list(venue.items()):
+                if isinstance(v, str):
+                    venue[k] = clean_text(v, allowed_tags=None)
+            attrs['eventbrite_venue'] = venue
+        tickets = attrs.get('eventbrite_ticket_classes')
+        if tickets is not None:
+            if not isinstance(tickets, list):
+                raise serializers.ValidationError({'eventbrite_ticket_classes': 'Os bilhetes tem de ser uma lista.'})
+            for index, ticket in enumerate(tickets):
+                if not isinstance(ticket, dict):
+                    raise serializers.ValidationError(
+                        {'eventbrite_ticket_classes': f'O bilhete {index + 1} tem de ser um objeto.'}
+                    )
+                if not str(ticket.get('name') or '').strip():
+                    raise serializers.ValidationError(
+                        {'eventbrite_ticket_classes': f'O bilhete {index + 1} precisa de nome.'}
+                    )
+                # sanitize ticket names
+                ticket['name'] = clean_text(ticket.get('name') or '', allowed_tags=None)
+                try:
+                    quantity = int(ticket.get('quantity_total') or ticket.get('quantity') or 0)
+                except (TypeError, ValueError) as error:
+                    raise serializers.ValidationError(
+                        {'eventbrite_ticket_classes': f'A quantidade do bilhete {index + 1} e invalida.'}
+                    ) from error
+                if quantity <= 0:
+                    raise serializers.ValidationError(
+                        {'eventbrite_ticket_classes': f'A quantidade do bilhete {index + 1} tem de ser superior a zero.'}
+                    )
 
         next_status = normalize_workflow_status(
             attrs.get('status') or getattr(self.instance, 'status', None)
@@ -503,6 +559,11 @@ class AdminEventWriteSerializer(serializers.ModelSerializer):
             club_id=club.id,
         )
         notify_event_workflow_status(event=event, previous_status=None, next_status=next_status)
+        
+        # Auto-sync to Eventbrite when event is published
+        if next_status == 'published':
+            sync_event_to_eventbrite(event)
+        
         return event
 
     def update(self, instance, validated_data):
@@ -525,7 +586,11 @@ class AdminEventWriteSerializer(serializers.ModelSerializer):
             EventCategory.objects.bulk_create(
                 [EventCategory(event=instance, category=category) for category in categories]
             )
-        if normalize_workflow_status(previous_status) != normalize_workflow_status(instance.status):
+        
+        # Track status change
+        status_changed = normalize_workflow_status(previous_status) != normalize_workflow_status(instance.status)
+        
+        if status_changed:
             record_editorial_action(
                 content_type='event',
                 object_id=instance.id,
@@ -539,6 +604,11 @@ class AdminEventWriteSerializer(serializers.ModelSerializer):
                 previous_status=previous_status,
                 next_status=instance.status,
             )
+            
+            # Auto-sync to Eventbrite when transitioning to published
+            if normalize_workflow_status(instance.status) == 'published':
+                sync_event_to_eventbrite(instance)
+        
         return instance
 
     def to_representation(self, instance):

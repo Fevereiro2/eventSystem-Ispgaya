@@ -42,6 +42,9 @@ import {
   InfoCulturaClub,
   InfoCulturaEvent,
   InfoCulturaSession,
+  EventbriteOrdersPage,
+  EventbriteRefundStatus,
+  EventbriteConnectionStatus,
   resolveInfoCulturaAssetUrl,
 } from '../../api/infoculturaApi';
 
@@ -102,6 +105,8 @@ export type ActivitiesPageProps = {
   handleEditBook: (book: InfoCulturaBook) => void;
   deletingBookId: number | null;
   handleDeleteBook: (id: number) => void | Promise<void>;
+  changingBookStatusId: number | null;
+  handleToggleBookActive: (id: number, shouldActivate: boolean) => void | Promise<void>;
   isLoadingActivities: boolean;
   activityTotal: number;
   activityPage: number;
@@ -116,6 +121,8 @@ export type ActivitiesPageProps = {
   handleEditSession: (session: InfoCulturaSession) => void;
   deletingSessionId: number | null;
   handleDeleteSession: (id: number) => void | Promise<void>;
+  changingSessionStatusId: number | null;
+  handleToggleSessionActive: (id: number, shouldActivate: boolean) => void | Promise<void>;
   sortedSessions: InfoCulturaSession[];
   handleSaveEvent: (event: FormEvent<HTMLFormElement>) => void;
   editingEventId: number | null;
@@ -130,6 +137,18 @@ export type ActivitiesPageProps = {
   handleEditEvent: (eventItem: InfoCulturaEvent) => void;
   deletingEventId: number | null;
   handleDeleteEvent: (id: number) => void | Promise<void>;
+  changingEventStatusId: number | null;
+  handleToggleEventActive: (id: number, shouldActivate: boolean) => void | Promise<void>;
+  syncingEventbriteId: number | null;
+  handleSyncEventbrite: (id: number, publish?: boolean) => void | Promise<void>;
+  eventbriteConnection?: EventbriteConnectionStatus | null;
+  isCheckingEventbriteConnection?: boolean;
+  handleCheckEventbriteConnection?: () => void | Promise<void>;
+  loadingEventbriteOrdersId: number | null;
+  eventbriteRefundStatus: EventbriteRefundStatus;
+  setEventbriteRefundStatus: Dispatch<SetStateAction<EventbriteRefundStatus>>;
+  eventbriteOrdersByEventId: Record<number, EventbriteOrdersPage>;
+  handleLoadEventbriteOrders: (id: number, refundStatus?: EventbriteRefundStatus) => void | Promise<void>;
   showEventCategories: boolean;
   handleSaveCategory: (event: FormEvent<HTMLFormElement>) => void;
   categoryForm: CategoryFormState;
@@ -201,6 +220,8 @@ function ActivitiesPage({
   handleEditBook,
   deletingBookId,
   handleDeleteBook,
+  changingBookStatusId,
+  handleToggleBookActive,
   isLoadingActivities,
   activityTotal,
   activityPage,
@@ -215,6 +236,8 @@ function ActivitiesPage({
   handleEditSession,
   deletingSessionId,
   handleDeleteSession,
+  changingSessionStatusId,
+  handleToggleSessionActive,
   sortedSessions,
   handleSaveEvent,
   editingEventId,
@@ -229,6 +252,18 @@ function ActivitiesPage({
   handleEditEvent,
   deletingEventId,
   handleDeleteEvent,
+  changingEventStatusId,
+  handleToggleEventActive,
+  syncingEventbriteId,
+  handleSyncEventbrite,
+  eventbriteConnection,
+  isCheckingEventbriteConnection = false,
+  handleCheckEventbriteConnection,
+  loadingEventbriteOrdersId,
+  eventbriteRefundStatus,
+  setEventbriteRefundStatus,
+  eventbriteOrdersByEventId,
+  handleLoadEventbriteOrders,
   showEventCategories,
   handleSaveCategory,
   categoryForm,
@@ -636,7 +671,7 @@ function ActivitiesPage({
                     id="book-cover"
                     key={bookImageFileKey}
                     type="file"
-                    accept="image/png, image/jpeg"
+                    accept="image/*"
                     className={adminInput}
                     onChange={(event) => {
                       const file = event.target.files?.[0] || null;
@@ -648,7 +683,7 @@ function ActivitiesPage({
                       ? 'A carregar capa...'
                       : bookForm.cover_image
                         ? 'Capa carregada com sucesso.'
-                        : 'Seleciona uma imagem PNG ou JPG para a capa do livro.'}
+                        : 'Seleciona uma imagem do computador ou telemovel.'}
                   </p>
                   {bookForm.cover_image ? (
                     <img
@@ -693,7 +728,7 @@ function ActivitiesPage({
                     }
                   />
 	                  <p className={blockText}>
-	                    Escolhe a data/hora de publicação. Para publicar imediatamente, usa "Publicar agora"; para agendar, escolhe um momento futuro e clica em "Agendar".
+	                    Usa "Publicar agora" para publicar imediatamente ou escolhe data/hora futura e clica em "Agendar".
 	                  </p>
 	                </div>
               </div>
@@ -779,6 +814,18 @@ function ActivitiesPage({
                     <div className={adminListTools}>
                       <button type="button" className={adminBtnEdit} onClick={() => handleEditBook(item)}>
                         Editar
+                      </button>
+                      <button
+                        type="button"
+                        className={item.is_active ? adminBtnSecondary : adminBtnPrimary}
+                        disabled={changingBookStatusId === item.id}
+                        onClick={() => void handleToggleBookActive(item.id, !item.is_active)}
+                      >
+                        {changingBookStatusId === item.id
+                          ? 'A atualizar...'
+                          : item.is_active
+                            ? 'Desativar'
+                            : 'Ativar'}
                       </button>
                       <button
                         type="button"
@@ -948,7 +995,7 @@ function ActivitiesPage({
 	                    }
 	                  />
 	                  <p className={blockText}>
-	                    Escolhe a data/hora de publicação. Para publicar imediatamente, usa "Publicar agora"; para agendar, escolhe um momento futuro e clica em "Agendar".
+	                    Usa "Publicar agora" para publicar imediatamente ou escolhe data/hora futura e clica em "Agendar".
 	                  </p>
 	                </div>
 
@@ -1067,6 +1114,18 @@ function ActivitiesPage({
                       </button>
                       <button
                         type="button"
+                        className={item.is_active ? adminBtnSecondary : adminBtnPrimary}
+                        disabled={changingSessionStatusId === item.id}
+                        onClick={() => void handleToggleSessionActive(item.id, !item.is_active)}
+                      >
+                        {changingSessionStatusId === item.id
+                          ? 'A atualizar...'
+                          : item.is_active
+                            ? 'Desativar'
+                            : 'Ativar'}
+                      </button>
+                      <button
+                        type="button"
                         className={adminBtnDanger}
                         disabled={deletingSessionId === item.id}
                         onClick={() => handleDeleteSession(item.id)}
@@ -1118,6 +1177,25 @@ function ActivitiesPage({
           {showActivityForm ? (
             <form id="activity-form" onSubmit={handleSaveEvent} className={adminPanelForm}>
               <h2 className={blockTitle}>{editingEventId ? 'Editar Evento' : 'Novo Evento'}</h2>
+              <div className="mb-4 flex flex-wrap items-center gap-3 rounded-lg border border-slate-200 bg-slate-50 p-3">
+                <button
+                  type="button"
+                  className={adminBtnSecondary}
+                  disabled={isCheckingEventbriteConnection || !handleCheckEventbriteConnection}
+                  onClick={() => {
+                    void handleCheckEventbriteConnection?.();
+                  }}
+                >
+                  {isCheckingEventbriteConnection ? 'A verificar...' : 'Verificar Eventbrite'}
+                </button>
+                {eventbriteConnection ? (
+                  <p className={eventbriteConnection.connected ? adminInfo : adminError}>
+                    {eventbriteConnection.connected
+                      ? `Ligado a ${eventbriteConnection.organization_name || eventbriteConnection.organization_id || 'Eventbrite'}`
+                      : eventbriteConnection.message || 'Eventbrite nao configurada'}
+                  </p>
+                ) : null}
+              </div>
 
               <div className={adminFormGridSpaced}>
                 {canManageUsers ? (
@@ -1272,7 +1350,7 @@ function ActivitiesPage({
 	                    }
 	                  />
 	                  <p className={blockText}>
-	                    Escolhe a data/hora de publicação. Para publicar imediatamente, usa "Publicar agora"; para agendar, escolhe um momento futuro e clica em "Agendar".
+	                    Usa "Publicar agora" para publicar imediatamente ou escolhe data/hora futura e clica em "Agendar".
 	                  </p>
 	                </div>
 
@@ -1367,7 +1445,183 @@ function ActivitiesPage({
                     Quando a lotacao for atingida, novas inscricoes passam para espera.
                   </p>
                 </div>
+              </div>
 
+              <h3 className={blockTitle}>Eventbrite</h3>
+              <div className={adminFormGridSpaced}>
+                <div className={adminField}>
+                  <label className={adminLabel} htmlFor="eventbrite-venue-id">
+                    ID da sala
+                  </label>
+                  <input
+                    id="eventbrite-venue-id"
+                    className={adminInput}
+                    value={eventForm.eventbrite_venue_id}
+                    onChange={(event) =>
+                      setEventForm((prev) => ({ ...prev, eventbrite_venue_id: event.target.value }))
+                    }
+                  />
+                  <p className={blockText}>
+                    Usa uma sala existente ou deixa vazio para criar pela morada abaixo.
+                  </p>
+                </div>
+                <div className={adminField}>
+                  <label className={adminLabel} htmlFor="eventbrite-venue-name">
+                    Sala
+                  </label>
+                  <input
+                    id="eventbrite-venue-name"
+                    className={adminInput}
+                    value={eventForm.eventbrite_venue_name}
+                    onChange={(event) =>
+                      setEventForm((prev) => ({ ...prev, eventbrite_venue_name: event.target.value }))
+                    }
+                  />
+                </div>
+                <div className={adminField}>
+                  <label className={adminLabel} htmlFor="eventbrite-venue-address">
+                    Morada
+                  </label>
+                  <input
+                    id="eventbrite-venue-address"
+                    className={adminInput}
+                    value={eventForm.eventbrite_venue_address_1}
+                    onChange={(event) =>
+                      setEventForm((prev) => ({ ...prev, eventbrite_venue_address_1: event.target.value }))
+                    }
+                  />
+                </div>
+                <div className={adminField}>
+                  <label className={adminLabel} htmlFor="eventbrite-venue-postal">
+                    Codigo postal
+                  </label>
+                  <input
+                    id="eventbrite-venue-postal"
+                    className={adminInput}
+                    value={eventForm.eventbrite_venue_postal_code}
+                    onChange={(event) =>
+                      setEventForm((prev) => ({ ...prev, eventbrite_venue_postal_code: event.target.value }))
+                    }
+                  />
+                </div>
+                <div className={adminField}>
+                  <label className={adminLabel} htmlFor="eventbrite-venue-city">
+                    Cidade Eventbrite
+                  </label>
+                  <input
+                    id="eventbrite-venue-city"
+                    className={adminInput}
+                    value={eventForm.eventbrite_venue_city}
+                    onChange={(event) =>
+                      setEventForm((prev) => ({ ...prev, eventbrite_venue_city: event.target.value }))
+                    }
+                  />
+                </div>
+                <div className={adminField}>
+                  <label className={adminLabel} htmlFor="eventbrite-venue-country">
+                    Pais
+                  </label>
+                  <input
+                    id="eventbrite-venue-country"
+                    className={adminInput}
+                    value={eventForm.eventbrite_venue_country}
+                    onChange={(event) =>
+                      setEventForm((prev) => ({ ...prev, eventbrite_venue_country: event.target.value }))
+                    }
+                  />
+                </div>
+                <div className={adminField}>
+                  <label className={adminLabel} htmlFor="eventbrite-ticket-name">
+                    Ticket
+                  </label>
+                  <input
+                    id="eventbrite-ticket-name"
+                    className={adminInput}
+                    value={eventForm.eventbrite_ticket_name}
+                    onChange={(event) =>
+                      setEventForm((prev) => ({ ...prev, eventbrite_ticket_name: event.target.value }))
+                    }
+                  />
+                </div>
+                <div className={adminField}>
+                  <label className={adminLabel} htmlFor="eventbrite-ticket-type">
+                    Tipo
+                  </label>
+                  <select
+                    id="eventbrite-ticket-type"
+                    className={adminInput}
+                    value={eventForm.eventbrite_ticket_type}
+                    onChange={(event) =>
+                      setEventForm((prev) => ({
+                        ...prev,
+                        eventbrite_ticket_type: event.target.value as EventFormState['eventbrite_ticket_type'],
+                      }))
+                    }
+                  >
+                    <option value="free">Gratis</option>
+                    <option value="paid">Pago</option>
+                    <option value="donation">Donativo</option>
+                  </select>
+                </div>
+                <div className={adminField}>
+                  <label className={adminLabel} htmlFor="eventbrite-ticket-quantity">
+                    Quantidade
+                  </label>
+                  <input
+                    id="eventbrite-ticket-quantity"
+                    type="number"
+                    min="1"
+                    className={adminInput}
+                    value={eventForm.eventbrite_ticket_quantity}
+                    onChange={(event) =>
+                      setEventForm((prev) => ({ ...prev, eventbrite_ticket_quantity: event.target.value }))
+                    }
+                  />
+                </div>
+                <div className={adminField}>
+                  <label className={adminLabel} htmlFor="eventbrite-ticket-price">
+                    Preco
+                  </label>
+                  <input
+                    id="eventbrite-ticket-price"
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    className={adminInput}
+                    disabled={eventForm.eventbrite_ticket_type !== 'paid'}
+                    value={eventForm.eventbrite_ticket_price}
+                    onChange={(event) =>
+                      setEventForm((prev) => ({ ...prev, eventbrite_ticket_price: event.target.value }))
+                    }
+                  />
+                </div>
+                <label className={`${adminLabel} flex items-center gap-2`}>
+                  <input
+                    type="checkbox"
+                    checked={eventForm.sync_eventbrite_on_save}
+                    onChange={(event) =>
+                      setEventForm((prev) => ({ ...prev, sync_eventbrite_on_save: event.target.checked }))
+                    }
+                  />
+                  Sincronizar ao guardar
+                </label>
+                <label className={`${adminLabel} flex items-center gap-2`}>
+                  <input
+                    type="checkbox"
+                    checked={eventForm.publish_eventbrite_on_save}
+                    onChange={(event) =>
+                      setEventForm((prev) => ({
+                        ...prev,
+                        publish_eventbrite_on_save: event.target.checked,
+                        sync_eventbrite_on_save: event.target.checked || prev.sync_eventbrite_on_save,
+                      }))
+                    }
+                  />
+                  Publicar na Eventbrite ao guardar
+                </label>
+              </div>
+
+              <div className={adminFormGridSpaced}>
                 <div className={adminField}>
                   <label className={adminLabel} htmlFor="event-image">
                     Imagem
@@ -1376,7 +1630,7 @@ function ActivitiesPage({
                     id="event-image"
                     key={eventImageFileKey}
                     type="file"
-                    accept="image/png, image/jpeg"
+                    accept="image/*"
                     className={adminInput}
                     onChange={(event) => {
                       const file = event.target.files?.[0] || null;
@@ -1388,7 +1642,7 @@ function ActivitiesPage({
                       ? 'A carregar imagem...'
                       : eventForm.image
                         ? 'Imagem carregada com sucesso.'
-                        : 'Seleciona uma imagem PNG ou JPG para o evento.'}
+                        : 'Seleciona uma imagem para o evento.'}
                   </p>
                   {eventForm.image ? (
                     <img
@@ -1476,8 +1730,44 @@ function ActivitiesPage({
                       </p>
                     </div>
                     <div className={adminListTools}>
+                      <button
+                        type="button"
+                        className={adminBtnSecondary}
+                        disabled={syncingEventbriteId === item.id}
+                        onClick={() => handleSyncEventbrite(item.id, false)}
+                      >
+                        {syncingEventbriteId === item.id ? 'A sincronizar...' : 'Eventbrite'}
+                      </button>
+                      <button
+                        type="button"
+                        className={adminBtnSecondary}
+                        disabled={syncingEventbriteId === item.id}
+                        onClick={() => handleSyncEventbrite(item.id, true)}
+                      >
+                        Publicar EB
+                      </button>
+                      <button
+                        type="button"
+                        className={adminBtnSecondary}
+                        disabled={loadingEventbriteOrdersId === item.id || !item.eventbrite_event_id}
+                        onClick={() => handleLoadEventbriteOrders(item.id)}
+                      >
+                        {loadingEventbriteOrdersId === item.id ? 'A carregar...' : 'Pedidos EB'}
+                      </button>
                       <button type="button" className={adminBtnEdit} onClick={() => handleEditEvent(item)}>
                         Editar
+                      </button>
+                      <button
+                        type="button"
+                        className={item.is_active ? adminBtnSecondary : adminBtnPrimary}
+                        disabled={changingEventStatusId === item.id}
+                        onClick={() => void handleToggleEventActive(item.id, !item.is_active)}
+                      >
+                        {changingEventStatusId === item.id
+                          ? 'A atualizar...'
+                          : item.is_active
+                            ? 'Desativar'
+                            : 'Ativar'}
                       </button>
                       <button
                         type="button"
@@ -1501,6 +1791,87 @@ function ActivitiesPage({
                     <p className={adminListMeta}>
                       Categorias: {item.categories.map((category) => category.name).join(', ')}
                     </p>
+                  ) : null}
+                  {item.eventbrite_event_id ? (
+                    <p className={adminListMeta}>
+                      Eventbrite: {item.eventbrite_status || 'sincronizado'} ·{' '}
+                      {item.eventbrite_url ? (
+                        <a className="underline" href={item.eventbrite_url} target="_blank" rel="noreferrer">
+                          abrir
+                        </a>
+                      ) : (
+                        item.eventbrite_event_id
+                      )}
+                    </p>
+                  ) : null}
+                  {item.eventbrite_venue_id || item.eventbrite_ticket_classes?.length ? (
+                    <p className={adminListMeta}>
+                      {item.eventbrite_venue_id ? `Sala EB ${item.eventbrite_venue_id}` : 'Sala EB por criar'}
+                      {item.eventbrite_ticket_classes?.length
+                        ? ` · Tickets: ${item.eventbrite_ticket_classes
+                            .map((ticket) => `${ticket.name} (${ticket.quantity_total})`)
+                            .join(', ')}`
+                        : ''}
+                    </p>
+                  ) : null}
+                  {item.eventbrite_last_error ? (
+                    <p className={adminError}>Eventbrite: {item.eventbrite_last_error}</p>
+                  ) : null}
+                  {item.eventbrite_event_id ? (
+                    <div className="mt-3 rounded-lg border border-slate-200 bg-slate-50 p-3">
+                      <div className="flex flex-wrap items-end gap-3">
+                        <div className={adminField}>
+                          <label className={adminLabel} htmlFor={`eventbrite-refund-${item.id}`}>
+                            Reembolsos
+                          </label>
+                          <select
+                            id={`eventbrite-refund-${item.id}`}
+                            className={adminInput}
+                            value={eventbriteRefundStatus}
+                            onChange={(event) => {
+                              const nextStatus = event.target.value as EventbriteRefundStatus;
+                              setEventbriteRefundStatus(nextStatus);
+                              void handleLoadEventbriteOrders(item.id, nextStatus);
+                            }}
+                          >
+                            <option value="">Todos os pedidos</option>
+                            <option value="pending">Reembolso pendente</option>
+                            <option value="completed">Reembolso concluido</option>
+                            <option value="outside_policy">Fora da politica</option>
+                            <option value="disputed">Em disputa</option>
+                            <option value="denied">Negado</option>
+                          </select>
+                        </div>
+                        {eventbriteOrdersByEventId[item.id]?.eventbrite_manage_orders_url ? (
+                          <a
+                            className={adminBtnSecondary}
+                            href={eventbriteOrdersByEventId[item.id].eventbrite_manage_orders_url}
+                            target="_blank"
+                            rel="noreferrer"
+                          >
+                            Gerir na Eventbrite
+                          </a>
+                        ) : null}
+                      </div>
+                      {eventbriteOrdersByEventId[item.id] ? (
+                        <div className="mt-3 space-y-2">
+                          <p className={adminListMeta}>
+                            {eventbriteOrdersByEventId[item.id].pagination.object_count ?? eventbriteOrdersByEventId[item.id].orders.length}{' '}
+                            pedido(s) encontrados
+                          </p>
+                          {eventbriteOrdersByEventId[item.id].orders.slice(0, 5).map((order) => (
+                            <p key={order.id} className={adminListMeta}>
+                              {order.name || order.email || order.id} · {order.status || 'sem estado'} ·{' '}
+                              {formatAdminDateTime(order.created)}
+                            </p>
+                          ))}
+                        </div>
+                      ) : (
+                        <p className={`${adminListMeta} mt-3`}>
+                          Carrega em “Pedidos EB” para ver encomendas e pedidos de reembolso.
+                        </p>
+                      )}
+                    </div>
                   ) : null}
                   {item.editorial_history && item.editorial_history.length > 0 ? (
                     <div className="mt-3 space-y-1">

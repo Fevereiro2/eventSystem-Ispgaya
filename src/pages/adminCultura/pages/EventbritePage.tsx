@@ -1,0 +1,937 @@
+import { FormEvent, useEffect, useMemo, useState } from 'react';
+import { Ticket } from 'lucide-react';
+import { useLocation, Link } from 'react-router-dom';
+
+import {
+  createAdminEvent,
+  createAdminEventbriteTicketClass,
+  EventPayload,
+  EventbriteAttendeesPage,
+  EventbriteEventDetail,
+  EventbriteOrdersPage,
+  fetchAdminEventbriteAttendees,
+  fetchAdminEventbriteConnection,
+  fetchAdminEventbriteEventDetail,
+  fetchAdminEventbriteOrders,
+  InfoCulturaClub,
+  InfoCulturaEvent,
+  InfoCulturaUser,
+  syncAdminEventToEventbrite,
+} from '../../../api/infoculturaApi';
+import {
+  adminActions,
+  adminBtnEdit,
+  adminBtnPrimary,
+  adminBtnSecondary,
+  adminError,
+  adminField,
+  adminFormGridSpaced,
+  adminInfo,
+  adminInput,
+  adminLabel,
+  adminList,
+  adminListItem,
+  adminListMeta,
+  adminListTitle,
+  adminListTools,
+  adminPanelCard,
+  adminPanelForm,
+  blockText,
+  blockTitle,
+} from '../../../styles/ui';
+import AdminPageHero from '../components/AdminPageHero';
+import { getEventbriteSubpage } from '../utils';
+import { formatAdminDateTime, getWorkflowStatusLabel } from '../utils';
+
+type EventbritePageProps = {
+  token: string;
+  currentUser: InfoCulturaUser;
+  canManageUsers: boolean;
+  clubs: InfoCulturaClub[];
+  events: InfoCulturaEvent[];
+  setEvents: (updater: (items: InfoCulturaEvent[]) => InfoCulturaEvent[]) => void;
+};
+
+type EventbriteDraftForm = {
+  club_id: string;
+  title: string;
+  description: string;
+  event_date: string;
+  start_date: string;
+  end_date: string;
+  city: string;
+  location: string;
+  capacity: string;
+  venue_id: string;
+  venue_name: string;
+  venue_address: string;
+  venue_postal_code: string;
+  venue_country: string;
+  ticket_name: string;
+  ticket_type: 'free' | 'paid' | 'donation';
+  ticket_quantity: string;
+  ticket_price: string;
+  publish: boolean;
+};
+
+type LocalVenueConfig = {
+  name: string;
+  rows: number;
+  seatsPerRow: number;
+  prefix: string;
+  notes: string;
+};
+
+type SeatStatus = 'available' | 'held' | 'blocked' | 'vip';
+
+type LocalSeat = {
+  id: string;
+  rowLabel: string;
+  seatNumber: number;
+  status: SeatStatus;
+};
+
+type LocalTicketPreset = {
+  id: string;
+  name: string;
+  type: 'free' | 'paid' | 'donation';
+  price: string;
+  quantity: string;
+  description: string;
+};
+
+const initialForm: EventbriteDraftForm = {
+  club_id: '',
+  title: '',
+  description: '',
+  event_date: '',
+  start_date: '',
+  end_date: '',
+  city: 'Vila Nova de Gaia',
+  location: '',
+  capacity: '',
+  venue_id: '',
+  venue_name: '',
+  venue_address: '',
+  venue_postal_code: '',
+  venue_country: 'PT',
+  ticket_name: 'Entrada geral',
+  ticket_type: 'free',
+  ticket_quantity: '',
+  ticket_price: '',
+  publish: false,
+};
+
+const defaultVenueConfig: LocalVenueConfig = {
+  name: '',
+  rows: 8,
+  seatsPerRow: 12,
+  prefix: 'Fila',
+  notes: '',
+};
+
+const defaultTicketPreset = (): LocalTicketPreset => ({
+  id: crypto.randomUUID(),
+  name: 'Bilhete normal',
+  type: 'free',
+  price: '',
+  quantity: '50',
+  description: '',
+});
+
+function getTicketClassLabel(ticket: Record<string, unknown>): string {
+  const name = String(ticket.name || ticket.ticket_class_name || 'Ticket');
+  const quantity = ticket.quantity_total || ticket.quantity_sold || '';
+  const sold = ticket.quantity_sold;
+  return `${name}${quantity ? ` · ${quantity}` : ''}${sold ? ` · vendidos ${sold}` : ''}`;
+}
+
+function buildRowLabel(prefix: string, index: number): string {
+  const letter = String.fromCharCode(65 + index);
+  return `${prefix.trim() || 'Fila'} ${letter}`;
+}
+
+function buildSeatMap(config: LocalVenueConfig): LocalSeat[] {
+  const seats: LocalSeat[] = [];
+
+  for (let rowIndex = 0; rowIndex < config.rows; rowIndex += 1) {
+    const rowLabel = buildRowLabel(config.prefix, rowIndex);
+    for (let seatNumber = 1; seatNumber <= config.seatsPerRow; seatNumber += 1) {
+      seats.push({
+        id: `${rowLabel}-${seatNumber}`,
+        rowLabel,
+        seatNumber,
+        status: 'available',
+      });
+    }
+  }
+
+  return seats;
+}
+
+function readStorage<T>(key: string, fallback: T): T {
+  if (typeof window === 'undefined') return fallback;
+
+  try {
+    const raw = window.localStorage.getItem(key);
+    return raw ? (JSON.parse(raw) as T) : fallback;
+  } catch {
+    return fallback;
+  }
+}
+
+function writeStorage<T>(key: string, value: T) {
+  if (typeof window === 'undefined') return;
+  window.localStorage.setItem(key, JSON.stringify(value));
+}
+
+function EventbritePage({
+  token,
+  currentUser,
+  canManageUsers,
+  clubs,
+  events,
+  setEvents,
+}: EventbritePageProps) {
+  const location = useLocation();
+  const activeSubpage = getEventbriteSubpage(location.pathname) || 'overview';
+  const [form, setForm] = useState<EventbriteDraftForm>(() => ({
+    ...initialForm,
+    club_id: canManageUsers ? '' : currentUser.club_id ? String(currentUser.club_id) : '',
+  }));
+  const [selectedEventId, setSelectedEventId] = useState<number | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
+  const [isChecking, setIsChecking] = useState(false);
+  const [isLoadingEventbrite, setIsLoadingEventbrite] = useState(false);
+  const [error, setError] = useState('');
+  const [connectionLabel, setConnectionLabel] = useState('');
+  const [detailsByEventId, setDetailsByEventId] = useState<Record<number, EventbriteEventDetail>>({});
+  const [ordersByEventId, setOrdersByEventId] = useState<Record<number, EventbriteOrdersPage>>({});
+  const [attendeesByEventId, setAttendeesByEventId] = useState<Record<number, EventbriteAttendeesPage>>({});
+  const [ticketName, setTicketName] = useState('Entrada extra');
+  const [ticketQuantity, setTicketQuantity] = useState('25');
+  const [ticketType, setTicketType] = useState<'free' | 'paid' | 'donation'>('free');
+  const [ticketPrice, setTicketPrice] = useState('');
+  const [venueConfigByEventId, setVenueConfigByEventId] = useState<Record<number, LocalVenueConfig>>(
+    () => readStorage('infocultura:eventbrite:venues', {})
+  );
+  const [seatMapByEventId, setSeatMapByEventId] = useState<Record<number, LocalSeat[]>>(
+    () => readStorage('infocultura:eventbrite:seatmaps', {})
+  );
+  const [ticketPresetsByEventId, setTicketPresetsByEventId] = useState<Record<number, LocalTicketPreset[]>>(
+    () => readStorage('infocultura:eventbrite:ticket-presets', {})
+  );
+  const [seatPaintMode, setSeatPaintMode] = useState<SeatStatus>('available');
+  const [draftVenueConfig, setDraftVenueConfig] = useState<LocalVenueConfig>(defaultVenueConfig);
+
+  const eventbriteEvents = useMemo(
+    () => events.filter((event) => event.eventbrite_event_id || event.eventbrite_venue_id),
+    [events]
+  );
+  const selectedEvent =
+    eventbriteEvents.find((event) => event.id === selectedEventId) ||
+    events.find((event) => event.id === selectedEventId) ||
+    null;
+
+  useEffect(() => {
+    writeStorage('infocultura:eventbrite:venues', venueConfigByEventId);
+  }, [venueConfigByEventId]);
+
+  useEffect(() => {
+    writeStorage('infocultura:eventbrite:seatmaps', seatMapByEventId);
+  }, [seatMapByEventId]);
+
+  useEffect(() => {
+    writeStorage('infocultura:eventbrite:ticket-presets', ticketPresetsByEventId);
+  }, [ticketPresetsByEventId]);
+
+  useEffect(() => {
+    if (!selectedEventId && eventbriteEvents.length > 0) {
+      setSelectedEventId(eventbriteEvents[0].id);
+    }
+  }, [selectedEventId, eventbriteEvents]);
+
+  useEffect(() => {
+    if (!selectedEvent) {
+      setDraftVenueConfig(defaultVenueConfig);
+      return;
+    }
+
+    const storedVenue = venueConfigByEventId[selectedEvent.id];
+    setDraftVenueConfig(
+      storedVenue || {
+        ...defaultVenueConfig,
+        name: selectedEvent.eventbrite_venue?.name || selectedEvent.location || '',
+      }
+    );
+  }, [selectedEvent, venueConfigByEventId]);
+
+  async function handleCheckConnection() {
+    setIsChecking(true);
+    setError('');
+    try {
+      const connection = await fetchAdminEventbriteConnection(token);
+      setConnectionLabel(
+        connection.connected
+          ? `Ligado a ${connection.organization_name || connection.organization_id || 'Eventbrite'}`
+          : connection.message || 'Eventbrite nao configurada'
+      );
+    } catch (caught) {
+      const message = caught instanceof Error ? caught.message : 'Nao foi possivel verificar a Eventbrite.';
+      setConnectionLabel(message);
+      setError(message);
+    } finally {
+      setIsChecking(false);
+    }
+  }
+
+  async function handleCreateEvent(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setError('');
+
+    if (!form.title || !form.description || !form.event_date || !form.start_date || !form.end_date) {
+      setError('Preenche titulo, descricao e datas.');
+      return;
+    }
+    if (canManageUsers && !form.club_id) {
+      setError('Seleciona o clube.');
+      return;
+    }
+
+    setIsSaving(true);
+    try {
+      const capacity = form.capacity ? Number(form.capacity) : Number(form.ticket_quantity || 100);
+      const payload: EventPayload = {
+        title: form.title.trim(),
+        description: form.description.trim(),
+        event_date: form.event_date,
+        start_date: form.start_date,
+        end_date: form.end_date,
+        image: '',
+        is_external: false,
+        enable_registrations: true,
+        registration_capacity: capacity,
+        status: 'published',
+        city: form.city.trim(),
+        location: form.location.trim(),
+        eventbrite_venue_id: form.venue_id.trim(),
+        eventbrite_venue:
+          form.venue_name || form.venue_address
+            ? {
+                name: form.venue_name.trim() || form.location.trim(),
+                address_1: form.venue_address.trim() || form.location.trim(),
+                city: form.city.trim(),
+                postal_code: form.venue_postal_code.trim(),
+                country: form.venue_country.trim() || 'PT',
+                capacity,
+              }
+            : null,
+        eventbrite_ticket_classes: [
+          {
+            name: form.ticket_name.trim() || 'Entrada geral',
+            type: form.ticket_type,
+            quantity_total: Number(form.ticket_quantity || capacity || 100),
+            price: form.ticket_type === 'paid' && form.ticket_price ? Number(form.ticket_price) : null,
+          },
+        ],
+        ...(form.club_id ? { club_id: Number(form.club_id) } : {}),
+      };
+
+      const createdEvent = await createAdminEvent(token, payload);
+      const syncedEvent = await syncAdminEventToEventbrite(token, createdEvent.id, form.publish);
+      setEvents((items) => [...items, syncedEvent]);
+      setSelectedEventId(syncedEvent.id);
+      setForm({
+        ...initialForm,
+        club_id: canManageUsers ? '' : currentUser.club_id ? String(currentUser.club_id) : '',
+      });
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : 'Nao foi possivel criar o evento Eventbrite.');
+    } finally {
+      setIsSaving(false);
+    }
+  }
+
+  async function handleSyncEvent(id: number, publish = false) {
+    setIsLoadingEventbrite(true);
+    setError('');
+    try {
+      const synced = await syncAdminEventToEventbrite(token, id, publish);
+      setEvents((items) => items.map((item) => (item.id === synced.id ? synced : item)));
+      setSelectedEventId(synced.id);
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : 'Nao foi possivel sincronizar com a Eventbrite.');
+    } finally {
+      setIsLoadingEventbrite(false);
+    }
+  }
+
+  async function handleLoadEventbriteData(id: number) {
+    setIsLoadingEventbrite(true);
+    setError('');
+    try {
+      const [detail, orders, attendees] = await Promise.all([
+        fetchAdminEventbriteEventDetail(token, id),
+        fetchAdminEventbriteOrders(token, id),
+        fetchAdminEventbriteAttendees(token, id),
+      ]);
+      setDetailsByEventId((items) => ({ ...items, [id]: detail }));
+      setOrdersByEventId((items) => ({ ...items, [id]: orders }));
+      setAttendeesByEventId((items) => ({ ...items, [id]: attendees }));
+      setSelectedEventId(id);
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : 'Nao foi possivel carregar dados da Eventbrite.');
+    } finally {
+      setIsLoadingEventbrite(false);
+    }
+  }
+
+  async function handleCreateTicket(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!selectedEvent) return;
+    setIsLoadingEventbrite(true);
+    setError('');
+
+    try {
+      await createAdminEventbriteTicketClass(token, selectedEvent.id, {
+        name: ticketName.trim() || 'Entrada extra',
+        type: ticketType,
+        quantity_total: Number(ticketQuantity || 1),
+        price: ticketType === 'paid' && ticketPrice ? Number(ticketPrice) : null,
+      });
+      await handleLoadEventbriteData(selectedEvent.id);
+      setTicketName('Entrada extra');
+      setTicketQuantity('25');
+      setTicketType('free');
+      setTicketPrice('');
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : 'Nao foi possivel criar o ticket.');
+      setIsLoadingEventbrite(false);
+    }
+  }
+
+  function handleSaveVenueConfig(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!selectedEvent) return;
+
+    const normalizedVenue = {
+      ...draftVenueConfig,
+      rows: Math.max(1, Number(draftVenueConfig.rows)),
+      seatsPerRow: Math.max(1, Number(draftVenueConfig.seatsPerRow)),
+    };
+
+    setVenueConfigByEventId((prev) => ({ ...prev, [selectedEvent.id]: normalizedVenue }));
+    setSeatMapByEventId((prev) => ({
+      ...prev,
+      [selectedEvent.id]: prev[selectedEvent.id]?.length ? prev[selectedEvent.id] : buildSeatMap(normalizedVenue),
+    }));
+  }
+
+  function handleGenerateSeatMap() {
+    if (!selectedEvent) return;
+    const normalizedVenue = {
+      ...draftVenueConfig,
+      rows: Math.max(1, Number(draftVenueConfig.rows)),
+      seatsPerRow: Math.max(1, Number(draftVenueConfig.seatsPerRow)),
+    };
+    setSeatMapByEventId((prev) => ({ ...prev, [selectedEvent.id]: buildSeatMap(normalizedVenue) }));
+  }
+
+  function handlePaintSeat(seatId: string) {
+    if (!selectedEvent) return;
+
+    setSeatMapByEventId((prev) => ({
+      ...prev,
+      [selectedEvent.id]: (prev[selectedEvent.id] || []).map((seat) =>
+        seat.id === seatId ? { ...seat, status: seatPaintMode } : seat
+      ),
+    }));
+  }
+
+  function handleSaveTicketPreset() {
+    if (!selectedEvent) return;
+    const preset = defaultTicketPreset();
+
+    setTicketPresetsByEventId((prev) => ({
+      ...prev,
+      [selectedEvent.id]: [
+        ...(prev[selectedEvent.id] || []),
+        preset,
+      ],
+    }));
+  }
+
+  function handleUpdateTicketPreset(
+    presetId: string,
+    field: keyof Omit<LocalTicketPreset, 'id'>,
+    value: string
+  ) {
+    if (!selectedEvent) return;
+
+    setTicketPresetsByEventId((prev) => ({
+      ...prev,
+      [selectedEvent.id]: (prev[selectedEvent.id] || []).map((preset) =>
+        preset.id === presetId ? { ...preset, [field]: value } : preset
+      ),
+    }));
+  }
+
+  function handleRemoveTicketPreset(presetId: string) {
+    if (!selectedEvent) return;
+
+    setTicketPresetsByEventId((prev) => ({
+      ...prev,
+      [selectedEvent.id]: (prev[selectedEvent.id] || []).filter((preset) => preset.id !== presetId),
+    }));
+  }
+
+  function handleUsePreset(preset: LocalTicketPreset) {
+    setTicketName(preset.name);
+    setTicketType(preset.type);
+    setTicketQuantity(preset.quantity);
+    setTicketPrice(preset.price);
+  }
+
+  const selectedDetails = selectedEvent ? detailsByEventId[selectedEvent.id] : null;
+  const selectedOrders = selectedEvent ? ordersByEventId[selectedEvent.id] : null;
+  const selectedAttendees = selectedEvent ? attendeesByEventId[selectedEvent.id] : null;
+  const selectedSeatMap = selectedEvent ? seatMapByEventId[selectedEvent.id] || [] : [];
+  const selectedTicketPresets = selectedEvent ? ticketPresetsByEventId[selectedEvent.id] || [] : [];
+  const seatStatusCounts = useMemo(() => {
+    return selectedSeatMap.reduce(
+      (acc, seat) => {
+        acc[seat.status] += 1;
+        return acc;
+      },
+      { available: 0, held: 0, blocked: 0, vip: 0 } as Record<SeatStatus, number>
+    );
+  }, [selectedSeatMap]);
+
+  const subpageLinks = [
+    { label: 'Visão Geral', href: '/infocultura/eventbrite', id: 'overview' },
+    { label: 'Salas', href: '/infocultura/eventbrite/salas', id: 'venues' },
+    { label: 'Lugares', href: '/infocultura/eventbrite/lugares', id: 'seating' },
+    { label: 'Tickets', href: '/infocultura/eventbrite/tickets', id: 'tickets' },
+  ] as const;
+
+  return (
+    <div className="space-y-6">
+      <AdminPageHero
+        icon={Ticket}
+        tone="emerald"
+        title="Eventbrite"
+        description="Criacao, publicacao, salas, tickets e desenho operacional de lugares para os eventos ligados a Eventbrite."
+        stats={[
+          { label: 'Eventos ligados', value: eventbriteEvents.length },
+          { label: 'Sincronizados', value: events.filter((event) => event.eventbrite_event_id).length },
+          { label: 'Com sala', value: events.filter((event) => event.eventbrite_venue_id).length },
+        ]}
+      />
+
+      <section className={adminPanelCard}>
+        <div className="flex flex-wrap gap-2">
+          {subpageLinks.map((item) => (
+            <Link
+              key={item.id}
+              to={item.href}
+              className={activeSubpage === item.id ? adminBtnPrimary : adminBtnSecondary}
+            >
+              {item.label}
+            </Link>
+          ))}
+        </div>
+      </section>
+
+      <section className={adminPanelCard}>
+        <div className={`${adminFormGridSpaced} items-end`}>
+          <div className={adminField}>
+            <label className={adminLabel} htmlFor="eventbrite-event-selector">Evento</label>
+            <select
+              id="eventbrite-event-selector"
+              className={adminInput}
+              value={selectedEventId || ''}
+              onChange={(event) => setSelectedEventId(event.target.value ? Number(event.target.value) : null)}
+            >
+              <option value="">Seleciona um evento</option>
+              {eventbriteEvents.map((event) => (
+                <option key={event.id} value={event.id}>
+                  {event.title}
+                </option>
+              ))}
+            </select>
+          </div>
+          {selectedEvent ? (
+            <div className={adminActions}>
+              <button type="button" className={adminBtnSecondary} disabled={isLoadingEventbrite} onClick={() => handleLoadEventbriteData(selectedEvent.id)}>
+                {isLoadingEventbrite ? 'A carregar...' : 'Atualizar dados EB'}
+              </button>
+              <button type="button" className={adminBtnSecondary} disabled={isLoadingEventbrite} onClick={() => handleSyncEvent(selectedEvent.id, false)}>
+                Sincronizar
+              </button>
+              <button type="button" className={adminBtnSecondary} disabled={isLoadingEventbrite} onClick={() => handleSyncEvent(selectedEvent.id, true)}>
+                Publicar
+              </button>
+            </div>
+          ) : null}
+        </div>
+        {selectedEvent ? (
+          <p className={`${adminListMeta} mt-3`}>
+            {selectedEvent.club_name || 'Sem clube'} · {getWorkflowStatusLabel(selectedEvent.status)} ·{' '}
+            {formatAdminDateTime(selectedEvent.start_date)}
+          </p>
+        ) : (
+          <p className={adminInfo}>Seleciona um evento para gerir salas, lugares e tickets.</p>
+        )}
+        {error ? <p className={`${adminError} mt-3`}>{error}</p> : null}
+      </section>
+
+      {activeSubpage === 'overview' ? (
+        <>
+          <section className={adminPanelCard}>
+            <div className={adminActions}>
+              <button type="button" className={adminBtnSecondary} disabled={isChecking} onClick={handleCheckConnection}>
+                {isChecking ? 'A verificar...' : 'Verificar ligacao'}
+              </button>
+              {connectionLabel ? <p className={connectionLabel.includes('Ligado') ? adminInfo : adminError}>{connectionLabel}</p> : null}
+            </div>
+          </section>
+
+          <form className={adminPanelForm} onSubmit={handleCreateEvent}>
+            <h2 className={blockTitle}>Criar evento Eventbrite</h2>
+            <div className={adminFormGridSpaced}>
+              {canManageUsers ? (
+                <div className={adminField}>
+                  <label className={adminLabel} htmlFor="eb-club">Clube</label>
+                  <select id="eb-club" className={adminInput} value={form.club_id} onChange={(event) => setForm((prev) => ({ ...prev, club_id: event.target.value }))}>
+                    <option value="">Seleciona um clube</option>
+                    {clubs.map((club) => <option key={club.id} value={club.id}>{club.name}</option>)}
+                  </select>
+                </div>
+              ) : null}
+              <div className={adminField}>
+                <label className={adminLabel} htmlFor="eb-title">Titulo</label>
+                <input id="eb-title" className={adminInput} value={form.title} onChange={(event) => setForm((prev) => ({ ...prev, title: event.target.value }))} />
+              </div>
+              <div className={adminField}>
+                <label className={adminLabel} htmlFor="eb-start">Inicio</label>
+                <input id="eb-start" type="datetime-local" className={adminInput} value={form.start_date} onChange={(event) => setForm((prev) => ({ ...prev, start_date: event.target.value }))} />
+              </div>
+              <div className={adminField}>
+                <label className={adminLabel} htmlFor="eb-end">Fim</label>
+                <input id="eb-end" type="datetime-local" className={adminInput} value={form.end_date} onChange={(event) => setForm((prev) => ({ ...prev, end_date: event.target.value }))} />
+              </div>
+              <div className={adminField}>
+                <label className={adminLabel} htmlFor="eb-date">Data publica</label>
+                <input id="eb-date" type="date" className={adminInput} value={form.event_date} onChange={(event) => setForm((prev) => ({ ...prev, event_date: event.target.value }))} />
+              </div>
+              <div className={adminField}>
+                <label className={adminLabel} htmlFor="eb-city">Cidade</label>
+                <input id="eb-city" className={adminInput} value={form.city} onChange={(event) => setForm((prev) => ({ ...prev, city: event.target.value }))} />
+              </div>
+              <div className={adminField}>
+                <label className={adminLabel} htmlFor="eb-location">Local</label>
+                <input id="eb-location" className={adminInput} value={form.location} onChange={(event) => setForm((prev) => ({ ...prev, location: event.target.value }))} />
+              </div>
+            </div>
+            <div className={adminField}>
+              <label className={adminLabel} htmlFor="eb-description">Descricao</label>
+              <textarea id="eb-description" rows={4} className={adminInput} value={form.description} onChange={(event) => setForm((prev) => ({ ...prev, description: event.target.value }))} />
+            </div>
+
+            <h3 className={blockTitle}>Sala</h3>
+            <div className={adminFormGridSpaced}>
+              <div className={adminField}>
+                <label className={adminLabel} htmlFor="eb-venue-id">ID da sala Eventbrite</label>
+                <input id="eb-venue-id" className={adminInput} value={form.venue_id} onChange={(event) => setForm((prev) => ({ ...prev, venue_id: event.target.value }))} />
+              </div>
+              <div className={adminField}>
+                <label className={adminLabel} htmlFor="eb-venue-name">Nome da sala</label>
+                <input id="eb-venue-name" className={adminInput} value={form.venue_name} onChange={(event) => setForm((prev) => ({ ...prev, venue_name: event.target.value }))} />
+              </div>
+              <div className={adminField}>
+                <label className={adminLabel} htmlFor="eb-venue-address">Morada</label>
+                <input id="eb-venue-address" className={adminInput} value={form.venue_address} onChange={(event) => setForm((prev) => ({ ...prev, venue_address: event.target.value }))} />
+              </div>
+              <div className={adminField}>
+                <label className={adminLabel} htmlFor="eb-venue-postal">Codigo postal</label>
+                <input id="eb-venue-postal" className={adminInput} value={form.venue_postal_code} onChange={(event) => setForm((prev) => ({ ...prev, venue_postal_code: event.target.value }))} />
+              </div>
+            </div>
+
+            <h3 className={blockTitle}>Ticket base</h3>
+            <div className={adminFormGridSpaced}>
+              <div className={adminField}>
+                <label className={adminLabel} htmlFor="eb-ticket-name">Nome</label>
+                <input id="eb-ticket-name" className={adminInput} value={form.ticket_name} onChange={(event) => setForm((prev) => ({ ...prev, ticket_name: event.target.value }))} />
+              </div>
+              <div className={adminField}>
+                <label className={adminLabel} htmlFor="eb-ticket-type">Tipo</label>
+                <select id="eb-ticket-type" className={adminInput} value={form.ticket_type} onChange={(event) => setForm((prev) => ({ ...prev, ticket_type: event.target.value as EventbriteDraftForm['ticket_type'] }))}>
+                  <option value="free">Gratis</option>
+                  <option value="paid">Pago</option>
+                  <option value="donation">Donativo</option>
+                </select>
+              </div>
+              <div className={adminField}>
+                <label className={adminLabel} htmlFor="eb-ticket-quantity">Quantidade</label>
+                <input id="eb-ticket-quantity" type="number" min="1" className={adminInput} value={form.ticket_quantity} onChange={(event) => setForm((prev) => ({ ...prev, ticket_quantity: event.target.value }))} />
+              </div>
+              <div className={adminField}>
+                <label className={adminLabel} htmlFor="eb-ticket-price">Preco</label>
+                <input id="eb-ticket-price" type="number" min="0" step="0.01" disabled={form.ticket_type !== 'paid'} className={adminInput} value={form.ticket_price} onChange={(event) => setForm((prev) => ({ ...prev, ticket_price: event.target.value }))} />
+              </div>
+            </div>
+            <label className={`${adminLabel} flex items-center gap-2`}>
+              <input type="checkbox" checked={form.publish} onChange={(event) => setForm((prev) => ({ ...prev, publish: event.target.checked }))} />
+              Publicar na Eventbrite depois de criar
+            </label>
+            <div className={adminActions}>
+              <button type="submit" className={adminBtnPrimary} disabled={isSaving}>{isSaving ? 'A criar...' : 'Criar e sincronizar'}</button>
+            </div>
+          </form>
+
+          <section className={adminPanelCard}>
+            <h2 className={blockTitle}>Eventos Eventbrite</h2>
+            <div className={adminList}>
+              {eventbriteEvents.length === 0 ? <p className={adminInfo}>Ainda nao existem eventos ligados a Eventbrite.</p> : null}
+              {eventbriteEvents.map((event) => (
+                <article key={event.id} className={adminListItem}>
+                  <h3 className={adminListTitle}>{event.title}</h3>
+                  <p className={adminListMeta}>
+                    {event.club_name || 'Sem clube'} · {getWorkflowStatusLabel(event.status)} · {formatAdminDateTime(event.start_date)}
+                  </p>
+                  <p className={adminListMeta}>
+                    Eventbrite {event.eventbrite_status || 'por sincronizar'} · Sala {event.eventbrite_venue_id || 'por criar'}
+                    {event.eventbrite_url ? <> · <a className="underline" href={event.eventbrite_url} target="_blank" rel="noreferrer">abrir</a></> : null}
+                  </p>
+                  <div className={adminListTools}>
+                    <button type="button" className={adminBtnSecondary} disabled={isLoadingEventbrite} onClick={() => handleSyncEvent(event.id, false)}>Sincronizar</button>
+                    <button type="button" className={adminBtnSecondary} disabled={isLoadingEventbrite} onClick={() => handleSyncEvent(event.id, true)}>Publicar</button>
+                    <button type="button" className={adminBtnEdit} disabled={isLoadingEventbrite || !event.eventbrite_event_id} onClick={() => handleLoadEventbriteData(event.id)}>Gerir</button>
+                  </div>
+                </article>
+              ))}
+            </div>
+          </section>
+        </>
+      ) : null}
+
+      {activeSubpage === 'venues' ? (
+        <section className={adminPanelCard}>
+          <h2 className={blockTitle}>Salas do evento</h2>
+          <p className={blockText}>
+            Define a estrutura interna da sala no InfoCultura para preparar seating, lotacao e futuras inscricoes por lugar.
+          </p>
+          {!selectedEvent ? <p className={`${adminInfo} mt-4`}>Seleciona um evento para configurar a sala.</p> : null}
+          {selectedEvent ? (
+            <form className={`${adminPanelForm} mt-4`} onSubmit={handleSaveVenueConfig}>
+              <div className={adminFormGridSpaced}>
+                <div className={adminField}>
+                  <label className={adminLabel}>Nome da sala</label>
+                  <input className={adminInput} value={draftVenueConfig.name} onChange={(event) => setDraftVenueConfig((prev) => ({ ...prev, name: event.target.value }))} />
+                </div>
+                <div className={adminField}>
+                  <label className={adminLabel}>Número de filas</label>
+                  <input className={adminInput} type="number" min="1" value={draftVenueConfig.rows} onChange={(event) => setDraftVenueConfig((prev) => ({ ...prev, rows: Number(event.target.value) }))} />
+                </div>
+                <div className={adminField}>
+                  <label className={adminLabel}>Lugares por fila</label>
+                  <input className={adminInput} type="number" min="1" value={draftVenueConfig.seatsPerRow} onChange={(event) => setDraftVenueConfig((prev) => ({ ...prev, seatsPerRow: Number(event.target.value) }))} />
+                </div>
+                <div className={adminField}>
+                  <label className={adminLabel}>Prefixo das filas</label>
+                  <input className={adminInput} value={draftVenueConfig.prefix} onChange={(event) => setDraftVenueConfig((prev) => ({ ...prev, prefix: event.target.value }))} />
+                </div>
+              </div>
+              <div className={adminField}>
+                <label className={adminLabel}>Notas operacionais</label>
+                <textarea className={adminInput} rows={4} value={draftVenueConfig.notes} onChange={(event) => setDraftVenueConfig((prev) => ({ ...prev, notes: event.target.value }))} />
+              </div>
+              <div className={adminActions}>
+                <button type="submit" className={adminBtnPrimary}>Guardar sala</button>
+                <button type="button" className={adminBtnSecondary} onClick={handleGenerateSeatMap}>Gerar mapa de lugares</button>
+              </div>
+              <p className={`${adminListMeta} mt-3`}>
+                Configuração atual: {draftVenueConfig.rows} filas · {draftVenueConfig.seatsPerRow} lugares por fila · capacidade teórica {draftVenueConfig.rows * draftVenueConfig.seatsPerRow}
+              </p>
+            </form>
+          ) : null}
+        </section>
+      ) : null}
+
+      {activeSubpage === 'seating' ? (
+        <section className={adminPanelCard}>
+          <h2 className={blockTitle}>Mapa de lugares</h2>
+          <p className={blockText}>
+            Este mapa operacional é gerido no InfoCultura. A Eventbrite publica tickets, mas o desenho detalhado dos assentos fica controlado aqui.
+          </p>
+          {!selectedEvent ? <p className={`${adminInfo} mt-4`}>Seleciona um evento para editar os lugares.</p> : null}
+          {selectedEvent ? (
+            <>
+              <div className={`${adminActions} mt-4`}>
+                {(['available', 'held', 'blocked', 'vip'] as SeatStatus[]).map((status) => (
+                  <button
+                    key={status}
+                    type="button"
+                    className={seatPaintMode === status ? adminBtnPrimary : adminBtnSecondary}
+                    onClick={() => setSeatPaintMode(status)}
+                  >
+                    {status === 'available'
+                      ? 'Disponível'
+                      : status === 'held'
+                        ? 'Reservado'
+                        : status === 'blocked'
+                          ? 'Bloqueado'
+                          : 'VIP'}
+                  </button>
+                ))}
+              </div>
+
+              <div className="mt-4 grid grid-cols-2 gap-3 lg:grid-cols-4">
+                <div className="rounded-xl border border-slate-200 p-4 text-sm text-slate-700">Disponíveis: {seatStatusCounts.available}</div>
+                <div className="rounded-xl border border-slate-200 p-4 text-sm text-slate-700">Reservados: {seatStatusCounts.held}</div>
+                <div className="rounded-xl border border-slate-200 p-4 text-sm text-slate-700">Bloqueados: {seatStatusCounts.blocked}</div>
+                <div className="rounded-xl border border-slate-200 p-4 text-sm text-slate-700">VIP: {seatStatusCounts.vip}</div>
+              </div>
+
+              {selectedSeatMap.length === 0 ? (
+                <p className={`${adminInfo} mt-4`}>Ainda não existe mapa para este evento. Primeiro configura a sala.</p>
+              ) : (
+                <div className="mt-6 space-y-4">
+                  {Array.from(new Set(selectedSeatMap.map((seat) => seat.rowLabel))).map((rowLabel) => (
+                    <div key={rowLabel} className="flex flex-wrap items-center gap-2">
+                      <div className="w-24 text-sm font-semibold text-slate-700">{rowLabel}</div>
+                      <div className="flex flex-wrap gap-2">
+                        {selectedSeatMap
+                          .filter((seat) => seat.rowLabel === rowLabel)
+                          .map((seat) => (
+                            <button
+                              key={seat.id}
+                              type="button"
+                              onClick={() => handlePaintSeat(seat.id)}
+                              className={`h-10 w-10 rounded-md border text-xs font-semibold ${
+                                seat.status === 'available'
+                                  ? 'border-slate-200 bg-white text-slate-700'
+                                  : seat.status === 'held'
+                                    ? 'border-amber-200 bg-amber-100 text-amber-900'
+                                    : seat.status === 'blocked'
+                                      ? 'border-rose-200 bg-rose-100 text-rose-900'
+                                      : 'border-emerald-200 bg-emerald-100 text-emerald-900'
+                              }`}
+                            >
+                              {seat.seatNumber}
+                            </button>
+                          ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {selectedAttendees ? (
+                <div className="mt-6">
+                  <h3 className={blockTitle}>Participantes Eventbrite</h3>
+                  <p className={adminListMeta}>{selectedAttendees.pagination.object_count ?? selectedAttendees.attendees.length} participante(s)</p>
+                  {selectedAttendees.attendees.slice(0, 8).map((attendee) => (
+                    <p key={attendee.id} className={adminListMeta}>
+                      {attendee.name || attendee.email || attendee.id} · {attendee.ticket_class_name || 'ticket'} · {attendee.checked_in ? 'check-in feito' : attendee.status || 'reservado'}
+                    </p>
+                  ))}
+                </div>
+              ) : null}
+            </>
+          ) : null}
+        </section>
+      ) : null}
+
+      {activeSubpage === 'tickets' ? (
+        <section className={adminPanelCard}>
+          <h2 className={blockTitle}>Tickets e tipologias</h2>
+          <p className={blockText}>
+            Gere o catálogo de tipos de ticket no InfoCultura e cria tickets adicionais na Eventbrite para o evento selecionado.
+          </p>
+          {!selectedEvent ? <p className={`${adminInfo} mt-4`}>Seleciona um evento para gerir tickets.</p> : null}
+          {selectedEvent ? (
+            <>
+              <div className="mt-4">
+                <div className="mb-3 flex items-center justify-between gap-3">
+                  <h3 className={blockTitle}>Tipos internos de ticket</h3>
+                  <button type="button" className={adminBtnSecondary} onClick={handleSaveTicketPreset}>
+                    Adicionar tipo
+                  </button>
+                </div>
+                <div className="space-y-3">
+                  {selectedTicketPresets.length === 0 ? (
+                    <p className={adminInfo}>Ainda não existem tipos internos de ticket para este evento.</p>
+                  ) : (
+                    selectedTicketPresets.map((preset) => (
+                      <div key={preset.id} className="rounded-xl border border-slate-200 p-4">
+                        <div className={adminFormGridSpaced}>
+                          <input className={adminInput} value={preset.name} onChange={(event) => handleUpdateTicketPreset(preset.id, 'name', event.target.value)} />
+                          <select className={adminInput} value={preset.type} onChange={(event) => handleUpdateTicketPreset(preset.id, 'type', event.target.value)}>
+                            <option value="free">Gratis</option>
+                            <option value="paid">Pago</option>
+                            <option value="donation">Donativo</option>
+                          </select>
+                          <input className={adminInput} type="number" min="0" step="0.01" value={preset.price} onChange={(event) => handleUpdateTicketPreset(preset.id, 'price', event.target.value)} />
+                          <input className={adminInput} type="number" min="1" value={preset.quantity} onChange={(event) => handleUpdateTicketPreset(preset.id, 'quantity', event.target.value)} />
+                        </div>
+                        <textarea className={`${adminInput} mt-3`} rows={2} value={preset.description} onChange={(event) => handleUpdateTicketPreset(preset.id, 'description', event.target.value)} />
+                        <div className={`${adminListTools} mt-3`}>
+                          <button type="button" className={adminBtnSecondary} onClick={() => handleUsePreset(preset)}>Usar no criador</button>
+                          <button type="button" className={adminBtnEdit} onClick={() => handleRemoveTicketPreset(preset.id)}>Remover</button>
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
+
+              <form className={`${adminPanelForm} mt-6`} onSubmit={handleCreateTicket}>
+                <h3 className={blockTitle}>Criar ticket adicional na Eventbrite</h3>
+                <div className={adminFormGridSpaced}>
+                  <input className={adminInput} value={ticketName} onChange={(event) => setTicketName(event.target.value)} aria-label="Nome do ticket" />
+                  <select className={adminInput} value={ticketType} onChange={(event) => setTicketType(event.target.value as typeof ticketType)}>
+                    <option value="free">Gratis</option>
+                    <option value="paid">Pago</option>
+                    <option value="donation">Donativo</option>
+                  </select>
+                  <input className={adminInput} type="number" min="1" value={ticketQuantity} onChange={(event) => setTicketQuantity(event.target.value)} aria-label="Quantidade" />
+                  <input className={adminInput} type="number" min="0" step="0.01" disabled={ticketType !== 'paid'} value={ticketPrice} onChange={(event) => setTicketPrice(event.target.value)} aria-label="Preco" />
+                </div>
+                <button type="submit" className={adminBtnPrimary} disabled={isLoadingEventbrite || !selectedEvent.eventbrite_event_id}>Criar ticket</button>
+              </form>
+
+              <div className="mt-6">
+                <h3 className={blockTitle}>Tickets atuais</h3>
+                {selectedDetails ? (
+                  <div className="space-y-2">
+                    <p className={adminListMeta}>Estado: {selectedDetails.status || selectedEvent.eventbrite_status || 'sem estado'} · Capacidade: {selectedDetails.capacity ?? selectedEvent.registration_capacity ?? 'n/d'}</p>
+                    <p className={adminListMeta}>Tickets: {selectedDetails.ticket_classes.length || 0}</p>
+                    {selectedDetails.ticket_classes.map((ticket, index) => (
+                      <p key={String(ticket.id || index)} className={adminListMeta}>{getTicketClassLabel(ticket)}</p>
+                    ))}
+                  </div>
+                ) : (
+                  <p className={adminInfo}>Carrega em “Atualizar dados EB” para ver os tickets da Eventbrite.</p>
+                )}
+              </div>
+
+              {selectedOrders ? (
+                <div className="mt-6">
+                  <h3 className={blockTitle}>Encomendas</h3>
+                  <p className={adminListMeta}>{selectedOrders.pagination.object_count ?? selectedOrders.orders.length} pedido(s)</p>
+                  {selectedOrders.orders.slice(0, 8).map((order) => (
+                    <p key={order.id} className={adminListMeta}>{order.name || order.email || order.id} · {order.status || 'sem estado'} · {formatAdminDateTime(order.created)}</p>
+                  ))}
+                </div>
+              ) : null}
+            </>
+          ) : null}
+        </section>
+      ) : null}
+    </div>
+  );
+}
+
+export default EventbritePage;

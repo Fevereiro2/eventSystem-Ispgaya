@@ -96,3 +96,18 @@ export async function deactivateAdminUser(
 
   return data.user;
 }
+
+export async function activateAdminUser(
+  token: string,
+  id: number
+): Promise<InfoCulturaUser> {
+  const data = await request<ApiUserResponse>(
+    `/auth/users/${id}/activate/`,
+    {
+      method: 'POST'
+    },
+    token
+  );
+
+  return data.user;
+}

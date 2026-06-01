@@ -24,8 +24,8 @@ export type ApiListResponse = {
   items: CulturalItem[];
 };
 
-export type ApiItemResponse = {
-  item: CulturalItem;
+export type ApiItemResponse<T = CulturalItem> = {
+  item: T;
 };
 
 export type ApiPublicRegistrationResponse = {
@@ -146,6 +146,43 @@ function notifyApiError(message: string, status: number): void {
   });
 }
 
+function shouldNotifySuccess(path: string, method: string): boolean {
+  const upperMethod = method.toUpperCase();
+
+  if (upperMethod === 'GET' || upperMethod === 'HEAD') {
+    return false;
+  }
+
+  if (
+    path === '/auth/login/' ||
+    path === '/auth/logout/' ||
+    path === '/auth/refresh/'
+  ) {
+    return false;
+  }
+
+  return true;
+}
+
+function notifyApiSuccess(path: string, method: string): void {
+  const upperMethod = method.toUpperCase();
+  const title = upperMethod === 'DELETE' ? 'Removido' : 'Guardado';
+  const message =
+    upperMethod === 'DELETE'
+      ? 'A remoção foi concluída com sucesso.'
+      : 'A alteração foi concluída com sucesso.';
+
+  if (!shouldNotifySuccess(path, upperMethod)) {
+    return;
+  }
+
+  pushToast({
+    title,
+    message,
+    tone: 'success'
+  });
+}
+
 let refreshTokenPromise: Promise<string | null> | null = null;
 
 async function refreshInfoCulturaToken(): Promise<string | null> {
@@ -183,6 +220,7 @@ export async function request<T>(
   token?: string,
   allowRefresh = true
 ): Promise<T> {
+  const method = (options.method || 'GET').toUpperCase();
   const headers = new Headers(options.headers);
   const resolvedToken = getStoredAccessToken() || token;
   const isFormDataBody = typeof FormData !== 'undefined' && options.body instanceof FormData;
@@ -233,7 +271,12 @@ export async function request<T>(
   }
 
   if (response.status === 204) {
+    notifyApiSuccess(path, method);
     return undefined as T;
+  }
+
+  if (shouldNotifySuccess(path, method)) {
+    notifyApiSuccess(path, method);
   }
 
   return (await response.json()) as T;
@@ -329,7 +372,7 @@ export function normalizeItemsResponse(data: ApiListResponse | CulturalItem[]): 
   return [];
 }
 
-export function normalizeItemResponse(data: ApiItemResponse | CulturalItem): CulturalItem {
+export function normalizeItemResponse<T extends object = CulturalItem>(data: ApiItemResponse<T> | T): T {
   if ('item' in data) {
     return data.item;
   }

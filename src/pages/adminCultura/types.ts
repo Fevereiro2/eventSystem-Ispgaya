@@ -75,6 +75,21 @@ export type EventFormState = {
   status: string;
   city: string;
   location: string;
+  eventbrite_venue_id: string;
+  eventbrite_venue_name: string;
+  eventbrite_venue_address_1: string;
+  eventbrite_venue_address_2: string;
+  eventbrite_venue_city: string;
+  eventbrite_venue_region: string;
+  eventbrite_venue_postal_code: string;
+  eventbrite_venue_country: string;
+  eventbrite_venue_capacity: string;
+  eventbrite_ticket_name: string;
+  eventbrite_ticket_type: 'free' | 'paid' | 'donation';
+  eventbrite_ticket_quantity: string;
+  eventbrite_ticket_price: string;
+  sync_eventbrite_on_save: boolean;
+  publish_eventbrite_on_save: boolean;
   club_id: string;
   category_ids: string[];
 };
@@ -82,6 +97,16 @@ export type EventFormState = {
 export type CategoryFormState = {
   name: string;
   description: string;
+};
+
+export type PhotoFormState = {
+  section: string;
+  title: string;
+  caption: string;
+  image: string;
+  alt_text: string;
+  display_order: string;
+  is_active: boolean;
 };
 
 export type ActivityTab = 'books' | 'sessions' | 'events';
@@ -93,12 +118,14 @@ export type AdminSection =
   | 'logs'
   | 'notificacoes'
   | 'newsletters'
+  | 'galeria'
   | 'utilizadores'
   | 'conteudos'
   | 'noticias'
   | 'livros'
   | 'sessoes'
   | 'eventos'
+  | 'eventbrite'
   | 'atividades'
   | 'clubes'
   | 'inscricoes';
@@ -108,11 +135,14 @@ export type UserPage =
   | { mode: 'create' }
   | { mode: 'profile'; userId: number }
   | { mode: 'edit'; userId: number }
-  | { mode: 'deactivate'; userId: number };
+  | { mode: 'deactivate'; userId: number }
+  | { mode: 'activate'; userId: number };
 
 export type NewsSubpage = 'form' | 'list';
 export type ActivitySubpage = 'form' | 'list' | 'categories';
 export type ContentSubpage = 'form' | 'list';
+export type PhotoSubpage = 'form' | 'list';
+export type EventbriteSubpage = 'overview' | 'venues' | 'seating' | 'tickets';
 
 export type AdminContextLink = {
   label: string;

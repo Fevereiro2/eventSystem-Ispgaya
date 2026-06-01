@@ -50,7 +50,64 @@ Para dominares este projeto, foca-te nestes 3 pontos:
 3.  **Componentização**:
     *   Sempre que criares algo novo no ecrã, pergunta-te: "Isto é uma página inteira ou um pedaço que posso reutilizar?". Se for reutilizável, cria um componente em `src/components/ui/`.
 
-## 🛠️ Como Executar
+## � Mudanças Recentes (Soft-Delete Unification)
+
+### O Que Mudou
+
+O sistema foi refatorizado para usar **soft-delete** (desativação lógica) em vez de eliminação permanente. Isto significa que quando um utilizador, clube, evento, etc. é "eliminado", na verdade é apenas marcado como inativo.
+
+**Benefícios:**
+- ✅ Nenhuma perda de dados
+- ✅ Histórico completo mantido
+- ✅ Possibilidade de reativar itens
+- ✅ Auditoria completa de todas as ações
+- ✅ Reversibilidade de operações
+
+### Documentação das Mudanças
+
+Para entenderes todas as mudanças implementadas, consulta:
+
+1. **[IMPLEMENTATION_SUMMARY.md](./IMPLEMENTATION_SUMMARY.md)** - Resumo completo das mudanças
+2. **[SOFT_DELETE_CHANGES.md](./SOFT_DELETE_CHANGES.md)** - Detalhes técnicos do backend
+3. **[FRONTEND_UPDATE_GUIDE.md](./FRONTEND_UPDATE_GUIDE.md)** - Como atualizar componentes do frontend
+4. **[API_ENDPOINTS_REFERENCE.md](./API_ENDPOINTS_REFERENCE.md)** - Referência de endpoints
+
+### Endpoints Novos
+
+Todos os endpoints de deactivate/activate para gerenciamento de entidades:
+
+```
+POST /api/clubs/admin/{id}/deactivate/
+POST /api/clubs/admin/{id}/activate/
+POST /api/events/admin/{id}/deactivate/
+POST /api/events/admin/{id}/activate/
+POST /api/news/admin/{id}/deactivate/
+POST /api/news/admin/{id}/activate/
+POST /api/books/admin/{id}/deactivate/
+POST /api/books/admin/{id}/activate/
+POST /api/sessions/admin/{id}/deactivate/
+POST /api/sessions/admin/{id}/activate/
+```
+
+### APIs Frontend Novas
+
+Novas funções em `src/api/admin.ts`:
+
+```typescript
+deactivateAdminClub()
+activateAdminClub()
+deactivateAdminEvent()
+activateAdminEvent()
+deactivateAdminNews()
+activateAdminNews()
+deactivateAdminBook()
+activateAdminBook()
+deactivateAdminSession()
+activateAdminSession()
+deactivateAdminClubMember()
+```
+
+## �🛠️ Como Executar
 
 ### Backend
 1. Navega para `backend/`.

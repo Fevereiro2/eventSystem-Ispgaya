@@ -6,6 +6,7 @@ import {
   InfoCulturaEvent,
   InfoCulturaNews,
   InfoCulturaNewsStatus,
+  InfoCulturaPhoto,
   InfoCulturaSession,
   UniversitySearchResult,
   ClubRegistrationPayload,
@@ -21,6 +22,11 @@ import {
 export async function fetchPublicContent(area: CulturalArea): Promise<CulturalItem[]> {
   const data = await request<{ items: CulturalItem[] } | CulturalItem[]>(`/content/?area=${area}`);
   return normalizeItemsResponse(data);
+}
+
+export async function fetchPublicPhotos(section?: string): Promise<InfoCulturaPhoto[]> {
+  const query = section?.trim() ? `?section=${encodeURIComponent(section.trim())}` : '';
+  return request<InfoCulturaPhoto[]>(`/photos/${query}`);
 }
 
 export async function fetchPublicClubs(): Promise<InfoCulturaClub[]> {

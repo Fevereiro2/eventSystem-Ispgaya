@@ -7,7 +7,7 @@ import {
   useMemo,
   useState,
 } from 'react';
-import { Bell, FolderKanban } from 'lucide-react';
+import { CalendarClock, FolderKanban } from 'lucide-react';
 import { NavLink, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import infoCulturaBg from '../assets/19825874_uqliU.jpeg';
 import ispgayaLogo from '../assets/ispgaya-logo.svg';
@@ -47,6 +47,10 @@ import {
   adminPortalSidebarSection,
   adminPortalSidebarSub,
   adminPortalSidebarTitle,
+  adminHeaderRow,
+  adminSectionNav,
+  adminSectionLink,
+  adminSectionLinkActive,
   adminTextarea,
   blockText,
   blockTitle,
@@ -86,11 +90,15 @@ import {
   CulturalItem,
   getAreaLabel,
 } from '../data/culturalContent';
-import AdminPageHero from './adminCultura/components/AdminPageHero.js';
 import {
   bulkDeleteAdminBooks,
   bulkDeleteAdminEvents,
   bulkDeleteAdminNews,
+  activateAdminBook,
+  activateAdminClub,
+  activateAdminEvent,
+  activateAdminNews,
+  activateAdminSession,
   assignUserToClub,
   bulkUpdateAdminEventStatus,
   bulkUpdateAdminNewsStatus,
@@ -101,15 +109,20 @@ import {
   createAdminContent,
   createAdminEvent,
   createAdminNews,
+  createAdminPhoto,
   createAdminSession,
-  createAdminUser,
-  deactivateAdminUser,
+  deactivateAdminBook,
+  deactivateAdminClub,
+  deactivateAdminEvent,
+  deactivateAdminNews,
+  deactivateAdminSession,
   deleteAdminBook,
   deleteAdminCategory,
   deleteAdminClub,
   deleteAdminContent,
   deleteAdminEvent,
   deleteAdminNews,
+  deleteAdminPhoto,
   deleteAdminSession,
   fetchAdminDashboard,
   fetchAdminNotifications,
@@ -121,6 +134,7 @@ import {
   InfoCulturaEvent,
   InfoCulturaNews,
   InfoCulturaNewsStatus,
+  InfoCulturaPhoto,
   InfoCulturaRegistration,
   InfoCulturaRegistrationStatus,
   InfoCulturaRole,
@@ -131,8 +145,10 @@ import {
   CategoryPayload,
   EventPayload,
   NewsPayload,
+  PhotoPayload,
   removeUserFromClub,
   SessionPayload,
+  syncAdminEventToEventbrite,
   uploadAdminImage,
   updateAdminBook,
   updateAdminCategory,
@@ -141,17 +157,22 @@ import {
   updateAdminContent,
   updateAdminEvent,
   updateAdminNews,
+  updateAdminPhoto,
   updateAdminSession,
-  updateAdminUser,
 } from '../api/infoculturaApi';
+import { resolveInfoCulturaAssetUrl } from '../api/client';
 import DashboardPage from './adminCultura/pages/DashboardPage';
 import ActivitiesPage from './adminCultura/ActivitiesPage';
 import ClubsPage from './adminCultura/pages/ClubsPage';
+import AdminPageHero from './adminCultura/components/AdminPageHero';
+import EventbritePage from './adminCultura/pages/EventbritePage';
 import EventsPage from './adminCultura/pages/EventsPage';
 import LogsPage from './adminCultura/pages/LogsPage';
 import MetricsPage from './adminCultura/pages/MetricsPage';
 import NewsPage from './adminCultura/pages/NewsPage';
 import NewslettersPage from './adminCultura/pages/NewslettersPage';
+import NotificationsPage from './adminCultura/pages/NotificationsPage';
+import PhotoGalleryPage from './adminCultura/pages/PhotoGalleryPage';
 import {
   buildActivityOverviewStats,
   buildContentOverviewStats,
@@ -161,22 +182,29 @@ import {
   buildDashboardHighlights,
   buildDashboardQuickActions,
   buildClubOverviewStats,
+  getActivitySectionCopy,
   buildNewsOverviewStats,
   buildNotificationOverviewStats,
   buildRegistrationOverviewStats,
   buildUserOverviewStats,
   buildSidebarContextNav,
+  getEventbritePageLinks,
   getActivityPageLinks,
-  getActivitySectionCopy,
   getContentPageLinks,
   getNewsPageLinks,
+  getPhotoPageLinks,
+  getUserPageLinks,
   getVisibleSectionGroups,
   getVisibleSections,
 } from './adminCultura/derived.js';
 import { useAdminActivities } from './adminCultura/hooks/useAdminActivities';
 import { useAdminAuth } from './adminCultura/hooks/useAdminAuth';
+import { useAdminEventbrite } from './adminCultura/hooks/useAdminEventbrite';
+import { sortPhotos, useAdminPhotos } from './adminCultura/hooks/useAdminPhotos';
+import { useSessionStorageState } from './adminCultura/hooks/useSessionStorageState';
 import { useAdminNews } from './adminCultura/hooks/useAdminNews';
 import { useAdminRegistrations } from './adminCultura/hooks/useAdminRegistrations';
+import { useAdminUserActions } from './adminCultura/hooks/useAdminUserActions';
 import { useAdminUsers } from './adminCultura/hooks/useAdminUsers';
 import RegistrationsPage from './adminCultura/pages/RegistrationsPage';
 import SessionsPage from './adminCultura/pages/SessionsPage';
@@ -191,6 +219,7 @@ import {
   initialContentForm,
   initialEventForm,
   initialNewsForm,
+  initialPhotoForm,
   initialSessionForm,
   initialUserForm,
   NEWS_PAGE_SIZE,
@@ -207,6 +236,7 @@ import {
   EventFormState,
   FormState,
   NewsFormState,
+  PhotoFormState,
   SessionFormState,
   UserFormState,
 } from './adminCultura/types';
@@ -218,12 +248,17 @@ import {
   getAllowedActivityTabs,
   getContentRoute,
   getContentSubpage,
+  getEventbriteRoute,
+  getEventbriteSubpage,
   getDefaultActivityOrdering,
   getDefaultActivityTab,
   getNewsRoute,
   getNewsSubpage,
+  getPhotoRoute,
+  getPhotoSubpage,
   getStoredReadNotificationIds,
   getUserPage,
+  getWorkflowStatusLabel,
   getWorkflowStatusOptions,
   isWithinDateRange,
   normalizeWorkflowStatus,
@@ -235,10 +270,6 @@ import {
   toDateTimeLocalValue
 } from './adminCultura/utils';
 
-
-
-
-
 function AdminCultura() {
 
   const location = useLocation();
@@ -247,10 +278,7 @@ function AdminCultura() {
   const [authUser, setAuthUser] = useState('');
   const [authPass, setAuthPass] = useState('');
   const [authError, setAuthError] = useState('');
-  const [token, setToken] = useState<string>(() => {
-    if (typeof window === 'undefined') return '';
-    return sessionStorage.getItem(TOKEN_KEY) || '';
-  });
+  const [token, setToken] = useSessionStorageState(TOKEN_KEY, '');
   const isAuth = token.length > 0;
   const [items, setItems] = useState<CulturalItem[]>([]);
   const [users, setUsers] = useState<InfoCulturaUser[]>([]);
@@ -264,6 +292,7 @@ function AdminCultura() {
   const [categories, setCategories] = useState<InfoCulturaCategory[]>([]);
   const [sessions, setSessions] = useState<InfoCulturaSession[]>([]);
   const [events, setEvents] = useState<InfoCulturaEvent[]>([]);
+  const [photos, setPhotos] = useState<InfoCulturaPhoto[]>([]);
   const [registrations, setRegistrations] = useState<InfoCulturaRegistration[]>([]);
   const [registrationStatuses, setRegistrationStatuses] = useState<
     InfoCulturaRegistrationStatus[]
@@ -278,6 +307,7 @@ function AdminCultura() {
   const [isLoadingDashboard, setIsLoadingDashboard] = useState(false);
   const [isLoadingNotifications, setIsLoadingNotifications] = useState(false);
   const [isLoadingActivities, setIsLoadingActivities] = useState(false);
+  const [isLoadingPhotos, setIsLoadingPhotos] = useState(false);
   const [isLoadingCategories, setIsLoadingCategories] = useState(false);
   const [isLoadingRegistrations, setIsLoadingRegistrations] = useState(false);
   const [isLoadingRegistrationStatuses, setIsLoadingRegistrationStatuses] = useState(false);
@@ -295,18 +325,27 @@ function AdminCultura() {
   const [isSavingCategory, setIsSavingCategory] = useState(false);
   const [isSavingSession, setIsSavingSession] = useState(false);
   const [isSavingEvent, setIsSavingEvent] = useState(false);
+  const [isSavingPhoto, setIsSavingPhoto] = useState(false);
   const [isUploadingClubImage, setIsUploadingClubImage] = useState(false);
   const [isUploadingNewsImage, setIsUploadingNewsImage] = useState(false);
   const [isUploadingBookImage, setIsUploadingBookImage] = useState(false);
   const [isUploadingEventImage, setIsUploadingEventImage] = useState(false);
+  const [isUploadingPhotoImage, setIsUploadingPhotoImage] = useState(false);
   const [updatingRegistrationId, setUpdatingRegistrationId] = useState<number | null>(null);
   const [isAssigningClubUser, setIsAssigningClubUser] = useState(false);
   const [isDeactivatingUser, setIsDeactivatingUser] = useState(false);
+  const [isActivatingUser, setIsActivatingUser] = useState(false);
+  const [changingNewsStatusId, setChangingNewsStatusId] = useState<number | null>(null);
+  const [changingBookStatusId, setChangingBookStatusId] = useState<number | null>(null);
+  const [changingSessionStatusId, setChangingSessionStatusId] = useState<number | null>(null);
+  const [changingEventStatusId, setChangingEventStatusId] = useState<number | null>(null);
+  const [changingClubStatusId, setChangingClubStatusId] = useState<number | null>(null);
   const [deletingNewsId, setDeletingNewsId] = useState<number | null>(null);
   const [deletingBookId, setDeletingBookId] = useState<number | null>(null);
   const [deletingCategoryId, setDeletingCategoryId] = useState<number | null>(null);
   const [deletingSessionId, setDeletingSessionId] = useState<number | null>(null);
   const [deletingEventId, setDeletingEventId] = useState<number | null>(null);
+  const [deletingPhotoId, setDeletingPhotoId] = useState<string | null>(null);
   const [deletingClubId, setDeletingClubId] = useState<number | null>(null);
   const [removingClubUserId, setRemovingClubUserId] = useState<number | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
@@ -318,10 +357,12 @@ function AdminCultura() {
   const [categoryForm, setCategoryForm] = useState<CategoryFormState>(initialCategoryForm);
   const [sessionForm, setSessionForm] = useState<SessionFormState>(initialSessionForm);
   const [eventForm, setEventForm] = useState<EventFormState>(initialEventForm);
+  const [photoForm, setPhotoForm] = useState<PhotoFormState>(initialPhotoForm);
   const [clubImageFileKey, setClubImageFileKey] = useState(0);
   const [newsImageFileKey, setNewsImageFileKey] = useState(0);
   const [bookImageFileKey, setBookImageFileKey] = useState(0);
   const [eventImageFileKey, setEventImageFileKey] = useState(0);
+  const [photoImageFileKey, setPhotoImageFileKey] = useState(0);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editingClubId, setEditingClubId] = useState<number | null>(null);
   const [editingNewsId, setEditingNewsId] = useState<number | null>(null);
@@ -329,6 +370,7 @@ function AdminCultura() {
   const [editingCategoryId, setEditingCategoryId] = useState<number | null>(null);
   const [editingSessionId, setEditingSessionId] = useState<number | null>(null);
   const [editingEventId, setEditingEventId] = useState<number | null>(null);
+  const [editingPhotoId, setEditingPhotoId] = useState<string | null>(null);
   const [selectedClubUserId, setSelectedClubUserId] = useState('');
   const [userDateFrom, setUserDateFrom] = useState('');
   const [userDateTo, setUserDateTo] = useState('');
@@ -363,6 +405,7 @@ function AdminCultura() {
   const [activityTab, setActivityTab] = useState<ActivityTab>('books');
   const [selectedEventIds, setSelectedEventIds] = useState<number[]>([]);
   const [bulkEventStatus, setBulkEventStatus] = useState('review');
+  const [isExportingActivities, setIsExportingActivities] = useState(false);
   const [registrationStatusFilter, setRegistrationStatusFilter] = useState('pending');
   const [registrationClubFilter, setRegistrationClubFilter] = useState('all');
   const [registrationSearchInput, setRegistrationSearchInput] = useState('');
@@ -391,6 +434,7 @@ function AdminCultura() {
   const [categoryFormError, setCategoryFormError] = useState('');
   const [sessionFormError, setSessionFormError] = useState('');
   const [eventFormError, setEventFormError] = useState('');
+  const [photoFormError, setPhotoFormError] = useState('');
 
   const activeSection = getAdminSection(location.pathname);
   const activeNewsSubpage = useMemo(() => getNewsSubpage(location.pathname), [location.pathname]);
@@ -400,6 +444,14 @@ function AdminCultura() {
   );
   const activeContentSubpage = useMemo(
     () => getContentSubpage(location.pathname),
+    [location.pathname]
+  );
+  const activeEventbriteSubpage = useMemo(
+    () => getEventbriteSubpage(location.pathname),
+    [location.pathname]
+  );
+  const activePhotoSubpage = useMemo(
+    () => getPhotoSubpage(location.pathname),
     [location.pathname]
   );
   const userPage = useMemo(() => getUserPage(location.pathname), [location.pathname]);
@@ -537,36 +589,70 @@ function AdminCultura() {
     pendingRegistrations,
     sessions.length
   );
-  const { label: activitySectionLabel, description: activitySectionDescription } =
-    getActivitySectionCopy(activityTab);
   const newsPageHref = activeNewsSubpage ? getNewsRoute(activeNewsSubpage) : null;
-  const activityPageHref = activeActivitySubpage
-    ? getActivityRoute(activityTab, activeActivitySubpage)
-    : null;
+  const bookPageHref =
+    activeSection === 'livros' && activeActivitySubpage
+      ? getActivityRoute('books', activeActivitySubpage)
+      : null;
+  const sessionPageHref =
+    activeSection === 'sessoes' && activeActivitySubpage
+      ? getActivityRoute('sessions', activeActivitySubpage)
+      : null;
+  const eventPageHref =
+    activeSection === 'eventos' && activeActivitySubpage
+      ? getActivityRoute('events', activeActivitySubpage)
+      : null;
   const contentPageHref = activeContentSubpage ? getContentRoute(activeContentSubpage) : null;
+  const eventbritePageHref = activeEventbriteSubpage ? getEventbriteRoute(activeEventbriteSubpage) : null;
+  const photoPageHref = activePhotoSubpage ? getPhotoRoute(activePhotoSubpage) : null;
+  const userPageHref =
+    userPage?.mode === 'create'
+      ? '/infocultura/utilizadores/novo'
+      : userPage?.mode === 'edit'
+        ? `/infocultura/utilizadores/${userPage.userId}/editar`
+        : userPage?.mode === 'profile'
+          ? `/infocultura/utilizadores/${userPage.userId}/perfil`
+          : userPage?.mode === 'deactivate'
+            ? `/infocultura/utilizadores/${userPage.userId}/desativar`
+            : userPage?.mode === 'activate'
+              ? `/infocultura/utilizadores/${userPage.userId}/ativar`
+              : userPage?.mode === 'list'
+                ? '/infocultura/utilizadores'
+                : null;
   const showNewsForm = activeNewsSubpage === 'form';
   const showNewsList = activeNewsSubpage === 'list';
-  const showActivityFiltersAndList = activeActivitySubpage === 'list';
   const showActivityForm = activeActivitySubpage === 'form';
-  const showEventCategories = activityTab === 'events' && activeActivitySubpage === 'categories';
+  const showActivityFiltersAndList = activeActivitySubpage === 'list';
+  const showEventCategories = activeSection === 'eventos' && activeActivitySubpage === 'categories';
   const showContentForm = activeContentSubpage === 'form';
   const showContentList = activeContentSubpage === 'list';
+  const showPhotoForm = activePhotoSubpage === 'form';
+  const showPhotoList = activePhotoSubpage === 'list';
   const newsPageLinks = getNewsPageLinks(editingNewsId);
-  const activityPageLinks = getActivityPageLinks(
-    activityTab,
-    editingBookId,
-    editingSessionId,
-    editingEventId
-  );
+  const bookPageLinks = getActivityPageLinks('books', editingBookId, editingSessionId, editingEventId);
+  const sessionPageLinks = getActivityPageLinks('sessions', editingBookId, editingSessionId, editingEventId);
+  const eventPageLinks = getActivityPageLinks('events', editingBookId, editingSessionId, editingEventId);
   const contentPageLinks = getContentPageLinks(editingId);
+  const photoPageLinks = getPhotoPageLinks(editingPhotoId);
+  const eventbritePageLinks = getEventbritePageLinks();
+  const userPageLinks = getUserPageLinks(userPage);
   const sidebarContextNavBySection = buildSidebarContextNav(
-    activityTab,
     newsPageLinks,
-    activityPageLinks,
+    bookPageLinks,
+    sessionPageLinks,
+    eventPageLinks,
     contentPageLinks,
+    photoPageLinks,
+    eventbritePageLinks,
+    userPageLinks,
     newsPageHref,
-    activityPageHref,
-    contentPageHref
+    bookPageHref,
+    sessionPageHref,
+    eventPageHref,
+    contentPageHref,
+    photoPageHref,
+    eventbritePageHref,
+    userPageHref
   );
   const readNotificationIdSet = useMemo(
     () => new Set(readNotificationIds),
@@ -602,6 +688,8 @@ function AdminCultura() {
   }
   const dashboardAgenda = buildDashboardAgenda(dashboardStats);
   const dashboardQuickActions = buildDashboardQuickActions(canManageUsers, defaultActivityHref);
+  const { label: activitySectionLabel, description: activitySectionDescription } =
+    getActivitySectionCopy(activityTab);
   const latestNotifications = useMemo(
     () =>
       notifications.map((notification) => ({
@@ -664,6 +752,7 @@ function AdminCultura() {
     setCategories([]);
     setSessions([]);
     setEvents([]);
+    setPhotos([]);
     setRegistrations([]);
     setRegistrationStatuses([]);
     setUserDateFrom('');
@@ -904,6 +993,13 @@ function AdminCultura() {
     setEventFormError('');
   }
 
+  function resetPhotoForm() {
+    setPhotoForm(initialPhotoForm);
+    setPhotoImageFileKey((prev) => prev + 1);
+    setEditingPhotoId(null);
+    setPhotoFormError('');
+  }
+
   function resetCategoryForm() {
     setCategoryForm(initialCategoryForm);
     setEditingCategoryId(null);
@@ -1112,8 +1208,8 @@ function AdminCultura() {
     resetCategoryForm();
     resetSessionForm();
     resetEventForm();
+    resetPhotoForm();
   }, [currentUser?.club_id, canManageUsers]);
-
   useEffect(() => {
     if (!canManageUsers || activityTab !== 'books' || editingBookId !== null) {
       return;
@@ -1150,6 +1246,11 @@ function AdminCultura() {
       return;
     }
 
+    if (activeSection === 'eventbrite') {
+      setActivityTab('events');
+      return;
+    }
+
     if (activeSection === 'atividades') {
       setActivityTab(defaultActivityTab);
     }
@@ -1171,8 +1272,13 @@ function AdminCultura() {
 
     if (activeSection === 'conteudos' && !activeContentSubpage) {
       navigate(getContentRoute('list'), { replace: true });
+      return;
     }
-  }, [activeActivitySubpage, activeContentSubpage, activeNewsSubpage, activeSection, navigate]);
+
+    if (activeSection === 'galeria' && !activePhotoSubpage) {
+      navigate(getPhotoRoute('list'), { replace: true });
+    }
+  }, [activeActivitySubpage, activeContentSubpage, activeNewsSubpage, activePhotoSubpage, activeSection, navigate]);
 
   useEffect(() => {
     setNewsPage(1);
@@ -1202,6 +1308,46 @@ function AdminCultura() {
   useEffect(() => {
     setActivityOrder(getDefaultActivityOrdering(activityTab));
   }, [activityTab]);
+
+  useAdminPhotos({
+    token,
+    setPhotos,
+    setIsLoadingPhotos,
+    setPhotoFormError,
+    handleAuthError,
+  });
+
+  const {
+    syncingEventbriteId,
+    loadingEventbriteOrdersId,
+    eventbriteRefundStatus,
+    setEventbriteRefundStatus,
+    eventbriteOrdersByEventId,
+    handleSyncEventbrite,
+    handleLoadEventbriteOrders,
+  } = useAdminEventbrite({
+    token,
+    setEvents,
+    setActivityError,
+    handleAuthError,
+  });
+
+  const { handleSaveUser, handleDeactivateUser, handleActivateUser } = useAdminUserActions({
+    token,
+    canManageUsers,
+    userPage,
+    userForm,
+    selectedUser,
+    currentUser,
+    setUsers,
+    setCurrentUser,
+    setUserFormError,
+    setIsSavingUser,
+    setIsDeactivatingUser,
+    setIsActivatingUser,
+    resetUserForm,
+    navigate,
+  });
 
   useEffect(() => {
     if (!token || !currentUser || activeSection !== 'resumo') {
@@ -1274,6 +1420,7 @@ function AdminCultura() {
     resetContentForm();
     resetUserForm();
     resetClubForm();
+    resetPhotoForm();
   }
 
   function markNotificationAsRead(notificationId: string) {
@@ -1398,92 +1545,160 @@ function AdminCultura() {
     }
   }
 
-  async function handleSaveUser(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
+  async function handleUploadPhotoImage(file: File) {
+    if (!token) return;
 
-    if (!token || !canManageUsers || !userPage) return;
-
-    const manualPassword = userForm.password.trim();
-    const payload = {
-      name: userForm.name.trim(),
-      email: userForm.email.trim(),
-      role: userForm.role,
-      generate_password: userForm.generate_password,
-      ...(userPage.mode === 'create' && userForm.club_id ? { club_id: Number(userForm.club_id) } : {}),
-      ...(!userForm.generate_password && manualPassword ? { password: manualPassword } : {})
-    };
-
-    if (!payload.name || !payload.email || !payload.role) {
-      setUserFormError('Preenche nome, email e role.');
-      return;
-    }
-
-    if (userPage.mode === 'create' && !userForm.club_id) {
-      setUserFormError('Seleciona um clube para associar este utilizador.');
-      return;
-    }
-
-    if (userPage.mode === 'create' && !userForm.generate_password && !manualPassword) {
-      setUserFormError('Ativa a geração automatica ou indica uma password.');
-      return;
-    }
-
-    setIsSavingUser(true);
-    setUserFormError('');
+    setIsUploadingPhotoImage(true);
+    setPhotoFormError('');
 
     try {
-      const savedUser =
-        userPage.mode === 'create'
-          ? await createAdminUser(token, payload)
-          : userPage.mode === 'edit'
-            ? await updateAdminUser(token, userPage.userId, payload)
-            : null;
-
-      if (!savedUser) {
-        return;
-      }
-
-      setUsers((prev) =>
-        userPage.mode === 'create'
-          ? sortUsers([savedUser, ...prev])
-          : sortUsers(prev.map((user) => (user.id === savedUser.id ? savedUser : user)))
-      );
-
-      if (currentUser?.id === savedUser.id) {
-        setCurrentUser(savedUser);
-      }
-
-      resetUserForm();
-      navigate('/infocultura/utilizadores');
+      const imagePath = await uploadAdminImage(token, file, 'photos');
+      setPhotoForm((prev) => ({ ...prev, image: imagePath }));
     } catch (error) {
-      const message =
-        error instanceof Error ? error.message : 'Não foi possível guardar o utilizador.';
-      setUserFormError(message);
+      const message = error instanceof Error ? error.message : 'Não foi possível carregar a imagem.';
+      setPhotoFormError(message);
     } finally {
-      setIsSavingUser(false);
+      setIsUploadingPhotoImage(false);
     }
   }
 
-  async function handleDeactivateUser(event: FormEvent<HTMLFormElement>) {
+  async function handleSavePhoto(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (!token) return;
 
-    if (!token || !canManageUsers || !selectedUser) return;
+    const payload: PhotoPayload = {
+      section: photoForm.section.trim() || 'laboratorio-cultural',
+      title: photoForm.title.trim(),
+      caption: photoForm.caption.trim(),
+      image: photoForm.image.trim(),
+      alt_text: photoForm.alt_text.trim(),
+      display_order: Number(photoForm.display_order || '0'),
+      is_active: photoForm.is_active,
+    };
 
-    setIsDeactivatingUser(true);
-    setUserFormError('');
+    if (!payload.title || !payload.image) {
+      setPhotoFormError('Preenche o título e a imagem.');
+      return;
+    }
+
+    setIsSavingPhoto(true);
+    setPhotoFormError('');
 
     try {
-      const updatedUser = await deactivateAdminUser(token, selectedUser.id);
-      setUsers((prev) =>
-        sortUsers(prev.map((user) => (user.id === updatedUser.id ? updatedUser : user)))
-      );
-      navigate('/infocultura/utilizadores');
+      if (editingPhotoId) {
+        const updated = await updateAdminPhoto(token, editingPhotoId, payload);
+        setPhotos((prev) => sortPhotos(prev.map((photo) => (photo.id === editingPhotoId ? updated : photo))));
+      } else {
+        const created = await createAdminPhoto(token, payload);
+        setPhotos((prev) => sortPhotos([created, ...prev]));
+      }
+
+      resetPhotoForm();
+      navigate(getPhotoRoute('list'));
     } catch (error) {
-      const message =
-        error instanceof Error ? error.message : 'Não foi possível desativar o utilizador.';
-      setUserFormError(message);
+      const message = error instanceof Error ? error.message : 'Não foi possível guardar a foto.';
+      setPhotoFormError(message);
     } finally {
-      setIsDeactivatingUser(false);
+      setIsSavingPhoto(false);
+    }
+  }
+
+  function handleEditPhoto(photo: InfoCulturaPhoto) {
+    setEditingPhotoId(photo.id);
+    setPhotoForm({
+      section: photo.section,
+      title: photo.title,
+      caption: photo.caption || '',
+      image: photo.image,
+      alt_text: photo.alt_text || '',
+      display_order: String(photo.display_order),
+      is_active: photo.is_active,
+    });
+    setPhotoFormError('');
+    navigate(getPhotoRoute('form'));
+  }
+
+  async function handleDeletePhoto(id: string) {
+    if (!token) return;
+
+    setDeletingPhotoId(id);
+    setPhotoFormError('');
+
+    try {
+      await deleteAdminPhoto(token, id);
+      setPhotos((prev) => prev.filter((photo) => photo.id !== id));
+      if (editingPhotoId === id) {
+        resetPhotoForm();
+      }
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Não foi possível apagar a foto.';
+      setPhotoFormError(message);
+    } finally {
+      setDeletingPhotoId(null);
+    }
+  }
+
+  async function handleToggleNewsActive(id: number, shouldActivate: boolean) {
+    if (!token) return;
+    setChangingNewsStatusId(id);
+    setNewsError('');
+    try {
+      const updated = shouldActivate
+        ? await activateAdminNews(token, id)
+        : await deactivateAdminNews(token, id);
+      setNewsItems((prev) => prev.map((item) => (item.id === updated.id ? updated : item)));
+    } catch (error) {
+      setNewsError(error instanceof Error ? error.message : 'Não foi possível atualizar a notícia.');
+    } finally {
+      setChangingNewsStatusId(null);
+    }
+  }
+
+  async function handleToggleBookActive(id: number, shouldActivate: boolean) {
+    if (!token) return;
+    setChangingBookStatusId(id);
+    setActivityError('');
+    try {
+      const updated = shouldActivate
+        ? await activateAdminBook(token, id)
+        : await deactivateAdminBook(token, id);
+      setBooks((prev) => prev.map((item) => (item.id === updated.id ? updated : item)));
+    } catch (error) {
+      setActivityError(error instanceof Error ? error.message : 'Não foi possível atualizar o livro.');
+    } finally {
+      setChangingBookStatusId(null);
+    }
+  }
+
+  async function handleToggleSessionActive(id: number, shouldActivate: boolean) {
+    if (!token) return;
+    setChangingSessionStatusId(id);
+    setActivityError('');
+    try {
+      const updated = shouldActivate
+        ? await activateAdminSession(token, id)
+        : await deactivateAdminSession(token, id);
+      setSessions((prev) => prev.map((item) => (item.id === updated.id ? updated : item)));
+    } catch (error) {
+      setActivityError(error instanceof Error ? error.message : 'Não foi possível atualizar a sessão.');
+    } finally {
+      setChangingSessionStatusId(null);
+    }
+  }
+
+  async function handleToggleEventActive(id: number, shouldActivate: boolean) {
+    if (!token) return;
+    setChangingEventStatusId(id);
+    setActivityError('');
+    try {
+      const updated = shouldActivate
+        ? await activateAdminEvent(token, id)
+        : await deactivateAdminEvent(token, id);
+      setEvents((prev) => prev.map((item) => (item.id === updated.id ? updated : item)));
+    } catch (error) {
+      setActivityError(error instanceof Error ? error.message : 'Não foi possível atualizar o evento.');
+    } finally {
+      setChangingEventStatusId(null);
     }
   }
 
@@ -1599,6 +1814,24 @@ function AdminCultura() {
       setClubFormError(message);
     } finally {
       setDeletingClubId(null);
+    }
+  }
+
+  async function handleToggleClubActive(id: number, shouldActivate: boolean) {
+    if (!token || !canManageUsers) return;
+
+    setChangingClubStatusId(id);
+    setClubFormError('');
+
+    try {
+      const updated = shouldActivate
+        ? await activateAdminClub(token, id)
+        : await deactivateAdminClub(token, id);
+      setClubs((prev) => prev.map((club) => (club.id === updated.id ? updated : club)));
+    } catch (error) {
+      setClubFormError(error instanceof Error ? error.message : 'Não foi possível atualizar o clube.');
+    } finally {
+      setChangingClubStatusId(null);
     }
   }
 
@@ -2110,6 +2343,8 @@ function AdminCultura() {
   }
 
   function handleEditEvent(item: InfoCulturaEvent) {
+    const venue = item.eventbrite_venue || null;
+    const firstTicket = item.eventbrite_ticket_classes?.[0] || null;
     setEditingEventId(item.id);
     setEventImageFileKey((prev) => prev + 1);
     setEventForm({
@@ -2129,6 +2364,28 @@ function AdminCultura() {
       status: normalizeWorkflowStatus(item.status),
       city: item.city || '',
       location: item.location || '',
+      eventbrite_venue_id: item.eventbrite_venue_id || '',
+      eventbrite_venue_name: venue?.name || item.location || '',
+      eventbrite_venue_address_1: venue?.address_1 || item.location || '',
+      eventbrite_venue_address_2: venue?.address_2 || '',
+      eventbrite_venue_city: venue?.city || item.city || '',
+      eventbrite_venue_region: venue?.region || '',
+      eventbrite_venue_postal_code: venue?.postal_code || '',
+      eventbrite_venue_country: venue?.country || 'PT',
+      eventbrite_venue_capacity:
+        venue?.capacity === null || venue?.capacity === undefined ? '' : String(venue.capacity),
+      eventbrite_ticket_name: firstTicket?.name || 'Entrada geral',
+      eventbrite_ticket_type: firstTicket?.type || 'free',
+      eventbrite_ticket_quantity:
+        firstTicket?.quantity_total === null || firstTicket?.quantity_total === undefined
+          ? item.registration_capacity
+            ? String(item.registration_capacity)
+            : ''
+          : String(firstTicket.quantity_total),
+      eventbrite_ticket_price:
+        firstTicket?.price === null || firstTicket?.price === undefined ? '' : String(firstTicket.price),
+      sync_eventbrite_on_save: false,
+      publish_eventbrite_on_save: false,
       club_id: item.club_id ? String(item.club_id) : '',
       category_ids: item.category_ids.map(String)
     });
@@ -2142,6 +2399,39 @@ function AdminCultura() {
     if (!token) return;
     const submitAction = getSubmitAction(event);
 
+    const venuePayload =
+      eventForm.eventbrite_venue_name.trim() ||
+      eventForm.eventbrite_venue_address_1.trim() ||
+      eventForm.eventbrite_venue_city.trim()
+        ? {
+            name: eventForm.eventbrite_venue_name.trim() || eventForm.location.trim(),
+            address_1: eventForm.eventbrite_venue_address_1.trim() || eventForm.location.trim(),
+            address_2: eventForm.eventbrite_venue_address_2.trim(),
+            city: eventForm.eventbrite_venue_city.trim() || eventForm.city.trim(),
+            region: eventForm.eventbrite_venue_region.trim(),
+            postal_code: eventForm.eventbrite_venue_postal_code.trim(),
+            country: eventForm.eventbrite_venue_country.trim() || 'PT',
+            capacity: eventForm.eventbrite_venue_capacity
+              ? Number(eventForm.eventbrite_venue_capacity)
+              : null,
+          }
+        : null;
+    const ticketPayload =
+      eventForm.eventbrite_ticket_name.trim() || eventForm.eventbrite_ticket_quantity
+        ? [
+            {
+              name: eventForm.eventbrite_ticket_name.trim() || 'Entrada geral',
+              type: eventForm.eventbrite_ticket_type,
+              quantity_total: eventForm.eventbrite_ticket_quantity
+                ? Number(eventForm.eventbrite_ticket_quantity)
+                : Number(eventForm.registration_capacity || 100),
+              price:
+                eventForm.eventbrite_ticket_type === 'paid' && eventForm.eventbrite_ticket_price
+                  ? Number(eventForm.eventbrite_ticket_price)
+                  : null,
+            },
+          ]
+        : null;
     const payload: EventPayload = {
       title: eventForm.title.trim(),
       description: eventForm.description.trim(),
@@ -2158,6 +2448,9 @@ function AdminCultura() {
       status: eventForm.status.trim(),
       city: eventForm.city.trim(),
       location: eventForm.location.trim(),
+      eventbrite_venue_id: eventForm.eventbrite_venue_id.trim(),
+      eventbrite_venue: venuePayload,
+      eventbrite_ticket_classes: ticketPayload,
       ...(eventForm.club_id ? { club_id: Number(eventForm.club_id) } : {}),
       category_ids: eventForm.category_ids.map(Number)
     };
@@ -2201,11 +2494,19 @@ function AdminCultura() {
         editingEventId === null
           ? await createAdminEvent(token, payload)
           : await updateAdminEvent(token, editingEventId, payload);
+      const finalEvent =
+        eventForm.sync_eventbrite_on_save || eventForm.publish_eventbrite_on_save
+          ? await syncAdminEventToEventbrite(
+              token,
+              savedEvent.id,
+              eventForm.publish_eventbrite_on_save
+            )
+          : savedEvent;
 
       setEvents((prev) =>
         editingEventId === null
-          ? [...prev, savedEvent]
-          : prev.map((item) => (item.id === savedEvent.id ? savedEvent : item))
+          ? [...prev, finalEvent]
+          : prev.map((item) => (item.id === finalEvent.id ? finalEvent : item))
       );
       resetEventForm();
       navigate(getActivityRoute('events', 'list'));
@@ -2260,6 +2561,74 @@ function AdminCultura() {
     }
   }
 
+  async function handleExportActivitiesCsv() {
+    setIsExportingActivities(true);
+
+    try {
+      const escapeValue = (value: string | number | boolean | null | undefined) => {
+        const text = value === null || value === undefined ? '' : String(value);
+        return /[",\n;]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text;
+      };
+
+      const rows: string[] = [];
+
+      if (activityTab === 'books') {
+        rows.push(['id', 'title', 'author', 'club', 'featured', 'created_at'].join(','));
+        sortedBooks.forEach((item) => {
+          rows.push(
+            [
+              item.id,
+              item.title,
+              item.author,
+              item.club_name || '',
+              item.is_featured ? 'sim' : 'nao',
+              item.created_at || ''
+            ]
+              .map(escapeValue)
+              .join(',')
+          );
+        });
+      } else if (activityTab === 'sessions') {
+        rows.push(['id', 'name', 'club', 'date', 'created_at'].join(','));
+        sortedSessions.forEach((item) => {
+          rows.push(
+            [item.id, item.name, item.club_name || '', item.session_date || '', item.created_at || '']
+              .map(escapeValue)
+              .join(',')
+          );
+        });
+      } else {
+        rows.push(['id', 'title', 'club', 'status', 'date', 'created_at'].join(','));
+        sortedEvents.forEach((item) => {
+          rows.push(
+            [
+              item.id,
+              item.title,
+              item.club_name || '',
+              item.status,
+              item.event_date || '',
+              item.created_at || ''
+            ]
+              .map(escapeValue)
+              .join(',')
+          );
+        });
+      }
+
+      const blob = new Blob([rows.join('\n')], { type: 'text/csv;charset=utf-8;' });
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `infocultura_${activityTab}.csv`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+    } finally {
+      setIsExportingActivities(false);
+    }
+  }
+
   async function handleUpdateRegistrationStatus(
     registrationId: number,
     status: string
@@ -2309,11 +2678,11 @@ function AdminCultura() {
     return <Navigate to="/infocultura/resumo" replace />;
   }
 
-  if (activeSection === 'utilizadores' && !userPage) {
-    return <Navigate to="/infocultura/utilizadores" replace />;
-  }
-
-  if (activeSection === 'clubes' && currentUser && !canManageUsers) {
+  if (
+    currentUser &&
+    !canManageUsers &&
+    (activeSection === 'utilizadores' || activeSection === 'clubes' || activeSection === 'logs')
+  ) {
     return <Navigate to="/infocultura/resumo" replace />;
   }
 
@@ -2523,94 +2892,17 @@ function AdminCultura() {
           {activeSection === 'logs' ? <LogsPage /> : null}
 
           {activeSection === 'notificacoes' ? (
-            <div className="space-y-6">
-              <AdminPageHero
-                icon={Bell}
-                title="Centro de Notificações"
-                description="Alertas editoriais, operacionais e de agenda gerados a partir da atividade do sistema."
-                tone="amber"
-                stats={notificationOverviewStats}
-                actions={
-                  <button
-                    type="button"
-                    className={adminBtnSecondary}
-                    disabled={notifications.length === 0}
-                    onClick={markAllNotificationsAsRead}
-                  >
-                    {getLocaleText(locale, 'Marcar todas como lidas', 'Mark all as read')}
-                  </button>
-                }
-              />
-
-              <section className={adminPanelCard}>
-                {isLoadingNotifications ? (
-                  <p className={adminInfo}>{getLocaleText(locale, 'A carregar notificações...', 'Loading notifications...')}</p>
-                ) : null}
-                {notificationError ? <p className={adminError}>{notificationError}</p> : null}
-
-                {!isLoadingNotifications && latestNotifications.length === 0 ? (
-                  <p className={adminInfo}>{getLocaleText(locale, 'Não existem notificações para mostrar.', 'There are no notifications to display.')}</p>
-                ) : null}
-
-                <div className="space-y-4">
-                  {latestNotifications.map((notification) => (
-                    <article
-                      key={notification.id}
-                      className={`rounded-2xl border p-5 shadow-sm ${
-                        notification.isRead
-                          ? 'border-slate-200 bg-white'
-                          : notification.level === 'warning'
-                            ? 'border-amber-200 bg-amber-50'
-                            : notification.level === 'success'
-                              ? 'border-emerald-200 bg-emerald-50'
-                              : 'border-sky-200 bg-sky-50'
-                      }`}
-                    >
-                      <div className="flex flex-wrap items-start justify-between gap-4">
-                        <div className="max-w-3xl">
-                          <div className="flex flex-wrap items-center gap-3">
-                            <h3 className="text-lg font-semibold text-slate-900">
-                              {notification.title}
-                            </h3>
-                            {!notification.isRead ? (
-                              <span className="inline-flex items-center rounded-full bg-[#dd8609] px-2.5 py-1 text-xs font-semibold text-white">
-                                {getLocaleText(locale, 'Nova', 'New')}
-                              </span>
-                            ) : null}
-                            <span className="inline-flex items-center rounded-full bg-white/80 px-2.5 py-1 text-xs font-semibold uppercase tracking-[0.12em] text-slate-600">
-                              {notification.kind}
-                            </span>
-                          </div>
-                          <p className="mt-3 leading-7 text-slate-700">{notification.message}</p>
-                          <p className="mt-3 text-sm font-medium text-slate-500">
-                            {formatAdminDateTime(notification.created_at || '')}
-                          </p>
-                        </div>
-
-                        <div className="flex flex-wrap gap-3">
-                          <button
-                            type="button"
-                            className={adminBtnPrimary}
-                            onClick={() => handleOpenNotification(notification)}
-                          >
-                            {getLocaleText(locale, 'Abrir', 'Open')}
-                          </button>
-                          {!notification.isRead ? (
-                            <button
-                              type="button"
-                              className={adminBtnSecondary}
-                              onClick={() => markNotificationAsRead(notification.id)}
-                            >
-                              {getLocaleText(locale, 'Marcar como lida', 'Mark as read')}
-                            </button>
-                          ) : null}
-                        </div>
-                      </div>
-                    </article>
-                  ))}
-                </div>
-              </section>
-            </div>
+            <NotificationsPage
+              locale={locale}
+              notificationOverviewStats={notificationOverviewStats}
+              notifications={notifications}
+              latestNotifications={latestNotifications}
+              isLoadingNotifications={isLoadingNotifications}
+              notificationError={notificationError}
+              onMarkAllAsRead={markAllNotificationsAsRead}
+              onMarkAsRead={markNotificationAsRead}
+              onOpenNotification={handleOpenNotification}
+            />
           ) : null}
 
           {activeSection === 'newsletters' ? <NewslettersPage /> : null}
@@ -2642,6 +2934,8 @@ function AdminCultura() {
               selectedUser={selectedUser}
               isDeactivatingUser={isDeactivatingUser}
               handleDeactivateUser={handleDeactivateUser}
+              isActivatingUser={isActivatingUser}
+              handleActivateUser={handleActivateUser}
             />
           ) : null}
 
@@ -2671,6 +2965,8 @@ function AdminCultura() {
               setClubOrder={setClubOrder}
               filteredClubs={filteredClubs}
               isLoadingClubs={isLoadingClubs}
+              changingClubStatusId={changingClubStatusId}
+              handleToggleClubActive={handleToggleClubActive}
               deletingClubId={deletingClubId}
               handleEditClub={handleEditClub}
               handleDeleteClub={handleDeleteClub}
@@ -2726,6 +3022,8 @@ function AdminCultura() {
               isDeletingBulkNews={isDeletingBulkNews}
               handleBulkDeleteNews={handleBulkDeleteNews}
               deletingNewsId={deletingNewsId}
+              changingNewsStatusId={changingNewsStatusId}
+              handleToggleNewsActive={handleToggleNewsActive}
               handleDeleteNews={handleDeleteNews}
               handleEditNews={handleEditNews}
               newsTotal={newsTotal}
@@ -2762,7 +3060,7 @@ function AdminCultura() {
               setActivityDateTo={setActivityDateTo}
               activityOrder={activityOrder}
               setActivityOrder={setActivityOrder}
-              activityTab={activityTab}
+              activityTab="books"
               selectedBookIds={selectedBookIds}
               setSelectedBookIds={setSelectedBookIds}
               sortedBooks={sortedBooks}
@@ -2792,6 +3090,8 @@ function AdminCultura() {
               handleEditBook={handleEditBook}
               deletingBookId={deletingBookId}
               handleDeleteBook={handleDeleteBook}
+              changingBookStatusId={changingBookStatusId}
+              handleToggleBookActive={handleToggleBookActive}
               isLoadingActivities={isLoadingActivities}
               activityTotal={activityTotal}
               activityPage={activityPage}
@@ -2806,6 +3106,8 @@ function AdminCultura() {
               handleEditSession={handleEditSession}
               deletingSessionId={deletingSessionId}
               handleDeleteSession={handleDeleteSession}
+              changingSessionStatusId={changingSessionStatusId}
+              handleToggleSessionActive={handleToggleSessionActive}
               sortedSessions={sortedSessions}
               handleSaveEvent={handleSaveEvent}
               editingEventId={editingEventId}
@@ -2820,7 +3122,16 @@ function AdminCultura() {
               handleEditEvent={handleEditEvent}
               deletingEventId={deletingEventId}
               handleDeleteEvent={handleDeleteEvent}
-              showEventCategories={showEventCategories}
+              changingEventStatusId={changingEventStatusId}
+              handleToggleEventActive={handleToggleEventActive}
+              syncingEventbriteId={syncingEventbriteId}
+              handleSyncEventbrite={handleSyncEventbrite}
+              loadingEventbriteOrdersId={loadingEventbriteOrdersId}
+              eventbriteRefundStatus={eventbriteRefundStatus}
+              setEventbriteRefundStatus={setEventbriteRefundStatus}
+              eventbriteOrdersByEventId={eventbriteOrdersByEventId}
+              handleLoadEventbriteOrders={handleLoadEventbriteOrders}
+              showEventCategories={false}
               handleSaveCategory={handleSaveCategory}
               categoryForm={categoryForm}
               setCategoryForm={setCategoryForm}
@@ -2892,6 +3203,8 @@ function AdminCultura() {
               handleEditBook={handleEditBook}
               deletingBookId={deletingBookId}
               handleDeleteBook={handleDeleteBook}
+              changingBookStatusId={changingBookStatusId}
+              handleToggleBookActive={handleToggleBookActive}
               isLoadingActivities={isLoadingActivities}
               activityTotal={activityTotal}
               activityPage={activityPage}
@@ -2906,6 +3219,8 @@ function AdminCultura() {
               handleEditSession={handleEditSession}
               deletingSessionId={deletingSessionId}
               handleDeleteSession={handleDeleteSession}
+              changingSessionStatusId={changingSessionStatusId}
+              handleToggleSessionActive={handleToggleSessionActive}
               sortedSessions={sortedSessions}
               handleSaveEvent={handleSaveEvent}
               editingEventId={editingEventId}
@@ -2920,7 +3235,16 @@ function AdminCultura() {
               handleEditEvent={handleEditEvent}
               deletingEventId={deletingEventId}
               handleDeleteEvent={handleDeleteEvent}
-              showEventCategories={showEventCategories}
+              changingEventStatusId={changingEventStatusId}
+              handleToggleEventActive={handleToggleEventActive}
+              syncingEventbriteId={syncingEventbriteId}
+              handleSyncEventbrite={handleSyncEventbrite}
+              loadingEventbriteOrdersId={loadingEventbriteOrdersId}
+              eventbriteRefundStatus={eventbriteRefundStatus}
+              setEventbriteRefundStatus={setEventbriteRefundStatus}
+              eventbriteOrdersByEventId={eventbriteOrdersByEventId}
+              handleLoadEventbriteOrders={handleLoadEventbriteOrders}
+              showEventCategories={false}
               handleSaveCategory={handleSaveCategory}
               categoryForm={categoryForm}
               setCategoryForm={setCategoryForm}
@@ -2992,6 +3316,8 @@ function AdminCultura() {
               handleEditBook={handleEditBook}
               deletingBookId={deletingBookId}
               handleDeleteBook={handleDeleteBook}
+              changingBookStatusId={changingBookStatusId}
+              handleToggleBookActive={handleToggleBookActive}
               isLoadingActivities={isLoadingActivities}
               activityTotal={activityTotal}
               activityPage={activityPage}
@@ -3006,6 +3332,8 @@ function AdminCultura() {
               handleEditSession={handleEditSession}
               deletingSessionId={deletingSessionId}
               handleDeleteSession={handleDeleteSession}
+              changingSessionStatusId={changingSessionStatusId}
+              handleToggleSessionActive={handleToggleSessionActive}
               sortedSessions={sortedSessions}
               handleSaveEvent={handleSaveEvent}
               editingEventId={editingEventId}
@@ -3020,6 +3348,15 @@ function AdminCultura() {
               handleEditEvent={handleEditEvent}
               deletingEventId={deletingEventId}
               handleDeleteEvent={handleDeleteEvent}
+              changingEventStatusId={changingEventStatusId}
+              handleToggleEventActive={handleToggleEventActive}
+              syncingEventbriteId={syncingEventbriteId}
+              handleSyncEventbrite={handleSyncEventbrite}
+              loadingEventbriteOrdersId={loadingEventbriteOrdersId}
+              eventbriteRefundStatus={eventbriteRefundStatus}
+              setEventbriteRefundStatus={setEventbriteRefundStatus}
+              eventbriteOrdersByEventId={eventbriteOrdersByEventId}
+              handleLoadEventbriteOrders={handleLoadEventbriteOrders}
               showEventCategories={showEventCategories}
               handleSaveCategory={handleSaveCategory}
               categoryForm={categoryForm}
@@ -3034,6 +3371,1344 @@ function AdminCultura() {
               deletingCategoryId={deletingCategoryId}
               handleDeleteCategory={handleDeleteCategory}
               toggleSelectedId={toggleSelectedId}
+            />
+          ) : null}
+
+          {activeSection === 'atividades' ? (
+            <div className="space-y-6">
+              <AdminPageHero
+                icon={CalendarClock}
+                title="Atividades"
+                description="Gestao integrada de livros, sessoes e eventos com filtros, agenda e workflow."
+                tone="blue"
+                stats={activityOverviewStats}
+                actions={
+                  <button
+                    type="button"
+                    className={adminBtnSecondary}
+                    disabled={isExportingActivities}
+                    onClick={() => void handleExportActivitiesCsv()}
+                  >
+                    {isExportingActivities ? 'A exportar...' : 'Exportar CSV'}
+                  </button>
+                }
+              />
+
+              <section className={adminPanelCard}>
+                <div className={adminHeaderRow}>
+                  <div>
+                    <h2 className={blockTitle}>Atividades dos clubes</h2>
+                    <p className={blockText}>
+                      Gere livros, sessoes e eventos ligados aos clubes.
+                    </p>
+                  </div>
+                  <div className="flex flex-wrap gap-4">
+                    {canManageUsers ? (
+                      <div className={adminField}>
+                        <label className={adminLabel} htmlFor="activity-club-filter">
+                          Filtrar por clube
+                        </label>
+                        <select
+                          id="activity-club-filter"
+                          className={adminInput}
+                          value={activityClubFilter}
+                          onChange={(event) => setActivityClubFilter(event.target.value)}
+                        >
+                          <option value="all">Todos os clubes</option>
+                          {clubs.map((club) => (
+                            <option key={club.id} value={club.id}>
+                              {club.name}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    ) : null}
+                    {activityTab === 'events' ? (
+                      <div className={adminField}>
+                        <label className={adminLabel} htmlFor="activity-category-filter">
+                          Filtrar por categoria
+                        </label>
+                        <select
+                          id="activity-category-filter"
+                          className={adminInput}
+                          value={activityCategoryFilter}
+                          onChange={(event) => setActivityCategoryFilter(event.target.value)}
+                        >
+                          <option value="all">Todas as categorias</option>
+                          {sortedCategories.map((category) => (
+                            <option key={category.id} value={category.id}>
+                              {category.name}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    ) : null}
+                    {activityTab === 'events' ? (
+                      <div className={adminField}>
+                        <label className={adminLabel} htmlFor="activity-status-filter">
+                          Estado editorial
+                        </label>
+                        <select
+                          id="activity-status-filter"
+                          className={adminInput}
+                          value={activityStatusFilter}
+                          onChange={(event) => setActivityStatusFilter(event.target.value)}
+                        >
+                          <option value="all">Todos os estados</option>
+                          {EVENT_WORKFLOW_ORDER.map((status) => (
+                            <option key={status} value={status}>
+                              {getWorkflowStatusLabel(status)}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    ) : null}
+                  </div>
+                </div>
+
+                <div className={adminSectionNav}>
+                  <button
+                    type="button"
+                    className={activityTab === 'books' ? adminSectionLinkActive : adminSectionLink}
+                    onClick={() => setActivityTab('books')}
+                  >
+                    Livros
+                  </button>
+                  <button
+                    type="button"
+                    className={activityTab === 'sessions' ? adminSectionLinkActive : adminSectionLink}
+                    onClick={() => setActivityTab('sessions')}
+                  >
+                    Sessoes
+                  </button>
+                  <button
+                    type="button"
+                    className={activityTab === 'events' ? adminSectionLinkActive : adminSectionLink}
+                    onClick={() => setActivityTab('events')}
+                  >
+                    Eventos
+                  </button>
+                </div>
+
+                {activityError ? <p className={adminError}>{activityError}</p> : null}
+
+                <div className={`${adminFormGridSpaced} mt-6`}>
+                  <form onSubmit={handleApplyActivitySearch} className={adminPanelForm}>
+                    <div className={adminField}>
+                      <label className={adminLabel} htmlFor="activity-search">
+                        Pesquisar {activityTab === 'books' ? 'livros' : activityTab === 'sessions' ? 'sessoes' : 'eventos'}
+                      </label>
+                      <input
+                        id="activity-search"
+                        className={adminInput}
+                        value={activitySearchInput}
+                        onChange={(event) => setActivitySearchInput(event.target.value)}
+                        placeholder={
+                          activityTab === 'books'
+                            ? 'Titulo, autor, editora ou clube'
+                            : activityTab === 'sessions'
+                              ? 'Nome, titulo, descricao ou clube'
+                              : 'Titulo, descricao, local ou clube'
+                        }
+                      />
+                    </div>
+                    <div className={adminActions}>
+                      <button type="submit" className={adminBtnPrimary}>
+                        Pesquisar
+                      </button>
+                      <button
+                        type="button"
+                        className={adminBtnSecondary}
+                        onClick={() => {
+                          setActivitySearchInput('');
+                          setActivitySearch('');
+                          setActivityPage(1);
+                        }}
+                      >
+                        Limpar
+                      </button>
+                    </div>
+                  </form>
+
+                  <div className={adminActions}>
+                    <button
+                      type="button"
+                      className={adminBtnSecondary}
+                      disabled={isExportingActivities}
+                      onClick={() => void handleExportActivitiesCsv()}
+                    >
+                      {isExportingActivities ? 'A exportar...' : 'Exportar CSV'}
+                    </button>
+                  </div>
+                </div>
+
+                <div className={adminFormGridSpaced}>
+                  <div className={adminField}>
+                    <label className={adminLabel} htmlFor="activity-date-from">
+                      Data desde
+                    </label>
+                    <input
+                      id="activity-date-from"
+                      type="date"
+                      className={adminInput}
+                      value={activityDateFrom}
+                      onChange={(event) => setActivityDateFrom(event.target.value)}
+                    />
+                  </div>
+                  <div className={adminField}>
+                    <label className={adminLabel} htmlFor="activity-date-to">
+                      Data ate
+                    </label>
+                    <input
+                      id="activity-date-to"
+                      type="date"
+                      className={adminInput}
+                      value={activityDateTo}
+                      onChange={(event) => setActivityDateTo(event.target.value)}
+                    />
+                  </div>
+                  <div className={adminField}>
+                    <label className={adminLabel} htmlFor="activity-order">
+                      Ordenar por
+                    </label>
+                    <select
+                      id="activity-order"
+                      className={adminInput}
+                      value={activityOrder}
+                      onChange={(event) => setActivityOrder(event.target.value)}
+                    >
+                      {activityTab === 'books' ? (
+                        <>
+                          <option value="featured">Destaque primeiro</option>
+                          <option value="newest">Mais recentes</option>
+                          <option value="oldest">Mais antigos</option>
+                          <option value="title_asc">Titulo A-Z</option>
+                          <option value="title_desc">Titulo Z-A</option>
+                          <option value="year_desc">Ano mais recente</option>
+                          <option value="year_asc">Ano mais antigo</option>
+                          <option value="club_asc">Clube A-Z</option>
+                          <option value="club_desc">Clube Z-A</option>
+                        </>
+                      ) : activityTab === 'sessions' ? (
+                        <>
+                          <option value="date_asc">Data mais proxima</option>
+                          <option value="date_desc">Data mais distante</option>
+                          <option value="newest">Mais recentes</option>
+                          <option value="oldest">Mais antigas</option>
+                          <option value="title_asc">Titulo A-Z</option>
+                          <option value="title_desc">Titulo Z-A</option>
+                          <option value="club_asc">Clube A-Z</option>
+                          <option value="club_desc">Clube Z-A</option>
+                        </>
+                      ) : (
+                        <>
+                          <option value="date_asc">Data mais proxima</option>
+                          <option value="date_desc">Data mais distante</option>
+                          <option value="newest">Mais recentes</option>
+                          <option value="oldest">Mais antigos</option>
+                          <option value="title_asc">Titulo A-Z</option>
+                          <option value="title_desc">Titulo Z-A</option>
+                          <option value="club_asc">Clube A-Z</option>
+                          <option value="club_desc">Clube Z-A</option>
+                          <option value="status_asc">Estado A-Z</option>
+                          <option value="status_desc">Estado Z-A</option>
+                        </>
+                      )}
+                    </select>
+                  </div>
+                </div>
+
+                {activityTab === 'books' ? (
+                  <div className={adminActions}>
+                    <button
+                      type="button"
+                      className={adminBtnSecondary}
+                      onClick={() =>
+                        setSelectedBookIds(
+                          selectedBookIds.length === sortedBooks.length
+                            ? []
+                            : sortedBooks.map((item) => item.id)
+                        )
+                      }
+                      disabled={sortedBooks.length === 0}
+                    >
+                      {selectedBookIds.length === sortedBooks.length && sortedBooks.length > 0
+                        ? 'Limpar selecao'
+                        : 'Selecionar pagina'}
+                    </button>
+                    <button
+                      type="button"
+                      className={adminBtnDanger}
+                      disabled={selectedBookIds.length === 0 || isDeletingBulkBooks}
+                      onClick={() => void handleBulkDeleteBooks()}
+                    >
+                      {isDeletingBulkBooks ? 'A apagar...' : 'Apagar selecionados'}
+                    </button>
+                  </div>
+                ) : null}
+
+                {activityTab === 'events' ? (
+                  <div className={adminActions}>
+                    <button
+                      type="button"
+                      className={adminBtnSecondary}
+                      onClick={() =>
+                        setSelectedEventIds(
+                          selectedEventIds.length === sortedEvents.length
+                            ? []
+                            : sortedEvents.map((item) => item.id)
+                        )
+                      }
+                      disabled={sortedEvents.length === 0}
+                    >
+                      {selectedEventIds.length === sortedEvents.length && sortedEvents.length > 0
+                        ? 'Limpar selecao'
+                        : 'Selecionar pagina'}
+                    </button>
+                    <select
+                      className={adminInput}
+                      value={bulkEventStatus}
+                      onChange={(event) => setBulkEventStatus(event.target.value)}
+                    >
+                      {availableEventStatuses.map((status) => (
+                        <option key={status} value={status}>
+                          {getWorkflowStatusLabel(status)}
+                        </option>
+                      ))}
+                    </select>
+                    <button
+                      type="button"
+                      className={adminBtnPrimary}
+                      disabled={selectedEventIds.length === 0 || isApplyingBulkEvents}
+                      onClick={() => void handleApplyBulkEventStatus()}
+                    >
+                      {isApplyingBulkEvents ? 'A aplicar...' : 'Aplicar em lote'}
+                    </button>
+                    <button
+                      type="button"
+                      className={adminBtnDanger}
+                      disabled={selectedEventIds.length === 0 || isDeletingBulkEvents}
+                      onClick={() => void handleBulkDeleteEvents()}
+                    >
+                      {isDeletingBulkEvents ? 'A apagar...' : 'Apagar selecionados'}
+                    </button>
+                  </div>
+                ) : null}
+              </section>
+
+              {activityTab === 'books' ? (
+                <>
+                  <form onSubmit={handleSaveBook} className={adminPanelForm}>
+                    <h2 className={blockTitle}>
+                      {editingBookId ? 'Editar Livro' : 'Novo Livro'}
+                    </h2>
+
+                    <div className={adminFormGridSpaced}>
+                      {canManageUsers ? (
+                        <div className={adminField}>
+                          <label className={adminLabel} htmlFor="book-club-id">
+                            Clube
+                          </label>
+                          <select
+                            id="book-club-id"
+                            className={adminInput}
+                            value={bookForm.club_id}
+                            onChange={(event) =>
+                              setBookForm((prev) => ({ ...prev, club_id: event.target.value }))
+                            }
+                          >
+                            <option value="">Seleciona um clube</option>
+                            {clubs.map((club) => (
+                              <option key={club.id} value={club.id}>
+                                {club.name}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                      ) : null}
+
+                      <div className={adminField}>
+                        <label className={adminLabel} htmlFor="book-title">
+                          Titulo
+                        </label>
+                        <input
+                          id="book-title"
+                          className={adminInput}
+                          value={bookForm.title}
+                          onChange={(event) =>
+                            setBookForm((prev) => ({ ...prev, title: event.target.value }))
+                          }
+                        />
+                      </div>
+
+                      <div className={adminField}>
+                        <label className={adminLabel} htmlFor="book-author">
+                          Autor
+                        </label>
+                        <input
+                          id="book-author"
+                          className={adminInput}
+                          value={bookForm.author}
+                          onChange={(event) =>
+                            setBookForm((prev) => ({ ...prev, author: event.target.value }))
+                          }
+                        />
+                      </div>
+
+                      <div className={adminField}>
+                        <label className={adminLabel} htmlFor="book-year">
+                          Ano
+                        </label>
+                        <input
+                          id="book-year"
+                          type="number"
+                          className={adminInput}
+                          value={bookForm.publication_year}
+                          onChange={(event) =>
+                            setBookForm((prev) => ({
+                              ...prev,
+                              publication_year: event.target.value
+                            }))
+                          }
+                        />
+                      </div>
+                    </div>
+
+                    <div className={adminFormGridSpaced}>
+                      <div className={adminField}>
+                        <label className={adminLabel} htmlFor="book-publisher">
+                          Editora
+                        </label>
+                        <input
+                          id="book-publisher"
+                          className={adminInput}
+                          value={bookForm.publisher}
+                          onChange={(event) =>
+                            setBookForm((prev) => ({ ...prev, publisher: event.target.value }))
+                          }
+                        />
+                      </div>
+
+                      <div className={adminField}>
+                        <label className={adminLabel} htmlFor="book-cover">
+                          Capa
+                        </label>
+                        <input
+                          id="book-cover"
+                          key={bookImageFileKey}
+                          type="file"
+                          accept="image/*"
+                          className={adminInput}
+                          onChange={(event) => {
+                            const file = event.target.files?.[0] || null;
+                            void handleUploadBookImage(file);
+                          }}
+                        />
+                        <p className={blockText}>
+                          {isUploadingBookImage
+                            ? 'A carregar capa...'
+                            : bookForm.cover_image
+                              ? 'Capa carregada com sucesso.'
+                              : 'Seleciona uma imagem do computador ou telemovel.'}
+                        </p>
+                        {bookForm.cover_image ? (
+                          <img
+                            src={resolveInfoCulturaAssetUrl(bookForm.cover_image)}
+                            alt="Preview da capa"
+                            className="mt-3 h-40 w-full rounded-xl object-cover"
+                          />
+                        ) : null}
+                      </div>
+
+                      <div className={adminField}>
+                        <label className={adminLabel} htmlFor="book-featured">
+                          Destaque
+                        </label>
+                        <select
+                          id="book-featured"
+                          className={adminInput}
+                          value={bookForm.is_featured ? 'sim' : 'nao'}
+                          onChange={(event) =>
+                            setBookForm((prev) => ({
+                              ...prev,
+                              is_featured: event.target.value === 'sim'
+                            }))
+                          }
+                        >
+                          <option value="nao">Nao</option>
+                          <option value="sim">Sim</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    <div className={adminFieldSpaced}>
+                      <label className={adminLabel} htmlFor="book-summary">
+                        Resumo
+                      </label>
+                      <textarea
+                        id="book-summary"
+                        rows={5}
+                        className={adminTextarea}
+                        value={bookForm.summary}
+                        onChange={(event) =>
+                          setBookForm((prev) => ({ ...prev, summary: event.target.value }))
+                        }
+                      />
+                    </div>
+
+                    {bookFormError ? <p className={adminError}>{bookFormError}</p> : null}
+
+                    <div className={adminActions}>
+                      <button type="submit" className={adminBtnPrimary} disabled={isSavingBook}>
+                        {isSavingBook ? 'A guardar...' : editingBookId ? 'Atualizar' : 'Criar'}
+                      </button>
+                      <button type="button" onClick={resetBookForm} className={adminBtnSecondary}>
+                        Limpar
+                      </button>
+                    </div>
+                  </form>
+
+                  <div className={adminList}>
+                    {isLoadingActivities ? <p className={adminInfo}>A carregar livros...</p> : null}
+                    {!isLoadingActivities && sortedBooks.length === 0 ? (
+                      <p className={adminInfo}>Nao existem livros para o filtro atual.</p>
+                    ) : null}
+                    {sortedBooks.map((item) => (
+                      <article key={item.id} className={adminListItem}>
+                        <div className={adminListTop}>
+                          <label className="mr-4 flex items-center gap-2 text-sm text-slate-600">
+                            <input
+                              type="checkbox"
+                              checked={selectedBookIds.includes(item.id)}
+                              onChange={() => toggleSelectedId(setSelectedBookIds, item.id)}
+                            />
+                            Selecionar
+                          </label>
+                          <div>
+                            <h3 className={adminListTitle}>{item.title}</h3>
+                            <p className={adminListMeta}>
+                              {item.club_name} · {item.author} · {item.publication_year}
+                            </p>
+                          </div>
+                        </div>
+                        <p className={adminListDesc}>{item.summary}</p>
+                        <div className={adminListTools}>
+                          <button
+                            type="button"
+                            className={adminBtnEdit}
+                            onClick={() => handleEditBook(item)}
+                          >
+                            Editar
+                          </button>
+                          <button
+                            type="button"
+                            className={adminBtnDanger}
+                            disabled={deletingBookId === item.id}
+                            onClick={() => handleDeleteBook(item.id)}
+                          >
+                            {deletingBookId === item.id ? 'A apagar...' : 'Apagar'}
+                          </button>
+                        </div>
+                      </article>
+                    ))}
+                  </div>
+                  {!isLoadingActivities ? (
+                    <div className={`${adminActions} mt-6`}>
+                      <p className={adminInfo}>
+                        {activityTotal} livro(s) · pagina {activityPage} de {activityTotalPages || 1}
+                      </p>
+                      <button
+                        type="button"
+                        className={adminBtnSecondary}
+                        disabled={activityPage <= 1}
+                        onClick={() => setActivityPage((prev) => Math.max(1, prev - 1))}
+                      >
+                        Anterior
+                      </button>
+                      <button
+                        type="button"
+                        className={adminBtnSecondary}
+                        disabled={activityTotalPages === 0 || activityPage >= activityTotalPages}
+                        onClick={() => setActivityPage((prev) => prev + 1)}
+                      >
+                        Seguinte
+                      </button>
+                    </div>
+                  ) : null}
+                </>
+              ) : null}
+
+              {activityTab === 'sessions' ? (
+                <>
+                  <form onSubmit={handleSaveSession} className={adminPanelForm}>
+                    <h2 className={blockTitle}>
+                      {editingSessionId ? 'Editar Sessao' : 'Nova Sessao'}
+                    </h2>
+
+                    <div className={adminFormGridSpaced}>
+                      {canManageUsers ? (
+                        <div className={adminField}>
+                          <label className={adminLabel} htmlFor="session-club-id">
+                            Clube
+                          </label>
+                          <select
+                            id="session-club-id"
+                            className={adminInput}
+                            value={sessionForm.club_id}
+                            onChange={(event) =>
+                              setSessionForm((prev) => ({ ...prev, club_id: event.target.value }))
+                            }
+                          >
+                            <option value="">Seleciona um clube</option>
+                            {clubs.map((club) => (
+                              <option key={club.id} value={club.id}>
+                                {club.name}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                      ) : null}
+
+                      <div className={adminField}>
+                        <label className={adminLabel} htmlFor="session-name">
+                          Nome curto
+                        </label>
+                        <input
+                          id="session-name"
+                          className={adminInput}
+                          value={sessionForm.name}
+                          onChange={(event) =>
+                            setSessionForm((prev) => ({ ...prev, name: event.target.value }))
+                          }
+                        />
+                      </div>
+
+                      <div className={adminField}>
+                        <label className={adminLabel} htmlFor="session-title">
+                          Titulo
+                        </label>
+                        <input
+                          id="session-title"
+                          className={adminInput}
+                          value={sessionForm.title}
+                          onChange={(event) =>
+                            setSessionForm((prev) => ({ ...prev, title: event.target.value }))
+                          }
+                        />
+                      </div>
+
+                      <div className={adminField}>
+                        <label className={adminLabel} htmlFor="session-date">
+                          Data
+                        </label>
+                        <input
+                          id="session-date"
+                          type="date"
+                          className={adminInput}
+                          value={sessionForm.session_date}
+                          onChange={(event) =>
+                            setSessionForm((prev) => ({
+                              ...prev,
+                              session_date: event.target.value
+                            }))
+                          }
+                        />
+                      </div>
+                    </div>
+
+                    <div className={adminFormGridSpaced}>
+                      <div className={adminField}>
+                        <label className={adminLabel} htmlFor="session-start">
+                          Inicio
+                        </label>
+                        <input
+                          id="session-start"
+                          type="datetime-local"
+                          className={adminInput}
+                          value={sessionForm.start_date}
+                          onChange={(event) =>
+                            setSessionForm((prev) => ({
+                              ...prev,
+                              start_date: event.target.value
+                            }))
+                          }
+                        />
+                      </div>
+
+                      <div className={adminField}>
+                        <label className={adminLabel} htmlFor="session-end">
+                          Fim
+                        </label>
+                        <input
+                          id="session-end"
+                          type="datetime-local"
+                          className={adminInput}
+                          value={sessionForm.end_date}
+                          onChange={(event) =>
+                            setSessionForm((prev) => ({ ...prev, end_date: event.target.value }))
+                          }
+                        />
+                      </div>
+
+                      <div className={adminField}>
+                        <label className={adminLabel} htmlFor="session-registrations-enabled">
+                          Inscricoes
+                        </label>
+                        <select
+                          id="session-registrations-enabled"
+                          className={adminInput}
+                          value={sessionForm.enable_registrations ? 'sim' : 'nao'}
+                          onChange={(event) =>
+                            setSessionForm((prev) => ({
+                              ...prev,
+                              enable_registrations: event.target.value === 'sim'
+                            }))
+                          }
+                        >
+                          <option value="nao">Fechadas</option>
+                          <option value="sim">Abertas</option>
+                        </select>
+                      </div>
+
+                      <div className={adminField}>
+                        <label className={adminLabel} htmlFor="session-registration-capacity">
+                          Lotacao
+                        </label>
+                        <input
+                          id="session-registration-capacity"
+                          type="number"
+                          min="1"
+                          className={adminInput}
+                          value={sessionForm.registration_capacity}
+                          onChange={(event) =>
+                            setSessionForm((prev) => ({
+                              ...prev,
+                              registration_capacity: event.target.value
+                            }))
+                          }
+                        />
+                        <p className={blockText}>
+                          Define o numero maximo de lugares antes de ativar lista de espera.
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className={adminFieldSpaced}>
+                      <label className={adminLabel} htmlFor="session-description">
+                        Descricao
+                      </label>
+                      <textarea
+                        id="session-description"
+                        rows={5}
+                        className={adminTextarea}
+                        value={sessionForm.description}
+                        onChange={(event) =>
+                          setSessionForm((prev) => ({
+                            ...prev,
+                            description: event.target.value
+                          }))
+                        }
+                      />
+                    </div>
+
+                    {sessionFormError ? <p className={adminError}>{sessionFormError}</p> : null}
+
+                    <div className={adminActions}>
+                      <button
+                        type="submit"
+                        className={adminBtnPrimary}
+                        disabled={isSavingSession}
+                      >
+                        {isSavingSession ? 'A guardar...' : editingSessionId ? 'Atualizar' : 'Criar'}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={resetSessionForm}
+                        className={adminBtnSecondary}
+                      >
+                        Limpar
+                      </button>
+                    </div>
+                  </form>
+
+                  <div className={adminList}>
+                    {isLoadingActivities ? <p className={adminInfo}>A carregar sessoes...</p> : null}
+                    {!isLoadingActivities && sortedSessions.length === 0 ? (
+                      <p className={adminInfo}>Nao existem sessoes para o filtro atual.</p>
+                    ) : null}
+                    {sortedSessions.map((item) => (
+                      <article key={item.id} className={adminListItem}>
+                        <div className={adminListTop}>
+                          <div>
+                            <h3 className={adminListTitle}>{item.title}</h3>
+                            <p className={adminListMeta}>
+                              {item.club_name} · {formatAdminDateTime(item.start_date)}
+                            </p>
+                          </div>
+                        </div>
+                        <p className={adminListDesc}>{item.description}</p>
+                        <p className={adminListMeta}>
+                          Inscricoes {item.enable_registrations ? 'abertas' : 'fechadas'} ·
+                          Confirmadas {item.confirmed_registrations} · Espera{' '}
+                          {item.waitlist_registrations}
+                          {item.registration_capacity !== null &&
+                          item.registration_capacity !== undefined
+                            ? ` · Lotacao ${item.registration_capacity}`
+                            : ''}
+                        </p>
+                        <div className={adminListTools}>
+                          <button
+                            type="button"
+                            className={adminBtnEdit}
+                            onClick={() => handleEditSession(item)}
+                          >
+                            Editar
+                          </button>
+                          <button
+                            type="button"
+                            className={adminBtnDanger}
+                            disabled={deletingSessionId === item.id}
+                            onClick={() => handleDeleteSession(item.id)}
+                          >
+                            {deletingSessionId === item.id ? 'A apagar...' : 'Apagar'}
+                          </button>
+                        </div>
+                      </article>
+                    ))}
+                  </div>
+                  {!isLoadingActivities ? (
+                    <div className={`${adminActions} mt-6`}>
+                      <p className={adminInfo}>
+                        {activityTotal} sessao(oes) · pagina {activityPage} de {activityTotalPages || 1}
+                      </p>
+                      <button
+                        type="button"
+                        className={adminBtnSecondary}
+                        disabled={activityPage <= 1}
+                        onClick={() => setActivityPage((prev) => Math.max(1, prev - 1))}
+                      >
+                        Anterior
+                      </button>
+                      <button
+                        type="button"
+                        className={adminBtnSecondary}
+                        disabled={activityTotalPages === 0 || activityPage >= activityTotalPages}
+                        onClick={() => setActivityPage((prev) => prev + 1)}
+                      >
+                        Seguinte
+                      </button>
+                    </div>
+                  ) : null}
+                </>
+              ) : null}
+
+              {activityTab === 'events' ? (
+                <>
+                  <form onSubmit={handleSaveEvent} className={adminPanelForm}>
+                    <h2 className={blockTitle}>
+                      {editingEventId ? 'Editar Evento' : 'Novo Evento'}
+                    </h2>
+
+                    <div className={adminFormGridSpaced}>
+                      {canManageUsers ? (
+                        <div className={adminField}>
+                          <label className={adminLabel} htmlFor="event-club-id">
+                            Clube
+                          </label>
+                          <select
+                            id="event-club-id"
+                            className={adminInput}
+                            value={eventForm.club_id}
+                            onChange={(event) =>
+                              setEventForm((prev) => ({ ...prev, club_id: event.target.value }))
+                            }
+                          >
+                            <option value="">Seleciona um clube</option>
+                            {clubs.map((club) => (
+                              <option key={club.id} value={club.id}>
+                                {club.name}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                      ) : null}
+
+                      <div className={adminField}>
+                        <label className={adminLabel} htmlFor="event-title">
+                          Titulo
+                        </label>
+                        <input
+                          id="event-title"
+                          className={adminInput}
+                          value={eventForm.title}
+                          onChange={(event) =>
+                            setEventForm((prev) => ({ ...prev, title: event.target.value }))
+                          }
+                        />
+                      </div>
+
+                      <div className={adminField}>
+                        <label className={adminLabel} htmlFor="event-status">
+                          Estado
+                        </label>
+                        <select
+                          id="event-status"
+                          className={adminInput}
+                          value={eventForm.status}
+                          onChange={(event) =>
+                            setEventForm((prev) => ({
+                              ...prev,
+                              status: normalizeWorkflowStatus(event.target.value)
+                            }))
+                          }
+                        >
+                          {availableEventStatuses.map((status) => (
+                            <option key={status} value={status}>
+                              {getWorkflowStatusLabel(status)}
+                            </option>
+                          ))}
+                        </select>
+                        <p className={blockText}>
+                          {canManageUsers
+                            ? 'Podes rever, publicar ou arquivar o evento.'
+                            : 'O evento pode ficar em rascunho ou seguir para revisao.'}
+                        </p>
+                      </div>
+
+                      <div className={adminField}>
+                        <label className={adminLabel} htmlFor="event-categories">
+                          Categorias
+                        </label>
+                        <select
+                          id="event-categories"
+                          multiple
+                          className={adminInput}
+                          value={eventForm.category_ids}
+                          onChange={(event) =>
+                            setEventForm((prev) => ({
+                              ...prev,
+                              category_ids: Array.from(event.target.selectedOptions).map(
+                                (option) => option.value
+                              )
+                            }))
+                          }
+                        >
+                          {sortedCategories.map((category) => (
+                            <option key={category.id} value={category.id}>
+                              {category.name}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+
+                      <div className={adminField}>
+                        <label className={adminLabel} htmlFor="event-date">
+                          Data
+                        </label>
+                        <input
+                          id="event-date"
+                          type="date"
+                          className={adminInput}
+                          value={eventForm.event_date}
+                          onChange={(event) =>
+                            setEventForm((prev) => ({ ...prev, event_date: event.target.value }))
+                          }
+                        />
+                      </div>
+                    </div>
+
+                    <div className={adminFormGridSpaced}>
+                      <div className={adminField}>
+                        <label className={adminLabel} htmlFor="event-start">
+                          Inicio
+                        </label>
+                        <input
+                          id="event-start"
+                          type="datetime-local"
+                          className={adminInput}
+                          value={eventForm.start_date}
+                          onChange={(event) =>
+                            setEventForm((prev) => ({ ...prev, start_date: event.target.value }))
+                          }
+                        />
+                      </div>
+
+                      <div className={adminField}>
+                        <label className={adminLabel} htmlFor="event-end">
+                          Fim
+                        </label>
+                        <input
+                          id="event-end"
+                          type="datetime-local"
+                          className={adminInput}
+                          value={eventForm.end_date}
+                          onChange={(event) =>
+                            setEventForm((prev) => ({ ...prev, end_date: event.target.value }))
+                          }
+                        />
+                      </div>
+
+                      <div className={adminField}>
+                        <label className={adminLabel} htmlFor="event-external">
+                          Externo
+                        </label>
+                        <select
+                          id="event-external"
+                          className={adminInput}
+                          value={eventForm.is_external ? 'sim' : 'nao'}
+                          onChange={(event) =>
+                            setEventForm((prev) => ({
+                              ...prev,
+                              is_external: event.target.value === 'sim'
+                            }))
+                          }
+                        >
+                          <option value="nao">Nao</option>
+                          <option value="sim">Sim</option>
+                        </select>
+                      </div>
+
+                      <div className={adminField}>
+                        <label className={adminLabel} htmlFor="event-registrations-enabled">
+                          Inscricoes
+                        </label>
+                        <select
+                          id="event-registrations-enabled"
+                          className={adminInput}
+                          value={eventForm.enable_registrations ? 'sim' : 'nao'}
+                          onChange={(event) =>
+                            setEventForm((prev) => ({
+                              ...prev,
+                              enable_registrations: event.target.value === 'sim'
+                            }))
+                          }
+                        >
+                          <option value="nao">Fechadas</option>
+                          <option value="sim">Abertas</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    <div className={adminFormGridSpaced}>
+                      <div className={adminField}>
+                        <label className={adminLabel} htmlFor="event-city">
+                          Cidade
+                        </label>
+                        <input
+                          id="event-city"
+                          className={adminInput}
+                          value={eventForm.city}
+                          onChange={(event) =>
+                            setEventForm((prev) => ({ ...prev, city: event.target.value }))
+                          }
+                        />
+                      </div>
+
+                      <div className={adminField}>
+                        <label className={adminLabel} htmlFor="event-location">
+                          Local
+                        </label>
+                        <input
+                          id="event-location"
+                          className={adminInput}
+                          value={eventForm.location}
+                          onChange={(event) =>
+                            setEventForm((prev) => ({ ...prev, location: event.target.value }))
+                          }
+                        />
+                      </div>
+
+                      <div className={adminField}>
+                        <label className={adminLabel} htmlFor="event-registration-capacity">
+                          Lotacao
+                        </label>
+                        <input
+                          id="event-registration-capacity"
+                          type="number"
+                          min="1"
+                          className={adminInput}
+                          value={eventForm.registration_capacity}
+                          onChange={(event) =>
+                            setEventForm((prev) => ({
+                              ...prev,
+                              registration_capacity: event.target.value
+                            }))
+                          }
+                        />
+                        <p className={blockText}>
+                          Quando a lotacao for atingida, novas inscricoes passam para espera.
+                        </p>
+                      </div>
+
+                      <div className={adminField}>
+                        <label className={adminLabel} htmlFor="event-image">
+                          Imagem
+                        </label>
+                        <input
+                          id="event-image"
+                          key={eventImageFileKey}
+                          type="file"
+                          accept="image/*"
+                          className={adminInput}
+                          onChange={(event) => {
+                            const file = event.target.files?.[0] || null;
+                            void handleUploadEventImage(file);
+                          }}
+                        />
+                        <p className={blockText}>
+                          {isUploadingEventImage
+                            ? 'A carregar imagem...'
+                            : eventForm.image
+                              ? 'Imagem carregada com sucesso.'
+                              : 'Seleciona uma imagem para o evento.'}
+                        </p>
+                        {eventForm.image ? (
+                          <img
+                            src={resolveInfoCulturaAssetUrl(eventForm.image)}
+                            alt="Preview do evento"
+                            className="mt-3 h-40 w-full rounded-xl object-cover"
+                          />
+                        ) : null}
+                      </div>
+                    </div>
+
+                    <div className={adminFieldSpaced}>
+                      <label className={adminLabel} htmlFor="event-description">
+                        Descricao
+                      </label>
+                      <textarea
+                        id="event-description"
+                        rows={5}
+                        className={adminTextarea}
+                        value={eventForm.description}
+                        onChange={(event) =>
+                          setEventForm((prev) => ({
+                            ...prev,
+                            description: event.target.value
+                          }))
+                        }
+                      />
+                    </div>
+
+                    {eventFormError ? <p className={adminError}>{eventFormError}</p> : null}
+
+                    <div className={adminActions}>
+                      <button type="submit" className={adminBtnPrimary} disabled={isSavingEvent}>
+                        {isSavingEvent ? 'A guardar...' : editingEventId ? 'Atualizar' : 'Criar'}
+                      </button>
+                      <button type="button" onClick={resetEventForm} className={adminBtnSecondary}>
+                        Limpar
+                      </button>
+                    </div>
+                  </form>
+
+                  <div className={adminList}>
+                    {isLoadingActivities ? <p className={adminInfo}>A carregar eventos...</p> : null}
+                    {!isLoadingActivities && sortedEvents.length === 0 ? (
+                      <p className={adminInfo}>Nao existem eventos para o filtro atual.</p>
+                    ) : null}
+                    {sortedEvents.map((item) => (
+                      <article key={item.id} className={adminListItem}>
+                        <div className={adminListTop}>
+                          <label className="mr-4 flex items-center gap-2 text-sm text-slate-600">
+                            <input
+                              type="checkbox"
+                              checked={selectedEventIds.includes(item.id)}
+                              onChange={() => toggleSelectedId(setSelectedEventIds, item.id)}
+                            />
+                            Selecionar
+                          </label>
+                          <div>
+                            <h3 className={adminListTitle}>{item.title}</h3>
+                            <p className={adminListMeta}>
+                              {item.club_name || 'Sem clube'} · {getWorkflowStatusLabel(item.status)} ·{' '}
+                              {formatAdminDateTime(item.start_date)}
+                            </p>
+                          </div>
+                        </div>
+                        <p className={adminListDesc}>{item.description}</p>
+                        <p className={adminListMeta}>
+                          Inscricoes {item.enable_registrations ? 'abertas' : 'fechadas'} ·
+                          Confirmadas {item.confirmed_registrations} · Espera{' '}
+                          {item.waitlist_registrations}
+                          {item.registration_capacity !== null &&
+                          item.registration_capacity !== undefined
+                            ? ` · Lotacao ${item.registration_capacity}`
+                            : ''}
+                        </p>
+                        {item.categories.length > 0 ? (
+                          <p className={adminListMeta}>
+                            Categorias: {item.categories.map((category) => category.name).join(', ')}
+                          </p>
+                        ) : null}
+                        {item.editorial_history && item.editorial_history.length > 0 ? (
+                          <div className="mt-3 space-y-1">
+                            {item.editorial_history.slice(0, 3).map((history, index) => (
+                              <p key={`${item.id}-${index}`} className={adminListMeta}>
+                                {history.actor_name} ·{' '}
+                                {history.from_status
+                                  ? `${getWorkflowStatusLabel(history.from_status)} -> `
+                                  : ''}
+                                {getWorkflowStatusLabel(history.to_status)} ·{' '}
+                                {formatAdminDateTime(history.created_at || '')}
+                              </p>
+                            ))}
+                          </div>
+                        ) : null}
+                        <div className={adminListTools}>
+                          <button
+                            type="button"
+                            className={adminBtnEdit}
+                            onClick={() => handleEditEvent(item)}
+                          >
+                            Editar
+                          </button>
+                          <button
+                            type="button"
+                            className={adminBtnDanger}
+                            disabled={deletingEventId === item.id}
+                            onClick={() => handleDeleteEvent(item.id)}
+                          >
+                            {deletingEventId === item.id ? 'A apagar...' : 'Apagar'}
+                          </button>
+                        </div>
+                      </article>
+                    ))}
+                  </div>
+                  {!isLoadingActivities ? (
+                    <div className={`${adminActions} mt-6`}>
+                      <p className={adminInfo}>
+                        {activityTotal} evento(s) · pagina {activityPage} de {activityTotalPages || 1}
+                      </p>
+                      <button
+                        type="button"
+                        className={adminBtnSecondary}
+                        disabled={activityPage <= 1}
+                        onClick={() => setActivityPage((prev) => Math.max(1, prev - 1))}
+                      >
+                        Anterior
+                      </button>
+                      <button
+                        type="button"
+                        className={adminBtnSecondary}
+                        disabled={activityTotalPages === 0 || activityPage >= activityTotalPages}
+                        onClick={() => setActivityPage((prev) => prev + 1)}
+                      >
+                        Seguinte
+                      </button>
+                    </div>
+                  ) : null}
+                </>
+              ) : null}
+
+              {activityTab === 'events' ? (
+                <section className={adminPanelCard}>
+                  <h2 className={blockTitle}>Categorias de eventos</h2>
+                  <p className={blockText}>
+                    Cria categorias para classificar eventos e usar filtros no painel e no publico.
+                  </p>
+
+                  <form onSubmit={handleSaveCategory} className={adminPanelForm}>
+                    <div className={adminFormGridSpaced}>
+                      <div className={adminField}>
+                        <label className={adminLabel} htmlFor="category-name">
+                          Nome
+                        </label>
+                        <input
+                          id="category-name"
+                          className={adminInput}
+                          value={categoryForm.name}
+                          onChange={(event) =>
+                            setCategoryForm((prev) => ({ ...prev, name: event.target.value }))
+                          }
+                        />
+                      </div>
+
+                      <div className={adminField}>
+                        <label className={adminLabel} htmlFor="category-description">
+                          Descricao
+                        </label>
+                        <textarea
+                          id="category-description"
+                          rows={3}
+                          className={adminTextarea}
+                          value={categoryForm.description}
+                          onChange={(event) =>
+                            setCategoryForm((prev) => ({
+                              ...prev,
+                              description: event.target.value
+                            }))
+                          }
+                        />
+                      </div>
+                    </div>
+
+                    {categoryFormError ? <p className={adminError}>{categoryFormError}</p> : null}
+
+                    <div className={adminActions}>
+                      <button type="submit" className={adminBtnPrimary} disabled={isSavingCategory}>
+                        {isSavingCategory
+                          ? 'A guardar...'
+                          : editingCategoryId
+                            ? 'Atualizar categoria'
+                            : 'Criar categoria'}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={resetCategoryForm}
+                        className={adminBtnSecondary}
+                      >
+                        Limpar
+                      </button>
+                    </div>
+                  </form>
+
+                  <div className={adminList}>
+                    {isLoadingCategories ? <p className={adminInfo}>A carregar categorias...</p> : null}
+                    {!isLoadingCategories && sortedCategories.length === 0 ? (
+                      <p className={adminInfo}>Nao existem categorias registadas.</p>
+                    ) : null}
+                    {sortedCategories.map((category) => (
+                      <article key={category.id} className={adminListItem}>
+                        <div className={adminListTop}>
+                          <div>
+                            <h3 className={adminListTitle}>{category.name}</h3>
+                            <p className={adminListMeta}>{category.description}</p>
+                          </div>
+                        </div>
+                        <div className={adminListTools}>
+                          <button
+                            type="button"
+                            className={adminBtnEdit}
+                            onClick={() => handleEditCategory(category)}
+                          >
+                            Editar
+                          </button>
+                          <button
+                            type="button"
+                            className={adminBtnDanger}
+                            disabled={deletingCategoryId === category.id}
+                            onClick={() => handleDeleteCategory(category.id)}
+                          >
+                            {deletingCategoryId === category.id ? 'A apagar...' : 'Apagar'}
+                          </button>
+                        </div>
+                      </article>
+                    ))}
+                  </div>
+                </section>
+              ) : null}
+            </div>
+          ) : null}
+
+          {activeSection === 'eventbrite' && currentUser ? (
+            <EventbritePage
+              token={token}
+              currentUser={currentUser}
+              canManageUsers={canManageUsers}
+              clubs={clubs}
+              events={events}
+              setEvents={setEvents}
             />
           ) : null}
 
@@ -3077,6 +4752,27 @@ function AdminCultura() {
               updatingRegistrationId={updatingRegistrationId}
               handleUpdateRegistrationStatus={handleUpdateRegistrationStatus}
               toggleSelectedId={toggleSelectedId}
+            />
+          ) : null}
+
+          {activeSection === 'galeria' ? (
+            <PhotoGalleryPage
+              photos={photos}
+              form={photoForm}
+              setForm={setPhotoForm}
+              editingPhotoId={editingPhotoId}
+              isSaving={isSavingPhoto}
+              isUploading={isUploadingPhotoImage}
+              isLoading={isLoadingPhotos}
+              error={photoFormError}
+              uploadingKey={photoImageFileKey}
+              deletingPhotoId={deletingPhotoId}
+              showForm={showPhotoForm}
+              showList={showPhotoList}
+              onSubmit={handleSavePhoto}
+              onImageUpload={handleUploadPhotoImage}
+              onEdit={handleEditPhoto}
+              onDelete={handleDeletePhoto}
             />
           ) : null}
 

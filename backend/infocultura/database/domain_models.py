@@ -204,10 +204,16 @@ class Event(AuditMixin):
     start_date: datetime
     end_date: datetime
     image: str = ""
+    is_active: bool = True
     is_external: bool = False
     status: str = EventStatus.DRAFT.value
     city: str = ""
     location: str = ""
+    eventbrite_event_id: str = ""
+    eventbrite_url: str = ""
+    eventbrite_status: str = ""
+    eventbrite_last_synced_at: Optional[datetime] = None
+    eventbrite_last_error: str = ""
 
     user_id: Optional[int]
 
@@ -254,6 +260,7 @@ class Book(CreatedAtMixin):
     publication_year: int
     cover_image: str
     summary: str
+    is_active: bool = True
     is_featured: bool
 
     club_id: Optional[int]
@@ -281,6 +288,7 @@ class Session(AuditMixin):
     session_date: date
     start_date: datetime
     end_date: datetime
+    is_active: bool = True
 
     club_id: Optional[int]
 
@@ -347,6 +355,7 @@ class News(AuditMixin):
     title: str
     summary: str
     image: str
+    is_active: bool = True
     published_at: Optional[datetime]
     content: str
 

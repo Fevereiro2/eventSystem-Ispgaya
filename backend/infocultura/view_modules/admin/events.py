@@ -6,6 +6,7 @@ from django.utils import timezone
 from rest_framework import generics, permissions
 from rest_framework.response import Response
 from rest_framework.views import APIView
+import logging
 
 from ...api.response_builders import apply_admin_ordering, apply_date_range_filters, build_csv_response, paginate_queryset
 from ...api.serializers import (
@@ -20,6 +21,18 @@ from ...api.serializers import (
 from ...core.permissions import IsClubAdmin
 from ...models import Event, EventCategory, EventRegistration, NewsStatus
 from ...service_modules.audit import record_admin_audit_action, record_editorial_action
+from ...service_modules.eventbrite import (
+    EventbriteAPIError,
+    EventbriteConfigurationError,
+    create_or_update_eventbrite_event,
+    create_eventbrite_ticket_class,
+    get_eventbrite_event,
+    get_eventbrite_connection_status,
+    list_eventbrite_attendees,
+    list_eventbrite_orders,
+    publish_eventbrite_event,
+    sync_event_to_eventbrite,
+)
 from ...service_modules.workflow import notify_event_workflow_status
 from ..admin.common import AdminAuditDestroyMixin, AdminAuditMixin, get_allowed_club_id
 from ..admin.list_helpers import read_admin_list_params
@@ -186,6 +199,9 @@ class AdminEventBulkStatusUpdateView(APIView):
                 previous_status=previous_status,
                 next_status=target_status,
             )
+            # Auto-sync to Eventbrite when transitioning to published
+            if normalize_workflow_status(target_status) == 'published':
+                sync_event_to_eventbrite(item)
             updated_items.append(item)
 
         output = AdminEventReadSerializer(updated_items, many=True)
@@ -227,3 +243,268 @@ class AdminEventBulkDeleteView(APIView):
                 metadata={'ids': deleted_ids},
             )
         return Response({'deleted': deleted_count})
+
+
+class AdminEventEventbriteSyncView(APIView):
+    permission_classes = [permissions.IsAuthenticated, IsClubAdmin]
+
+    def post(self, request, pk: int):
+        queryset = Event.objects.select_related('user__club').prefetch_related('categories')
+        allowed_club_id = get_allowed_club_id(request.user)
+        if allowed_club_id is not None:
+            queryset = queryset.filter(user__club_id=allowed_club_id)
+
+        try:
+            event = queryset.get(pk=pk)
+        except Event.DoesNotExist:
+            return Response({'message': 'Evento nao encontrado.'}, status=404)
+
+        should_publish = bool(request.data.get('publish', False))
+        now = timezone.now()
+
+        try:
+            result = create_or_update_eventbrite_event(event)
+            publish_payload = None
+            if should_publish:
+                publish_payload = publish_eventbrite_event(result.event_id)
+
+            event.eventbrite_event_id = result.event_id
+            event.eventbrite_url = result.url
+            event.eventbrite_status = 'published' if should_publish else result.status
+            event.eventbrite_venue_id = result.venue_id or event.eventbrite_venue_id
+            event.eventbrite_last_synced_at = now
+            event.eventbrite_last_error = ''
+            event.updated_at = now
+            event.save(
+                update_fields=[
+                    'eventbrite_event_id',
+                    'eventbrite_url',
+                    'eventbrite_status',
+                    'eventbrite_venue_id',
+                    'eventbrite_last_synced_at',
+                    'eventbrite_last_error',
+                    'updated_at',
+                ]
+            )
+        except (EventbriteConfigurationError, EventbriteAPIError) as error:
+            event.eventbrite_last_error = str(error)
+            event.updated_at = now
+            event.save(update_fields=['eventbrite_last_error', 'updated_at'])
+            status_code = getattr(error, 'status_code', None) or 400
+            return Response({'message': str(error)}, status=status_code)
+
+        record_admin_audit_action(
+            action='eventbrite_sync',
+            content_type='event',
+            summary=f'Evento sincronizado com Eventbrite: {event.title}',
+            actor_user=request.user,
+            metadata={
+                'event_id': event.id,
+                'eventbrite_event_id': event.eventbrite_event_id,
+                'publish': should_publish,
+            },
+        )
+
+        output = AdminEventReadSerializer(event)
+        return Response(
+            {
+                'item': output.data,
+                'eventbrite': {
+                    'event_id': result.event_id,
+                    'url': event.eventbrite_url,
+                    'status': event.eventbrite_status,
+                    'venue_id': event.eventbrite_venue_id,
+                    'ticket_classes': result.ticket_classes or [],
+                    'published': should_publish,
+                    'publish_payload': publish_payload,
+                },
+            }
+        )
+
+
+class AdminEventbriteConnectionView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        logger = logging.getLogger(__name__)
+        try:
+            logger.debug(
+                'AdminEventbriteConnectionView.get user=%s is_authenticated=%s auth=%s cookies=%s',
+                getattr(request, 'user', None),
+                getattr(getattr(request, 'user', None), 'is_authenticated', False),
+                getattr(request, 'auth', None),
+                list(request.COOKIES.keys()),
+            )
+            payload = get_eventbrite_connection_status()
+        except (EventbriteConfigurationError, EventbriteAPIError) as error:
+            return Response(
+                {
+                    'connected': False,
+                    'message': str(error),
+                },
+                status=getattr(error, 'status_code', None) or 400,
+            )
+
+        return Response(payload)
+
+
+class AdminEventEventbriteDetailView(APIView):
+    permission_classes = [permissions.IsAuthenticated, IsClubAdmin]
+
+    def get_event(self, request, pk: int):
+        queryset = Event.objects.select_related('user__club')
+        allowed_club_id = get_allowed_club_id(request.user)
+        if allowed_club_id is not None:
+            queryset = queryset.filter(user__club_id=allowed_club_id)
+
+        try:
+            event = queryset.get(pk=pk)
+        except Event.DoesNotExist:
+            return None, Response({'message': 'Evento nao encontrado.'}, status=404)
+
+        if not event.eventbrite_event_id:
+            return None, Response({'message': 'Este evento ainda nao esta sincronizado com a Eventbrite.'}, status=400)
+
+        return event, None
+
+    def get(self, request, pk: int):
+        event, error_response = self.get_event(request, pk)
+        if error_response:
+            return error_response
+
+        try:
+            payload = get_eventbrite_event(event.eventbrite_event_id)
+        except (EventbriteConfigurationError, EventbriteAPIError) as error:
+            return Response({'message': str(error)}, status=getattr(error, 'status_code', None) or 400)
+
+        return Response(
+            {
+                'id': payload.get('id') or event.eventbrite_event_id,
+                'name': ((payload.get('name') or {}).get('text') or event.title),
+                'status': payload.get('status') or '',
+                'url': payload.get('url') or event.eventbrite_url,
+                'capacity': payload.get('capacity'),
+                'ticket_classes': payload.get('ticket_classes') or [],
+                'venue': payload.get('venue') or {},
+            }
+        )
+
+
+class AdminEventEventbriteTicketClassView(AdminEventEventbriteDetailView):
+    def post(self, request, pk: int):
+        event, error_response = self.get_event(request, pk)
+        if error_response:
+            return error_response
+
+        ticket = request.data.get('ticket_class') or request.data
+        if not isinstance(ticket, dict):
+            return Response({'message': 'Dados do ticket invalidos.'}, status=400)
+
+        try:
+            payload = create_eventbrite_ticket_class(event.eventbrite_event_id, ticket)
+        except (EventbriteConfigurationError, EventbriteAPIError) as error:
+            return Response({'message': str(error)}, status=getattr(error, 'status_code', None) or 400)
+
+        record_admin_audit_action(
+            action='eventbrite_ticket_create',
+            content_type='event',
+            summary=f'Ticket Eventbrite criado: {event.title}',
+            actor_user=request.user,
+            metadata={'event_id': event.id, 'eventbrite_event_id': event.eventbrite_event_id},
+        )
+        return Response({'ticket_class': payload})
+
+
+class AdminEventEventbriteAttendeesView(AdminEventEventbriteDetailView):
+    def get(self, request, pk: int):
+        event, error_response = self.get_event(request, pk)
+        if error_response:
+            return error_response
+
+        try:
+            payload = list_eventbrite_attendees(
+                event.eventbrite_event_id,
+                continuation=(request.query_params.get('continuation') or '').strip(),
+            )
+        except (EventbriteConfigurationError, EventbriteAPIError) as error:
+            return Response({'message': str(error)}, status=getattr(error, 'status_code', None) or 400)
+
+        attendees = payload.get('attendees') or []
+        return Response(
+            {
+                'attendees': [
+                    {
+                        'id': attendee.get('id'),
+                        'name': ((attendee.get('profile') or {}).get('name') or attendee.get('name') or ''),
+                        'email': ((attendee.get('profile') or {}).get('email') or attendee.get('email') or ''),
+                        'status': attendee.get('status') or '',
+                        'checked_in': bool(attendee.get('checked_in')),
+                        'ticket_class_name': attendee.get('ticket_class_name') or '',
+                        'ticket_class_id': attendee.get('ticket_class_id') or '',
+                        'order_id': attendee.get('order_id') or '',
+                        'created': attendee.get('created') or '',
+                    }
+                    for attendee in attendees
+                ],
+                'pagination': payload.get('pagination') or {},
+                'eventbrite_manage_attendees_url': (
+                    f'https://www.eventbrite.com/manage/events/{event.eventbrite_event_id}/attendees'
+                ),
+            }
+        )
+
+
+class AdminEventEventbriteOrdersView(APIView):
+    permission_classes = [permissions.IsAuthenticated, IsClubAdmin]
+    allowed_refund_statuses = {'completed', 'pending', 'outside_policy', 'disputed', 'denied'}
+
+    def get(self, request, pk: int):
+        queryset = Event.objects.select_related('user__club')
+        allowed_club_id = get_allowed_club_id(request.user)
+        if allowed_club_id is not None:
+            queryset = queryset.filter(user__club_id=allowed_club_id)
+
+        try:
+            event = queryset.get(pk=pk)
+        except Event.DoesNotExist:
+            return Response({'message': 'Evento nao encontrado.'}, status=404)
+
+        if not event.eventbrite_event_id:
+            return Response({'message': 'Este evento ainda nao esta sincronizado com a Eventbrite.'}, status=400)
+
+        refund_status = (request.query_params.get('refund_request_statuses') or '').strip()
+        if refund_status and refund_status not in self.allowed_refund_statuses:
+            return Response({'message': 'Estado de reembolso invalido.'}, status=400)
+
+        try:
+            payload = list_eventbrite_orders(
+                event.eventbrite_event_id,
+                refund_request_statuses=refund_status,
+                continuation=(request.query_params.get('continuation') or '').strip(),
+            )
+        except (EventbriteConfigurationError, EventbriteAPIError) as error:
+            return Response({'message': str(error)}, status=getattr(error, 'status_code', None) or 400)
+
+        orders = payload.get('orders') or []
+        normalized_orders = [
+            {
+                'id': order.get('id'),
+                'name': order.get('name') or order.get('first_name') or '',
+                'email': order.get('email') or '',
+                'status': order.get('status') or '',
+                'created': order.get('created') or '',
+                'changed': order.get('changed') or '',
+                'costs': order.get('costs') or {},
+                'refund_request': order.get('refund_request') or {},
+            }
+            for order in orders
+        ]
+        return Response(
+            {
+                'orders': normalized_orders,
+                'pagination': payload.get('pagination') or {},
+                'eventbrite_manage_orders_url': (
+                    f'https://www.eventbrite.com/manage/events/{event.eventbrite_event_id}/orders'
+                ),
+            }
+        )
