@@ -1,4 +1,4 @@
-import { FormEvent, useCallback } from 'react';
+import { FormEvent, type Dispatch, type SetStateAction, useCallback } from 'react';
 import type { NavigateFunction } from 'react-router-dom';
 
 import {
@@ -18,8 +18,8 @@ type UseAdminUserActionsOptions = {
   userForm: UserFormState;
   selectedUser: InfoCulturaUser | null;
   currentUser: InfoCulturaUser | null;
-  setUsers: React.Dispatch<React.SetStateAction<InfoCulturaUser[]>>;
-  setCurrentUser: React.Dispatch<React.SetStateAction<InfoCulturaUser | null>>;
+  setUsers: Dispatch<SetStateAction<InfoCulturaUser[]>>;
+  setCurrentUser: Dispatch<SetStateAction<InfoCulturaUser | null>>;
   setUserFormError: (value: string) => void;
   setIsSavingUser: (value: boolean) => void;
   setIsDeactivatingUser: (value: boolean) => void;

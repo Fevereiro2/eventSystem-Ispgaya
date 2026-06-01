@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+import { type Dispatch, type SetStateAction, useCallback, useState } from 'react';
 
 import {
   EventbriteOrdersPage,
@@ -10,7 +10,7 @@ import {
 
 type UseAdminEventbriteOptions = {
   token: string;
-  setEvents: React.Dispatch<React.SetStateAction<InfoCulturaEvent[]>>;
+  setEvents: Dispatch<SetStateAction<InfoCulturaEvent[]>>;
   setActivityError: (value: string) => void;
   handleAuthError: (error: unknown) => boolean;
 };
