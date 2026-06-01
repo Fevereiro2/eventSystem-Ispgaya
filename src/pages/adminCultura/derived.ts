@@ -21,6 +21,7 @@ import {
   formatAdminDateTime,
   getActivityRoute,
   getContentRoute,
+  getEventbriteRoute,
   getNewsRoute,
   getPhotoRoute,
   getWorkflowStatusLabel,
@@ -154,6 +155,15 @@ export function getPhotoPageLinks(editingId: string | null): AdminContextLink[] 
   ];
 }
 
+export function getEventbritePageLinks(): AdminContextLink[] {
+  return [
+    { label: 'Visão Geral', href: getEventbriteRoute('overview') },
+    { label: 'Salas', href: getEventbriteRoute('venues') },
+    { label: 'Lugares', href: getEventbriteRoute('seating') },
+    { label: 'Tickets', href: getEventbriteRoute('tickets') },
+  ];
+}
+
 export function buildSidebarContextNav(
   newsPageLinks: AdminContextLink[],
   bookPageLinks: AdminContextLink[],
@@ -161,12 +171,14 @@ export function buildSidebarContextNav(
   eventPageLinks: AdminContextLink[],
   contentPageLinks: AdminContextLink[],
   photoPageLinks: AdminContextLink[],
+  eventbritePageLinks: AdminContextLink[],
   newsPageHref: string | null,
   bookPageHref: string | null,
   sessionPageHref: string | null,
   eventPageHref: string | null,
   contentPageHref: string | null,
-  photoPageHref: string | null
+  photoPageHref: string | null,
+  eventbritePageHref: string | null
 ): Partial<Record<AdminSection, { links: AdminContextLink[]; activeHref?: string | null }>> {
   return {
     noticias: {
@@ -192,6 +204,10 @@ export function buildSidebarContextNav(
     galeria: {
       links: photoPageLinks,
       activeHref: photoPageHref,
+    },
+    eventbrite: {
+      links: eventbritePageLinks,
+      activeHref: eventbritePageHref,
     },
   };
 }

@@ -13,6 +13,10 @@ from ...service_modules.eventbrite import (
     unpublish_eventbrite_event,
     delete_eventbrite_event,
     sync_event_to_eventbrite,
+    get_eventbrite_connection_status,
+    list_eventbrite_organization_events,
+    EventbriteConfigurationError,
+    EventbriteAPIError,
 )
 
 
@@ -122,3 +126,53 @@ def unpublish_event(request, pk: int):
         return Response({'item': EventSerializer(event).data, 'unpublish_payload': payload})
     except Exception as error:
         return Response({'message': str(error)}, status=400)
+
+
+@api_view(["GET"])
+@permission_classes([permissions.IsAuthenticated])
+def connection(request):
+    try:
+        status = get_eventbrite_connection_status()
+        return Response(status)
+    except EventbriteConfigurationError as error:
+        return Response({'connected': False, 'message': str(error)}, status=400)
+    except EventbriteAPIError as error:
+        return Response({'connected': False, 'message': str(error)}, status=502)
+    except Exception:
+        return Response({'connected': False, 'message': 'Erro ao contactar a Eventbrite.'}, status=500)
+
+
+@api_view(["GET"])
+@permission_classes([permissions.IsAuthenticated])
+def events_list(request):
+    """List all events from the Eventbrite organization."""
+    try:
+        events = list_eventbrite_organization_events()
+        return Response({
+            'count': len(events),
+            'events': events,
+        })
+    except EventbriteConfigurationError as error:
+        return Response({'message': str(error)}, status=400)
+    except EventbriteAPIError as error:
+        return Response({'message': str(error)}, status=502)
+    except Exception as error:
+        return Response({'message': f'Erro ao listar eventos: {str(error)}'}, status=500)
+
+
+@api_view(["GET"])
+@permission_classes([permissions.AllowAny])
+def events_list_public(request):
+    """List all public events from the Eventbrite organization (no authentication required)."""
+    try:
+        events = list_eventbrite_organization_events()
+        return Response({
+            'count': len(events),
+            'events': events,
+        })
+    except EventbriteConfigurationError as error:
+        return Response({'message': str(error), 'events': []}, status=200)
+    except EventbriteAPIError as error:
+        return Response({'message': str(error), 'events': []}, status=200)
+    except Exception as error:
+        return Response({'message': f'Erro ao listar eventos: {str(error)}', 'events': []}, status=200)

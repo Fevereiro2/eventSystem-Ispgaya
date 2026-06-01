@@ -273,13 +273,52 @@ def create_or_update_eventbrite_event(event) -> EventbriteSyncResult:
 
 def get_eventbrite_connection_status() -> dict:
     organization_id = _require_setting('EVENTBRITE_ORGANIZATION_ID')
-    payload = _eventbrite_request('GET', f'/organizations/{organization_id}/')
-    return {
-        'connected': True,
-        'organization_id': str(payload.get('id') or organization_id),
-        'organization_name': str(payload.get('name') or ''),
-        'payload': payload,
-    }
+    try:
+        payload = _eventbrite_request('GET', f'/organizations/{organization_id}/')
+        return {
+            'connected': True,
+            'organization_id': str(payload.get('id') or organization_id),
+            'organization_name': str(payload.get('name') or ''),
+            'payload': payload,
+        }
+    except EventbriteAPIError as error:
+        # If we get a 403 (feature restriction), the token is valid but org access is limited
+        # Still return connected=true because we can proceed with event operations
+        if error.status_code == 403:
+            return {
+                'connected': True,
+                'organization_id': organization_id,
+                'organization_name': '(Acesso limitado)',
+                'message': 'Token válido, mas acesso à organização restringido. Pode criar/gerir eventos.',
+                'payload': error.payload,
+            }
+        # Re-raise other API errors
+        raise
+
+
+def list_eventbrite_organization_events() -> list:
+    """List all events in the Eventbrite organization."""
+    organization_id = _require_setting('EVENTBRITE_ORGANIZATION_ID')
+    try:
+        response = _eventbrite_request('GET', f'/organizations/{organization_id}/events/')
+        events = response.get('events', [])
+        return [
+            {
+                'id': event.get('id'),
+                'name': event.get('name', {}).get('text', ''),
+                'status': event.get('status'),
+                'url': event.get('url'),
+                'created': event.get('created'),
+                'start': event.get('start', {}).get('utc'),
+                'end': event.get('end', {}).get('utc'),
+            }
+            for event in events
+        ]
+    except EventbriteAPIError as error:
+        # If 403, return empty list (access limited but can still operate)
+        if error.status_code == 403:
+            return []
+        raise
 
 
 def get_eventbrite_event(eventbrite_event_id: str) -> dict:

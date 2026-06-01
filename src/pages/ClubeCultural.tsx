@@ -6,6 +6,7 @@ import ClubRegistrationModal, {
   ClubRegistrationFormData
 } from '../components/ui/ClubRegistrationModal';
 import NewsHighlightsSection, { type NewsHighlightItem } from '../components/ui/NewsHighlightsSection';
+import PhotoCarousel from '../components/ui/PhotoCarousel';
 import Footer from '../components/layout/Footer';
 import HeaderNav from '../components/layout/HeaderNav';
 import BestBooksSection from '../components/sections/BestBooksSection.js';
@@ -17,11 +18,13 @@ import {
   fetchPublicClubs,
   fetchPublicEvents,
   fetchPublicNews,
+  fetchPublicPhotos,
   fetchPublicSessions,
   InfoCulturaBook,
   InfoCulturaClub,
   InfoCulturaEvent,
   InfoCulturaNews,
+  InfoCulturaPhoto,
   InfoCulturaSession,
   resolveInfoCulturaAssetUrl
 } from '../api/infoculturaApi';
@@ -34,6 +37,7 @@ import {
   sectionSpace
 } from '../styles/ui';
 import { getLocaleText, useLocale } from '../i18n/locale.js';
+import { buildClubPhotoSectionAliases, filterPhotosBySections } from '../utils/photoSections';
 
 type ClubeCulturalProps = {
   pageTitle?: string;
@@ -87,6 +91,7 @@ function ClubeCultural({
   const [books, setBooks] = useState<InfoCulturaBook[]>([]);
   const [sessions, setSessions] = useState<InfoCulturaSession[]>([]);
   const [events, setEvents] = useState<InfoCulturaEvent[]>([]);
+  const [photos, setPhotos] = useState<InfoCulturaPhoto[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState('');
   const [isRegistrationModalOpen, setIsRegistrationModalOpen] = useState(false);
@@ -118,12 +123,13 @@ function ClubeCultural({
     async function loadClub() {
       try {
         const resolvedClubId = await resolveClubId();
-        const [nextClub, nextNews, nextBooks, nextSessions, nextEvents] = await Promise.all([
+        const [nextClub, nextNews, nextBooks, nextSessions, nextEvents, nextPhotos] = await Promise.all([
           fetchPublicClub(resolvedClubId),
           fetchPublicNews(resolvedClubId),
           fetchPublicBooks(resolvedClubId),
           fetchPublicSessions(resolvedClubId),
-          fetchPublicEvents({ clubId: resolvedClubId })
+          fetchPublicEvents({ clubId: resolvedClubId }),
+          fetchPublicPhotos()
         ]);
 
         if (!active) return;
@@ -133,6 +139,7 @@ function ClubeCultural({
         setBooks(nextBooks);
         setSessions(nextSessions);
         setEvents(nextEvents);
+        setPhotos(nextPhotos);
       } catch (error) {
         if (!active) return;
         const message =
@@ -156,6 +163,20 @@ function ClubeCultural({
   const filteredSessions = useMemo(() => sessions.filter((item) => isOnOrAfterDate(item.session_date, '')), [sessions]);
   const filteredEvents = useMemo(() => events.filter((item) => isOnOrAfterDate(item.event_date, '')), [events]);
   const filteredBooks = books;
+  const clubPhotoItems = useMemo(
+    () =>
+      filterPhotosBySections(
+        photos,
+        buildClubPhotoSectionAliases(club?.name, clubSearchTerms || [])
+      ).map((photo) => ({
+        id: photo.id,
+        title: photo.title,
+        caption: photo.caption,
+        image: photo.image,
+        alt_text: photo.alt_text,
+      })),
+    [photos, club?.name, clubSearchTerms]
+  );
   const highlightedNews = useMemo<NewsHighlightItem[]>(
     () =>
       [...filteredNews]
@@ -330,6 +351,24 @@ function ClubeCultural({
                 <p className="mb-8 rounded-sm bg-green-50 px-4 py-3 text-sm text-green-700">
                   {registrationFeedback}
                 </p>
+              ) : null}
+
+              {clubPhotoItems.length > 0 ? (
+                <section className="mb-12 mt-12">
+                  <div className="mb-5">
+                    <h2 className={blockTitle}>
+                      {getLocaleText(locale, 'Momentos do Laboratório Cultural', 'Cultural Lab moments')}
+                    </h2>
+                    <p className={blockText}>
+                      {getLocaleText(
+                        locale,
+                        'Galeria de imagens associadas às atividades e momentos deste clube.',
+                        'Image gallery associated with this club activities and moments.'
+                      )}
+                    </p>
+                  </div>
+                  <PhotoCarousel items={clubPhotoItems} />
+                </section>
               ) : null}
 
               {filteredNews.length === 0 &&

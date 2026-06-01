@@ -4,6 +4,8 @@ import Breadcrumbs from '../components/ui/Breadcrumbs';
 import Footer from '../components/layout/Footer';
 import HeaderNav from '../components/layout/HeaderNav';
 import BestBooksSection from '../components/sections/BestBooksSection.js';
+import LaboratorioEventsSection from '../components/sections/LaboratorioEventsSection';
+import EventbriteEventsSection from '../components/sections/EventbriteEventsSection';
 import PhotoCarousel from '../components/ui/PhotoCarousel';
 import NewsHighlightsSection, {
   type NewsHighlightItem
@@ -547,6 +549,18 @@ function LaboratorioCultural() {
                     </div>
                   </section>
                 ) : null}
+
+                <LaboratorioEventsSection
+                  events={filteredEvents}
+                  clubs={clubs}
+                  locale={locale}
+                  title={getLocaleText(locale, 'Todos os eventos do laboratório', 'All laboratory events')}
+                  description={getLocaleText(
+                    locale,
+                    'Consulta num único bloco todos os eventos públicos ativos do Laboratório Cultural.',
+                    'Browse all active public events from the Cultural Laboratory in a single section.'
+                  )}
+                />
               </div>
             ) : null}
 
@@ -582,6 +596,8 @@ function LaboratorioCultural() {
                 </div>
               </div>
             ) : null}
+
+            <EventbriteEventsSection />
             </div>
           </div>
         </section>

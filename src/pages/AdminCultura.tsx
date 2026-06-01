@@ -178,6 +178,7 @@ import {
   buildRegistrationOverviewStats,
   buildUserOverviewStats,
   buildSidebarContextNav,
+  getEventbritePageLinks,
   getActivityPageLinks,
   getContentPageLinks,
   getNewsPageLinks,
@@ -236,6 +237,8 @@ import {
   getAllowedActivityTabs,
   getContentRoute,
   getContentSubpage,
+  getEventbriteRoute,
+  getEventbriteSubpage,
   getDefaultActivityOrdering,
   getDefaultActivityTab,
   getNewsRoute,
@@ -427,6 +430,10 @@ function AdminCultura() {
     () => getContentSubpage(location.pathname),
     [location.pathname]
   );
+  const activeEventbriteSubpage = useMemo(
+    () => getEventbriteSubpage(location.pathname),
+    [location.pathname]
+  );
   const activePhotoSubpage = useMemo(
     () => getPhotoSubpage(location.pathname),
     [location.pathname]
@@ -580,6 +587,7 @@ function AdminCultura() {
       ? getActivityRoute('events', activeActivitySubpage)
       : null;
   const contentPageHref = activeContentSubpage ? getContentRoute(activeContentSubpage) : null;
+  const eventbritePageHref = activeEventbriteSubpage ? getEventbriteRoute(activeEventbriteSubpage) : null;
   const photoPageHref = activePhotoSubpage ? getPhotoRoute(activePhotoSubpage) : null;
   const showNewsForm = activeNewsSubpage === 'form';
   const showNewsList = activeNewsSubpage === 'list';
@@ -596,6 +604,7 @@ function AdminCultura() {
   const eventPageLinks = getActivityPageLinks('events', editingBookId, editingSessionId, editingEventId);
   const contentPageLinks = getContentPageLinks(editingId);
   const photoPageLinks = getPhotoPageLinks(editingPhotoId);
+  const eventbritePageLinks = getEventbritePageLinks();
   const sidebarContextNavBySection = buildSidebarContextNav(
     newsPageLinks,
     bookPageLinks,
@@ -603,12 +612,14 @@ function AdminCultura() {
     eventPageLinks,
     contentPageLinks,
     photoPageLinks,
+    eventbritePageLinks,
     newsPageHref,
     bookPageHref,
     sessionPageHref,
     eventPageHref,
     contentPageHref,
-    photoPageHref
+    photoPageHref,
+    eventbritePageHref
   );
   const readNotificationIdSet = useMemo(
     () => new Set(readNotificationIds),

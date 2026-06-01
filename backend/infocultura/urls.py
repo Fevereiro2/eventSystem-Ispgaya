@@ -5,6 +5,9 @@ from .view_modules.api.eventbrite_views import (
     delete_event,
     publish_event,
     unpublish_event,
+    connection,
+    events_list,
+    events_list_public,
 )
 from .views import (
     AdminBookDetailView,
@@ -178,6 +181,7 @@ urlpatterns = [
     path('events/admin/', AdminEventListCreateView.as_view(), name='events-admin-list-create'),
     # Eventbrite action endpoints
     path('events/admin/eventbrite/create/', create_event, name='events-admin-eventbrite-create'),
+    path('events/admin/eventbrite/connection/', connection, name='events-admin-eventbrite-connection'),
     path('events/admin/eventbrite/<int:pk>/update/', update_event, name='events-admin-eventbrite-update'),
     path('events/admin/eventbrite/<int:pk>/delete/', delete_event, name='events-admin-eventbrite-delete'),
     path('events/admin/eventbrite/<int:pk>/publish/', publish_event, name='events-admin-eventbrite-publish'),
@@ -213,4 +217,7 @@ urlpatterns = [
     path('clubs/admin/<int:pk>/members/<int:user_pk>/', AdminClubMemberRemoveView.as_view(), name='clubs-admin-member-remove'),
     path('clubs/admin/<int:pk>/users/<int:user_pk>/assign/', AdminClubMemberAssignView.as_view(), name='clubs-admin-user-assign-compat'),
     path('clubs/admin/<int:pk>/users/<int:user_pk>/remove/', AdminClubMemberRemoveView.as_view(), name='clubs-admin-user-remove-compat'),
+    path('events/admin/eventbrite/connection/', connection, name='eventbrite-connection'),
+    path('events/admin/eventbrite/events/', events_list, name='eventbrite-events-list'),
+    path('events/eventbrite/public/', events_list_public, name='eventbrite-events-public'),
 ]

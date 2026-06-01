@@ -6,10 +6,12 @@ import {
   fetchPublicClubs,
   fetchPublicEvents,
   fetchPublicNews,
+  fetchPublicPhotos,
   fetchPublicSessions,
   InfoCulturaClub,
   InfoCulturaEvent,
   InfoCulturaNews,
+  InfoCulturaPhoto,
   InfoCulturaSession,
   resolveInfoCulturaAssetUrl
 } from '../api/infoculturaApi.js';
@@ -17,6 +19,7 @@ import Breadcrumbs from '../components/ui/Breadcrumbs';
 import ClubCallToAction from '../components/ui/ClubCallToAction';
 import ClubRegistrationModal, { ClubRegistrationFormData } from '../components/ui/ClubRegistrationModal';
 import NewsHighlightsSection, { type NewsHighlightItem } from '../components/ui/NewsHighlightsSection';
+import PhotoCarousel from '../components/ui/PhotoCarousel';
 import Footer from '../components/layout/Footer';
 import HeaderNav from '../components/layout/HeaderNav';
 import TopBar from '../components/layout/TopBar';
@@ -30,6 +33,7 @@ import {
   sectionSpace
 } from '../styles/ui';
 import { getLocaleText, useLocale } from '../i18n/locale.js';
+import { buildClubPhotoSectionAliases, filterPhotosBySections } from '../utils/photoSections';
 
 function normalizeClubName(value: string): string {
   return value
@@ -56,6 +60,7 @@ function Teatro() {
   const [newsItems, setNewsItems] = useState<InfoCulturaNews[]>([]);
   const [events, setEvents] = useState<InfoCulturaEvent[]>([]);
   const [sessions, setSessions] = useState<InfoCulturaSession[]>([]);
+  const [photos, setPhotos] = useState<InfoCulturaPhoto[]>([]);
   const [isRegistrationModalOpen, setIsRegistrationModalOpen] = useState(false);
   const [isSubmittingRegistration, setIsSubmittingRegistration] = useState(false);
   const [registrationError, setRegistrationError] = useState('');
@@ -79,16 +84,18 @@ function Teatro() {
           return;
         }
 
-        const [nextNews, nextEvents, nextSessions] = await Promise.all([
+        const [nextNews, nextEvents, nextSessions, nextPhotos] = await Promise.all([
           fetchPublicNews(theatreClub.id),
           fetchPublicEvents({ clubId: theatreClub.id }),
-          fetchPublicSessions(theatreClub.id)
+          fetchPublicSessions(theatreClub.id),
+          fetchPublicPhotos()
         ]);
 
         if (!active) return;
         setNewsItems(nextNews);
         setEvents(nextEvents);
         setSessions(nextSessions);
+        setPhotos(nextPhotos);
       } catch {
         if (!active) return;
         setClub(null);
@@ -175,6 +182,20 @@ function Teatro() {
     ],
     [events, sessions]
   );
+  const clubPhotoItems = useMemo(
+    () =>
+      filterPhotosBySections(
+        photos,
+        buildClubPhotoSectionAliases(club?.name, ['teatro', 'clube teatro', 'clube de teatro'])
+      ).map((photo) => ({
+        id: photo.id,
+        title: photo.title,
+        caption: photo.caption,
+        image: photo.image,
+        alt_text: photo.alt_text,
+      })),
+    [photos, club?.name]
+  );
 
   async function handleSubmitRegistration(data: ClubRegistrationFormData) {
     if (!club) {
@@ -245,6 +266,24 @@ function Teatro() {
               'If you enjoy communicating, improvising, building scenes and gaining confidence in front of an audience, this is your space in the Cultural Laboratory.'
             )}
           </p>
+
+          {clubPhotoItems.length > 0 ? (
+            <section className="mb-12 mt-12">
+              <div className="mb-5">
+                <h2 className={blockTitle}>
+                  {getLocaleText(locale, 'Momentos do Laboratório Cultural', 'Cultural Lab moments')}
+                </h2>
+                <p className={blockText}>
+                  {getLocaleText(
+                    locale,
+                    'Galeria visual com imagens das criações, ensaios e apresentações do clube.',
+                    'Visual gallery with images from the club creations, rehearsals and performances.'
+                  )}
+                </p>
+              </div>
+              <PhotoCarousel items={clubPhotoItems} />
+            </section>
+          ) : null}
 
         </div>
 

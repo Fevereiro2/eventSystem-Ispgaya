@@ -11,6 +11,7 @@ import {
   ActivityTab,
   AdminSection,
   ContentSubpage,
+  EventbriteSubpage,
   NewsSubpage,
   PhotoSubpage,
   UserPage
@@ -148,6 +149,16 @@ export function getPhotoSubpage(pathname: string): PhotoSubpage | null {
   return null;
 }
 
+export function getEventbriteSubpage(pathname: string): EventbriteSubpage | null {
+  if (pathname === '/infocultura/eventbrite' || pathname === '/infocultura/eventbrite/') {
+    return 'overview';
+  }
+  if (pathname === '/infocultura/eventbrite/salas') return 'venues';
+  if (pathname === '/infocultura/eventbrite/lugares') return 'seating';
+  if (pathname === '/infocultura/eventbrite/tickets') return 'tickets';
+  return null;
+}
+
 export function getNewsRoute(page: NewsSubpage): string {
   return page === 'form' ? '/infocultura/noticias/nova' : '/infocultura/noticias/registadas';
 }
@@ -166,6 +177,19 @@ export function getContentRoute(page: ContentSubpage): string {
 
 export function getPhotoRoute(page: PhotoSubpage): string {
   return page === 'form' ? '/infocultura/galeria/nova' : '/infocultura/galeria/registadas';
+}
+
+export function getEventbriteRoute(page: EventbriteSubpage): string {
+  switch (page) {
+    case 'venues':
+      return '/infocultura/eventbrite/salas';
+    case 'seating':
+      return '/infocultura/eventbrite/lugares';
+    case 'tickets':
+      return '/infocultura/eventbrite/tickets';
+    default:
+      return '/infocultura/eventbrite';
+  }
 }
 
 export function getAdminSectionHref(section: AdminSection): string {

@@ -142,6 +142,7 @@ export type NewsSubpage = 'form' | 'list';
 export type ActivitySubpage = 'form' | 'list' | 'categories';
 export type ContentSubpage = 'form' | 'list';
 export type PhotoSubpage = 'form' | 'list';
+export type EventbriteSubpage = 'overview' | 'venues' | 'seating' | 'tickets';
 
 export type AdminContextLink = {
   label: string;
