@@ -12,6 +12,7 @@ import {
   AdminSection,
   ContentSubpage,
   NewsSubpage,
+  PhotoSubpage,
   UserPage
 } from './types.js';
 
@@ -141,6 +142,12 @@ export function getContentSubpage(pathname: string): ContentSubpage | null {
   return null;
 }
 
+export function getPhotoSubpage(pathname: string): PhotoSubpage | null {
+  if (pathname === '/infocultura/galeria/nova') return 'form';
+  if (pathname === '/infocultura/galeria/registadas') return 'list';
+  return null;
+}
+
 export function getNewsRoute(page: NewsSubpage): string {
   return page === 'form' ? '/infocultura/noticias/nova' : '/infocultura/noticias/registadas';
 }
@@ -157,6 +164,10 @@ export function getContentRoute(page: ContentSubpage): string {
   return page === 'form' ? '/infocultura/conteudos/novo' : '/infocultura/conteudos/registados';
 }
 
+export function getPhotoRoute(page: PhotoSubpage): string {
+  return page === 'form' ? '/infocultura/galeria/nova' : '/infocultura/galeria/registadas';
+}
+
 export function getAdminSectionHref(section: AdminSection): string {
   switch (section) {
     case 'resumo':
@@ -169,6 +180,8 @@ export function getAdminSectionHref(section: AdminSection): string {
       return '/infocultura/notificacoes';
     case 'newsletters':
       return '/infocultura/newsletters';
+    case 'galeria':
+      return '/infocultura/galeria';
     case 'utilizadores':
       return '/infocultura/utilizadores';
     case 'conteudos':
@@ -230,6 +243,10 @@ export function getAdminSection(pathname: string): AdminSection | null {
 
   if (pathname === '/infocultura/newsletters' || pathname.startsWith('/infocultura/newsletters/')) {
     return 'newsletters';
+  }
+
+  if (pathname === '/infocultura/galeria' || pathname.startsWith('/infocultura/galeria/')) {
+    return 'galeria';
   }
 
   if (pathname === '/infocultura/livros' || pathname.startsWith('/infocultura/livros/')) {

@@ -39,36 +39,37 @@ import iso9001 from '../../assets/ISO-9001.svg';
 import gaiaSkyline from '../../assets/gaia-skyline.webp';
 import logoNegative from '../../assets/ispgaya-logo-negative.svg';
 import { useLocale, getLocaleText } from '../../i18n/locale.js';
+import { buildIspgayaUrl } from '../../i18n/urls.js';
 
 function Footer() {
   const { locale } = useLocale();
   const hubLinks: { name: string; link: string }[] = [
     { name: getLocaleText(locale, 'Inforestudante', 'Student Portal'), link: 'https://inforestudante.ispgaya.pt' },
     { name: getLocaleText(locale, 'Infordocente', 'Teacher Portal'), link: 'https://infordocente.ispgaya.pt' },
-    { name: 'Infocultura', link: '/infocultura' },
+    { name: 'Infocultura', link: buildIspgayaUrl(locale, '/infocultura') },
     { name: getLocaleText(locale, 'Email', 'Email'), link: 'https://outlook.office.com' },
-    { name: 'Wi-Fi', link: 'https://ispgaya.pt' },
-    { name: getLocaleText(locale, 'Palavra-passe', 'Password'), link: '#' },
-    { name: getLocaleText(locale, 'Cartão ISPGAYA', 'ISPGAYA Card'), link: '#' },
-    { name: getLocaleText(locale, 'Identidade Visual', 'Visual Identity'), link: '#' }
+    { name: getLocaleText(locale, 'Horários', 'Timetables'), link: 'https://horarios.ispgaya.pt/geral/' },
+    { name: getLocaleText(locale, 'Palavra-passe', 'Password'), link: buildIspgayaUrl(locale, '/perguntas-frequentes') },
+    { name: getLocaleText(locale, 'Cartão ISPGAYA', 'ISPGAYA Card'), link: buildIspgayaUrl(locale, '/vida-academica/estudante-ispgaya') },
+    { name: getLocaleText(locale, 'Identidade Visual', 'Visual Identity'), link: buildIspgayaUrl(locale, '/instituicao/ispgaya') }
   ];
   const ensinoLinks = [
-    getLocaleText(locale, 'CTeSP', 'HND'),
-    getLocaleText(locale, 'Licenciaturas', 'Bachelor Degrees'),
-    getLocaleText(locale, 'Mestrados', 'Masters'),
-    getLocaleText(locale, 'Pós-Graduações', 'Postgraduate Studies'),
-    getLocaleText(locale, 'Candidaturas', 'Applications'),
-    getLocaleText(locale, 'Bolsas e Financiamento', 'Scholarships and Funding'),
-    getLocaleText(locale, 'Programas Avançados', 'Advanced Programmes')
+    { label: getLocaleText(locale, 'CTeSP', 'HND'), href: buildIspgayaUrl(locale, '/ensino/oferta-formativa/ctesp') },
+    { label: getLocaleText(locale, 'Licenciaturas', 'Bachelor Degrees'), href: buildIspgayaUrl(locale, '/ensino/oferta-formativa/licenciaturas') },
+    { label: getLocaleText(locale, 'Mestrados', 'Masters'), href: buildIspgayaUrl(locale, '/ensino/oferta-formativa/mestrados') },
+    { label: getLocaleText(locale, 'Pós-Graduações', 'Postgraduate Studies'), href: buildIspgayaUrl(locale, '/ensino/programas-avancados/pos-graduacoes') },
+    { label: getLocaleText(locale, 'Candidaturas', 'Applications'), href: buildIspgayaUrl(locale, '/ensino/candidaturas') },
+    { label: getLocaleText(locale, 'Bolsas e Financiamento', 'Scholarships and Funding'), href: buildIspgayaUrl(locale, '/ensino/bolsas-e-financiamento') },
+    { label: getLocaleText(locale, 'Programas Avançados', 'Advanced Programmes'), href: buildIspgayaUrl(locale, '/ensino/programas-avancados') }
   ];
 
   const interesseLinks = [
-    'DGES',
-    'A3ES',
-    'Ciencia Vitae',
-    getLocaleText(locale, 'Governo de Portugal', 'Government of Portugal'),
-    getLocaleText(locale, 'Projetos Cofinanciados', 'Co-financed Projects'),
-    getLocaleText(locale, 'Repositório de Documentos', 'Document Repository')
+    { label: 'DGES', href: 'https://www.dges.gov.pt' },
+    { label: 'A3ES', href: 'https://www.a3es.pt' },
+    { label: 'Ciencia Vitae', href: 'https://www.cienciavitae.pt' },
+    { label: getLocaleText(locale, 'Governo de Portugal', 'Government of Portugal'), href: 'https://www.portugal.gov.pt' },
+    { label: getLocaleText(locale, 'Projetos Cofinanciados', 'Co-financed Projects'), href: 'https://ispgaya.pt/projetos-cofinanciados' },
+    { label: getLocaleText(locale, 'Repositório de Documentos', 'Document Repository'), href: buildIspgayaUrl(locale, '/repositorio-de-documentos') }
   ];
   const text = {
     follow: getLocaleText(locale, 'Segue-nos', 'Follow us'),
@@ -93,15 +94,15 @@ function Footer() {
             <img src={logoNegative} width={175} height={54} className={footerLogo} alt="ISPGAYA" />
             <p className={footerFollowTitle}>{text.follow}</p>
             <div className={footerSocialLinks}>
-              <a href="#" className={footerSocialLink}>
+              <a href="https://www.facebook.com/ispgaya/" className={footerSocialLink}>
                 <span className={footerSrOnly}>ISPGAYA Facebook</span>
                 <Facebook className={footerSocialIcon} aria-hidden="true" />
               </a>
-              <a href="#" className={footerSocialLink}>
+              <a href="https://www.instagram.com/ispgaya/" className={footerSocialLink}>
                 <span className={footerSrOnly}>ISPGAYA Instagram</span>
                 <Instagram className={footerSocialIcon} aria-hidden="true" />
               </a>
-              <a href="#" className={footerSocialLink}>
+              <a href="https://www.linkedin.com/school/ispgaya/" className={footerSocialLink}>
                 <span className={footerSrOnly}>ISPGAYA LinkedIn</span>
                 <Linkedin className={footerSocialIcon} aria-hidden="true" />
               </a>
@@ -112,9 +113,9 @@ function Footer() {
             <p className={footerTitle}>{text.ensino}</p>
             <ul className={footerList}>
               {ensinoLinks.map((item) => (
-                <li key={item} className={footerListItem}>
-                  <a href="#" className={footerLink}>
-                    {item}
+                <li key={item.label} className={footerListItem}>
+                  <a href={item.href} className={footerLink}>
+                    {item.label}
                   </a>
                 </li>
               ))}
@@ -138,9 +139,9 @@ function Footer() {
             <p className={footerSubTitle}>{text.interest}</p>
             <ul className={footerList}>
               {interesseLinks.map((item) => (
-                <li key={item} className={footerListItem}>
-                  <a href="#" className={footerLink}>
-                    {item}
+                <li key={item.label} className={footerListItem}>
+                  <a href={item.href} className={footerLink}>
+                    {item.label}
                   </a>
                 </li>
               ))}
@@ -174,11 +175,11 @@ function Footer() {
             </div>
 
             <div className={footerBottomLinks}>
-              <a href="#" className={footerBottomLink}>
+              <a href={buildIspgayaUrl(locale, '/legal/termos-e-condicoes')} className={footerBottomLink}>
                 {text.terms}
               </a>
               <span className={footerBottomSeparator}>/</span>
-              <a href="#" className={footerBottomLink}>
+              <a href={buildIspgayaUrl(locale, '/legal/politica-de-privacidade')} className={footerBottomLink}>
                 {text.privacy}
               </a>
             </div>

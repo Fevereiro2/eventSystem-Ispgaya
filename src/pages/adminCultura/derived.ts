@@ -22,6 +22,7 @@ import {
   getActivityRoute,
   getContentRoute,
   getNewsRoute,
+  getPhotoRoute,
   getWorkflowStatusLabel,
   normalizeWorkflowStatus,
   getAdminSectionHref,
@@ -146,17 +147,26 @@ export function getContentPageLinks(editingId: string | null): AdminContextLink[
   ];
 }
 
+export function getPhotoPageLinks(editingId: string | null): AdminContextLink[] {
+  return [
+    { label: editingId ? 'Editar Foto' : 'Nova Foto', href: getPhotoRoute('form') },
+    { label: 'Fotos Registadas', href: getPhotoRoute('list') },
+  ];
+}
+
 export function buildSidebarContextNav(
   newsPageLinks: AdminContextLink[],
   bookPageLinks: AdminContextLink[],
   sessionPageLinks: AdminContextLink[],
   eventPageLinks: AdminContextLink[],
   contentPageLinks: AdminContextLink[],
+  photoPageLinks: AdminContextLink[],
   newsPageHref: string | null,
   bookPageHref: string | null,
   sessionPageHref: string | null,
   eventPageHref: string | null,
-  contentPageHref: string | null
+  contentPageHref: string | null,
+  photoPageHref: string | null
 ): Partial<Record<AdminSection, { links: AdminContextLink[]; activeHref?: string | null }>> {
   return {
     noticias: {
@@ -178,6 +188,10 @@ export function buildSidebarContextNav(
     conteudos: {
       links: contentPageLinks,
       activeHref: contentPageHref,
+    },
+    galeria: {
+      links: photoPageLinks,
+      activeHref: photoPageHref,
     },
   };
 }

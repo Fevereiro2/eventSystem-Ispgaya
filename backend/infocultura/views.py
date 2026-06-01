@@ -39,6 +39,8 @@ from .view_modules.admin_news import (
     AdminNewsDetailView,
     AdminNewsListCreateView,
     AdminNewsStatusListView,
+    AdminPhotoCarouselDetailView,
+    AdminPhotoCarouselListCreateView,
 )
 from .view_modules.admin_newsletters import (
     AdminNewsletterDetailView,
@@ -49,6 +51,7 @@ from .view_modules.admin_newsletters import (
 )
 from .view_modules.admin_users import (
     AdminRoleListView,
+    AdminUserActivateView,
     AdminUserDeactivateView,
     AdminUserDetailView,
     AdminUserListCreateView,
@@ -69,6 +72,7 @@ from .view_modules.public_views import (
     PublicNewsDetailView,
     PublicNewsListView,
     PublicNewsStatusListView,
+    PublicPhotoCarouselListView,
     PublicSessionCalendarView,
     PublicSessionDetailView,
     PublicSessionListView,
@@ -103,6 +107,8 @@ __all__ = [
     'AdminNewsDetailView',
     'AdminNewsListCreateView',
     'AdminNewsStatusListView',
+    'AdminPhotoCarouselDetailView',
+    'AdminPhotoCarouselListCreateView',
     'AdminNewsletterDetailView',
     'AdminNewsletterListCreateView',
     'AdminNewsletterSendView',
@@ -113,6 +119,7 @@ __all__ = [
     'AdminRegistrationStatusListView',
     'AdminRegistrationStatusUpdateView',
     'AdminRoleListView',
+    'AdminUserActivateView',
     'AdminSessionDetailView',
     'AdminSessionListCreateView',
     'AdminUserDeactivateView',
@@ -135,6 +142,7 @@ __all__ = [
     'PublicNewsDetailView',
     'PublicNewsListView',
     'PublicNewsStatusListView',
+    'PublicPhotoCarouselListView',
     'PublicSessionCalendarView',
     'PublicSessionDetailView',
     'PublicSessionListView',

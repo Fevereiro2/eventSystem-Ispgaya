@@ -4,6 +4,7 @@ import Breadcrumbs from '../components/ui/Breadcrumbs';
 import Footer from '../components/layout/Footer';
 import HeaderNav from '../components/layout/HeaderNav';
 import BestBooksSection from '../components/sections/BestBooksSection.js';
+import PhotoCarousel from '../components/ui/PhotoCarousel';
 import NewsHighlightsSection, {
   type NewsHighlightItem
 } from '../components/ui/NewsHighlightsSection';
@@ -13,11 +14,13 @@ import {
   fetchPublicClubs,
   fetchPublicEvents,
   fetchPublicNews,
+  fetchPublicPhotos,
   fetchPublicSessions,
   InfoCulturaBook,
   InfoCulturaClub,
   InfoCulturaEvent,
   InfoCulturaNews,
+  InfoCulturaPhoto,
   InfoCulturaSession,
   resolveInfoCulturaAssetUrl
 } from '../api/infoculturaApi';
@@ -40,6 +43,7 @@ function normalizeLabel(value: string): string {
   return value
     .normalize('NFD')
     .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-zA-Z0-9]+/g, '')
     .toLowerCase()
     .trim();
 }
@@ -123,6 +127,7 @@ function LaboratorioCultural() {
   const [books, setBooks] = useState<InfoCulturaBook[]>([]);
   const [sessions, setSessions] = useState<InfoCulturaSession[]>([]);
   const [events, setEvents] = useState<InfoCulturaEvent[]>([]);
+  const [photos, setPhotos] = useState<InfoCulturaPhoto[]>([]);
   const [searchQuery] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState('');
@@ -132,13 +137,14 @@ function LaboratorioCultural() {
 
     async function loadData() {
       try {
-        const [nextClubs, nextNews, nextBooks, nextSessions, nextEvents] =
+        const [nextClubs, nextNews, nextBooks, nextSessions, nextEvents, nextPhotos] =
           await Promise.all([
           fetchPublicClubs(),
           fetchPublicNews(),
           fetchPublicBooks(),
           fetchPublicSessions(),
-          fetchPublicEvents()
+          fetchPublicEvents(),
+          fetchPublicPhotos()
           ]);
 
         if (!active) return;
@@ -147,6 +153,7 @@ function LaboratorioCultural() {
         setBooks(nextBooks);
         setSessions(nextSessions);
         setEvents(nextEvents);
+        setPhotos(nextPhotos);
       } catch (error) {
         if (!active) return;
         const message =
@@ -292,6 +299,23 @@ function LaboratorioCultural() {
         })),
     [events]
   );
+  const carouselItems = useMemo(() => {
+    const validSections = new Set([
+      'laboratoriocultural',
+      'laboratoriocultura',
+    ]);
+
+    return photos
+      .filter((photo) => validSections.has(normalizeLabel(photo.section)))
+      .sort((left, right) => left.display_order - right.display_order)
+      .map((photo) => ({
+        id: photo.id,
+        title: photo.title,
+        caption: photo.caption,
+        image: photo.image,
+        alt_text: photo.alt_text,
+      }));
+  }, [photos]);
 
   const hasSearch = normalizedQuery.length > 0;
   const totalResults =
@@ -525,6 +549,19 @@ function LaboratorioCultural() {
                 ) : null}
               </div>
             ) : null}
+
+            <section className="space-y-4">
+              <div className="max-w-3xl">
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#dd8609]">
+                  {getLocaleText(locale, 'Galeria', 'Gallery')}
+                </p>
+                <h2 className="mt-3 text-2xl font-semibold text-slate-900 lg:text-3xl">
+                  {getLocaleText(locale, 'Momentos do Laboratório Cultural', 'Moments from the Cultural Laboratory')}
+                </h2>
+              </div>
+              
+              <PhotoCarousel items={carouselItems} />
+            </section>
 
             {!isLoading && !loadError ? (
 	              <div className="rounded-2xl border border-slate-200 bg-slate-50 p-6 lg:p-8">

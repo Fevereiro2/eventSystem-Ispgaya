@@ -99,6 +99,16 @@ export type CategoryFormState = {
   description: string;
 };
 
+export type PhotoFormState = {
+  section: string;
+  title: string;
+  caption: string;
+  image: string;
+  alt_text: string;
+  display_order: string;
+  is_active: boolean;
+};
+
 export type ActivityTab = 'books' | 'sessions' | 'events';
 export type ActivitySection = 'livros' | 'sessoes' | 'eventos';
 
@@ -108,6 +118,7 @@ export type AdminSection =
   | 'logs'
   | 'notificacoes'
   | 'newsletters'
+  | 'galeria'
   | 'utilizadores'
   | 'conteudos'
   | 'noticias'
@@ -130,6 +141,7 @@ export type UserPage =
 export type NewsSubpage = 'form' | 'list';
 export type ActivitySubpage = 'form' | 'list' | 'categories';
 export type ContentSubpage = 'form' | 'list';
+export type PhotoSubpage = 'form' | 'list';
 
 export type AdminContextLink = {
   label: string;

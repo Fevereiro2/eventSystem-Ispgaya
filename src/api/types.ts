@@ -38,6 +38,19 @@ export type InfoCulturaCategory = {
   updated_at?: string | null;
 };
 
+export type InfoCulturaPhoto = {
+  id: string;
+  section: string;
+  title: string;
+  caption: string;
+  image: string;
+  alt_text: string;
+  display_order: number;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+};
+
 export type InfoCulturaNewsStatus = {
   id: number;
   name: string;
@@ -259,6 +272,16 @@ export type EventbriteRefundStatus =
   | 'outside_policy'
   | 'disputed'
   | 'denied';
+
+export type PhotoPayload = {
+  section: string;
+  title: string;
+  caption?: string;
+  image: string;
+  alt_text?: string;
+  display_order?: number;
+  is_active: boolean;
+};
 
 export type InfoCulturaRegistrationStatus = {
   id: number;

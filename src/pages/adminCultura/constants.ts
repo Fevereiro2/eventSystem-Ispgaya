@@ -8,6 +8,7 @@ import {
   EventFormState,
   FormState,
   NewsFormState,
+  PhotoFormState,
   SessionFormState,
   UserFormState
 } from './types.js';
@@ -128,6 +129,16 @@ export const initialCategoryForm: CategoryFormState = {
   description: ''
 };
 
+export const initialPhotoForm: PhotoFormState = {
+  section: 'laboratorio-cultural',
+  title: '',
+  caption: '',
+  image: '',
+  alt_text: '',
+  display_order: '0',
+  is_active: true,
+};
+
 export const activitySectionByTab: Record<ActivityTab, ActivitySection> = {
   books: 'livros',
   sessions: 'sessoes',
@@ -148,6 +159,7 @@ export const adminSections: { id: AdminSection; label: string; href: string }[] 
   { id: 'logs', label: 'Logs', href: '/infocultura/logs' },
   { id: 'notificacoes', label: 'Notificações', href: '/infocultura/notificacoes' },
   { id: 'newsletters', label: 'Newsletters', href: '/infocultura/newsletters' },
+  { id: 'galeria', label: 'Galeria', href: '/infocultura/galeria' },
   { id: 'utilizadores', label: 'Utilizadores', href: '/infocultura/utilizadores' },
   { id: 'noticias', label: 'Notícias', href: '/infocultura/noticias' },
   { id: 'livros', label: 'Livros', href: '/infocultura/livros' },
@@ -164,6 +176,6 @@ export const adminSectionGroups: {
   ids: AdminSection[];
 }[] = [
   { title: 'Painel', ids: ['resumo', 'metricas', 'logs', 'notificacoes'] },
-  { title: 'Gestão', ids: ['newsletters', 'utilizadores', 'clubes', 'inscricoes'] },
+  { title: 'Gestão', ids: ['newsletters', 'galeria', 'utilizadores', 'clubes', 'inscricoes'] },
   { title: 'Conteúdos', ids: ['noticias', 'livros', 'sessoes', 'eventos', 'eventbrite', 'conteudos'] }
 ];

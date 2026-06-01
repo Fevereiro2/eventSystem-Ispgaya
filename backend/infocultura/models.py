@@ -78,6 +78,26 @@ class CulturalContent(models.Model):
         return f'{self.title} ({self.area})'
 
 
+class PhotoCarouselItem(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    section = models.CharField(max_length=80, default='homepage')
+    title = models.CharField(max_length=180)
+    caption = models.TextField(blank=True, default='')
+    image = models.CharField(max_length=500)
+    alt_text = models.CharField(max_length=255, blank=True, default='')
+    display_order = models.PositiveIntegerField(default=0)
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = db_constants.TABLE_PHOTO_CAROUSEL_ITEM
+        ordering = ['section', 'display_order', '-updated_at']
+
+    def __str__(self):
+        return f'{self.section}: {self.title}'
+
+
 class Club(models.Model):
     id = models.AutoField(primary_key=True, db_column=db_constants.COL_ID_CLUBS)
     name = models.CharField(max_length=100)

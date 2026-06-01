@@ -30,7 +30,9 @@ import {
   NewsPayload,
   NewsletterPayload,
   NewsletterSubscriberPayload,
+  PhotoPayload,
   SessionPayload,
+  InfoCulturaPhoto,
   InfoCulturaUser,
 } from './types.js';
 import {
@@ -99,6 +101,63 @@ export async function deleteAdminContent(token: string, id: string): Promise<voi
     `/content/admin/${id}/`,
     {
       method: 'DELETE'
+    },
+    token
+  );
+}
+
+export async function fetchAdminPhotos(
+  token: string,
+  filters?: {
+    section?: string;
+    isActive?: boolean;
+  }
+): Promise<InfoCulturaPhoto[]> {
+  const search = new URLSearchParams();
+  if (filters?.section?.trim()) {
+    search.set('section', filters.section.trim());
+  }
+  if (typeof filters?.isActive === 'boolean') {
+    search.set('is_active', filters.isActive ? 'true' : 'false');
+  }
+  const query = search.toString();
+  return request<InfoCulturaPhoto[]>(`/photos/admin/${query ? `?${query}` : ''}`, {}, token);
+}
+
+export async function createAdminPhoto(
+  token: string,
+  payload: PhotoPayload
+): Promise<InfoCulturaPhoto> {
+  return request<InfoCulturaPhoto>(
+    '/photos/admin/',
+    {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    },
+    token
+  );
+}
+
+export async function updateAdminPhoto(
+  token: string,
+  id: string,
+  payload: PhotoPayload
+): Promise<InfoCulturaPhoto> {
+  return request<InfoCulturaPhoto>(
+    `/photos/admin/${id}/`,
+    {
+      method: 'PUT',
+      body: JSON.stringify(payload),
+    },
+    token
+  );
+}
+
+export async function deleteAdminPhoto(token: string, id: string): Promise<void> {
+  await request<void>(
+    `/photos/admin/${id}/`,
+    {
+      method: 'DELETE',
     },
     token
   );
@@ -686,7 +745,7 @@ export async function bulkDeleteAdminNews(token: string, ids: number[]): Promise
 export async function uploadAdminImage(
   token: string,
   file: File,
-  folder: 'news' | 'events' | 'books' | 'clubs'
+  folder: 'news' | 'events' | 'books' | 'clubs' | 'photos'
 ): Promise<string> {
   const body = new FormData();
   body.append('file', file);

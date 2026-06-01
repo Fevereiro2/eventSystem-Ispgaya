@@ -1,15 +1,13 @@
 import {
   Dispatch,
-  ComponentType,
   FormEvent,
-  ReactNode,
   SetStateAction,
   useCallback,
   useEffect,
   useMemo,
   useState,
 } from 'react';
-import { Bell, CalendarClock, FolderKanban } from 'lucide-react';
+import { CalendarClock, FolderKanban } from 'lucide-react';
 import { NavLink, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import infoCulturaBg from '../assets/19825874_uqliU.jpeg';
 import ispgayaLogo from '../assets/ispgaya-logo.svg';
@@ -106,19 +104,17 @@ import {
   createAdminContent,
   createAdminEvent,
   createAdminNews,
+  createAdminPhoto,
   createAdminSession,
-  createAdminUser,
-  deactivateAdminUser,
-  activateAdminUser,
   deleteAdminBook,
   deleteAdminCategory,
   deleteAdminClub,
   deleteAdminContent,
   deleteAdminEvent,
   deleteAdminNews,
+  deleteAdminPhoto,
   deleteAdminSession,
   fetchAdminDashboard,
-  fetchAdminEventbriteOrders,
   fetchAdminNotifications,
   InfoCulturaAdminNotification,
   InfoCulturaBook,
@@ -126,10 +122,9 @@ import {
   InfoCulturaClub,
   InfoCulturaDashboardStats,
   InfoCulturaEvent,
-  EventbriteOrdersPage,
-  EventbriteRefundStatus,
   InfoCulturaNews,
   InfoCulturaNewsStatus,
+  InfoCulturaPhoto,
   InfoCulturaRegistration,
   InfoCulturaRegistrationStatus,
   InfoCulturaRole,
@@ -140,6 +135,7 @@ import {
   CategoryPayload,
   EventPayload,
   NewsPayload,
+  PhotoPayload,
   removeUserFromClub,
   SessionPayload,
   syncAdminEventToEventbrite,
@@ -151,19 +147,22 @@ import {
   updateAdminContent,
   updateAdminEvent,
   updateAdminNews,
+  updateAdminPhoto,
   updateAdminSession,
-  updateAdminUser,
 } from '../api/infoculturaApi';
 import { resolveInfoCulturaAssetUrl } from '../api/client';
 import DashboardPage from './adminCultura/pages/DashboardPage';
 import ActivitiesPage from './adminCultura/ActivitiesPage';
 import ClubsPage from './adminCultura/pages/ClubsPage';
+import AdminPageHero from './adminCultura/components/AdminPageHero';
 import EventbritePage from './adminCultura/pages/EventbritePage';
 import EventsPage from './adminCultura/pages/EventsPage';
 import LogsPage from './adminCultura/pages/LogsPage';
 import MetricsPage from './adminCultura/pages/MetricsPage';
 import NewsPage from './adminCultura/pages/NewsPage';
 import NewslettersPage from './adminCultura/pages/NewslettersPage';
+import NotificationsPage from './adminCultura/pages/NotificationsPage';
+import PhotoGalleryPage from './adminCultura/pages/PhotoGalleryPage';
 import {
   buildActivityOverviewStats,
   buildContentOverviewStats,
@@ -182,14 +181,18 @@ import {
   getActivityPageLinks,
   getContentPageLinks,
   getNewsPageLinks,
+  getPhotoPageLinks,
   getVisibleSectionGroups,
   getVisibleSections,
 } from './adminCultura/derived.js';
 import { useAdminActivities } from './adminCultura/hooks/useAdminActivities';
 import { useAdminAuth } from './adminCultura/hooks/useAdminAuth';
+import { useAdminEventbrite } from './adminCultura/hooks/useAdminEventbrite';
+import { sortPhotos, useAdminPhotos } from './adminCultura/hooks/useAdminPhotos';
 import { useSessionStorageState } from './adminCultura/hooks/useSessionStorageState';
 import { useAdminNews } from './adminCultura/hooks/useAdminNews';
 import { useAdminRegistrations } from './adminCultura/hooks/useAdminRegistrations';
+import { useAdminUserActions } from './adminCultura/hooks/useAdminUserActions';
 import { useAdminUsers } from './adminCultura/hooks/useAdminUsers';
 import RegistrationsPage from './adminCultura/pages/RegistrationsPage';
 import SessionsPage from './adminCultura/pages/SessionsPage';
@@ -204,6 +207,7 @@ import {
   initialContentForm,
   initialEventForm,
   initialNewsForm,
+  initialPhotoForm,
   initialSessionForm,
   initialUserForm,
   NEWS_PAGE_SIZE,
@@ -220,6 +224,7 @@ import {
   EventFormState,
   FormState,
   NewsFormState,
+  PhotoFormState,
   SessionFormState,
   UserFormState,
 } from './adminCultura/types';
@@ -235,6 +240,8 @@ import {
   getDefaultActivityTab,
   getNewsRoute,
   getNewsSubpage,
+  getPhotoRoute,
+  getPhotoSubpage,
   getStoredReadNotificationIds,
   getUserPage,
   getWorkflowStatusLabel,
@@ -248,79 +255,6 @@ import {
   toDateInputValue,
   toDateTimeLocalValue
 } from './adminCultura/utils';
-
-type AdminHeroTone = 'amber' | 'blue' | 'slate' | 'rose' | 'emerald';
-
-type AdminHeroStat = {
-  label: string;
-  value: string | number;
-};
-
-type AdminPageHeroProps = {
-  icon: ComponentType<{ className?: string }>;
-  title: string;
-  description: string;
-  tone?: AdminHeroTone;
-  stats?: AdminHeroStat[];
-  actions?: ReactNode;
-};
-
-function getAdminHeroToneClasses(tone: AdminHeroTone): string {
-  if (tone === 'blue') return 'bg-sky-100 text-sky-700';
-  if (tone === 'rose') return 'bg-rose-100 text-rose-700';
-  if (tone === 'emerald') return 'bg-emerald-100 text-emerald-700';
-  if (tone === 'slate') return 'bg-slate-100 text-slate-700';
-  return 'bg-amber-100 text-amber-700';
-}
-
-function AdminPageHero({
-  icon: Icon,
-  title,
-  description,
-  tone = 'amber',
-  stats = [],
-  actions,
-}: AdminPageHeroProps) {
-  return (
-    <section className="rounded-2xl border border-slate-200 bg-gradient-to-r from-white to-slate-50 p-6 shadow-sm">
-      <div className="flex flex-wrap items-start justify-between gap-4">
-        <div>
-          <div className="flex items-center gap-3">
-            <span
-              className={`flex h-11 w-11 items-center justify-center rounded-xl ${getAdminHeroToneClasses(
-                tone
-              )}`}
-            >
-              <Icon className="h-5 w-5" />
-            </span>
-            <div>
-              <h2 className="text-3xl font-semibold text-slate-900">{title}</h2>
-              <p className="mt-1 text-sm text-slate-600">{description}</p>
-            </div>
-          </div>
-        </div>
-
-        {actions ? <div className="flex flex-wrap gap-3">{actions}</div> : null}
-      </div>
-
-      {stats.length > 0 ? (
-        <div className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
-          {stats.map((stat) => (
-            <div
-              key={stat.label}
-              className="rounded-2xl border border-slate-200 bg-white px-4 py-4 shadow-sm"
-            >
-              <p className="text-2xl font-semibold text-slate-900">{stat.value}</p>
-              <p className="mt-1 text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">
-                {stat.label}
-              </p>
-            </div>
-          ))}
-        </div>
-      ) : null}
-    </section>
-  );
-}
 
 function AdminCultura() {
 
@@ -344,6 +278,7 @@ function AdminCultura() {
   const [categories, setCategories] = useState<InfoCulturaCategory[]>([]);
   const [sessions, setSessions] = useState<InfoCulturaSession[]>([]);
   const [events, setEvents] = useState<InfoCulturaEvent[]>([]);
+  const [photos, setPhotos] = useState<InfoCulturaPhoto[]>([]);
   const [registrations, setRegistrations] = useState<InfoCulturaRegistration[]>([]);
   const [registrationStatuses, setRegistrationStatuses] = useState<
     InfoCulturaRegistrationStatus[]
@@ -358,6 +293,7 @@ function AdminCultura() {
   const [isLoadingDashboard, setIsLoadingDashboard] = useState(false);
   const [isLoadingNotifications, setIsLoadingNotifications] = useState(false);
   const [isLoadingActivities, setIsLoadingActivities] = useState(false);
+  const [isLoadingPhotos, setIsLoadingPhotos] = useState(false);
   const [isLoadingCategories, setIsLoadingCategories] = useState(false);
   const [isLoadingRegistrations, setIsLoadingRegistrations] = useState(false);
   const [isLoadingRegistrationStatuses, setIsLoadingRegistrationStatuses] = useState(false);
@@ -375,10 +311,12 @@ function AdminCultura() {
   const [isSavingCategory, setIsSavingCategory] = useState(false);
   const [isSavingSession, setIsSavingSession] = useState(false);
   const [isSavingEvent, setIsSavingEvent] = useState(false);
+  const [isSavingPhoto, setIsSavingPhoto] = useState(false);
   const [isUploadingClubImage, setIsUploadingClubImage] = useState(false);
   const [isUploadingNewsImage, setIsUploadingNewsImage] = useState(false);
   const [isUploadingBookImage, setIsUploadingBookImage] = useState(false);
   const [isUploadingEventImage, setIsUploadingEventImage] = useState(false);
+  const [isUploadingPhotoImage, setIsUploadingPhotoImage] = useState(false);
   const [updatingRegistrationId, setUpdatingRegistrationId] = useState<number | null>(null);
   const [isAssigningClubUser, setIsAssigningClubUser] = useState(false);
   const [isDeactivatingUser, setIsDeactivatingUser] = useState(false);
@@ -388,6 +326,7 @@ function AdminCultura() {
   const [deletingCategoryId, setDeletingCategoryId] = useState<number | null>(null);
   const [deletingSessionId, setDeletingSessionId] = useState<number | null>(null);
   const [deletingEventId, setDeletingEventId] = useState<number | null>(null);
+  const [deletingPhotoId, setDeletingPhotoId] = useState<string | null>(null);
   const [deletingClubId, setDeletingClubId] = useState<number | null>(null);
   const [removingClubUserId, setRemovingClubUserId] = useState<number | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
@@ -399,10 +338,12 @@ function AdminCultura() {
   const [categoryForm, setCategoryForm] = useState<CategoryFormState>(initialCategoryForm);
   const [sessionForm, setSessionForm] = useState<SessionFormState>(initialSessionForm);
   const [eventForm, setEventForm] = useState<EventFormState>(initialEventForm);
+  const [photoForm, setPhotoForm] = useState<PhotoFormState>(initialPhotoForm);
   const [clubImageFileKey, setClubImageFileKey] = useState(0);
   const [newsImageFileKey, setNewsImageFileKey] = useState(0);
   const [bookImageFileKey, setBookImageFileKey] = useState(0);
   const [eventImageFileKey, setEventImageFileKey] = useState(0);
+  const [photoImageFileKey, setPhotoImageFileKey] = useState(0);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editingClubId, setEditingClubId] = useState<number | null>(null);
   const [editingNewsId, setEditingNewsId] = useState<number | null>(null);
@@ -410,6 +351,7 @@ function AdminCultura() {
   const [editingCategoryId, setEditingCategoryId] = useState<number | null>(null);
   const [editingSessionId, setEditingSessionId] = useState<number | null>(null);
   const [editingEventId, setEditingEventId] = useState<number | null>(null);
+  const [editingPhotoId, setEditingPhotoId] = useState<string | null>(null);
   const [selectedClubUserId, setSelectedClubUserId] = useState('');
   const [userDateFrom, setUserDateFrom] = useState('');
   const [userDateTo, setUserDateTo] = useState('');
@@ -460,12 +402,6 @@ function AdminCultura() {
   const [isApplyingBulkNews, setIsApplyingBulkNews] = useState(false);
   const [isApplyingBulkEvents, setIsApplyingBulkEvents] = useState(false);
   const [isApplyingBulkRegistrations, setIsApplyingBulkRegistrations] = useState(false);
-  const [syncingEventbriteId, setSyncingEventbriteId] = useState<number | null>(null);
-  const [loadingEventbriteOrdersId, setLoadingEventbriteOrdersId] = useState<number | null>(null);
-  const [eventbriteRefundStatus, setEventbriteRefundStatus] = useState<EventbriteRefundStatus>('');
-  const [eventbriteOrdersByEventId, setEventbriteOrdersByEventId] = useState<
-    Record<number, EventbriteOrdersPage>
-  >({});
   const [isDeletingBulkNews, setIsDeletingBulkNews] = useState(false);
   const [isDeletingBulkBooks, setIsDeletingBulkBooks] = useState(false);
   const [isDeletingBulkEvents, setIsDeletingBulkEvents] = useState(false);
@@ -479,6 +415,7 @@ function AdminCultura() {
   const [categoryFormError, setCategoryFormError] = useState('');
   const [sessionFormError, setSessionFormError] = useState('');
   const [eventFormError, setEventFormError] = useState('');
+  const [photoFormError, setPhotoFormError] = useState('');
 
   const activeSection = getAdminSection(location.pathname);
   const activeNewsSubpage = useMemo(() => getNewsSubpage(location.pathname), [location.pathname]);
@@ -488,6 +425,10 @@ function AdminCultura() {
   );
   const activeContentSubpage = useMemo(
     () => getContentSubpage(location.pathname),
+    [location.pathname]
+  );
+  const activePhotoSubpage = useMemo(
+    () => getPhotoSubpage(location.pathname),
     [location.pathname]
   );
   const userPage = useMemo(() => getUserPage(location.pathname), [location.pathname]);
@@ -639,6 +580,7 @@ function AdminCultura() {
       ? getActivityRoute('events', activeActivitySubpage)
       : null;
   const contentPageHref = activeContentSubpage ? getContentRoute(activeContentSubpage) : null;
+  const photoPageHref = activePhotoSubpage ? getPhotoRoute(activePhotoSubpage) : null;
   const showNewsForm = activeNewsSubpage === 'form';
   const showNewsList = activeNewsSubpage === 'list';
   const showActivityForm = activeActivitySubpage === 'form';
@@ -646,22 +588,27 @@ function AdminCultura() {
   const showEventCategories = activeSection === 'eventos' && activeActivitySubpage === 'categories';
   const showContentForm = activeContentSubpage === 'form';
   const showContentList = activeContentSubpage === 'list';
+  const showPhotoForm = activePhotoSubpage === 'form';
+  const showPhotoList = activePhotoSubpage === 'list';
   const newsPageLinks = getNewsPageLinks(editingNewsId);
   const bookPageLinks = getActivityPageLinks('books', editingBookId, editingSessionId, editingEventId);
   const sessionPageLinks = getActivityPageLinks('sessions', editingBookId, editingSessionId, editingEventId);
   const eventPageLinks = getActivityPageLinks('events', editingBookId, editingSessionId, editingEventId);
   const contentPageLinks = getContentPageLinks(editingId);
+  const photoPageLinks = getPhotoPageLinks(editingPhotoId);
   const sidebarContextNavBySection = buildSidebarContextNav(
     newsPageLinks,
     bookPageLinks,
     sessionPageLinks,
     eventPageLinks,
     contentPageLinks,
+    photoPageLinks,
     newsPageHref,
     bookPageHref,
     sessionPageHref,
     eventPageHref,
-    contentPageHref
+    contentPageHref,
+    photoPageHref
   );
   const readNotificationIdSet = useMemo(
     () => new Set(readNotificationIds),
@@ -761,6 +708,7 @@ function AdminCultura() {
     setCategories([]);
     setSessions([]);
     setEvents([]);
+    setPhotos([]);
     setRegistrations([]);
     setRegistrationStatuses([]);
     setUserDateFrom('');
@@ -1001,6 +949,13 @@ function AdminCultura() {
     setEventFormError('');
   }
 
+  function resetPhotoForm() {
+    setPhotoForm(initialPhotoForm);
+    setPhotoImageFileKey((prev) => prev + 1);
+    setEditingPhotoId(null);
+    setPhotoFormError('');
+  }
+
   function resetCategoryForm() {
     setCategoryForm(initialCategoryForm);
     setEditingCategoryId(null);
@@ -1209,6 +1164,7 @@ function AdminCultura() {
     resetCategoryForm();
     resetSessionForm();
     resetEventForm();
+    resetPhotoForm();
   }, [currentUser?.club_id, canManageUsers]);
   useEffect(() => {
     if (!canManageUsers || activityTab !== 'books' || editingBookId !== null) {
@@ -1272,8 +1228,13 @@ function AdminCultura() {
 
     if (activeSection === 'conteudos' && !activeContentSubpage) {
       navigate(getContentRoute('list'), { replace: true });
+      return;
     }
-  }, [activeActivitySubpage, activeContentSubpage, activeNewsSubpage, activeSection, navigate]);
+
+    if (activeSection === 'galeria' && !activePhotoSubpage) {
+      navigate(getPhotoRoute('list'), { replace: true });
+    }
+  }, [activeActivitySubpage, activeContentSubpage, activeNewsSubpage, activePhotoSubpage, activeSection, navigate]);
 
   useEffect(() => {
     setNewsPage(1);
@@ -1303,6 +1264,46 @@ function AdminCultura() {
   useEffect(() => {
     setActivityOrder(getDefaultActivityOrdering(activityTab));
   }, [activityTab]);
+
+  useAdminPhotos({
+    token,
+    setPhotos,
+    setIsLoadingPhotos,
+    setPhotoFormError,
+    handleAuthError,
+  });
+
+  const {
+    syncingEventbriteId,
+    loadingEventbriteOrdersId,
+    eventbriteRefundStatus,
+    setEventbriteRefundStatus,
+    eventbriteOrdersByEventId,
+    handleSyncEventbrite,
+    handleLoadEventbriteOrders,
+  } = useAdminEventbrite({
+    token,
+    setEvents,
+    setActivityError,
+    handleAuthError,
+  });
+
+  const { handleSaveUser, handleDeactivateUser, handleActivateUser } = useAdminUserActions({
+    token,
+    canManageUsers,
+    userPage,
+    userForm,
+    selectedUser,
+    currentUser,
+    setUsers,
+    setCurrentUser,
+    setUserFormError,
+    setIsSavingUser,
+    setIsDeactivatingUser,
+    setIsActivatingUser,
+    resetUserForm,
+    navigate,
+  });
 
   useEffect(() => {
     if (!token || !currentUser || activeSection !== 'resumo') {
@@ -1375,6 +1376,7 @@ function AdminCultura() {
     resetContentForm();
     resetUserForm();
     resetClubForm();
+    resetPhotoForm();
   }
 
   function markNotificationAsRead(notificationId: string) {
@@ -1496,6 +1498,99 @@ function AdminCultura() {
       setPanelError(message);
     } finally {
       setDeletingId(null);
+    }
+  }
+
+  async function handleUploadPhotoImage(file: File) {
+    if (!token) return;
+
+    setIsUploadingPhotoImage(true);
+    setPhotoFormError('');
+
+    try {
+      const imagePath = await uploadAdminImage(token, file, 'photos');
+      setPhotoForm((prev) => ({ ...prev, image: imagePath }));
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Não foi possível carregar a imagem.';
+      setPhotoFormError(message);
+    } finally {
+      setIsUploadingPhotoImage(false);
+    }
+  }
+
+  async function handleSavePhoto(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!token) return;
+
+    const payload: PhotoPayload = {
+      section: photoForm.section.trim() || 'laboratorio-cultural',
+      title: photoForm.title.trim(),
+      caption: photoForm.caption.trim(),
+      image: photoForm.image.trim(),
+      alt_text: photoForm.alt_text.trim(),
+      display_order: Number(photoForm.display_order || '0'),
+      is_active: photoForm.is_active,
+    };
+
+    if (!payload.title || !payload.image) {
+      setPhotoFormError('Preenche o título e a imagem.');
+      return;
+    }
+
+    setIsSavingPhoto(true);
+    setPhotoFormError('');
+
+    try {
+      if (editingPhotoId) {
+        const updated = await updateAdminPhoto(token, editingPhotoId, payload);
+        setPhotos((prev) => sortPhotos(prev.map((photo) => (photo.id === editingPhotoId ? updated : photo))));
+      } else {
+        const created = await createAdminPhoto(token, payload);
+        setPhotos((prev) => sortPhotos([created, ...prev]));
+      }
+
+      resetPhotoForm();
+      navigate(getPhotoRoute('list'));
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Não foi possível guardar a foto.';
+      setPhotoFormError(message);
+    } finally {
+      setIsSavingPhoto(false);
+    }
+  }
+
+  function handleEditPhoto(photo: InfoCulturaPhoto) {
+    setEditingPhotoId(photo.id);
+    setPhotoForm({
+      section: photo.section,
+      title: photo.title,
+      caption: photo.caption || '',
+      image: photo.image,
+      alt_text: photo.alt_text || '',
+      display_order: String(photo.display_order),
+      is_active: photo.is_active,
+    });
+    setPhotoFormError('');
+    navigate(getPhotoRoute('form'));
+  }
+
+  async function handleDeletePhoto(id: string) {
+    if (!token) return;
+
+    setDeletingPhotoId(id);
+    setPhotoFormError('');
+
+    try {
+      await deleteAdminPhoto(token, id);
+      setPhotos((prev) => prev.filter((photo) => photo.id !== id));
+      if (editingPhotoId === id) {
+        resetPhotoForm();
+      }
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Não foi possível apagar a foto.';
+      setPhotoFormError(message);
+    } finally {
+      setDeletingPhotoId(null);
     }
   }
 
@@ -2821,94 +2916,17 @@ function AdminCultura() {
           {activeSection === 'logs' ? <LogsPage /> : null}
 
           {activeSection === 'notificacoes' ? (
-            <div className="space-y-6">
-              <AdminPageHero
-                icon={Bell}
-                title="Centro de Notificações"
-                description="Alertas editoriais, operacionais e de agenda gerados a partir da atividade do sistema."
-                tone="amber"
-                stats={notificationOverviewStats}
-                actions={
-                  <button
-                    type="button"
-                    className={adminBtnSecondary}
-                    disabled={notifications.length === 0}
-                    onClick={markAllNotificationsAsRead}
-                  >
-                    {getLocaleText(locale, 'Marcar todas como lidas', 'Mark all as read')}
-                  </button>
-                }
-              />
-
-              <section className={adminPanelCard}>
-                {isLoadingNotifications ? (
-                  <p className={adminInfo}>{getLocaleText(locale, 'A carregar notificações...', 'Loading notifications...')}</p>
-                ) : null}
-                {notificationError ? <p className={adminError}>{notificationError}</p> : null}
-
-                {!isLoadingNotifications && latestNotifications.length === 0 ? (
-                  <p className={adminInfo}>{getLocaleText(locale, 'Não existem notificações para mostrar.', 'There are no notifications to display.')}</p>
-                ) : null}
-
-                <div className="space-y-4">
-                  {latestNotifications.map((notification) => (
-                    <article
-                      key={notification.id}
-                      className={`rounded-2xl border p-5 shadow-sm ${
-                        notification.isRead
-                          ? 'border-slate-200 bg-white'
-                          : notification.level === 'warning'
-                            ? 'border-amber-200 bg-amber-50'
-                            : notification.level === 'success'
-                              ? 'border-emerald-200 bg-emerald-50'
-                              : 'border-sky-200 bg-sky-50'
-                      }`}
-                    >
-                      <div className="flex flex-wrap items-start justify-between gap-4">
-                        <div className="max-w-3xl">
-                          <div className="flex flex-wrap items-center gap-3">
-                            <h3 className="text-lg font-semibold text-slate-900">
-                              {notification.title}
-                            </h3>
-                            {!notification.isRead ? (
-                              <span className="inline-flex items-center rounded-full bg-[#dd8609] px-2.5 py-1 text-xs font-semibold text-white">
-                                {getLocaleText(locale, 'Nova', 'New')}
-                              </span>
-                            ) : null}
-                            <span className="inline-flex items-center rounded-full bg-white/80 px-2.5 py-1 text-xs font-semibold uppercase tracking-[0.12em] text-slate-600">
-                              {notification.kind}
-                            </span>
-                          </div>
-                          <p className="mt-3 leading-7 text-slate-700">{notification.message}</p>
-                          <p className="mt-3 text-sm font-medium text-slate-500">
-                            {formatAdminDateTime(notification.created_at || '')}
-                          </p>
-                        </div>
-
-                        <div className="flex flex-wrap gap-3">
-                          <button
-                            type="button"
-                            className={adminBtnPrimary}
-                            onClick={() => handleOpenNotification(notification)}
-                          >
-                            {getLocaleText(locale, 'Abrir', 'Open')}
-                          </button>
-                          {!notification.isRead ? (
-                            <button
-                              type="button"
-                              className={adminBtnSecondary}
-                              onClick={() => markNotificationAsRead(notification.id)}
-                            >
-                              {getLocaleText(locale, 'Marcar como lida', 'Mark as read')}
-                            </button>
-                          ) : null}
-                        </div>
-                      </div>
-                    </article>
-                  ))}
-                </div>
-              </section>
-            </div>
+            <NotificationsPage
+              locale={locale}
+              notificationOverviewStats={notificationOverviewStats}
+              notifications={notifications}
+              latestNotifications={latestNotifications}
+              isLoadingNotifications={isLoadingNotifications}
+              notificationError={notificationError}
+              onMarkAllAsRead={markAllNotificationsAsRead}
+              onMarkAsRead={markNotificationAsRead}
+              onOpenNotification={handleOpenNotification}
+            />
           ) : null}
 
           {activeSection === 'newsletters' ? <NewslettersPage /> : null}
@@ -4736,6 +4754,27 @@ function AdminCultura() {
               updatingRegistrationId={updatingRegistrationId}
               handleUpdateRegistrationStatus={handleUpdateRegistrationStatus}
               toggleSelectedId={toggleSelectedId}
+            />
+          ) : null}
+
+          {activeSection === 'galeria' ? (
+            <PhotoGalleryPage
+              photos={photos}
+              form={photoForm}
+              setForm={setPhotoForm}
+              editingPhotoId={editingPhotoId}
+              isSaving={isSavingPhoto}
+              isUploading={isUploadingPhotoImage}
+              isLoading={isLoadingPhotos}
+              error={photoFormError}
+              uploadingKey={photoImageFileKey}
+              deletingPhotoId={deletingPhotoId}
+              showForm={showPhotoForm}
+              showList={showPhotoList}
+              onSubmit={handleSavePhoto}
+              onImageUpload={handleUploadPhotoImage}
+              onEdit={handleEditPhoto}
+              onDelete={handleDeletePhoto}
             />
           ) : null}
 

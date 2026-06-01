@@ -17,10 +17,11 @@ from ..api.serializers import (
     EventSerializer,
     NewsSerializer,
     NewsStatusSerializer,
+    PhotoCarouselItemSerializer,
     SessionRegistrationCreateSerializer,
     SessionSerializer,
 )
-from ..models import Book, Category, Club, CulturalContent, Event, News, NewsStatus, Session
+from ..models import Book, Category, Club, CulturalContent, Event, News, NewsStatus, PhotoCarouselItem, Session
 from ..service_modules.calendar import filter_activities_by_range, get_past_activities, get_upcoming_activities
 
 
@@ -41,6 +42,20 @@ class PublicContentListView(generics.ListAPIView):
             queryset = queryset.filter(date__lte=timezone.localdate())
 
         return queryset
+
+
+class PublicPhotoCarouselListView(generics.ListAPIView):
+    serializer_class = PhotoCarouselItemSerializer
+    permission_classes = [permissions.AllowAny]
+
+    def get_queryset(self):
+        queryset = PhotoCarouselItem.objects.filter(is_active=True)
+        section = (self.request.query_params.get("section") or "").strip()
+
+        if section:
+            queryset = queryset.filter(section=section)
+
+        return queryset.order_by("display_order", "-updated_at")
 
 
 class PublicClubListView(generics.ListAPIView):
