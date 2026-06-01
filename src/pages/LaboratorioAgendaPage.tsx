@@ -70,6 +70,39 @@ function getDateKey(date: Date): string {
   ].join('-');
 }
 
+function addDays(date: Date, days: number): Date {
+  return new Date(date.getFullYear(), date.getMonth(), date.getDate() + days);
+}
+
+function getStartOfWeek(date: Date): Date {
+  const weekday = (date.getDay() + 6) % 7;
+  return addDays(date, -weekday);
+}
+
+function getRangeBounds(start: string, end: string): { from: string; to: string } | null {
+  if (!start && !end) return null;
+  if (start && !end) return { from: start, to: start };
+  if (!start && end) return { from: end, to: end };
+  return start <= end ? { from: start, to: end } : { from: end, to: start };
+}
+
+function isDateInRange(dateKey: string, start: string, end: string): boolean {
+  const bounds = getRangeBounds(start, end);
+  if (!bounds) return false;
+  return dateKey >= bounds.from && dateKey <= bounds.to;
+}
+
+function formatWeekLabel(date: Date, locale: 'pt' | 'en'): string {
+  const weekStart = getStartOfWeek(date);
+  const weekEnd = addDays(weekStart, 6);
+  const formatter = new Intl.DateTimeFormat(locale === 'en' ? 'en-GB' : 'pt-PT', {
+    day: '2-digit',
+    month: 'short',
+  });
+
+  return `${formatter.format(weekStart)} - ${formatter.format(weekEnd)}`;
+}
+
 function getClubNameById(clubs: InfoCulturaClub[], clubId?: number | null): string {
   if (!clubId) return '';
   return clubs.find((club) => club.id === clubId)?.name || '';
@@ -86,11 +119,13 @@ function LaboratorioAgendaPage() {
   const [eventStateFilter, setEventStateFilter] = useState<'all' | 'upcoming' | 'ongoing' | 'past'>(
     'all'
   );
-  const [visibleMonth, setVisibleMonth] = useState(() => {
+  const [calendarView, setCalendarView] = useState<'month' | 'week'>('month');
+  const [visibleDate, setVisibleDate] = useState(() => {
     const now = new Date();
     return new Date(now.getFullYear(), now.getMonth(), 1);
   });
-  const [selectedDate, setSelectedDate] = useState('');
+  const [rangeStartDate, setRangeStartDate] = useState('');
+  const [rangeEndDate, setRangeEndDate] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState('');
 
@@ -140,16 +175,19 @@ function LaboratorioAgendaPage() {
     () =>
       events.filter((item) => {
         const itemDate = item.event_date.slice(0, 10);
+        const hasRange = Boolean(rangeStartDate || rangeEndDate);
+        const matchesRange = !hasRange || isDateInRange(itemDate, rangeStartDate, rangeEndDate);
+
         return (
           (eventClubFilter === 'all' || String(item.club_id || '') === eventClubFilter) &&
           (eventCategoryFilter === 'all' || item.category_ids.includes(Number(eventCategoryFilter))) &&
           (eventCityFilter === 'all' ||
             normalizeLabel(item.city || item.location || '') === normalizeLabel(eventCityFilter)) &&
           (eventStateFilter === 'all' || getEventTimeState(item) === eventStateFilter) &&
-          (!selectedDate || itemDate === selectedDate)
+          matchesRange
         );
       }),
-    [events, eventClubFilter, eventCategoryFilter, eventCityFilter, eventStateFilter, selectedDate]
+    [events, eventClubFilter, eventCategoryFilter, eventCityFilter, eventStateFilter, rangeStartDate, rangeEndDate]
   );
 
   const calendarEventsByDate = useMemo(() => {
@@ -177,8 +215,16 @@ function LaboratorioAgendaPage() {
   }, [events, eventClubFilter, eventCategoryFilter, eventCityFilter, eventStateFilter]);
 
   const calendarDays = useMemo(() => {
-    const monthStart = new Date(visibleMonth.getFullYear(), visibleMonth.getMonth(), 1);
-    const monthEnd = new Date(visibleMonth.getFullYear(), visibleMonth.getMonth() + 1, 0);
+    if (calendarView === 'week') {
+      const weekStart = getStartOfWeek(visibleDate);
+      return Array.from({ length: 7 }, (_, index) => ({
+        date: addDays(weekStart, index),
+        inMonth: true,
+      }));
+    }
+
+    const monthStart = new Date(visibleDate.getFullYear(), visibleDate.getMonth(), 1);
+    const monthEnd = new Date(visibleDate.getFullYear(), visibleDate.getMonth() + 1, 0);
     const startWeekday = (monthStart.getDay() + 6) % 7;
     const totalDays = monthEnd.getDate();
     const cells: Array<{ date: Date; inMonth: boolean }> = [];
@@ -206,7 +252,34 @@ function LaboratorioAgendaPage() {
     }
 
     return cells;
-  }, [visibleMonth]);
+  }, [calendarView, visibleDate]);
+
+  const selectedRange = useMemo(
+    () => getRangeBounds(rangeStartDate, rangeEndDate),
+    [rangeStartDate, rangeEndDate]
+  );
+
+  function handleCalendarDateClick(dateKey: string) {
+    if (!rangeStartDate || (rangeStartDate && rangeEndDate)) {
+      setRangeStartDate(dateKey);
+      setRangeEndDate('');
+      return;
+    }
+
+    if (rangeStartDate === dateKey) {
+      setRangeStartDate('');
+      setRangeEndDate('');
+      return;
+    }
+
+    if (dateKey < rangeStartDate) {
+      setRangeStartDate(dateKey);
+      setRangeEndDate(rangeStartDate);
+      return;
+    }
+
+    setRangeEndDate(dateKey);
+  }
 
   return (
     <>
@@ -327,6 +400,33 @@ function LaboratorioAgendaPage() {
                         <option value="past">{getLocaleText(locale, 'Concluídos', 'Past')}</option>
                       </select>
                     </div>
+
+                    <div className={adminField}>
+                      <label className={adminLabel} htmlFor="agenda-range-start">
+                        {getLocaleText(locale, 'Início', 'Start')}
+                      </label>
+                      <input
+                        id="agenda-range-start"
+                        type="date"
+                        className={adminInput}
+                        value={rangeStartDate}
+                        onChange={(event) => setRangeStartDate(event.target.value)}
+                      />
+                    </div>
+
+                    <div className={adminField}>
+                      <label className={adminLabel} htmlFor="agenda-range-end">
+                        {getLocaleText(locale, 'Fim', 'End')}
+                      </label>
+                      <input
+                        id="agenda-range-end"
+                        type="date"
+                        className={adminInput}
+                        value={rangeEndDate}
+                        min={rangeStartDate || undefined}
+                        onChange={(event) => setRangeEndDate(event.target.value)}
+                      />
+                    </div>
                   </div>
 
                   <div className="mt-5 grid grid-cols-1 gap-3 sm:flex sm:flex-wrap">
@@ -338,18 +438,22 @@ function LaboratorioAgendaPage() {
                         setEventCategoryFilter('all');
                         setEventCityFilter('all');
                         setEventStateFilter('all');
-                        setSelectedDate('');
+                        setRangeStartDate('');
+                        setRangeEndDate('');
                       }}
                     >
                       {getLocaleText(locale, 'Limpar filtros', 'Clear filters')}
                     </button>
-                    {selectedDate ? (
+                    {selectedRange ? (
                       <button
                         type="button"
                         className={`${adminBtnSecondary} w-full text-center sm:w-auto`}
-                        onClick={() => setSelectedDate('')}
+                        onClick={() => {
+                          setRangeStartDate('');
+                          setRangeEndDate('');
+                        }}
                       >
-                        {getLocaleText(locale, 'Limpar data', 'Clear date')}
+                        {getLocaleText(locale, 'Limpar intervalo', 'Clear range')}
                       </button>
                     ) : null}
                   </div>
@@ -357,12 +461,42 @@ function LaboratorioAgendaPage() {
 
                 <section className="grid gap-6 xl:grid-cols-[1.1fr_0.9fr] xl:gap-8">
                   <div className="min-w-0">
+                    <div className="mb-4 flex flex-wrap items-center justify-between gap-2 sm:mb-5 sm:gap-4">
+                      <div className="inline-flex rounded-md border border-slate-200 p-1">
+                        <button
+                          type="button"
+                          className={`rounded px-3 py-1.5 text-sm font-medium ${
+                            calendarView === 'month'
+                              ? 'bg-slate-900 text-white'
+                              : 'text-slate-600 hover:bg-slate-50'
+                          }`}
+                          onClick={() => setCalendarView('month')}
+                        >
+                          {getLocaleText(locale, 'Mês', 'Month')}
+                        </button>
+                        <button
+                          type="button"
+                          className={`rounded px-3 py-1.5 text-sm font-medium ${
+                            calendarView === 'week'
+                              ? 'bg-slate-900 text-white'
+                              : 'text-slate-600 hover:bg-slate-50'
+                          }`}
+                          onClick={() => setCalendarView('week')}
+                        >
+                          {getLocaleText(locale, 'Semana', 'Week')}
+                        </button>
+                      </div>
+                    </div>
+
                     <div className="mb-4 flex items-center justify-between gap-2 sm:mb-5 sm:gap-4">
                       <button
                         type="button"
                         onClick={() =>
-                          setVisibleMonth(
-                            (current) => new Date(current.getFullYear(), current.getMonth() - 1, 1)
+                          setVisibleDate(
+                            (current) =>
+                              calendarView === 'week'
+                                ? addDays(current, -7)
+                                : new Date(current.getFullYear(), current.getMonth() - 1, 1)
                           )
                         }
                           className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-slate-200 text-slate-700 transition hover:border-[#dd8609] hover:text-[#dd8609] sm:h-10 sm:w-10"
@@ -370,13 +504,18 @@ function LaboratorioAgendaPage() {
                         <ChevronLeft className="h-5 w-5" />
                       </button>
                       <h2 className="min-w-0 break-words text-center font-heading text-xl font-semibold capitalize text-slate-900 sm:text-2xl">
-                        {formatMonthLabel(visibleMonth, locale)}
+                        {calendarView === 'week'
+                          ? formatWeekLabel(visibleDate, locale)
+                          : formatMonthLabel(visibleDate, locale)}
                       </h2>
                       <button
                         type="button"
                         onClick={() =>
-                          setVisibleMonth(
-                            (current) => new Date(current.getFullYear(), current.getMonth() + 1, 1)
+                          setVisibleDate(
+                            (current) =>
+                              calendarView === 'week'
+                                ? addDays(current, 7)
+                                : new Date(current.getFullYear(), current.getMonth() + 1, 1)
                           )
                         }
                           className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-slate-200 text-slate-700 transition hover:border-[#dd8609] hover:text-[#dd8609] sm:h-10 sm:w-10"
@@ -400,16 +539,19 @@ function LaboratorioAgendaPage() {
                       {calendarDays.map(({ date, inMonth }) => {
                         const dateKey = getDateKey(date);
                         const items = calendarEventsByDate.get(dateKey) || [];
-                        const isSelected = selectedDate === dateKey;
+                        const isSelected = selectedRange?.from === dateKey && selectedRange?.to === dateKey;
+                        const isInSelectedRange = isDateInRange(dateKey, rangeStartDate, rangeEndDate);
 
                         return (
                           <button
                             key={dateKey}
                             type="button"
-                            onClick={() => setSelectedDate(isSelected ? '' : dateKey)}
+                            onClick={() => handleCalendarDateClick(dateKey)}
                             className={`min-h-[46px] border-b border-r border-slate-200 p-1.5 text-left transition sm:min-h-[88px] sm:p-2 ${
                               isSelected
                                 ? 'bg-orange-50 text-[#dd8609]'
+                                : isInSelectedRange
+                                  ? 'bg-amber-50 text-[#b86708]'
                                 : inMonth
                                   ? 'bg-white hover:bg-slate-50'
                                   : 'bg-slate-50 text-slate-400'
@@ -434,12 +576,18 @@ function LaboratorioAgendaPage() {
                     <div className="flex items-start justify-between gap-4">
                       <div className="min-w-0">
                         <h2 className="break-words font-heading text-xl font-semibold text-slate-900 sm:text-2xl">
-                          {selectedDate ? `${getLocaleText(locale, 'Eventos em', 'Events on')} ${formatDateLabel(selectedDate, locale)}` : getLocaleText(locale, 'Visão geral filtrada', 'Filtered overview')}
+                          {selectedRange
+                            ? selectedRange.from === selectedRange.to
+                              ? `${getLocaleText(locale, 'Eventos em', 'Events on')} ${formatDateLabel(selectedRange.from, locale)}`
+                              : `${getLocaleText(locale, 'Eventos entre', 'Events between')} ${formatDateLabel(selectedRange.from, locale)} ${getLocaleText(locale, 'e', 'and')} ${formatDateLabel(selectedRange.to, locale)}`
+                            : getLocaleText(locale, 'Visão geral filtrada', 'Filtered overview')}
                         </h2>
                         <p className="mt-2 text-sm leading-6 text-slate-600">
-                          {selectedDate
-                            ? getLocaleText(locale, 'Selecionaste um dia específico no calendário.', 'You selected a specific day in the calendar.')
-                            : getLocaleText(locale, 'Seleciona uma data para reduzir a agenda a um dia.', 'Select a date to narrow the agenda to one day.')}
+                          {selectedRange
+                            ? selectedRange.from === selectedRange.to
+                              ? getLocaleText(locale, 'Selecionaste um dia específico no calendário.', 'You selected a specific day in the calendar.')
+                              : getLocaleText(locale, 'Selecionaste um intervalo temporal no calendário interativo.', 'You selected a time range in the interactive calendar.')
+                            : getLocaleText(locale, 'Seleciona uma ou duas datas para reduzir a agenda a um dia ou intervalo.', 'Select one or two dates to narrow the agenda to a day or range.')}
                         </p>
                       </div>
                     </div>
