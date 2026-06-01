@@ -31,7 +31,6 @@ class NewsSerializer(serializers.ModelSerializer):
             'summary',
             'image',
             'content',
-            'is_active',
             'published_at',
             'created_at',
             'updated_at',
