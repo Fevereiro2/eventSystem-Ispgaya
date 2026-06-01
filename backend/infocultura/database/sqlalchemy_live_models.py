@@ -249,6 +249,7 @@ class Book(Base, CreatedAtMixin, ReprMixin):
     publication_year: Mapped[int] = mapped_column(Integer, nullable=False)
     cover_image: Mapped[str] = mapped_column(String(500), nullable=False, server_default=text("''"))
     summary: Mapped[str] = mapped_column(Text, nullable=False)
+    is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default=text("1"))
     is_featured: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default=text("0"))
     id_club: Mapped[Optional[int]] = mapped_column(
         Integer,
@@ -272,6 +273,7 @@ class Session(Base, AuditMixin, ReprMixin):
     session_date: Mapped[date] = mapped_column(Date, nullable=False)
     start_date: Mapped[datetime] = mapped_column(DateTime, nullable=False)
     end_date: Mapped[datetime] = mapped_column(DateTime, nullable=False)
+    is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default=text("1"))
     id_club: Mapped[Optional[int]] = mapped_column(
         Integer,
         ForeignKey("clubs.id_clubs", ondelete="SET NULL"),
@@ -315,6 +317,7 @@ class Event(Base, AuditMixin, ReprMixin):
     start_date: Mapped[datetime] = mapped_column(DateTime, nullable=False)
     end_date: Mapped[datetime] = mapped_column(DateTime, nullable=False)
     image: Mapped[str] = mapped_column(String(500), nullable=False, server_default=text("''"))
+    is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default=text("1"))
     is_external: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default=text("0"))
     status: Mapped[str] = mapped_column(String(50), nullable=False)
     city: Mapped[str] = mapped_column(String(120), nullable=False, server_default=text("''"))
@@ -365,6 +368,7 @@ class News(Base, AuditMixin, ReprMixin):
     title: Mapped[str] = mapped_column(String(255), nullable=False)
     summary: Mapped[str] = mapped_column(Text, nullable=False)
     image: Mapped[str] = mapped_column(String(500), nullable=False, server_default=text("''"))
+    is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default=text("1"))
     id_nstatus: Mapped[int] = mapped_column(
         Integer,
         ForeignKey("nstatus.id_nstatus"),

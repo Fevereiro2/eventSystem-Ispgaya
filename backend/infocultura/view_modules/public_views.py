@@ -105,6 +105,7 @@ class PublicNewsListView(generics.ListAPIView):
 
     def get_queryset(self):
         queryset = News.objects.select_related("news_status", "club").filter(
+            is_active=True,
             news_status__name__iexact="published",
             published_at__isnull=False,
             published_at__lte=timezone.now(),
@@ -121,6 +122,7 @@ class PublicNewsDetailView(generics.RetrieveAPIView):
 
     def get_queryset(self):
         return News.objects.select_related("news_status", "club").filter(
+            is_active=True,
             news_status__name__iexact="published",
             published_at__isnull=False,
             published_at__lte=timezone.now(),
@@ -132,7 +134,7 @@ class PublicBookListView(generics.ListAPIView):
     permission_classes = [permissions.AllowAny]
 
     def get_queryset(self):
-        queryset = Book.objects.select_related("club").filter(club__is_active=True).filter(
+        queryset = Book.objects.select_related("club").filter(is_active=True, club__is_active=True).filter(
             Q(created_at__isnull=True) | Q(created_at__lte=timezone.now())
         )
         club_id = self.request.query_params.get("club_id")
@@ -146,7 +148,7 @@ class PublicBookDetailView(generics.RetrieveAPIView):
     permission_classes = [permissions.AllowAny]
 
     def get_queryset(self):
-        return Book.objects.select_related("club").filter(club__is_active=True).filter(
+        return Book.objects.select_related("club").filter(is_active=True, club__is_active=True).filter(
             Q(created_at__isnull=True) | Q(created_at__lte=timezone.now())
         )
 
@@ -156,7 +158,7 @@ class PublicSessionListView(generics.ListAPIView):
     permission_classes = [permissions.AllowAny]
 
     def get_queryset(self):
-        queryset = Session.objects.select_related("club").filter(club__is_active=True).filter(
+        queryset = Session.objects.select_related("club").filter(is_active=True, club__is_active=True).filter(
             Q(created_at__isnull=True) | Q(created_at__lte=timezone.now())
         )
         club_id = self.request.query_params.get("club_id")
@@ -181,7 +183,7 @@ class PublicSessionDetailView(generics.RetrieveAPIView):
     permission_classes = [permissions.AllowAny]
 
     def get_queryset(self):
-        return Session.objects.select_related("club").filter(club__is_active=True).filter(
+        return Session.objects.select_related("club").filter(is_active=True, club__is_active=True).filter(
             Q(created_at__isnull=True) | Q(created_at__lte=timezone.now())
         )
 
@@ -192,7 +194,7 @@ class PublicSessionRegistrationCreateView(APIView):
     def post(self, request, pk):
         session = (
             Session.objects.select_related("club")
-            .filter(pk=pk, club__is_active=True)
+            .filter(pk=pk, is_active=True, club__is_active=True)
             .filter(Q(created_at__isnull=True) | Q(created_at__lte=timezone.now()))
             .first()
         )
@@ -221,7 +223,7 @@ class PublicSessionCalendarView(APIView):
     def get(self, request, pk):
         session = (
             Session.objects.select_related("club")
-            .filter(pk=pk, club__is_active=True)
+            .filter(pk=pk, is_active=True, club__is_active=True)
             .filter(Q(created_at__isnull=True) | Q(created_at__lte=timezone.now()))
             .first()
         )
@@ -253,6 +255,7 @@ class PublicEventListView(generics.ListAPIView):
 
     def get_queryset(self):
         queryset = Event.objects.select_related("user__club").prefetch_related("categories").filter(
+            is_active=True,
             user__club__is_active=True
         ).filter(Q(status__iexact="published") | Q(status__iexact="publicado")).filter(
             Q(created_at__isnull=True) | Q(created_at__lte=timezone.now())
@@ -289,6 +292,7 @@ class PublicEventDetailView(generics.RetrieveAPIView):
 
     def get_queryset(self):
         return Event.objects.select_related("user__club").prefetch_related("categories").filter(
+            is_active=True,
             user__club__is_active=True
         ).filter(Q(status__iexact="published") | Q(status__iexact="publicado")).filter(
             Q(created_at__isnull=True) | Q(created_at__lte=timezone.now())
@@ -302,7 +306,7 @@ class PublicEventRegistrationCreateView(APIView):
         event = (
             Event.objects.select_related("user__club")
             .prefetch_related("categories")
-            .filter(pk=pk)
+            .filter(pk=pk, is_active=True)
             .filter(user__club__is_active=True)
             .filter(Q(status__iexact="published") | Q(status__iexact="publicado"))
             .filter(Q(created_at__isnull=True) | Q(created_at__lte=timezone.now()))
@@ -334,7 +338,7 @@ class PublicEventCalendarView(APIView):
         event = (
             Event.objects.select_related("user__club")
             .prefetch_related("categories")
-            .filter(pk=pk)
+            .filter(pk=pk, is_active=True)
             .filter(user__club__is_active=True)
             .filter(Q(status__iexact="published") | Q(status__iexact="publicado"))
             .filter(Q(created_at__isnull=True) | Q(created_at__lte=timezone.now()))

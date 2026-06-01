@@ -136,6 +136,7 @@ class News(models.Model):
     title = models.CharField(max_length=255)
     summary = models.TextField()
     image = models.CharField(max_length=500)
+    is_active = models.BooleanField(default=True)
     news_status = models.ForeignKey(
         NewsStatus,
         on_delete=models.DO_NOTHING,
@@ -172,6 +173,7 @@ class Book(models.Model):
     publication_year = models.IntegerField()
     cover_image = models.CharField(max_length=500, blank=True, default='')
     summary = models.TextField()
+    is_active = models.BooleanField(default=True)
     is_featured = models.BooleanField(default=False)
     created_at = models.DateTimeField(blank=True, null=True)
     club = models.ForeignKey(
@@ -206,6 +208,7 @@ class Session(models.Model):
     session_date = models.DateField()
     start_date = models.DateTimeField(db_column=db_constants.COL_START_DATE)
     end_date = models.DateTimeField(db_column=db_constants.COL_END_DATE)
+    is_active = models.BooleanField(default=True)
     status = models.CharField(max_length=16, choices=STATUS_CHOICES, default='active')
     enable_registrations = models.BooleanField(default=False)
     registration_capacity = models.IntegerField(blank=True, null=True)
@@ -268,6 +271,7 @@ class Event(models.Model):
     start_date = models.DateTimeField(db_column=db_constants.COL_START_DATE)
     end_date = models.DateTimeField(db_column=db_constants.COL_END_DATE)
     image = models.CharField(max_length=500, blank=True, default='')
+    is_active = models.BooleanField(default=True)
     is_external = models.BooleanField(default=False)
     enable_registrations = models.BooleanField(default=False)
     registration_capacity = models.IntegerField(blank=True, null=True)

@@ -155,6 +155,7 @@ class Event(Base, AuditMixin, ReprMixin):
     start_date: Mapped[datetime] = mapped_column(DateTime, nullable=False)
     end_date: Mapped[datetime] = mapped_column(DateTime, nullable=False)
     image: Mapped[str] = mapped_column(String(500), nullable=False, default="")
+    is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
     is_external: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     enable_registrations: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     registration_capacity: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
@@ -220,6 +221,7 @@ class Book(Base, CreatedAtMixin, ReprMixin):
     publication_year: Mapped[int] = mapped_column(Integer, nullable=False)
     cover_image: Mapped[str] = mapped_column(String(500), nullable=False, default="")
     summary: Mapped[str] = mapped_column(Text, nullable=False, default="")
+    is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
     is_featured: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
 
     club_id: Mapped[Optional[int]] = mapped_column(
@@ -244,6 +246,7 @@ class Session(Base, AuditMixin, ReprMixin):
     session_date: Mapped[date] = mapped_column(Date, nullable=False)
     start_date: Mapped[datetime] = mapped_column(DateTime, nullable=False)
     end_date: Mapped[datetime] = mapped_column(DateTime, nullable=False)
+    is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
     enable_registrations: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     registration_capacity: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
 
@@ -361,6 +364,7 @@ class News(Base, AuditMixin, ReprMixin):
     title: Mapped[str] = mapped_column(String(255), nullable=False)
     summary: Mapped[str] = mapped_column(Text, nullable=False, default="")
     image: Mapped[str] = mapped_column(String(500), nullable=False, default="")
+    is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
     published_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
     content: Mapped[str] = mapped_column(Text, nullable=False)
 
