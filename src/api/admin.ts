@@ -1302,6 +1302,175 @@ export async function assignUserToClub(
   return data.user;
 }
 
+// ============================================================================
+// SOFT-DELETE OPERATIONS (Deactivate/Activate)
+// ============================================================================
+
+export async function deactivateAdminClub(
+  token: string,
+  id: number
+): Promise<InfoCulturaClub> {
+  const data = await request<{ club: InfoCulturaClub }>(
+    `/clubs/admin/${id}/deactivate/`,
+    {
+      method: 'POST'
+    },
+    token
+  );
+
+  return data.club;
+}
+
+export async function activateAdminClub(
+  token: string,
+  id: number
+): Promise<InfoCulturaClub> {
+  const data = await request<{ club: InfoCulturaClub }>(
+    `/clubs/admin/${id}/activate/`,
+    {
+      method: 'POST'
+    },
+    token
+  );
+
+  return data.club;
+}
+
+export async function deactivateAdminEvent(
+  token: string,
+  id: number
+): Promise<InfoCulturaEvent> {
+  const data = await request<{ event: InfoCulturaEvent }>(
+    `/events/admin/${id}/deactivate/`,
+    {
+      method: 'POST'
+    },
+    token
+  );
+
+  return data.event;
+}
+
+export async function activateAdminEvent(
+  token: string,
+  id: number
+): Promise<InfoCulturaEvent> {
+  const data = await request<{ event: InfoCulturaEvent }>(
+    `/events/admin/${id}/activate/`,
+    {
+      method: 'POST'
+    },
+    token
+  );
+
+  return data.event;
+}
+
+export async function deactivateAdminNews(
+  token: string,
+  id: number
+): Promise<InfoCulturaNews> {
+  const data = await request<{ news: InfoCulturaNews }>(
+    `/news/admin/${id}/deactivate/`,
+    {
+      method: 'POST'
+    },
+    token
+  );
+
+  return data.news;
+}
+
+export async function activateAdminNews(
+  token: string,
+  id: number
+): Promise<InfoCulturaNews> {
+  const data = await request<{ news: InfoCulturaNews }>(
+    `/news/admin/${id}/activate/`,
+    {
+      method: 'POST'
+    },
+    token
+  );
+
+  return data.news;
+}
+
+export async function deactivateAdminBook(
+  token: string,
+  id: number
+): Promise<InfoCulturaBook> {
+  const data = await request<{ book: InfoCulturaBook }>(
+    `/books/admin/${id}/deactivate/`,
+    {
+      method: 'POST'
+    },
+    token
+  );
+
+  return data.book;
+}
+
+export async function activateAdminBook(
+  token: string,
+  id: number
+): Promise<InfoCulturaBook> {
+  const data = await request<{ book: InfoCulturaBook }>(
+    `/books/admin/${id}/activate/`,
+    {
+      method: 'POST'
+    },
+    token
+  );
+
+  return data.book;
+}
+
+export async function deactivateAdminSession(
+  token: string,
+  id: number
+): Promise<InfoCulturaSession> {
+  const data = await request<{ session: InfoCulturaSession }>(
+    `/sessions/admin/${id}/deactivate/`,
+    {
+      method: 'POST'
+    },
+    token
+  );
+
+  return data.session;
+}
+
+export async function activateAdminSession(
+  token: string,
+  id: number
+): Promise<InfoCulturaSession> {
+  const data = await request<{ session: InfoCulturaSession }>(
+    `/sessions/admin/${id}/activate/`,
+    {
+      method: 'POST'
+    },
+    token
+  );
+
+  return data.session;
+}
+
+export async function deactivateAdminClubMember(
+  token: string,
+  clubId: number,
+  userId: number
+): Promise<InfoCulturaUser> {
+  const data = await request<{ user: InfoCulturaUser }>(
+    `/clubs/admin/${clubId}/members/${userId}/deactivate/`,
+    {
+      method: 'POST'
+    },
+    token
+  );
+
+  return data.user;
+}
 export async function removeUserFromClub(
   token: string,
   clubId: number,

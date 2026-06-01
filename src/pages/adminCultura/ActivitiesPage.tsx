@@ -105,6 +105,8 @@ export type ActivitiesPageProps = {
   handleEditBook: (book: InfoCulturaBook) => void;
   deletingBookId: number | null;
   handleDeleteBook: (id: number) => void | Promise<void>;
+  changingBookStatusId: number | null;
+  handleToggleBookActive: (id: number, shouldActivate: boolean) => void | Promise<void>;
   isLoadingActivities: boolean;
   activityTotal: number;
   activityPage: number;
@@ -119,6 +121,8 @@ export type ActivitiesPageProps = {
   handleEditSession: (session: InfoCulturaSession) => void;
   deletingSessionId: number | null;
   handleDeleteSession: (id: number) => void | Promise<void>;
+  changingSessionStatusId: number | null;
+  handleToggleSessionActive: (id: number, shouldActivate: boolean) => void | Promise<void>;
   sortedSessions: InfoCulturaSession[];
   handleSaveEvent: (event: FormEvent<HTMLFormElement>) => void;
   editingEventId: number | null;
@@ -133,6 +137,8 @@ export type ActivitiesPageProps = {
   handleEditEvent: (eventItem: InfoCulturaEvent) => void;
   deletingEventId: number | null;
   handleDeleteEvent: (id: number) => void | Promise<void>;
+  changingEventStatusId: number | null;
+  handleToggleEventActive: (id: number, shouldActivate: boolean) => void | Promise<void>;
   syncingEventbriteId: number | null;
   handleSyncEventbrite: (id: number, publish?: boolean) => void | Promise<void>;
   eventbriteConnection?: EventbriteConnectionStatus | null;
@@ -214,6 +220,8 @@ function ActivitiesPage({
   handleEditBook,
   deletingBookId,
   handleDeleteBook,
+  changingBookStatusId,
+  handleToggleBookActive,
   isLoadingActivities,
   activityTotal,
   activityPage,
@@ -228,6 +236,8 @@ function ActivitiesPage({
   handleEditSession,
   deletingSessionId,
   handleDeleteSession,
+  changingSessionStatusId,
+  handleToggleSessionActive,
   sortedSessions,
   handleSaveEvent,
   editingEventId,
@@ -242,6 +252,8 @@ function ActivitiesPage({
   handleEditEvent,
   deletingEventId,
   handleDeleteEvent,
+  changingEventStatusId,
+  handleToggleEventActive,
   syncingEventbriteId,
   handleSyncEventbrite,
   eventbriteConnection,
@@ -805,6 +817,18 @@ function ActivitiesPage({
                       </button>
                       <button
                         type="button"
+                        className={item.is_active ? adminBtnSecondary : adminBtnPrimary}
+                        disabled={changingBookStatusId === item.id}
+                        onClick={() => void handleToggleBookActive(item.id, !item.is_active)}
+                      >
+                        {changingBookStatusId === item.id
+                          ? 'A atualizar...'
+                          : item.is_active
+                            ? 'Desativar'
+                            : 'Ativar'}
+                      </button>
+                      <button
+                        type="button"
                         className={adminBtnDanger}
                         disabled={deletingBookId === item.id}
                         onClick={() => handleDeleteBook(item.id)}
@@ -1087,6 +1111,18 @@ function ActivitiesPage({
                     <div className={adminListTools}>
                       <button type="button" className={adminBtnEdit} onClick={() => handleEditSession(item)}>
                         Editar
+                      </button>
+                      <button
+                        type="button"
+                        className={item.is_active ? adminBtnSecondary : adminBtnPrimary}
+                        disabled={changingSessionStatusId === item.id}
+                        onClick={() => void handleToggleSessionActive(item.id, !item.is_active)}
+                      >
+                        {changingSessionStatusId === item.id
+                          ? 'A atualizar...'
+                          : item.is_active
+                            ? 'Desativar'
+                            : 'Ativar'}
                       </button>
                       <button
                         type="button"
@@ -1720,6 +1756,18 @@ function ActivitiesPage({
                       </button>
                       <button type="button" className={adminBtnEdit} onClick={() => handleEditEvent(item)}>
                         Editar
+                      </button>
+                      <button
+                        type="button"
+                        className={item.is_active ? adminBtnSecondary : adminBtnPrimary}
+                        disabled={changingEventStatusId === item.id}
+                        onClick={() => void handleToggleEventActive(item.id, !item.is_active)}
+                      >
+                        {changingEventStatusId === item.id
+                          ? 'A atualizar...'
+                          : item.is_active
+                            ? 'Desativar'
+                            : 'Ativar'}
                       </button>
                       <button
                         type="button"

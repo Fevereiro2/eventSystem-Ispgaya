@@ -73,6 +73,7 @@ export type InfoCulturaNews = {
   summary: string;
   image: string;
   content: string;
+  is_active: boolean;
   published_at: string | null;
   created_at: string;
   updated_at: string;
@@ -111,6 +112,7 @@ export type InfoCulturaBook = {
   publication_year: number;
   cover_image: string;
   summary: string;
+  is_active: boolean;
   is_featured: boolean;
   created_at: string | null;
   club_id: number | null;
@@ -122,6 +124,7 @@ export type InfoCulturaSession = {
   name: string;
   title: string;
   description: string;
+  is_active: boolean;
   session_date: string;
   start_date: string;
   end_date: string;
@@ -143,6 +146,7 @@ export type InfoCulturaEvent = {
   id: number;
   title: string;
   description: string;
+  is_active: boolean;
   event_date: string;
   start_date: string;
   end_date: string;

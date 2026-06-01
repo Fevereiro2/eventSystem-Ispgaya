@@ -88,6 +88,8 @@ type NewsPageProps = {
   isDeletingBulkNews: boolean;
   handleBulkDeleteNews: () => void | Promise<void>;
   deletingNewsId: number | null;
+  changingNewsStatusId: number | null;
+  handleToggleNewsActive: (id: number, shouldActivate: boolean) => void | Promise<void>;
   handleDeleteNews: (id: number) => void | Promise<void>;
   handleEditNews: (item: InfoCulturaNews) => void;
   newsTotal: number;
@@ -142,6 +144,8 @@ function NewsPage({
   isDeletingBulkNews,
   handleBulkDeleteNews,
   deletingNewsId,
+  changingNewsStatusId,
+  handleToggleNewsActive,
   handleDeleteNews,
   handleEditNews,
   newsTotal,
@@ -552,6 +556,18 @@ function NewsPage({
                   <div className={`${adminListTools} mt-0 shrink-0`}>
                     <button type="button" className={adminBtnEdit} onClick={() => handleEditNews(item)}>
                       Editar
+                    </button>
+                    <button
+                      type="button"
+                      className={item.is_active ? adminBtnSecondary : adminBtnPrimary}
+                      disabled={changingNewsStatusId === item.id}
+                      onClick={() => void handleToggleNewsActive(item.id, !item.is_active)}
+                    >
+                      {changingNewsStatusId === item.id
+                        ? 'A atualizar...'
+                        : item.is_active
+                          ? 'Desativar'
+                          : 'Ativar'}
                     </button>
                     <button
                       type="button"

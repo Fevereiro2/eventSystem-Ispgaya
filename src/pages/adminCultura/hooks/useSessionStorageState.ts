@@ -20,14 +20,25 @@ export function useSessionStorageState(
 
     // Initial sync in case sessionStorage changed while component was not mounted
     const stored = sessionStorage.getItem(key);
-    if (stored !== null && stored !== state) {
+    if (stored === null) {
+      if (state !== initialValue) {
+        setState(initialValue);
+      }
+    } else if (stored !== state) {
       setState(stored);
     }
 
     // Listen for sessionStorage changes from the same tab
     const handleStorageChange = () => {
       const stored = sessionStorage.getItem(key);
-      if (stored !== null && stored !== state) {
+      if (stored === null) {
+        if (state !== initialValue) {
+          setState(initialValue);
+        }
+        return;
+      }
+
+      if (stored !== state) {
         setState(stored);
       }
     };
@@ -38,7 +49,7 @@ export function useSessionStorageState(
     // Also poll for changes within the same tab (storage event doesn't fire within same tab)
     const interval = setInterval(() => {
       const stored = sessionStorage.getItem(key);
-      setState((prevState) => (stored !== null ? stored : prevState));
+      setState(stored !== null ? stored : initialValue);
     }, 100);
 
     return () => {
@@ -52,9 +63,13 @@ export function useSessionStorageState(
     (value: string) => {
       if (typeof window === 'undefined') return;
       setState(value);
-      sessionStorage.setItem(key, value);
+      if (value) {
+        sessionStorage.setItem(key, value);
+      } else {
+        sessionStorage.removeItem(key);
+      }
     },
-    [key]
+    [initialValue, key]
   );
 
   return [state, setValue];

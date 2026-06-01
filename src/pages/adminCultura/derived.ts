@@ -16,7 +16,7 @@ import {
   adminSections,
   activityTabBySection,
 } from './constants.js';
-import type { ActivityTab, AdminContextLink, AdminSection } from './types.js';
+import type { ActivityTab, AdminContextLink, AdminSection, UserPage } from './types.js';
 import {
   formatAdminDateTime,
   getActivityRoute,
@@ -155,6 +155,35 @@ export function getPhotoPageLinks(editingId: string | null): AdminContextLink[] 
   ];
 }
 
+export function getUserPageLinks(userPage: UserPage | null): AdminContextLink[] {
+  const links: AdminContextLink[] = [
+    {
+      label: userPage?.mode === 'create' ? 'Criar Utilizador' : 'Novo Utilizador',
+      href: '/infocultura/utilizadores/novo',
+    },
+    {
+      label: 'Utilizadores Registados',
+      href: '/infocultura/utilizadores',
+    },
+  ];
+
+  if (userPage?.mode === 'deactivate') {
+    links.push({
+      label: 'Desativar Conta',
+      href: `/infocultura/utilizadores/${userPage.userId}/desativar`,
+    });
+  }
+
+  if (userPage?.mode === 'activate') {
+    links.push({
+      label: 'Ativar Conta',
+      href: `/infocultura/utilizadores/${userPage.userId}/ativar`,
+    });
+  }
+
+  return links;
+}
+
 export function getEventbritePageLinks(): AdminContextLink[] {
   return [
     { label: 'Visão Geral', href: getEventbriteRoute('overview') },
@@ -172,13 +201,15 @@ export function buildSidebarContextNav(
   contentPageLinks: AdminContextLink[],
   photoPageLinks: AdminContextLink[],
   eventbritePageLinks: AdminContextLink[],
+  userPageLinks: AdminContextLink[],
   newsPageHref: string | null,
   bookPageHref: string | null,
   sessionPageHref: string | null,
   eventPageHref: string | null,
   contentPageHref: string | null,
   photoPageHref: string | null,
-  eventbritePageHref: string | null
+  eventbritePageHref: string | null,
+  userPageHref: string | null
 ): Partial<Record<AdminSection, { links: AdminContextLink[]; activeHref?: string | null }>> {
   return {
     noticias: {
@@ -208,6 +239,10 @@ export function buildSidebarContextNav(
     eventbrite: {
       links: eventbritePageLinks,
       activeHref: eventbritePageHref,
+    },
+    utilizadores: {
+      links: userPageLinks,
+      activeHref: userPageHref,
     },
   };
 }

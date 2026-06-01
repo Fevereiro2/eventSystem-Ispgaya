@@ -94,6 +94,11 @@ import {
   bulkDeleteAdminBooks,
   bulkDeleteAdminEvents,
   bulkDeleteAdminNews,
+  activateAdminBook,
+  activateAdminClub,
+  activateAdminEvent,
+  activateAdminNews,
+  activateAdminSession,
   assignUserToClub,
   bulkUpdateAdminEventStatus,
   bulkUpdateAdminNewsStatus,
@@ -106,6 +111,11 @@ import {
   createAdminNews,
   createAdminPhoto,
   createAdminSession,
+  deactivateAdminBook,
+  deactivateAdminClub,
+  deactivateAdminEvent,
+  deactivateAdminNews,
+  deactivateAdminSession,
   deleteAdminBook,
   deleteAdminCategory,
   deleteAdminClub,
@@ -183,6 +193,7 @@ import {
   getContentPageLinks,
   getNewsPageLinks,
   getPhotoPageLinks,
+  getUserPageLinks,
   getVisibleSectionGroups,
   getVisibleSections,
 } from './adminCultura/derived.js';
@@ -324,6 +335,11 @@ function AdminCultura() {
   const [isAssigningClubUser, setIsAssigningClubUser] = useState(false);
   const [isDeactivatingUser, setIsDeactivatingUser] = useState(false);
   const [isActivatingUser, setIsActivatingUser] = useState(false);
+  const [changingNewsStatusId, setChangingNewsStatusId] = useState<number | null>(null);
+  const [changingBookStatusId, setChangingBookStatusId] = useState<number | null>(null);
+  const [changingSessionStatusId, setChangingSessionStatusId] = useState<number | null>(null);
+  const [changingEventStatusId, setChangingEventStatusId] = useState<number | null>(null);
+  const [changingClubStatusId, setChangingClubStatusId] = useState<number | null>(null);
   const [deletingNewsId, setDeletingNewsId] = useState<number | null>(null);
   const [deletingBookId, setDeletingBookId] = useState<number | null>(null);
   const [deletingCategoryId, setDeletingCategoryId] = useState<number | null>(null);
@@ -589,6 +605,20 @@ function AdminCultura() {
   const contentPageHref = activeContentSubpage ? getContentRoute(activeContentSubpage) : null;
   const eventbritePageHref = activeEventbriteSubpage ? getEventbriteRoute(activeEventbriteSubpage) : null;
   const photoPageHref = activePhotoSubpage ? getPhotoRoute(activePhotoSubpage) : null;
+  const userPageHref =
+    userPage?.mode === 'create'
+      ? '/infocultura/utilizadores/novo'
+      : userPage?.mode === 'edit'
+        ? `/infocultura/utilizadores/${userPage.userId}/editar`
+        : userPage?.mode === 'profile'
+          ? `/infocultura/utilizadores/${userPage.userId}/perfil`
+          : userPage?.mode === 'deactivate'
+            ? `/infocultura/utilizadores/${userPage.userId}/desativar`
+            : userPage?.mode === 'activate'
+              ? `/infocultura/utilizadores/${userPage.userId}/ativar`
+              : userPage?.mode === 'list'
+                ? '/infocultura/utilizadores'
+                : null;
   const showNewsForm = activeNewsSubpage === 'form';
   const showNewsList = activeNewsSubpage === 'list';
   const showActivityForm = activeActivitySubpage === 'form';
@@ -605,6 +635,7 @@ function AdminCultura() {
   const contentPageLinks = getContentPageLinks(editingId);
   const photoPageLinks = getPhotoPageLinks(editingPhotoId);
   const eventbritePageLinks = getEventbritePageLinks();
+  const userPageLinks = getUserPageLinks(userPage);
   const sidebarContextNavBySection = buildSidebarContextNav(
     newsPageLinks,
     bookPageLinks,
@@ -613,13 +644,15 @@ function AdminCultura() {
     contentPageLinks,
     photoPageLinks,
     eventbritePageLinks,
+    userPageLinks,
     newsPageHref,
     bookPageHref,
     sessionPageHref,
     eventPageHref,
     contentPageHref,
     photoPageHref,
-    eventbritePageHref
+    eventbritePageHref,
+    userPageHref
   );
   const readNotificationIdSet = useMemo(
     () => new Set(readNotificationIds),
@@ -1605,6 +1638,70 @@ function AdminCultura() {
     }
   }
 
+  async function handleToggleNewsActive(id: number, shouldActivate: boolean) {
+    if (!token) return;
+    setChangingNewsStatusId(id);
+    setNewsError('');
+    try {
+      const updated = shouldActivate
+        ? await activateAdminNews(token, id)
+        : await deactivateAdminNews(token, id);
+      setNewsItems((prev) => prev.map((item) => (item.id === updated.id ? updated : item)));
+    } catch (error) {
+      setNewsError(error instanceof Error ? error.message : 'Não foi possível atualizar a notícia.');
+    } finally {
+      setChangingNewsStatusId(null);
+    }
+  }
+
+  async function handleToggleBookActive(id: number, shouldActivate: boolean) {
+    if (!token) return;
+    setChangingBookStatusId(id);
+    setActivityError('');
+    try {
+      const updated = shouldActivate
+        ? await activateAdminBook(token, id)
+        : await deactivateAdminBook(token, id);
+      setBooks((prev) => prev.map((item) => (item.id === updated.id ? updated : item)));
+    } catch (error) {
+      setActivityError(error instanceof Error ? error.message : 'Não foi possível atualizar o livro.');
+    } finally {
+      setChangingBookStatusId(null);
+    }
+  }
+
+  async function handleToggleSessionActive(id: number, shouldActivate: boolean) {
+    if (!token) return;
+    setChangingSessionStatusId(id);
+    setActivityError('');
+    try {
+      const updated = shouldActivate
+        ? await activateAdminSession(token, id)
+        : await deactivateAdminSession(token, id);
+      setSessions((prev) => prev.map((item) => (item.id === updated.id ? updated : item)));
+    } catch (error) {
+      setActivityError(error instanceof Error ? error.message : 'Não foi possível atualizar a sessão.');
+    } finally {
+      setChangingSessionStatusId(null);
+    }
+  }
+
+  async function handleToggleEventActive(id: number, shouldActivate: boolean) {
+    if (!token) return;
+    setChangingEventStatusId(id);
+    setActivityError('');
+    try {
+      const updated = shouldActivate
+        ? await activateAdminEvent(token, id)
+        : await deactivateAdminEvent(token, id);
+      setEvents((prev) => prev.map((item) => (item.id === updated.id ? updated : item)));
+    } catch (error) {
+      setActivityError(error instanceof Error ? error.message : 'Não foi possível atualizar o evento.');
+    } finally {
+      setChangingEventStatusId(null);
+    }
+  }
+
   async function handleSaveClub(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
@@ -1717,6 +1814,24 @@ function AdminCultura() {
       setClubFormError(message);
     } finally {
       setDeletingClubId(null);
+    }
+  }
+
+  async function handleToggleClubActive(id: number, shouldActivate: boolean) {
+    if (!token || !canManageUsers) return;
+
+    setChangingClubStatusId(id);
+    setClubFormError('');
+
+    try {
+      const updated = shouldActivate
+        ? await activateAdminClub(token, id)
+        : await deactivateAdminClub(token, id);
+      setClubs((prev) => prev.map((club) => (club.id === updated.id ? updated : club)));
+    } catch (error) {
+      setClubFormError(error instanceof Error ? error.message : 'Não foi possível atualizar o clube.');
+    } finally {
+      setChangingClubStatusId(null);
     }
   }
 
@@ -2850,6 +2965,8 @@ function AdminCultura() {
               setClubOrder={setClubOrder}
               filteredClubs={filteredClubs}
               isLoadingClubs={isLoadingClubs}
+              changingClubStatusId={changingClubStatusId}
+              handleToggleClubActive={handleToggleClubActive}
               deletingClubId={deletingClubId}
               handleEditClub={handleEditClub}
               handleDeleteClub={handleDeleteClub}
@@ -2905,6 +3022,8 @@ function AdminCultura() {
               isDeletingBulkNews={isDeletingBulkNews}
               handleBulkDeleteNews={handleBulkDeleteNews}
               deletingNewsId={deletingNewsId}
+              changingNewsStatusId={changingNewsStatusId}
+              handleToggleNewsActive={handleToggleNewsActive}
               handleDeleteNews={handleDeleteNews}
               handleEditNews={handleEditNews}
               newsTotal={newsTotal}
@@ -2971,6 +3090,8 @@ function AdminCultura() {
               handleEditBook={handleEditBook}
               deletingBookId={deletingBookId}
               handleDeleteBook={handleDeleteBook}
+              changingBookStatusId={changingBookStatusId}
+              handleToggleBookActive={handleToggleBookActive}
               isLoadingActivities={isLoadingActivities}
               activityTotal={activityTotal}
               activityPage={activityPage}
@@ -2985,6 +3106,8 @@ function AdminCultura() {
               handleEditSession={handleEditSession}
               deletingSessionId={deletingSessionId}
               handleDeleteSession={handleDeleteSession}
+              changingSessionStatusId={changingSessionStatusId}
+              handleToggleSessionActive={handleToggleSessionActive}
               sortedSessions={sortedSessions}
               handleSaveEvent={handleSaveEvent}
               editingEventId={editingEventId}
@@ -2999,6 +3122,8 @@ function AdminCultura() {
               handleEditEvent={handleEditEvent}
               deletingEventId={deletingEventId}
               handleDeleteEvent={handleDeleteEvent}
+              changingEventStatusId={changingEventStatusId}
+              handleToggleEventActive={handleToggleEventActive}
               syncingEventbriteId={syncingEventbriteId}
               handleSyncEventbrite={handleSyncEventbrite}
               loadingEventbriteOrdersId={loadingEventbriteOrdersId}
@@ -3078,6 +3203,8 @@ function AdminCultura() {
               handleEditBook={handleEditBook}
               deletingBookId={deletingBookId}
               handleDeleteBook={handleDeleteBook}
+              changingBookStatusId={changingBookStatusId}
+              handleToggleBookActive={handleToggleBookActive}
               isLoadingActivities={isLoadingActivities}
               activityTotal={activityTotal}
               activityPage={activityPage}
@@ -3092,6 +3219,8 @@ function AdminCultura() {
               handleEditSession={handleEditSession}
               deletingSessionId={deletingSessionId}
               handleDeleteSession={handleDeleteSession}
+              changingSessionStatusId={changingSessionStatusId}
+              handleToggleSessionActive={handleToggleSessionActive}
               sortedSessions={sortedSessions}
               handleSaveEvent={handleSaveEvent}
               editingEventId={editingEventId}
@@ -3106,6 +3235,8 @@ function AdminCultura() {
               handleEditEvent={handleEditEvent}
               deletingEventId={deletingEventId}
               handleDeleteEvent={handleDeleteEvent}
+              changingEventStatusId={changingEventStatusId}
+              handleToggleEventActive={handleToggleEventActive}
               syncingEventbriteId={syncingEventbriteId}
               handleSyncEventbrite={handleSyncEventbrite}
               loadingEventbriteOrdersId={loadingEventbriteOrdersId}
@@ -3185,6 +3316,8 @@ function AdminCultura() {
               handleEditBook={handleEditBook}
               deletingBookId={deletingBookId}
               handleDeleteBook={handleDeleteBook}
+              changingBookStatusId={changingBookStatusId}
+              handleToggleBookActive={handleToggleBookActive}
               isLoadingActivities={isLoadingActivities}
               activityTotal={activityTotal}
               activityPage={activityPage}
@@ -3199,6 +3332,8 @@ function AdminCultura() {
               handleEditSession={handleEditSession}
               deletingSessionId={deletingSessionId}
               handleDeleteSession={handleDeleteSession}
+              changingSessionStatusId={changingSessionStatusId}
+              handleToggleSessionActive={handleToggleSessionActive}
               sortedSessions={sortedSessions}
               handleSaveEvent={handleSaveEvent}
               editingEventId={editingEventId}
@@ -3213,6 +3348,8 @@ function AdminCultura() {
               handleEditEvent={handleEditEvent}
               deletingEventId={deletingEventId}
               handleDeleteEvent={handleDeleteEvent}
+              changingEventStatusId={changingEventStatusId}
+              handleToggleEventActive={handleToggleEventActive}
               syncingEventbriteId={syncingEventbriteId}
               handleSyncEventbrite={handleSyncEventbrite}
               loadingEventbriteOrdersId={loadingEventbriteOrdersId}
