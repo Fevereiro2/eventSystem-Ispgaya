@@ -2403,7 +2403,6 @@ function AdminCultura() {
     if (!token) return;
     const submitAction = getSubmitAction(event);
 
-<<<<<<< Updated upstream
     const venuePayload =
       eventForm.eventbrite_venue_name.trim() ||
       eventForm.eventbrite_venue_address_1.trim() ||
@@ -2437,13 +2436,12 @@ function AdminCultura() {
             },
           ]
         : null;
-=======
+
     // Auto-calculate event_date from start_date (extract date part from datetime-local)
     const calculatedEventDate = eventForm.start_date 
       ? eventForm.start_date.split('T')[0] 
       : '';
 
->>>>>>> Stashed changes
     const payload: EventPayload = {
       title: eventForm.title.trim(),
       description: eventForm.description.trim(),
