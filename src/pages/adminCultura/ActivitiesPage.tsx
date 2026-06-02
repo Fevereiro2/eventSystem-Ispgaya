@@ -927,24 +927,6 @@ function ActivitiesPage({
                     }
                   />
                 </div>
-
-                <div className={adminField}>
-                  <label className={adminLabel} htmlFor="session-date">
-                    Data
-                  </label>
-                  <input
-                    id="session-date"
-                    type="date"
-                    className={adminInput}
-                    value={sessionForm.session_date}
-                    onChange={(event) =>
-                      setSessionForm((prev) => ({
-                        ...prev,
-                        session_date: event.target.value,
-                      }))
-                    }
-                  />
-                </div>
               </div>
 
               <div className={adminFormGridSpaced}>
@@ -1287,21 +1269,6 @@ function ActivitiesPage({
                       </option>
                     ))}
                   </select>
-                </div>
-
-                <div className={adminField}>
-                  <label className={adminLabel} htmlFor="event-date">
-                    Data
-                  </label>
-                  <input
-                    id="event-date"
-                    type="date"
-                    className={adminInput}
-                    value={eventForm.event_date}
-                    onChange={(event) =>
-                      setEventForm((prev) => ({ ...prev, event_date: event.target.value }))
-                    }
-                  />
                 </div>
               </div>
 
