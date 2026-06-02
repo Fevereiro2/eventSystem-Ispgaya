@@ -266,7 +266,6 @@ import {
   sortClubsByOrder,
   sortUsers,
   sortUsersByOrder,
-  toDateInputValue,
   toDateTimeLocalValue
 } from './adminCultura/utils';
 
@@ -2229,7 +2228,7 @@ function AdminCultura() {
       name: item.name,
       title: item.title,
       description: item.description,
-      session_date: toDateInputValue(item.session_date),
+      session_date: '', // Will be auto-calculated from start_date
       start_date: toDateTimeLocalValue(item.start_date),
       end_date: toDateTimeLocalValue(item.end_date),
       available_at: toDateTimeLocalValue(item.created_at),
@@ -2254,11 +2253,16 @@ function AdminCultura() {
       ? (sessionForm.club_id ? Number(sessionForm.club_id) : null)
       : currentUser?.club_id ?? null;
 
+    // Auto-calculate session_date from start_date (extract date part from datetime-local)
+    const calculatedSessionDate = sessionForm.start_date 
+      ? sessionForm.start_date.split('T')[0] 
+      : '';
+
     const payload: SessionPayload = {
       name: sessionForm.name.trim(),
       title: sessionForm.title.trim(),
       description: sessionForm.description.trim(),
-      session_date: sessionForm.session_date,
+      session_date: calculatedSessionDate,
       start_date: sessionForm.start_date,
       end_date: sessionForm.end_date,
       created_at: sessionForm.available_at || null,
@@ -2350,7 +2354,7 @@ function AdminCultura() {
     setEventForm({
       title: item.title,
       description: item.description,
-      event_date: toDateInputValue(item.event_date),
+      event_date: '', // Will be auto-calculated from start_date
       start_date: toDateTimeLocalValue(item.start_date),
       end_date: toDateTimeLocalValue(item.end_date),
       publish_at: toDateTimeLocalValue(item.created_at),
@@ -2432,10 +2436,16 @@ function AdminCultura() {
             },
           ]
         : null;
+
+    // Auto-calculate event_date from start_date (extract date part from datetime-local)
+    const calculatedEventDate = eventForm.start_date 
+      ? eventForm.start_date.split('T')[0] 
+      : '';
+
     const payload: EventPayload = {
       title: eventForm.title.trim(),
       description: eventForm.description.trim(),
-      event_date: eventForm.event_date,
+      event_date: calculatedEventDate,
       start_date: eventForm.start_date,
       end_date: eventForm.end_date,
       created_at: eventForm.publish_at || null,
