@@ -661,7 +661,7 @@ def create_session_registration(
         activity_title=session.title,
         club_id=session.club_id,
         club_name=session.club.name if session.club_id and session.club else "Clube sem nome",
-        location=session.title,
+        location=session.location or session.title,
         start_date=session.start_date,
         registrations_enabled=bool(session.enable_registrations),
         registration_capacity=session.registration_capacity,

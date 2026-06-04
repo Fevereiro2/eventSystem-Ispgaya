@@ -65,7 +65,7 @@ def build_activity_calendar_payload(*, activity_type: str, activity_id: int) -> 
         activity = Session.objects.select_related("club").filter(id=activity_id).first()
         if not activity:
             return {}
-        location = activity.title
+        location = activity.location or activity.title
         return {
             "google_url": _build_google_calendar_url(
                 title=activity.title,

@@ -27,7 +27,7 @@ Objetivo:
 | `nstatus` | `id_nstatus` | `id_nstatus`, `name`, `description` | `news.id_nstatus -> nstatus.id_nstatus` | ORM managed |
 | `news` | `id_news` | `id_news`, `title`, `summary`, `image`, `is_active`, `id_nstatus`, `published_at`, `id_clubs`, `content`, `updated_at`, `created_at` | `id_nstatus -> nstatus.id_nstatus`; `id_clubs -> clubs.id_clubs` | ORM managed |
 | `books` | `id_books` | `id_books`, `title`, `author`, `publisher`, `publication_year`, `cover_image`, `summary`, `is_active`, `is_featured`, `id_club`, `created_at` | `id_club -> clubs.id_clubs` | ORM managed |
-| `sessions` | `id_sessions` | `id_sessions`, `name`, `title`, `description`, `session_date`, `start_date`, `end_date`, `is_active`, `id_club`, `updated_at`, `created_at` | `id_club -> clubs.id_clubs` | ORM managed |
+| `sessions` | `id_sessions` | `id_sessions`, `name`, `title`, `description`, `session_date`, `start_date`, `end_date`, `location`, `is_active`, `id_club`, `updated_at`, `created_at` | `id_club -> clubs.id_clubs` | ORM managed |
 | `category` | `id_category` | `id_category`, `name`, `description`, `updated_at`, `created_at` | many-to-many with `event` through `event_category` | ORM managed |
 | `event` | `id_event` | `id_event`, `title`, `description`, `event_date`, `start_date`, `end_date`, `image`, `is_active`, `is_external`, `status`, `city`, `location`, `user_id`, `updated_at`, `created_at` | `user_id -> users.id`; many-to-many with `category` and `registrations` | ORM managed |
 | `event_category` | `(id_event, id_category)` | `id_event`, `id_category` | `event.id_event -> event.id_event`; `category.id_category -> category.id_category` | ORM managed |

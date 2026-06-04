@@ -288,6 +288,7 @@ class Session(AuditMixin):
     session_date: date
     start_date: datetime
     end_date: datetime
+    location: str = ""
     is_active: bool = True
 
     club_id: Optional[int]

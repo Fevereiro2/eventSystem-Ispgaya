@@ -86,6 +86,7 @@ export const initialSessionForm: SessionFormState = {
   start_date: '',
   end_date: '',
   available_at: '',
+  location: '',
   enable_registrations: false,
   registration_capacity: '',
   club_id: ''

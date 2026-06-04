@@ -236,7 +236,7 @@ class PublicSessionCalendarView(APIView):
             description=session.description,
             start_date=session.start_date,
             end_date=session.end_date,
-            location=session.title,
+            location=session.location or session.title,
             filename=f"sessao-{session.id}.ics",
         )
 

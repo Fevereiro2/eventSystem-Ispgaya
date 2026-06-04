@@ -107,6 +107,17 @@ activateAdminSession()
 deactivateAdminClubMember()
 ```
 
+## 🧭 Organização e Paradigmas
+
+Consulta [docs/architecture.md](./docs/architecture.md) para a visão estruturada do projeto.
+
+Resumo curto:
+
+- o frontend está dividido por páginas, componentes, hooks, api e utils
+- o backend separa modelos, serializers, views e serviços
+- no backend, Django é MVT, mas a organização segue a lógica do MVC
+- a POO aparece nos modelos e na lógica encapsulada por classes e serviços
+
 ## �🛠️ Como Executar
 
 ### Backend

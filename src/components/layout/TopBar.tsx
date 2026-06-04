@@ -11,56 +11,77 @@ import {
   topBarRightLinks
 } from '../../styles/ui';
 import { useLocale, getLocaleText } from '../../i18n/locale.js';
+import { buildIspgayaUrl } from '../../i18n/urls.js';
 
-const leftLinks = [
-  {
-    label: 'Inforestudante',
-    href: 'https://inforestudante.ispgaya.pt',
-    target: '_blank',
-    rel: 'noindex nofollow'
-  },
-  {
-    label: 'Infordocente',
-    href: 'https://infordocente.ispgaya.pt',
-    target: '_blank',
-    rel: 'noindex nofollow'
-  },
-  {
-    label: 'Infocultura',
-    href: '/infocultura',
-    target: '_blank',
-    rel: 'noindex nofollow'
-  },
-  {
-    label: 'Email',
-    href: 'https://outlook.office.com',
-    target: '_blank',
-    rel: 'noindex nofollow'
-  },
-  {
-    label: 'Horarios',
-    href: 'https://horarios.ispgaya.pt/geral/',
-    target: '_blank',
-    rel: 'noindex nofollow'
-  }
-];
+type TopBarLink = {
+  pt: string;
+  en: string;
+  href: string;
+  target?: string;
+  rel?: string;
+};
 
-const rightLinks = [
-  {
-    label: 'Perguntas Frequentes',
-    href: 'https://ispgaya.pt/pt/perguntas-frequentes'
-  },
-  {
-    label: 'Candidatura Online',
-    href: 'https://inforestudante.ispgaya.pt/nonio/security/preRegisto.do?origem=CANDIDATURAS',
-    target: '_blank',
-    rel: 'noopener noreferrer'
-  },
-  {
-    label: 'Contactos',
-    href: 'https://ispgaya.pt/pt/instituicao/contactos'
-  }
-];
+function getLeftLinks(locale: 'pt' | 'en'): TopBarLink[] {
+  return [
+    {
+      pt: 'Inforestudante',
+      en: 'Student Portal',
+      href: 'https://inforestudante.ispgaya.pt',
+      target: '_blank',
+      rel: 'noindex nofollow'
+    },
+    {
+      pt: 'Infordocente',
+      en: 'Teacher Portal',
+      href: 'https://infordocente.ispgaya.pt',
+      target: '_blank',
+      rel: 'noindex nofollow'
+    },
+    {
+      pt: 'Infocultura',
+      en: 'InfoCultura',
+      href: buildIspgayaUrl(locale, '/infocultura'),
+      target: '_blank',
+      rel: 'noindex nofollow'
+    },
+    {
+      pt: 'Email',
+      en: 'Email',
+      href: 'https://outlook.office.com',
+      target: '_blank',
+      rel: 'noindex nofollow'
+    },
+    {
+      pt: 'Horários',
+      en: 'Timetables',
+      href: 'https://horarios.ispgaya.pt/geral/',
+      target: '_blank',
+      rel: 'noindex nofollow'
+    }
+  ];
+}
+
+function getRightLinks(locale: 'pt' | 'en'): TopBarLink[] {
+  return [
+    {
+      pt: 'Perguntas Frequentes',
+      en: 'Frequently Asked Questions',
+      href: buildIspgayaUrl(locale, '/perguntas-frequentes')
+    },
+    {
+      pt: 'Candidatura Online',
+      en: 'Online Application',
+      href: 'https://inforestudante.ispgaya.pt/nonio/security/preRegisto.do?origem=CANDIDATURAS',
+      target: '_blank',
+      rel: 'noopener noreferrer'
+    },
+    {
+      pt: 'Contactos',
+      en: 'Contacts',
+      href: buildIspgayaUrl(locale, '/instituicao/contactos')
+    }
+  ];
+}
 
 type TopBarProps = {
   transparent?: boolean;
@@ -68,6 +89,8 @@ type TopBarProps = {
 
 function TopBar({ transparent = false }: TopBarProps) {
   const { locale, setLocale } = useLocale();
+  const leftLinks = getLeftLinks(locale);
+  const rightLinks = getRightLinks(locale);
   const rootClassName = transparent
     ? 'hidden xl:block bg-transparent text-white'
     : topBar;
@@ -89,13 +112,13 @@ function TopBar({ transparent = false }: TopBarProps) {
         <div className={topBarGroup}>
           {leftLinks.map((item) => (
             <a
-              key={item.label}
+              key={item.pt}
               href={item.href}
               target={item.target}
               rel={item.rel}
               className={linkClassName}
             >
-              {item.label}
+              {getLocaleText(locale, item.pt, item.en)}
             </a>
           ))}
         </div>
@@ -104,13 +127,13 @@ function TopBar({ transparent = false }: TopBarProps) {
           <div className={topBarRightLinks}>
             {rightLinks.map((item) => (
               <a
-                key={item.label}
+                key={item.pt}
                 href={item.href}
                 target={item.target}
                 rel={item.rel}
                 className={linkClassName}
               >
-                {item.label}
+                {getLocaleText(locale, item.pt, item.en)}
               </a>
             ))}
           </div>

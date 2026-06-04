@@ -26,6 +26,7 @@ type GoogleMapsLocationFieldProps = {
   onLocationChange: (value: string) => void;
   suggestions?: string[];
   value: string;
+  citySuggestions?: string[];
 };
 
 function extractCityFromPlace(place: PlaceResultLike): string {
@@ -46,11 +47,14 @@ function GoogleMapsLocationField({
   onLocationChange,
   suggestions = [],
   value,
+  citySuggestions = [],
 }: GoogleMapsLocationFieldProps) {
   const inputRef = useRef<HTMLInputElement | null>(null);
   const autocompleteRef = useRef<AutocompleteLike | null>(null);
   const [mapsStatus, setMapsStatus] = useState<'idle' | 'ready' | 'error'>('idle');
   const datalistId = `${inputId}-suggestions`;
+  const [filteredCities, setFilteredCities] = useState<string[]>(citySuggestions);
+  const [selectedCity, setSelectedCity] = useState<string>('');
 
   useEffect(() => {
     if (!hasGoogleMapsApiKey()) {
@@ -101,8 +105,43 @@ function GoogleMapsLocationField({
     };
   }, [onCityChange, onLocationChange, value]);
 
+  // Update filtered cities when citySuggestions change
+  useEffect(() => {
+    setFilteredCities(citySuggestions);
+  }, [citySuggestions]);
+
   return (
     <div className="space-y-3">
+      {citySuggestions.length > 0 && (
+        <div>
+          <input
+            id={`${inputId}-city`}
+            className={adminInput}
+            list={`${inputId}-city-suggestions`}
+            value={selectedCity}
+            onChange={(event) => {
+              const nextCity = event.target.value;
+              setSelectedCity(nextCity);
+              onCityChange(nextCity);
+              // Filter cities as user types
+              if (nextCity) {
+                const filtered = citySuggestions.filter((c) =>
+                  c.toLowerCase().includes(nextCity.toLowerCase())
+                );
+                setFilteredCities(filtered);
+              } else {
+                setFilteredCities(citySuggestions);
+              }
+            }}
+            placeholder="Pesquisar cidade..."
+          />
+          <datalist id={`${inputId}-city-suggestions`}>
+            {filteredCities.map((suggestion) => (
+              <option key={suggestion} value={suggestion} />
+            ))}
+          </datalist>
+        </div>
+      )}
       <input
         ref={inputRef}
         id={inputId}
@@ -122,11 +161,7 @@ function GoogleMapsLocationField({
       {mapsStatus === 'ready' ? (
         <p className={blockText}>Autocomplete Google Maps ativo e dropdown com locais já usados.</p>
       ) : null}
-      {mapsStatus === 'error' ? (
-        <p className={blockText}>
-          O campo mostra os locais já usados. Define `VITE_GOOGLE_MAPS_API_KEY` para ativar também autocomplete Google Maps.
-        </p>
-      ) : null}
+
     </div>
   );
 }

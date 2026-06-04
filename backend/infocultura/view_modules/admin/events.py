@@ -68,8 +68,17 @@ class AdminEventListCreateView(AdminAuditMixin, generics.ListCreateAPIView):
 
         if category_id and category_id.isdigit():
             queryset = queryset.filter(categories__id=int(category_id))
+        is_active = (self.request.query_params.get('is_active') or '').strip().lower()
+        if is_active in {'true', 'false'}:
+            queryset = queryset.filter(is_active=is_active == 'true')
         if params.status:
             queryset = queryset.filter(status__iexact=params.status)
+        city = (self.request.query_params.get('city') or '').strip()
+        if city:
+            queryset = queryset.filter(city__icontains=city)
+        location = (self.request.query_params.get('location') or '').strip()
+        if location:
+            queryset = queryset.filter(location__icontains=location)
         if params.search:
             queryset = queryset.filter(
                 Q(title__icontains=params.search)

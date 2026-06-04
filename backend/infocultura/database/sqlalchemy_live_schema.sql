@@ -106,6 +106,7 @@ CREATE TABLE sessions (
 	session_date DATE NOT NULL, 
 	start_date DATETIME NOT NULL, 
 	end_date DATETIME NOT NULL, 
+	location VARCHAR(255) NOT NULL DEFAULT '', 
 	is_active BOOL NOT NULL DEFAULT 1, 
 	id_club INTEGER, 
 	updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP, 

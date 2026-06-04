@@ -39,6 +39,12 @@ class AdminBookListCreateView(AdminAuditMixin, generics.ListCreateAPIView):
             queryset = queryset.filter(club_id=allowed_club_id)
         elif params.club_id is not None:
             queryset = queryset.filter(club_id=params.club_id)
+        is_active = (self.request.query_params.get('is_active') or '').strip().lower()
+        if is_active in {'true', 'false'}:
+            queryset = queryset.filter(is_active=is_active == 'true')
+        featured = (self.request.query_params.get('featured') or '').strip().lower()
+        if featured in {'true', 'false'}:
+            queryset = queryset.filter(is_featured=featured == 'true')
         if params.search:
             queryset = queryset.filter(
                 Q(title__icontains=params.search)

@@ -56,6 +56,7 @@ export type SessionFormState = {
   start_date: string;
   end_date: string;
   available_at: string;
+  location: string;
   enable_registrations: boolean;
   registration_capacity: string;
   club_id: string;

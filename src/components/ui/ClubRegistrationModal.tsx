@@ -1,4 +1,5 @@
 import { FormEvent, useEffect, useState } from 'react';
+import { getLocaleText, useLocale } from '../../i18n/locale.js';
 import {
   adminBtnPrimary,
   adminBtnSecondary,
@@ -40,13 +41,25 @@ function ClubRegistrationModal({
   isOpen,
   isSubmitting = false,
   submitError = '',
-  entityLabel = 'clube',
-  kickerLabel = 'Inscricao',
-  helperText = 'Preenche os teus dados para enviar um pedido de inscricao ao clube.',
-  submitLabel = 'Enviar inscricao',
+  entityLabel = '',
+  kickerLabel = '',
+  helperText = '',
+  submitLabel = '',
   onClose,
   onSubmit
 }: ClubRegistrationModalProps) {
+  const { locale } = useLocale();
+  const resolvedEntityLabel = entityLabel || getLocaleText(locale, 'clube', 'club');
+  const resolvedKickerLabel = kickerLabel || getLocaleText(locale, 'Inscrição', 'Registration');
+  const resolvedHelperText =
+    helperText ||
+    getLocaleText(
+      locale,
+      'Preenche os teus dados para enviar um pedido de inscrição ao clube.',
+      'Fill in your details to send a registration request to the club.'
+    );
+  const resolvedSubmitLabel =
+    submitLabel || getLocaleText(locale, 'Enviar inscrição', 'Send registration');
   const [form, setForm] = useState<ClubRegistrationFormData>(initialFormState);
   const [localError, setLocalError] = useState('');
 
@@ -88,12 +101,12 @@ function ClubRegistrationModal({
     };
 
     if (!payload.name) {
-      setLocalError('O nome e obrigatorio.');
+      setLocalError(getLocaleText(locale, 'O nome é obrigatório.', 'Name is required.'));
       return;
     }
 
     if (!payload.email) {
-      setLocalError('O email e obrigatorio.');
+      setLocalError(getLocaleText(locale, 'O email é obrigatório.', 'Email is required.'));
       return;
     }
 
@@ -120,13 +133,13 @@ function ClubRegistrationModal({
         <div className="flex items-start justify-between gap-4">
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[#dd8609]">
-              {kickerLabel}
+              {resolvedKickerLabel}
             </p>
             <h2 id="club-registration-title" className="mt-2 text-2xl font-semibold text-slate-900">
-              Inscrever em {clubName}
+              {getLocaleText(locale, 'Inscrever em', 'Register for')} {clubName}
             </h2>
             <p className="mt-2 text-sm leading-6 text-slate-600">
-              {helperText.replace(/clube/gi, entityLabel)}
+              {resolvedHelperText.replace(/clube/gi, resolvedEntityLabel)}
             </p>
           </div>
 
@@ -136,7 +149,7 @@ function ClubRegistrationModal({
             onClick={onClose}
             disabled={isSubmitting}
           >
-            Fechar
+            {getLocaleText(locale, 'Fechar', 'Close')}
           </button>
         </div>
 
@@ -144,7 +157,7 @@ function ClubRegistrationModal({
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             <div className="space-y-1">
               <label className={adminLabel} htmlFor="club-registration-name">
-                Nome
+                {getLocaleText(locale, 'Nome', 'Name')}
               </label>
               <input
                 id="club-registration-name"
@@ -156,7 +169,7 @@ function ClubRegistrationModal({
 
             <div className="space-y-1">
               <label className={adminLabel} htmlFor="club-registration-email">
-                Email
+                {getLocaleText(locale, 'Email', 'Email')}
               </label>
               <input
                 id="club-registration-email"
@@ -169,9 +182,9 @@ function ClubRegistrationModal({
           </div>
 
           <div className="space-y-1">
-            <label className={adminLabel} htmlFor="club-registration-phone">
-              Telefone
-            </label>
+              <label className={adminLabel} htmlFor="club-registration-phone">
+              {getLocaleText(locale, 'Telefone', 'Phone')}
+              </label>
             <input
               id="club-registration-phone"
               className={adminInput}
@@ -181,9 +194,9 @@ function ClubRegistrationModal({
           </div>
 
           <div className="space-y-1">
-            <label className={adminLabel} htmlFor="club-registration-message">
-              Mensagem
-            </label>
+              <label className={adminLabel} htmlFor="club-registration-message">
+              {getLocaleText(locale, 'Mensagem', 'Message')}
+              </label>
             <textarea
               id="club-registration-message"
               rows={4}
@@ -198,7 +211,7 @@ function ClubRegistrationModal({
 
           <div className="flex flex-wrap gap-2">
             <button type="submit" className={adminBtnPrimary} disabled={isSubmitting}>
-              {isSubmitting ? 'A enviar...' : submitLabel}
+              {isSubmitting ? getLocaleText(locale, 'A enviar...', 'Sending...') : resolvedSubmitLabel}
             </button>
             <button
               type="button"
@@ -206,7 +219,7 @@ function ClubRegistrationModal({
               onClick={onClose}
               disabled={isSubmitting}
             >
-              Cancelar
+              {getLocaleText(locale, 'Cancelar', 'Cancel')}
             </button>
           </div>
         </form>

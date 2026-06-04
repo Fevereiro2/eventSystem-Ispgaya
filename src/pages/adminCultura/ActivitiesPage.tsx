@@ -210,6 +210,16 @@ export type ActivitiesPageProps = {
   setActivityCategoryFilter: Dispatch<SetStateAction<string>>;
   activityStatusFilter: string;
   setActivityStatusFilter: Dispatch<SetStateAction<string>>;
+  activityBookFeaturedFilter: string;
+  setActivityBookFeaturedFilter: Dispatch<SetStateAction<string>>;
+  activitySessionLocationFilter: string;
+  setActivitySessionLocationFilter: Dispatch<SetStateAction<string>>;
+  activitySessionRegistrationsFilter: string;
+  setActivitySessionRegistrationsFilter: Dispatch<SetStateAction<string>>;
+  activityEventCityFilter: string;
+  setActivityEventCityFilter: Dispatch<SetStateAction<string>>;
+  activityEventLocationFilter: string;
+  setActivityEventLocationFilter: Dispatch<SetStateAction<string>>;
   activityError: string;
   handleApplyActivitySearch: (event: FormEvent<HTMLFormElement>) => void;
   activitySearchInput: string;
@@ -325,6 +335,16 @@ function ActivitiesPage({
   setActivityCategoryFilter,
   activityStatusFilter,
   setActivityStatusFilter,
+  activityBookFeaturedFilter,
+  setActivityBookFeaturedFilter,
+  activitySessionLocationFilter,
+  setActivitySessionLocationFilter,
+  activitySessionRegistrationsFilter,
+  setActivitySessionRegistrationsFilter,
+  activityEventCityFilter,
+  setActivityEventCityFilter,
+  activityEventLocationFilter,
+  setActivityEventLocationFilter,
   activityError,
   handleApplyActivitySearch,
   activitySearchInput,
@@ -662,6 +682,18 @@ function ActivitiesPage({
     [sortedEvents]
   );
 
+  const existingSessionLocations = useMemo(
+    () =>
+      Array.from(
+        new Set(
+          sortedSessions
+            .map((item) => item.location.trim())
+            .filter((location) => location.length > 0)
+        )
+      ).sort((left, right) => left.localeCompare(right, 'pt-PT')),
+    [sortedSessions]
+  );
+
   return (
     <div className="space-y-6">
       <AdminPageHero
@@ -737,8 +769,122 @@ function ActivitiesPage({
                         {getWorkflowStatusLabel(status)}
                       </option>
                     ))}
+                    </select>
+                  </div>
+                ) : null}
+              {activityTab === 'books' ? (
+                <div className={adminField}>
+                  <label className={adminLabel} htmlFor="activity-book-featured-filter">
+                    Destaque
+                  </label>
+                  <select
+                    id="activity-book-featured-filter"
+                    className={adminInput}
+                    value={activityBookFeaturedFilter}
+                    onChange={(event) => setActivityBookFeaturedFilter(event.target.value)}
+                  >
+                    <option value="all">Todos os livros</option>
+                    <option value="featured">Apenas em destaque</option>
+                    <option value="regular">Sem destaque</option>
                   </select>
                 </div>
+              ) : null}
+              {activityTab === 'sessions' ? (
+                <>
+                  <div className={adminField}>
+                    <label className={adminLabel} htmlFor="activity-session-registrations-filter">
+                      Inscricoes
+                    </label>
+                    <select
+                      id="activity-session-registrations-filter"
+                      className={adminInput}
+                      value={activitySessionRegistrationsFilter}
+                      onChange={(event) =>
+                        setActivitySessionRegistrationsFilter(event.target.value)
+                      }
+                    >
+                      <option value="all">Todas</option>
+                      <option value="open">Abertas</option>
+                      <option value="closed">Fechadas</option>
+                    </select>
+                  </div>
+                  <div className={adminField}>
+                    <label className={adminLabel} htmlFor="activity-session-location-filter">
+                      Local
+                    </label>
+                    <input
+                      id="activity-session-location-filter"
+                      className={adminInput}
+                      list={
+                        existingSessionLocations.length > 0
+                          ? 'activity-session-location-suggestions'
+                          : undefined
+                      }
+                      value={activitySessionLocationFilter}
+                      onChange={(event) => setActivitySessionLocationFilter(event.target.value)}
+                      placeholder="Rua, sala ou local"
+                    />
+                    {existingSessionLocations.length > 0 ? (
+                      <datalist id="activity-session-location-suggestions">
+                        {existingSessionLocations.map((location) => (
+                          <option key={location} value={location} />
+                        ))}
+                      </datalist>
+                    ) : null}
+                  </div>
+                </>
+              ) : null}
+              {activityTab === 'events' ? (
+                <>
+                  <div className={adminField}>
+                    <label className={adminLabel} htmlFor="activity-event-city-filter">
+                      Cidade
+                    </label>
+                    <input
+                      id="activity-event-city-filter"
+                      className={adminInput}
+                      list={
+                        existingEventCities.length > 0
+                          ? 'activity-event-city-suggestions'
+                          : undefined
+                      }
+                      value={activityEventCityFilter}
+                      onChange={(event) => setActivityEventCityFilter(event.target.value)}
+                      placeholder="Cidade ou concelho"
+                    />
+                    {existingEventCities.length > 0 ? (
+                      <datalist id="activity-event-city-suggestions">
+                        {existingEventCities.map((city) => (
+                          <option key={city} value={city} />
+                        ))}
+                      </datalist>
+                    ) : null}
+                  </div>
+                  <div className={adminField}>
+                    <label className={adminLabel} htmlFor="activity-event-location-filter">
+                      Local
+                    </label>
+                    <input
+                      id="activity-event-location-filter"
+                      className={adminInput}
+                      list={
+                        existingEventLocations.length > 0
+                          ? 'activity-event-location-suggestions'
+                          : undefined
+                      }
+                      value={activityEventLocationFilter}
+                      onChange={(event) => setActivityEventLocationFilter(event.target.value)}
+                      placeholder="Rua, sala ou local"
+                    />
+                    {existingEventLocations.length > 0 ? (
+                      <datalist id="activity-event-location-suggestions">
+                        {existingEventLocations.map((location) => (
+                          <option key={location} value={location} />
+                        ))}
+                      </datalist>
+                    ) : null}
+                  </div>
+                </>
               ) : null}
             </div>
           </div>
@@ -1364,6 +1510,22 @@ function ActivitiesPage({
 	                  </p>
 	                </div>
 
+                <div className={adminField}>
+                  <label className={adminLabel} htmlFor="session-location">
+                    Local
+                  </label>
+                  <GoogleMapsLocationField
+                    inputId="session-location"
+                    suggestions={existingSessionLocations}
+                    citySuggestions={existingEventCities}
+                    value={sessionForm.location}
+                    onLocationChange={(nextLocation) =>
+                      setSessionForm((prev) => ({ ...prev, location: nextLocation }))
+                    }
+                    onCityChange={() => undefined}
+                  />
+                </div>
+
 	                <div className={adminField}>
 	                  <label className={adminLabel} htmlFor="session-registrations-enabled">
                     Inscricoes
@@ -1501,6 +1663,7 @@ function ActivitiesPage({
                   </div>
                   <p className={adminListDesc}>{item.description}</p>
                   <p className={adminListMeta}>
+                    {item.location ? `Local ${item.location} · ` : ''}
                     Inscricoes {item.enable_registrations ? 'abertas' : 'fechadas'} ·
                     Confirmadas {item.confirmed_registrations} · Espera {item.waitlist_registrations}
                     {item.registration_capacity !== null && item.registration_capacity !== undefined
@@ -1892,6 +2055,11 @@ function ActivitiesPage({
                   <GoogleMapsLocationField
                     inputId="event-location"
                     suggestions={existingEventLocations}
+                    citySuggestions={
+                      eventForm.country_code === PORTUGAL_COUNTRY_CODE
+                        ? allPortugalMunicipalities
+                        : existingEventCities
+                    }
                     value={eventForm.location}
                     onLocationChange={(nextLocation) =>
                       setEventForm((prev) => ({ ...prev, location: nextLocation }))

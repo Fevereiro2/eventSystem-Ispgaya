@@ -35,6 +35,17 @@ class AdminSessionListCreateView(AdminAuditMixin, generics.ListCreateAPIView):
             queryset = queryset.filter(club_id=allowed_club_id)
         elif params.club_id is not None:
             queryset = queryset.filter(club_id=params.club_id)
+        is_active = (self.request.query_params.get('is_active') or '').strip().lower()
+        if is_active in {'true', 'false'}:
+            queryset = queryset.filter(is_active=is_active == 'true')
+        registrations = (self.request.query_params.get('registrations') or '').strip().lower()
+        if registrations == 'open':
+            queryset = queryset.filter(enable_registrations=True)
+        elif registrations == 'closed':
+            queryset = queryset.filter(enable_registrations=False)
+        location = (self.request.query_params.get('location') or '').strip()
+        if location:
+            queryset = queryset.filter(location__icontains=location)
         if params.search:
             queryset = queryset.filter(
                 Q(name__icontains=params.search)

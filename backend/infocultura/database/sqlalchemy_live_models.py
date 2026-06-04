@@ -273,6 +273,7 @@ class Session(Base, AuditMixin, ReprMixin):
     session_date: Mapped[date] = mapped_column(Date, nullable=False)
     start_date: Mapped[datetime] = mapped_column(DateTime, nullable=False)
     end_date: Mapped[datetime] = mapped_column(DateTime, nullable=False)
+    location: Mapped[str] = mapped_column(String(255), nullable=False, server_default=text("''"))
     is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default=text("1"))
     id_club: Mapped[Optional[int]] = mapped_column(
         Integer,

@@ -128,6 +128,7 @@ export type InfoCulturaSession = {
   session_date: string;
   start_date: string;
   end_date: string;
+  location: string;
   enable_registrations: boolean;
   registration_capacity?: number | null;
   created_at: string | null;
@@ -498,6 +499,7 @@ export type SessionPayload = {
   session_date: string;
   start_date: string;
   end_date: string;
+  location: string;
   created_at?: string | null;
   enable_registrations?: boolean;
   registration_capacity?: number | null;

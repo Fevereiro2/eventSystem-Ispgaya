@@ -7,6 +7,18 @@ Backend em **Python Django + DRF** preparado para a base de dados MySQL que já 
 Também inclui tabela Django para conteúdos:
 - `infocultura_culturalcontent`
 
+## Estrutura e Paradigmas
+
+O backend está organizado por responsabilidade:
+
+- `models.py` representa o domínio e a persistência
+- `serializers.py` valida e normaliza os dados de entrada/saída
+- `view_modules/` concentra a camada HTTP por área funcional
+- `service_modules/` concentra regras de negócio e integrações
+- `database/` mantém a camada de schema e suporte a migrações
+
+O Django é tecnicamente **MVT**, mas a estrutura foi montada para refletir a separação típica de **MVC** e aplicar **POO** nos modelos e serviços. Isto melhora manutenção, testes e reutilização.
+
 ## 1) Setup rápido
 
 ```bash

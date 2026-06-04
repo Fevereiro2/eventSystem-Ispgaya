@@ -27,10 +27,7 @@ import {
 import {
   adminBtnPrimary,
   adminBtnSecondary,
-  blockText,
-  blockTitle,
   container,
-  contentCard,
   contentEmpty,
   contentSection,
   mainContent
@@ -44,18 +41,39 @@ type CulturalEntryDetailProps = {
   kind: EntryKind;
 };
 
-function formatDate(value?: string | null): string {
-  if (!value) return 'Sem data';
+function formatDate(value?: string | null, locale: 'pt' | 'en' = 'pt'): string {
+  if (!value) return getLocaleText(locale, 'Sem data', 'No date');
 
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) {
     return value;
   }
 
-  return new Intl.DateTimeFormat('pt-PT', {
+  return new Intl.DateTimeFormat(locale === 'en' ? 'en-GB' : 'pt-PT', {
     dateStyle: 'medium',
     timeStyle: value.includes('T') ? 'short' : undefined
   }).format(date);
+}
+
+function formatDateRange(start?: string | null, end?: string | null, locale: 'pt' | 'en' = 'pt'): string {
+  if (!start && !end) return getLocaleText(locale, 'Sem data', 'No date');
+  if (!start) return formatDate(end, locale);
+  if (!end) return formatDate(start, locale);
+
+  const startDate = new Date(start);
+  const endDate = new Date(end);
+  if (Number.isNaN(startDate.getTime()) || Number.isNaN(endDate.getTime())) {
+    return `${formatDate(start, locale)} - ${formatDate(end, locale)}`;
+  }
+
+  if (startDate.toDateString() === endDate.toDateString()) {
+    const dayLabel = new Intl.DateTimeFormat(locale === 'en' ? 'en-GB' : 'pt-PT', { dateStyle: 'medium' }).format(startDate);
+    const startTime = new Intl.DateTimeFormat(locale === 'en' ? 'en-GB' : 'pt-PT', { timeStyle: 'short' }).format(startDate);
+    const endTime = new Intl.DateTimeFormat(locale === 'en' ? 'en-GB' : 'pt-PT', { timeStyle: 'short' }).format(endDate);
+    return `${dayLabel} · ${startTime} - ${endTime}`;
+  }
+
+  return `${formatDate(start, locale)} - ${formatDate(end, locale)}`;
 }
 
 function downloadBlob(blob: Blob, filename: string) {
@@ -69,10 +87,12 @@ function downloadBlob(blob: Blob, filename: string) {
   window.URL.revokeObjectURL(url);
 }
 
-function estimateReadingTime(text: string): string {
+function estimateReadingTime(text: string, locale: 'pt' | 'en' = 'pt'): string {
   const wordCount = text.trim().split(/\s+/).filter(Boolean).length;
   const minutes = Math.max(1, Math.ceil(wordCount / 220));
-  return `${minutes} minuto${minutes === 1 ? '' : 's'} de leitura`;
+  return locale === 'en'
+    ? `${minutes} minute${minutes === 1 ? '' : 's'} of reading`
+    : `${minutes} minuto${minutes === 1 ? '' : 's'} de leitura`;
 }
 
 function CulturalEntryDetail({ kind }: CulturalEntryDetailProps) {
@@ -139,7 +159,7 @@ function CulturalEntryDetail({ kind }: CulturalEntryDetailProps) {
     return () => {
       active = false;
     };
-  }, [itemId, kind]);
+  }, [itemId, kind, locale]);
 
   useEffect(() => {
     if (kind !== 'event' || !entry || !('id' in entry)) {
@@ -228,9 +248,7 @@ function CulturalEntryDetail({ kind }: CulturalEntryDetailProps) {
     };
   }, [entry, kind]);
 
-  const title = entry?.title || 'Detalhe';
-  const clubId = entry && 'club_id' in entry ? entry.club_id : undefined;
-  const clubName = entry && 'club_name' in entry ? entry.club_name : undefined;
+  const title = entry?.title || getLocaleText(locale, 'Detalhe', 'Detail');
   const image: string =
     entry && 'image' in entry
       ? String(entry.image || '')
@@ -315,10 +333,10 @@ function CulturalEntryDetail({ kind }: CulturalEntryDetailProps) {
   const eventEntry = kind === 'event' && entry ? (entry as InfoCulturaEvent) : null;
   const sessionEntry = kind === 'session' && entry ? (entry as InfoCulturaSession) : null;
   const newsEntry = kind === 'news' && entry ? (entry as InfoCulturaNews) : null;
-  const eventReadingTime = eventEntry ? estimateReadingTime(eventEntry.description || '') : '';
-  const sessionReadingTime = sessionEntry ? estimateReadingTime(sessionEntry.description || '') : '';
+  const eventReadingTime = eventEntry ? estimateReadingTime(eventEntry.description || '', locale) : '';
+  const sessionReadingTime = sessionEntry ? estimateReadingTime(sessionEntry.description || '', locale) : '';
   const newsReadingTime = newsEntry
-    ? estimateReadingTime(`${newsEntry.summary || ''} ${newsEntry.content || ''}`)
+    ? estimateReadingTime(`${newsEntry.summary || ''} ${newsEntry.content || ''}`, locale)
     : '';
   const currentUrl =
     typeof window !== 'undefined'
@@ -387,7 +405,7 @@ function CulturalEntryDetail({ kind }: CulturalEntryDetailProps) {
                             d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
                           />
                         </svg>
-                        <span className="ml-2 capitalize">{formatDate(eventEntry.start_date)}</span>
+                        <span className="ml-2 capitalize">{formatDate(eventEntry.start_date, locale)}</span>
                       </div>
                       <div className="flex items-center">
                         <svg
@@ -490,12 +508,12 @@ function CulturalEntryDetail({ kind }: CulturalEntryDetailProps) {
                     <div className="flex flex-wrap gap-3">
                       {calendarLinks?.google ? (
                         <a href={calendarLinks.google} target="_blank" rel="noreferrer" className={adminBtnSecondary}>
-                          Google Calendar
+                          {getLocaleText(locale, 'Google Calendar', 'Google Calendar')}
                         </a>
                       ) : null}
                       {calendarLinks?.outlook ? (
                         <a href={calendarLinks.outlook} target="_blank" rel="noreferrer" className={adminBtnSecondary}>
-                          Outlook
+                          {getLocaleText(locale, 'Outlook', 'Outlook')}
                         </a>
                       ) : null}
                       <button
@@ -567,7 +585,7 @@ function CulturalEntryDetail({ kind }: CulturalEntryDetailProps) {
                               </Link>
                             </h4>
                             <time className="mt-2 inline-block text-sm font-medium capitalize text-gray-500" dateTime={item.start_date || item.event_date}>
-                              {formatDate(item.start_date || item.event_date)}
+                              {formatDate(item.start_date || item.event_date, locale)}
                             </time>
                           </div>
                         ))}
@@ -618,7 +636,7 @@ function CulturalEntryDetail({ kind }: CulturalEntryDetailProps) {
                             d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
                           />
                         </svg>
-                        <span className="ml-2 capitalize">{formatDate(sessionEntry.start_date)}</span>
+                        <span className="ml-2">{formatDateRange(sessionEntry.start_date, sessionEntry.end_date, locale)}</span>
                       </div>
                       <div className="flex items-center">
                         <svg
@@ -654,6 +672,17 @@ function CulturalEntryDetail({ kind }: CulturalEntryDetailProps) {
                       {sessionEntry.name}
                     </span>
                   </div>
+
+                  {sessionEntry.location ? (
+                    <section className="mt-8 rounded-2xl border border-slate-200 bg-white shadow-sm">
+                      <div className="px-6 py-4">
+                        <p className="text-sm font-semibold uppercase tracking-tight text-slate-500">
+                          {getLocaleText(locale, 'Localização', 'Location')}
+                        </p>
+                        <h2 className="mt-1 text-xl font-semibold text-slate-900">{sessionEntry.location}</h2>
+                      </div>
+                    </section>
+                  ) : null}
 
                   <div className="mt-6 flex flex-wrap items-start justify-between gap-4 lg:flex-nowrap">
                     <div>
@@ -741,6 +770,11 @@ function CulturalEntryDetail({ kind }: CulturalEntryDetailProps) {
                       <p className="mt-2 text-sm text-slate-600">
                         {getLocaleText(locale, 'Estado das inscrições', 'Registration status')}: {registrationState === 'open' ? getLocaleText(locale, 'Abertas', 'Open') : registrationState === 'waitlist' ? getLocaleText(locale, 'Lista de espera', 'Waiting list') : getLocaleText(locale, 'Encerradas', 'Closed')}
                       </p>
+                      {sessionEntry.location ? (
+                        <p className="mt-2 text-sm text-slate-600">
+                          {getLocaleText(locale, 'Local', 'Location')}: {sessionEntry.location}
+                        </p>
+                      ) : null}
                     </div>
                   ) : null}
 
@@ -793,7 +827,7 @@ function CulturalEntryDetail({ kind }: CulturalEntryDetailProps) {
                             d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
                           />
                         </svg>
-                        <span className="ml-2 capitalize">{formatDate(newsEntry.published_at || newsEntry.created_at)}</span>
+                        <span className="ml-2 capitalize">{formatDate(newsEntry.published_at || newsEntry.created_at, locale)}</span>
                       </div>
                       <div className="flex items-center">
                         <svg
@@ -844,7 +878,7 @@ function CulturalEntryDetail({ kind }: CulturalEntryDetailProps) {
                   <div className="mt-6 flex flex-wrap items-start justify-between gap-4 lg:flex-nowrap">
                     <div>
                       <p className="text-sm font-semibold uppercase tracking-tight text-gray-500">
-                        Partilha
+                        {getLocaleText(locale, 'Partilha', 'Share')}
                       </p>
                       <div className="mt-3 flex items-end gap-4">
                         <a
@@ -902,7 +936,7 @@ function CulturalEntryDetail({ kind }: CulturalEntryDetailProps) {
                               </Link>
                             </h4>
                             <time className="mt-2 inline-block text-sm font-medium capitalize text-gray-500" dateTime={item.published_at || item.created_at}>
-                              {formatDate(item.published_at || item.created_at)}
+                              {formatDate(item.published_at || item.created_at, locale)}
                             </time>
                           </div>
                         ))}
@@ -921,14 +955,18 @@ function CulturalEntryDetail({ kind }: CulturalEntryDetailProps) {
       {(kind === 'event' || kind === 'session') && entry ? (
         <ClubRegistrationModal
           clubName={title}
-          entityLabel={kind === 'event' ? 'evento' : 'sessao'}
-          kickerLabel={kind === 'event' ? 'Evento' : 'Sessao'}
+          entityLabel={getLocaleText(locale, kind === 'event' ? 'evento' : 'sessao', kind === 'event' ? 'event' : 'session')}
+          kickerLabel={getLocaleText(locale, kind === 'event' ? 'Evento' : 'Sessão', kind === 'event' ? 'Event' : 'Session')}
           helperText={
             kind === 'event'
-              ? 'Preenche os teus dados para enviar a inscricao para este evento.'
-              : 'Preenche os teus dados para enviar a inscricao para esta sessao.'
+              ? getLocaleText(locale, 'Preenche os teus dados para enviar a inscrição para este evento.', 'Fill in your details to send your registration for this event.')
+              : getLocaleText(locale, 'Preenche os teus dados para enviar a inscrição para esta sessão.', 'Fill in your details to send your registration for this session.')
           }
-          submitLabel={registrationState === 'waitlist' ? 'Entrar em espera' : 'Enviar inscricao'}
+          submitLabel={
+            registrationState === 'waitlist'
+              ? getLocaleText(locale, 'Entrar em espera', 'Join waitlist')
+              : getLocaleText(locale, 'Enviar inscrição', 'Send registration')
+          }
           isOpen={isRegistrationModalOpen}
           isSubmitting={isSubmittingRegistration}
           submitError={registrationError}

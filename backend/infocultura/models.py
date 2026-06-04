@@ -208,6 +208,7 @@ class Session(models.Model):
     session_date = models.DateField()
     start_date = models.DateTimeField(db_column=db_constants.COL_START_DATE)
     end_date = models.DateTimeField(db_column=db_constants.COL_END_DATE)
+    location = models.CharField(max_length=255, blank=True, default='')
     is_active = models.BooleanField(default=True)
     status = models.CharField(max_length=16, choices=STATUS_CHOICES, default='active')
     enable_registrations = models.BooleanField(default=False)

@@ -21,6 +21,11 @@ type UseAdminActivitiesOptions = {
   activityClubFilter: string;
   activityCategoryFilter: string;
   activityStatusFilter: string;
+  activityBookFeaturedFilter: string;
+  activitySessionLocationFilter: string;
+  activitySessionRegistrationsFilter: string;
+  activityEventCityFilter: string;
+  activityEventLocationFilter: string;
   activitySearch: string;
   activityOrder: string;
   activityDateFrom: string;
@@ -48,6 +53,11 @@ export function useAdminActivities({
   activityClubFilter,
   activityCategoryFilter,
   activityStatusFilter,
+  activityBookFeaturedFilter,
+  activitySessionLocationFilter,
+  activitySessionRegistrationsFilter,
+  activityEventCityFilter,
+  activityEventLocationFilter,
   activitySearch,
   activityOrder,
   activityDateFrom,
@@ -85,12 +95,23 @@ export function useAdminActivities({
     const categoryId =
       activityCategoryFilter !== 'all' ? Number(activityCategoryFilter) : undefined;
     const status = activityStatusFilter && activityStatusFilter !== 'all' ? activityStatusFilter : undefined;
+    const bookFeatured =
+      activityBookFeaturedFilter === 'featured'
+        ? true
+        : activityBookFeaturedFilter === 'regular'
+          ? false
+          : undefined;
+    const sessionRegistrations =
+      activitySessionRegistrationsFilter !== 'all'
+        ? (activitySessionRegistrationsFilter as 'open' | 'closed')
+        : undefined;
 
     const effectiveTab = activeSection === 'eventbrite' ? 'events' : activityTab;
     const activityRequest =
       effectiveTab === 'books'
         ? fetchAdminBooks(token, {
             clubId,
+            featured: bookFeatured,
             search: activitySearch,
             ordering: activityOrder,
             dateFrom: activityDateFrom,
@@ -101,6 +122,8 @@ export function useAdminActivities({
         : effectiveTab === 'sessions'
           ? fetchAdminSessions(token, {
               clubId,
+              registrations: sessionRegistrations,
+              location: activitySessionLocationFilter,
               search: activitySearch,
               ordering: activityOrder,
               dateFrom: activityDateFrom,
@@ -112,6 +135,8 @@ export function useAdminActivities({
               clubId,
               categoryId,
               status,
+              city: activityEventCityFilter,
+              location: activityEventLocationFilter,
               search: activitySearch,
               ordering: activityOrder,
               dateFrom: activityDateFrom,
@@ -158,6 +183,11 @@ export function useAdminActivities({
     activityClubFilter,
     activityCategoryFilter,
     activityStatusFilter,
+    activityBookFeaturedFilter,
+    activitySessionLocationFilter,
+    activitySessionRegistrationsFilter,
+    activityEventCityFilter,
+    activityEventLocationFilter,
     activitySearch,
     activityOrder,
     activityDateFrom,

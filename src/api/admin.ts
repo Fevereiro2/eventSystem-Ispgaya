@@ -767,6 +767,8 @@ export async function fetchAdminBooks(
   token: string,
   filters?: {
     clubId?: number;
+    isActive?: boolean;
+    featured?: boolean;
     search?: string;
     ordering?: string;
     dateFrom?: string;
@@ -779,6 +781,12 @@ export async function fetchAdminBooks(
   const search = new URLSearchParams();
   if (typeof filters?.clubId === 'number') {
     search.set('club_id', String(filters.clubId));
+  }
+  if (typeof filters?.isActive === 'boolean') {
+    search.set('is_active', filters.isActive ? 'true' : 'false');
+  }
+  if (typeof filters?.featured === 'boolean') {
+    search.set('featured', filters.featured ? 'true' : 'false');
   }
   if (filters?.search?.trim()) {
     search.set('search', filters.search.trim());
@@ -895,6 +903,9 @@ export async function fetchAdminSessions(
   token: string,
   filters?: {
     clubId?: number;
+    isActive?: boolean;
+    registrations?: 'all' | 'open' | 'closed';
+    location?: string;
     search?: string;
     ordering?: string;
     dateFrom?: string;
@@ -907,6 +918,15 @@ export async function fetchAdminSessions(
   const search = new URLSearchParams();
   if (typeof filters?.clubId === 'number') {
     search.set('club_id', String(filters.clubId));
+  }
+  if (typeof filters?.isActive === 'boolean') {
+    search.set('is_active', filters.isActive ? 'true' : 'false');
+  }
+  if (filters?.registrations && filters.registrations !== 'all') {
+    search.set('registrations', filters.registrations);
+  }
+  if (filters?.location?.trim()) {
+    search.set('location', filters.location.trim());
   }
   if (filters?.search?.trim()) {
     search.set('search', filters.search.trim());
@@ -1011,7 +1031,10 @@ export async function fetchAdminEvents(
   filters?: {
     clubId?: number;
     categoryId?: number;
+    isActive?: boolean;
     status?: string;
+    city?: string;
+    location?: string;
     search?: string;
     ordering?: string;
     dateFrom?: string;
@@ -1028,8 +1051,17 @@ export async function fetchAdminEvents(
   if (typeof filters?.categoryId === 'number') {
     search.set('category_id', String(filters.categoryId));
   }
+  if (typeof filters?.isActive === 'boolean') {
+    search.set('is_active', filters.isActive ? 'true' : 'false');
+  }
   if (filters?.status && filters.status !== 'all') {
     search.set('status', filters.status);
+  }
+  if (filters?.city?.trim()) {
+    search.set('city', filters.city.trim());
+  }
+  if (filters?.location?.trim()) {
+    search.set('location', filters.location.trim());
   }
   if (filters?.search?.trim()) {
     search.set('search', filters.search.trim());

@@ -74,6 +74,7 @@ class SessionSerializer(serializers.ModelSerializer):
             'session_date',
             'start_date',
             'end_date',
+            'location',
             'enable_registrations',
             'registration_capacity',
             'created_at',
@@ -301,6 +302,7 @@ class AdminSessionWriteSerializer(ClubScopedWriteSerializer):
             'session_date',
             'start_date',
             'end_date',
+            'location',
             'created_at',
             'enable_registrations',
             'registration_capacity',
@@ -351,6 +353,9 @@ class AdminSessionWriteSerializer(ClubScopedWriteSerializer):
             raise serializers.ValidationError(
                 {'registration_capacity': 'Define a lotacao para ativar inscricoes.'}
             )
+
+        if 'location' in attrs:
+            attrs['location'] = clean_text(attrs['location'], allowed_tags=None)
 
         return attrs
 

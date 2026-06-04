@@ -393,6 +393,12 @@ function AdminCultura() {
   const [activityClubFilter, setActivityClubFilter] = useState('all');
   const [activityCategoryFilter, setActivityCategoryFilter] = useState('all');
   const [activityStatusFilter, setActivityStatusFilter] = useState('all');
+  const [activityBookFeaturedFilter, setActivityBookFeaturedFilter] = useState('all');
+  const [activitySessionLocationFilter, setActivitySessionLocationFilter] = useState('');
+  const [activitySessionRegistrationsFilter, setActivitySessionRegistrationsFilter] =
+    useState('all');
+  const [activityEventCityFilter, setActivityEventCityFilter] = useState('');
+  const [activityEventLocationFilter, setActivityEventLocationFilter] = useState('');
   const [activitySearchInput, setActivitySearchInput] = useState('');
   const [activitySearch, setActivitySearch] = useState('');
   const [activityOrder, setActivityOrder] = useState(getDefaultActivityOrdering('books'));
@@ -497,6 +503,39 @@ function AdminCultura() {
   );
   const sortedSessions = useMemo(() => [...sessions], [sessions]);
   const sortedEvents = useMemo(() => [...events], [events]);
+  const existingSessionLocations = useMemo(
+    () =>
+      Array.from(
+        new Set(
+          sortedSessions
+            .map((item) => item.location.trim())
+            .filter((location) => location.length > 0)
+        )
+      ).sort((left, right) => left.localeCompare(right, 'pt-PT')),
+    [sortedSessions]
+  );
+  const existingEventCities = useMemo(
+    () =>
+      Array.from(
+        new Set(
+          sortedEvents
+            .map((item) => item.city.trim())
+            .filter((city) => city.length > 0)
+        )
+      ).sort((left, right) => left.localeCompare(right, 'pt-PT')),
+    [sortedEvents]
+  );
+  const existingEventLocations = useMemo(
+    () =>
+      Array.from(
+        new Set(
+          sortedEvents
+            .map((item) => item.location.trim())
+            .filter((location) => location.length > 0)
+        )
+      ).sort((left, right) => left.localeCompare(right, 'pt-PT')),
+    [sortedEvents]
+  );
   const availableNewsStatuses = useMemo(() => {
     const allowedNames = getWorkflowStatusOptions(
       canManageUsers ? NEWS_WORKFLOW_ORDER : NEWS_WORKFLOW_ORDER.slice(0, 2),
@@ -783,6 +822,11 @@ function AdminCultura() {
     setActivityClubFilter('all');
     setActivityCategoryFilter('all');
     setActivityStatusFilter('all');
+    setActivityBookFeaturedFilter('all');
+    setActivitySessionLocationFilter('');
+    setActivitySessionRegistrationsFilter('all');
+    setActivityEventCityFilter('');
+    setActivityEventLocationFilter('');
     setActivitySearchInput('');
     setActivitySearch('');
     setActivityOrder(getDefaultActivityOrdering('books'));
@@ -885,6 +929,11 @@ function AdminCultura() {
     activityClubFilter,
     activityCategoryFilter,
     activityStatusFilter,
+    activityBookFeaturedFilter,
+    activitySessionLocationFilter,
+    activitySessionRegistrationsFilter,
+    activityEventCityFilter,
+    activityEventLocationFilter,
     activitySearch,
     activityOrder,
     activityDateFrom,
@@ -2232,6 +2281,7 @@ function AdminCultura() {
       start_date: toDateTimeLocalValue(item.start_date),
       end_date: toDateTimeLocalValue(item.end_date),
       available_at: toDateTimeLocalValue(item.created_at),
+      location: item.location || '',
       enable_registrations: Boolean(item.enable_registrations),
       registration_capacity:
         item.registration_capacity === null || item.registration_capacity === undefined
@@ -2265,6 +2315,7 @@ function AdminCultura() {
       session_date: calculatedSessionDate,
       start_date: sessionForm.start_date,
       end_date: sessionForm.end_date,
+      location: sessionForm.location.trim(),
       created_at: sessionForm.available_at || null,
       enable_registrations: sessionForm.enable_registrations,
       registration_capacity: sessionForm.registration_capacity
@@ -3062,6 +3113,16 @@ function AdminCultura() {
               setActivityCategoryFilter={setActivityCategoryFilter}
               activityStatusFilter={activityStatusFilter}
               setActivityStatusFilter={setActivityStatusFilter}
+              activityBookFeaturedFilter={activityBookFeaturedFilter}
+              setActivityBookFeaturedFilter={setActivityBookFeaturedFilter}
+              activitySessionLocationFilter={activitySessionLocationFilter}
+              setActivitySessionLocationFilter={setActivitySessionLocationFilter}
+              activitySessionRegistrationsFilter={activitySessionRegistrationsFilter}
+              setActivitySessionRegistrationsFilter={setActivitySessionRegistrationsFilter}
+              activityEventCityFilter={activityEventCityFilter}
+              setActivityEventCityFilter={setActivityEventCityFilter}
+              activityEventLocationFilter={activityEventLocationFilter}
+              setActivityEventLocationFilter={setActivityEventLocationFilter}
               activityError={activityError}
               handleApplyActivitySearch={handleApplyActivitySearch}
               activitySearchInput={activitySearchInput}
@@ -3176,6 +3237,16 @@ function AdminCultura() {
               setActivityCategoryFilter={setActivityCategoryFilter}
               activityStatusFilter={activityStatusFilter}
               setActivityStatusFilter={setActivityStatusFilter}
+              activityBookFeaturedFilter={activityBookFeaturedFilter}
+              setActivityBookFeaturedFilter={setActivityBookFeaturedFilter}
+              activitySessionLocationFilter={activitySessionLocationFilter}
+              setActivitySessionLocationFilter={setActivitySessionLocationFilter}
+              activitySessionRegistrationsFilter={activitySessionRegistrationsFilter}
+              setActivitySessionRegistrationsFilter={setActivitySessionRegistrationsFilter}
+              activityEventCityFilter={activityEventCityFilter}
+              setActivityEventCityFilter={setActivityEventCityFilter}
+              activityEventLocationFilter={activityEventLocationFilter}
+              setActivityEventLocationFilter={setActivityEventLocationFilter}
               activityError={activityError}
               handleApplyActivitySearch={handleApplyActivitySearch}
               activitySearchInput={activitySearchInput}
@@ -3289,6 +3360,16 @@ function AdminCultura() {
               setActivityCategoryFilter={setActivityCategoryFilter}
               activityStatusFilter={activityStatusFilter}
               setActivityStatusFilter={setActivityStatusFilter}
+              activityBookFeaturedFilter={activityBookFeaturedFilter}
+              setActivityBookFeaturedFilter={setActivityBookFeaturedFilter}
+              activitySessionLocationFilter={activitySessionLocationFilter}
+              setActivitySessionLocationFilter={setActivitySessionLocationFilter}
+              activitySessionRegistrationsFilter={activitySessionRegistrationsFilter}
+              setActivitySessionRegistrationsFilter={setActivitySessionRegistrationsFilter}
+              activityEventCityFilter={activityEventCityFilter}
+              setActivityEventCityFilter={setActivityEventCityFilter}
+              activityEventLocationFilter={activityEventLocationFilter}
+              setActivityEventLocationFilter={setActivityEventLocationFilter}
               activityError={activityError}
               handleApplyActivitySearch={handleApplyActivitySearch}
               activitySearchInput={activitySearchInput}
@@ -3476,6 +3557,122 @@ function AdminCultura() {
                           ))}
                         </select>
                       </div>
+                    ) : null}
+                    {activityTab === 'books' ? (
+                      <div className={adminField}>
+                        <label className={adminLabel} htmlFor="activity-book-featured-filter">
+                          Destaque
+                        </label>
+                        <select
+                          id="activity-book-featured-filter"
+                          className={adminInput}
+                          value={activityBookFeaturedFilter}
+                          onChange={(event) => setActivityBookFeaturedFilter(event.target.value)}
+                        >
+                          <option value="all">Todos os livros</option>
+                          <option value="featured">Apenas em destaque</option>
+                          <option value="regular">Sem destaque</option>
+                        </select>
+                      </div>
+                    ) : null}
+                    {activityTab === 'sessions' ? (
+                      <>
+                        <div className={adminField}>
+                          <label className={adminLabel} htmlFor="activity-session-registrations-filter">
+                            Inscricoes
+                          </label>
+                          <select
+                            id="activity-session-registrations-filter"
+                            className={adminInput}
+                            value={activitySessionRegistrationsFilter}
+                            onChange={(event) =>
+                              setActivitySessionRegistrationsFilter(event.target.value)
+                            }
+                          >
+                            <option value="all">Todas</option>
+                            <option value="open">Abertas</option>
+                            <option value="closed">Fechadas</option>
+                          </select>
+                        </div>
+                        <div className={adminField}>
+                          <label className={adminLabel} htmlFor="activity-session-location-filter">
+                            Local
+                          </label>
+                          <input
+                            id="activity-session-location-filter"
+                            className={adminInput}
+                            list={
+                              existingSessionLocations.length > 0
+                                ? 'activity-session-location-suggestions'
+                                : undefined
+                            }
+                            value={activitySessionLocationFilter}
+                            onChange={(event) =>
+                              setActivitySessionLocationFilter(event.target.value)
+                            }
+                            placeholder="Rua, sala ou local"
+                          />
+                          {existingSessionLocations.length > 0 ? (
+                            <datalist id="activity-session-location-suggestions">
+                              {existingSessionLocations.map((location) => (
+                                <option key={location} value={location} />
+                              ))}
+                            </datalist>
+                          ) : null}
+                        </div>
+                      </>
+                    ) : null}
+                    {activityTab === 'events' ? (
+                      <>
+                        <div className={adminField}>
+                          <label className={adminLabel} htmlFor="activity-event-city-filter">
+                            Cidade
+                          </label>
+                          <input
+                            id="activity-event-city-filter"
+                            className={adminInput}
+                            list={
+                              existingEventCities.length > 0
+                                ? 'activity-event-city-suggestions'
+                                : undefined
+                            }
+                            value={activityEventCityFilter}
+                            onChange={(event) => setActivityEventCityFilter(event.target.value)}
+                            placeholder="Cidade ou concelho"
+                          />
+                          {existingEventCities.length > 0 ? (
+                            <datalist id="activity-event-city-suggestions">
+                              {existingEventCities.map((city) => (
+                                <option key={city} value={city} />
+                              ))}
+                            </datalist>
+                          ) : null}
+                        </div>
+                        <div className={adminField}>
+                          <label className={adminLabel} htmlFor="activity-event-location-filter">
+                            Local
+                          </label>
+                          <input
+                            id="activity-event-location-filter"
+                            className={adminInput}
+                            list={
+                              existingEventLocations.length > 0
+                                ? 'activity-event-location-suggestions'
+                                : undefined
+                            }
+                            value={activityEventLocationFilter}
+                            onChange={(event) => setActivityEventLocationFilter(event.target.value)}
+                            placeholder="Rua, sala ou local"
+                          />
+                          {existingEventLocations.length > 0 ? (
+                            <datalist id="activity-event-location-suggestions">
+                              {existingEventLocations.map((location) => (
+                                <option key={location} value={location} />
+                              ))}
+                            </datalist>
+                          ) : null}
+                        </div>
+                      </>
                     ) : null}
                   </div>
                 </div>
