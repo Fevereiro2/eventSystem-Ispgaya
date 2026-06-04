@@ -313,8 +313,10 @@ function CulturalEntryDetail({ kind }: CulturalEntryDetailProps) {
     : null;
 
   const eventEntry = kind === 'event' && entry ? (entry as InfoCulturaEvent) : null;
+  const sessionEntry = kind === 'session' && entry ? (entry as InfoCulturaSession) : null;
   const newsEntry = kind === 'news' && entry ? (entry as InfoCulturaNews) : null;
   const eventReadingTime = eventEntry ? estimateReadingTime(eventEntry.description || '') : '';
+  const sessionReadingTime = sessionEntry ? estimateReadingTime(sessionEntry.description || '') : '';
   const newsReadingTime = newsEntry
     ? estimateReadingTime(`${newsEntry.summary || ''} ${newsEntry.content || ''}`)
     : '';
@@ -576,6 +578,181 @@ function CulturalEntryDetail({ kind }: CulturalEntryDetailProps) {
               </section>
             ) : null}
 
+            {!isLoading && !loadError && sessionEntry ? (
+              <section className="mx-auto max-w-4xl px-4 pb-10 sm:px-6 lg:px-0">
+                <Link
+                  to="/laboratorio-cultural"
+                  className="mt-6 flex items-center text-sm font-medium text-gray-500"
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="mt-0.5 h-5 w-5"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M7 16l-4-4m0 0l4-4m-4 4h18" />
+                  </svg>
+                  <span className="ml-2">{getLocaleText(locale, 'Voltar', 'Back')}</span>
+                </Link>
+
+                <article>
+                  <div className="mt-4">
+                    <h1 className="font-heading text-3xl font-bold leading-tight tracking-tight lg:text-4xl lg:leading-snug">
+                      {sessionEntry.title}
+                    </h1>
+                    <div className="mt-2 flex flex-wrap items-center gap-3 font-medium text-gray-500 md:gap-5 md:flex-nowrap">
+                      <div className="flex items-center">
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          className="h-5 w-5"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+                          />
+                        </svg>
+                        <span className="ml-2 capitalize">{formatDate(sessionEntry.start_date)}</span>
+                      </div>
+                      <div className="flex items-center">
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          className="h-5 w-5"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+                          />
+                        </svg>
+                        <span className="ml-2">{sessionReadingTime}</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="mt-8 max-w-none whitespace-pre-wrap text-slate-700">
+                    <p>{sessionEntry.description}</p>
+                  </div>
+
+                  <div className="mt-4 flex flex-wrap items-center gap-2">
+                    {sessionEntry.club_name ? (
+                      <span className="inline-block rounded-sm bg-orange-50 px-3 py-1.5 text-sm font-semibold tracking-wide text-orange-600">
+                        #{sessionEntry.club_name.toLowerCase().replace(/\s+/g, '')}
+                      </span>
+                    ) : null}
+                    <span className="inline-block rounded-sm bg-slate-100 px-3 py-1.5 text-sm font-semibold tracking-wide text-slate-600">
+                      {sessionEntry.name}
+                    </span>
+                  </div>
+
+                  <div className="mt-6 flex flex-wrap items-start justify-between gap-4 lg:flex-nowrap">
+                    <div>
+                      <p className="text-sm font-semibold uppercase tracking-tight text-gray-500">
+                        {getLocaleText(locale, 'Partilha', 'Share')}
+                      </p>
+                      <div className="mt-3 flex items-end gap-4">
+                        <a
+                          href={`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(currentUrl)}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex text-gray-700"
+                        >
+                          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                            <path d="M9 8h-3v4h3v12h5v-12h3.642l.358-4h-4v-1.667c0-.955.192-1.333 1.115-1.333h2.885v-5h-3.808c-3.596 0-5.192 1.583-5.192 4.615v3.385z" />
+                          </svg>
+                        </a>
+                        <a
+                          href={`https://twitter.com/intent/tweet?url=${encodeURIComponent(currentUrl)}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex text-gray-700"
+                        >
+                          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                            <path d="M24 4.557c-.883.392-1.832.656-2.828.775 1.017-.609 1.798-1.574 2.165-2.724-.951.564-2.005.974-3.127 1.195-.897-.957-2.178-1.555-3.594-1.555-3.179 0-5.515 2.966-4.797 6.045-4.091-.205-7.719-2.165-10.148-5.144-1.29 2.213-.669 5.108 1.523 6.574-.806-.026-1.566-.247-2.229-.616-.054 2.281 1.581 4.415 3.949 4.89-.693.188-1.452.232-2.224.084.626 1.956 2.444 3.379 4.6 3.419-2.07 1.623-4.678 2.348-7.29 2.04 2.179 1.397 4.768 2.212 7.548 2.212 9.142 0 14.307-7.721 13.995-14.646.962-.695 1.797-1.562 2.457-2.549z" />
+                          </svg>
+                        </a>
+                        <a
+                          href={`https://www.linkedin.com/shareArticle?mini=true&url=${encodeURIComponent(currentUrl)}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex text-gray-700"
+                        >
+                          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                            <path d="M4.98 3.5c0 1.381-1.11 2.5-2.48 2.5s-2.48-1.119-2.48-2.5c0-1.38 1.11-2.5 2.48-2.5s2.48 1.12 2.48 2.5zm.02 4.5h-5v16h5v-16zm7.982 0h-4.968v16h4.969v-8.399c0-4.67 6.029-5.052 6.029 0v8.399h4.988v-10.131c0-7.88-8.922-7.593-11.018-3.714v-2.155z" />
+                          </svg>
+                        </a>
+                      </div>
+                    </div>
+
+                    <div className="flex flex-wrap gap-3">
+                      {calendarLinks?.google ? (
+                        <a href={calendarLinks.google} target="_blank" rel="noreferrer" className={adminBtnSecondary}>
+                          Google Calendar
+                        </a>
+                      ) : null}
+                      {calendarLinks?.outlook ? (
+                        <a href={calendarLinks.outlook} target="_blank" rel="noreferrer" className={adminBtnSecondary}>
+                          Outlook
+                        </a>
+                      ) : null}
+                      <button
+                        type="button"
+                        className={adminBtnSecondary}
+                        onClick={() => void handleDownloadCalendar()}
+                        disabled={isDownloadingCalendar}
+                      >
+                        {isDownloadingCalendar ? getLocaleText(locale, 'A descarregar...', 'Downloading...') : getLocaleText(locale, 'Descarregar .ics', 'Download .ics')}
+                      </button>
+                      {canRegister && registrationState !== 'closed' ? (
+                        <button
+                          type="button"
+                          className={adminBtnPrimary}
+                          onClick={() => {
+                            setRegistrationFeedback('');
+                            setRegistrationError('');
+                            setIsRegistrationModalOpen(true);
+                          }}
+                        >
+                          {registrationState === 'waitlist'
+                            ? getLocaleText(locale, 'Entrar em lista de espera', 'Join waitlist')
+                            : getLocaleText(locale, 'Inscrever-me', 'Register')}
+                        </button>
+                      ) : null}
+                    </div>
+                  </div>
+
+                  {registrationSummary ? (
+                    <div className="mt-6 rounded-xl border border-slate-200 bg-slate-50 p-4">
+                      <h3 className="text-lg font-semibold text-slate-900">{getLocaleText(locale, 'Participação', 'Participation')}</h3>
+                      <p className="mt-2 text-sm text-slate-600">
+                        {getLocaleText(locale, 'Confirmadas', 'Confirmed')}: {registrationSummary.confirmed} · {getLocaleText(locale, 'Lista de espera', 'Waiting list')}: {registrationSummary.waitlist}
+                        {registrationSummary.remaining !== null ? ` · ${getLocaleText(locale, 'Vagas restantes', 'Remaining slots')}: ${registrationSummary.remaining}` : ''}
+                      </p>
+                      <p className="mt-2 text-sm text-slate-600">
+                        {getLocaleText(locale, 'Estado das inscrições', 'Registration status')}: {registrationState === 'open' ? getLocaleText(locale, 'Abertas', 'Open') : registrationState === 'waitlist' ? getLocaleText(locale, 'Lista de espera', 'Waiting list') : getLocaleText(locale, 'Encerradas', 'Closed')}
+                      </p>
+                    </div>
+                  ) : null}
+
+                  {registrationFeedback ? (
+                    <p className="mt-4 rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-700">
+                      {registrationFeedback}
+                    </p>
+                  ) : null}
+                </article>
+              </section>
+            ) : null}
+
             {!isLoading && !loadError && newsEntry ? (
               <section className="mx-auto max-w-4xl px-4 pb-10 sm:px-6 lg:px-0">
                 <Link
@@ -736,48 +913,7 @@ function CulturalEntryDetail({ kind }: CulturalEntryDetailProps) {
               </section>
             ) : null}
 
-            {!isLoading && !loadError && entry && !eventEntry && !newsEntry ? (
-              <div className={contentCard}>
-                {image ? (
-                  <img
-                    src={resolveInfoCulturaAssetUrl(image)}
-                    alt={title}
-                    className="mb-6 h-72 w-full rounded-2xl object-cover"
-                  />
-                ) : null}
-                <h2 className={blockTitle}>{title}</h2>
-                <p className={blockText}>
-                  {clubName ? `${clubName} · ` : ''}
-                  {'author' in entry
-                    ? `${entry.author} · ${entry.publication_year}`
-                    : 'published_at' in entry
-                    ? formatDate(entry.published_at || entry.created_at)
-                    : 'session_date' in entry
-                      ? formatDate(entry.start_date)
-                      : formatDate(entry.start_date)}
-                </p>
-                {'author' in entry && entry.publisher ? <p className={blockText}>{getLocaleText(locale, 'Editora', 'Publisher')}: {entry.publisher}</p> : null}
-                {'summary' in entry ? <p className={blockText}>{entry.summary}</p> : null}
-                {'description' in entry ? <p className={blockText}>{entry.description}</p> : null}
-                {'content' in entry ? <div className="mt-6 whitespace-pre-wrap text-slate-700">{entry.content}</div> : null}
-                {'categories' in entry && entry.categories.length > 0 ? (
-                  <p className={blockText}>{getLocaleText(locale, 'Categorias', 'Categories')}: {entry.categories.map((category) => category.name).join(', ')}</p>
-                ) : null}
-                {'location' in entry ? (
-                  <p className={blockText}>{getLocaleText(locale, 'Local', 'Location')}: {entry.location || entry.city || getLocaleText(locale, 'Local por definir', 'Location to be defined')}</p>
-                ) : null}
-                <div className="mt-8 flex flex-wrap gap-3">
-                  {clubId ? (
-                    <Link to={`/laboratorio-cultural/clubes/${clubId}`} className={adminBtnSecondary}>
-                      {getLocaleText(locale, 'Ver clube', 'View club')}
-                    </Link>
-                  ) : null}
-                  <Link to="/laboratorio-cultural" className={adminBtnSecondary}>
-                    {getLocaleText(locale, 'Voltar ao laboratorio', 'Back to laboratory')}
-                  </Link>
-                </div>
-              </div>
-            ) : null}
+  
           </div>
         </section>
       </main>
