@@ -117,6 +117,7 @@ deactivateAdminClubMember()
 
 ### Frontend
 1. Na pasta raiz, instala dependências: `npm install`.
-2. Executa em modo desenvolvimento: `npm run dev`.
+2. Para ativar autocomplete de moradas/locais com Google Maps no formulário de eventos, define `VITE_GOOGLE_MAPS_API_KEY` no ficheiro `.env`.
+3. Executa em modo desenvolvimento: `npm run dev`.
 
 Este projeto é uma excelente base para estudares **Arquitetura de Software**. Diverte-te a explorar!

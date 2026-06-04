@@ -2366,6 +2366,9 @@ function AdminCultura() {
           ? ''
           : String(item.registration_capacity),
       status: normalizeWorkflowStatus(item.status),
+      country_code: venue?.country || 'PT',
+      district: venue?.region || '',
+      municipality: venue?.city || item.city || '',
       city: item.city || '',
       location: item.location || '',
       eventbrite_venue_id: item.eventbrite_venue_id || '',
@@ -2402,6 +2405,7 @@ function AdminCultura() {
     event.preventDefault();
     if (!token) return;
     const submitAction = getSubmitAction(event);
+    const resolvedCity = eventForm.municipality.trim() || eventForm.city.trim();
 
     const venuePayload =
       eventForm.eventbrite_venue_name.trim() ||
@@ -2411,10 +2415,10 @@ function AdminCultura() {
             name: eventForm.eventbrite_venue_name.trim() || eventForm.location.trim(),
             address_1: eventForm.eventbrite_venue_address_1.trim() || eventForm.location.trim(),
             address_2: eventForm.eventbrite_venue_address_2.trim(),
-            city: eventForm.eventbrite_venue_city.trim() || eventForm.city.trim(),
-            region: eventForm.eventbrite_venue_region.trim(),
+            city: eventForm.eventbrite_venue_city.trim() || resolvedCity,
+            region: eventForm.eventbrite_venue_region.trim() || eventForm.district.trim(),
             postal_code: eventForm.eventbrite_venue_postal_code.trim(),
-            country: eventForm.eventbrite_venue_country.trim() || 'PT',
+            country: eventForm.eventbrite_venue_country.trim() || eventForm.country_code.trim() || 'PT',
             capacity: eventForm.eventbrite_venue_capacity
               ? Number(eventForm.eventbrite_venue_capacity)
               : null,
@@ -2456,7 +2460,7 @@ function AdminCultura() {
         ? Number(eventForm.registration_capacity)
         : null,
       status: eventForm.status.trim(),
-      city: eventForm.city.trim(),
+      city: resolvedCity,
       location: eventForm.location.trim(),
       eventbrite_venue_id: eventForm.eventbrite_venue_id.trim(),
       eventbrite_venue: venuePayload,

@@ -36,6 +36,7 @@ import {
   mainContent
 } from '../styles/ui';
 import { getLocaleText, useLocale } from '../i18n/locale.js';
+import { buildGoogleMapsQuery } from '../utils/googleMaps.js';
 
 type EntryKind = 'news' | 'session' | 'event' | 'book';
 
@@ -323,6 +324,7 @@ function CulturalEntryDetail({ kind }: CulturalEntryDetailProps) {
       : kind === 'event' && entry
         ? `/vida-academica/eventos/${entry.id}`
         : '#';
+  const eventMapQuery = eventEntry ? buildGoogleMapsQuery(eventEntry.location, eventEntry.city) : '';
 
   return (
     <>
@@ -418,6 +420,18 @@ function CulturalEntryDetail({ kind }: CulturalEntryDetailProps) {
                   <div className="max-w-none whitespace-pre-wrap text-slate-700">
                     <p>{eventEntry.description}</p>
                   </div>
+
+                  {eventMapQuery ? (
+                    <section className="mt-8 rounded-2xl border border-slate-200 bg-white shadow-sm">
+                      <div className="px-6 py-4">
+                        <p className="text-sm font-semibold uppercase tracking-tight text-slate-500">
+                          {getLocaleText(locale, 'Localização', 'Location')}
+                        </p>
+                        <h2 className="mt-1 text-xl font-semibold text-slate-900">{eventEntry.location || eventMapQuery}</h2>
+                        {eventEntry.city ? <p className="mt-1 text-sm text-slate-600">{eventEntry.city}</p> : null}
+                      </div>
+                    </section>
+                  ) : null}
 
                   {eventEntry.categories.length > 0 ? (
                     <div className="mt-4 flex flex-wrap items-center gap-2">

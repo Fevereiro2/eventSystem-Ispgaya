@@ -73,6 +73,9 @@ export type EventFormState = {
   enable_registrations: boolean;
   registration_capacity: string;
   status: string;
+  country_code: string;
+  district: string;
+  municipality: string;
   city: string;
   location: string;
   eventbrite_venue_id: string;

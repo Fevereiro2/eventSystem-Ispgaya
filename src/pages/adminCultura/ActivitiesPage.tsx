@@ -1,7 +1,8 @@
-import { Dispatch, FormEvent, SetStateAction } from 'react';
+import { Dispatch, FormEvent, SetStateAction, useEffect, useMemo, useState } from 'react';
 import { CalendarClock } from 'lucide-react';
 
 import AdminPageHero from './components/AdminPageHero.js';
+import GoogleMapsLocationField from '../../components/ui/GoogleMapsLocationField.js';
 import { adminNamePattern, adminNameTitle } from './nameValidation.js';
 import { ActivityTab, BookFormState, CategoryFormState, EventFormState, SessionFormState } from './types';
 import { formatAdminDateTime, getWorkflowStatusLabel, normalizeWorkflowStatus } from './utils';
@@ -49,6 +50,152 @@ import {
 } from '../../api/infoculturaApi';
 
 type AdminHeroStat = { label: string; value: string | number };
+
+type CountryOption = {
+  code: string;
+  label: string;
+};
+
+type PtDataDistrict = {
+  code: string;
+  name: string;
+};
+
+const PORTUGAL_COUNTRY_CODE = 'PT';
+const DEFAULT_COUNTRY_OPTIONS: CountryOption[] = [{ code: PORTUGAL_COUNTRY_CODE, label: 'Portugal' }];
+const PORTUGAL_DISTRICT_OPTIONS = [
+  'Aveiro',
+  'Beja',
+  'Braga',
+  'Bragança',
+  'Castelo Branco',
+  'Coimbra',
+  'Évora',
+  'Faro',
+  'Guarda',
+  'Leiria',
+  'Lisboa',
+  'Portalegre',
+  'Porto',
+  'Santarém',
+  'Setúbal',
+  'Viana do Castelo',
+  'Vila Real',
+  'Viseu',
+  'Região Autónoma da Madeira',
+  'Região Autónoma dos Açores',
+];
+const PORTUGAL_FALLBACK_MUNICIPALITIES_BY_DISTRICT: Record<string, string[]> = {
+  Porto: [
+    'Amarante',
+    'Baião',
+    'Felgueiras',
+    'Gondomar',
+    'Lousada',
+    'Maia',
+    'Marco de Canaveses',
+    'Matosinhos',
+    'Paços de Ferreira',
+    'Paredes',
+    'Penafiel',
+    'Porto',
+    'Póvoa de Varzim',
+    'Santo Tirso',
+    'Trofa',
+    'Valongo',
+    'Vila do Conde',
+    'Vila Nova de Gaia',
+  ],
+};
+
+function normalizeCountryOptions(payload: unknown): CountryOption[] {
+  if (!Array.isArray(payload)) {
+    return DEFAULT_COUNTRY_OPTIONS;
+  }
+
+  const options = payload
+    .map((item) => {
+      if (!item || typeof item !== 'object') {
+        return null;
+      }
+
+      const code = 'cca2' in item && typeof item.cca2 === 'string' ? item.cca2 : '';
+      const name =
+        'translations' in item &&
+        item.translations &&
+        typeof item.translations === 'object' &&
+        'por' in item.translations &&
+        item.translations.por &&
+        typeof item.translations.por === 'object' &&
+        'common' in item.translations.por &&
+        typeof item.translations.por.common === 'string'
+          ? item.translations.por.common
+          : 'name' in item &&
+              item.name &&
+              typeof item.name === 'object' &&
+              'common' in item.name &&
+              typeof item.name.common === 'string'
+            ? item.name.common
+            : '';
+
+      if (!code || !name) {
+        return null;
+      }
+
+      return { code, label: name };
+    })
+    .filter((item): item is CountryOption => item !== null)
+    .sort((left, right) => left.label.localeCompare(right.label, 'pt-PT'));
+
+  return options.length > 0 ? options : DEFAULT_COUNTRY_OPTIONS;
+}
+
+function normalizePtDataDistricts(payload: unknown): PtDataDistrict[] {
+  if (!payload || typeof payload !== 'object' || !('data' in payload) || !payload.data || typeof payload.data !== 'object') {
+    return [];
+  }
+
+  const districts =
+    'districts' in payload.data && Array.isArray(payload.data.districts) ? payload.data.districts : [];
+
+  return districts
+    .map((item) => {
+      if (!item || typeof item !== 'object') {
+        return null;
+      }
+
+      const code = 'code' in item && typeof item.code === 'string' ? item.code : '';
+      const name = 'name' in item && typeof item.name === 'string' ? item.name : '';
+      if (!code || !name) {
+        return null;
+      }
+
+      return { code, name };
+    })
+    .filter((item): item is PtDataDistrict => item !== null);
+}
+
+function normalizePtDataMunicipalities(payload: unknown): string[] {
+  if (!payload || typeof payload !== 'object' || !('data' in payload) || !payload.data || typeof payload.data !== 'object') {
+    return [];
+  }
+
+  const municipalities =
+    'municipalities' in payload.data && Array.isArray(payload.data.municipalities)
+      ? payload.data.municipalities
+      : [];
+
+  return municipalities
+    .map((item) => {
+      if (!item || typeof item !== 'object') {
+        return null;
+      }
+
+      return 'name' in item && typeof item.name === 'string' ? item.name : null;
+    })
+    .filter((item): item is string => item !== null)
+    .sort((left, right) => left.localeCompare(right, 'pt-PT'));
+}
 
 export type ActivitiesPageProps = {
   activitySectionLabel: string;
@@ -279,6 +426,242 @@ function ActivitiesPage({
   handleDeleteCategory,
   toggleSelectedId,
 }: ActivitiesPageProps) {
+  const [countryOptions, setCountryOptions] = useState<CountryOption[]>(DEFAULT_COUNTRY_OPTIONS);
+  const [portugalDistricts, setPortugalDistricts] = useState<string[]>(PORTUGAL_DISTRICT_OPTIONS);
+  const [portugalDistrictCodesByName, setPortugalDistrictCodesByName] = useState<Record<string, string>>({});
+  const [municipalitiesByDistrict, setMunicipalitiesByDistrict] = useState<Record<string, string[]>>({});
+
+  useEffect(() => {
+    let active = true;
+
+    async function loadCountryOptions() {
+      try {
+        const response = await fetch('https://restcountries.com/v3.1/all?fields=cca2,translations,name');
+        if (!response.ok) {
+          throw new Error('Countries API unavailable');
+        }
+
+        const payload = (await response.json()) as unknown;
+        if (!active) {
+          return;
+        }
+
+        setCountryOptions(normalizeCountryOptions(payload));
+      } catch {
+        if (active) {
+          setCountryOptions(DEFAULT_COUNTRY_OPTIONS);
+        }
+      }
+    }
+
+    void loadCountryOptions();
+
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (
+      eventForm.country_code !== PORTUGAL_COUNTRY_CODE ||
+      !eventForm.district ||
+      municipalitiesByDistrict[eventForm.district]
+    ) {
+      return;
+    }
+
+    let active = true;
+
+    async function loadDistrictMunicipalities() {
+      try {
+        const districtCode = portugalDistrictCodesByName[eventForm.district];
+        if (!districtCode) {
+          throw new Error('District code unavailable');
+        }
+
+        const response = await fetch(
+          `https://api.ptdata.org/v1/geo/municipalities?district=${encodeURIComponent(districtCode)}&limit=500`
+        );
+        if (!response.ok) {
+          throw new Error('District municipalities API unavailable');
+        }
+
+        const payload = (await response.json()) as unknown;
+        if (!active) {
+          return;
+        }
+
+        const municipios = normalizePtDataMunicipalities(payload);
+
+        if (municipios.length === 0) {
+          return;
+        }
+
+        setMunicipalitiesByDistrict((prev) => ({
+          ...prev,
+          [eventForm.district]: [...municipios].sort((left, right) =>
+            left.localeCompare(right, 'pt-PT')
+          ),
+        }));
+      } catch {
+        if (!active) {
+          return;
+        }
+
+        const fallbackMunicipalities =
+          PORTUGAL_FALLBACK_MUNICIPALITIES_BY_DISTRICT[eventForm.district];
+        if (!fallbackMunicipalities?.length) {
+          return;
+        }
+
+        setMunicipalitiesByDistrict((prev) => ({
+          ...prev,
+          [eventForm.district]: fallbackMunicipalities,
+        }));
+      }
+    }
+
+    void loadDistrictMunicipalities();
+
+    return () => {
+      active = false;
+    };
+  }, [eventForm.country_code, eventForm.district, municipalitiesByDistrict]);
+
+  useEffect(() => {
+    let active = true;
+
+    async function loadPortugalDistricts() {
+      try {
+        const response = await fetch('https://api.ptdata.org/v1/geo/districts');
+        if (!response.ok) {
+          throw new Error('ptdata unavailable');
+        }
+
+        const payload = (await response.json()) as unknown;
+        if (!active) {
+          return;
+        }
+
+        const normalized = normalizePtDataDistricts(payload);
+        const nextDistricts = normalized
+          .map((item) => item.name)
+          .sort((left, right) => left.localeCompare(right, 'pt-PT'));
+        const nextCodes = normalized.reduce<Record<string, string>>((accumulator, item) => {
+          accumulator[item.name] = item.code;
+          return accumulator;
+        }, {});
+
+        setPortugalDistricts(nextDistricts.length > 0 ? nextDistricts : PORTUGAL_DISTRICT_OPTIONS);
+        setPortugalDistrictCodesByName(nextCodes);
+      } catch {
+        if (!active) {
+          return;
+        }
+        setPortugalDistricts(PORTUGAL_DISTRICT_OPTIONS);
+        setPortugalDistrictCodesByName({});
+        setMunicipalitiesByDistrict({});
+      }
+    }
+
+    void loadPortugalDistricts();
+
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  const allPortugalMunicipalities = useMemo(
+    () =>
+      Array.from(
+        new Set(
+          Object.values(municipalitiesByDistrict).flatMap((municipalities) => municipalities)
+        )
+      ).sort((left, right) => left.localeCompare(right, 'pt-PT')),
+    [municipalitiesByDistrict]
+  );
+
+  const districtByMunicipality = useMemo(
+    () =>
+      Object.entries(municipalitiesByDistrict).reduce<Record<string, string>>(
+        (accumulator, [district, municipalities]) => {
+          municipalities.forEach((municipality) => {
+            accumulator[municipality] = district;
+          });
+          return accumulator;
+        },
+        {}
+      ),
+    [municipalitiesByDistrict]
+  );
+
+  const currentDistrictMunicipalities = useMemo(() => {
+    if (eventForm.country_code !== PORTUGAL_COUNTRY_CODE || !eventForm.district) {
+      return [];
+    }
+
+    return (
+      municipalitiesByDistrict[eventForm.district] ||
+      PORTUGAL_FALLBACK_MUNICIPALITIES_BY_DISTRICT[eventForm.district] ||
+      []
+    );
+  }, [eventForm.country_code, eventForm.district, municipalitiesByDistrict]);
+
+  useEffect(() => {
+    if (
+      eventForm.country_code !== PORTUGAL_COUNTRY_CODE ||
+      !eventForm.municipality ||
+      eventForm.district ||
+      !districtByMunicipality[eventForm.municipality]
+    ) {
+      return;
+    }
+
+    setEventForm((prev) =>
+      prev.country_code === PORTUGAL_COUNTRY_CODE &&
+      prev.municipality &&
+      !prev.district &&
+      districtByMunicipality[prev.municipality]
+        ? {
+            ...prev,
+            district: districtByMunicipality[prev.municipality],
+            eventbrite_venue_region:
+              prev.eventbrite_venue_region || districtByMunicipality[prev.municipality],
+          }
+        : prev
+    );
+  }, [
+    districtByMunicipality,
+    eventForm.country_code,
+    eventForm.district,
+    eventForm.municipality,
+    setEventForm,
+  ]);
+
+  const existingEventCities = useMemo(
+    () =>
+      Array.from(
+        new Set(
+          sortedEvents
+            .map((item) => item.city.trim())
+            .filter((city) => city.length > 0)
+        )
+      ).sort((left, right) => left.localeCompare(right, 'pt-PT')),
+    [sortedEvents]
+  );
+
+  const existingEventLocations = useMemo(
+    () =>
+      Array.from(
+        new Set(
+          sortedEvents
+            .map((item) => item.location.trim())
+            .filter((location) => location.length > 0)
+        )
+      ).sort((left, right) => left.localeCompare(right, 'pt-PT')),
+    [sortedEvents]
+  );
+
   return (
     <div className="space-y-6">
       <AdminPageHero
@@ -1364,29 +1747,157 @@ function ActivitiesPage({
 
               <div className={adminFormGridSpaced}>
                 <div className={adminField}>
+                  <label className={adminLabel} htmlFor="event-country">
+                    País
+                  </label>
+                  <select
+                    id="event-country"
+                    className={adminInput}
+                    value={eventForm.country_code}
+                    onChange={(event) => {
+                      const nextCountryCode = event.target.value;
+                      setEventForm((prev) => ({
+                        ...prev,
+                        country_code: nextCountryCode,
+                        district: nextCountryCode === PORTUGAL_COUNTRY_CODE ? prev.district : '',
+                        municipality: nextCountryCode === PORTUGAL_COUNTRY_CODE ? prev.municipality : '',
+                        eventbrite_venue_country: nextCountryCode,
+                        eventbrite_venue_region:
+                          nextCountryCode === PORTUGAL_COUNTRY_CODE ? prev.eventbrite_venue_region : '',
+                      }));
+                    }}
+                  >
+                    {countryOptions.map((country) => (
+                      <option key={country.code} value={country.code}>
+                        {country.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {eventForm.country_code === PORTUGAL_COUNTRY_CODE ? (
+                  <div className={adminField}>
+                    <label className={adminLabel} htmlFor="event-district">
+                      Distrito
+                    </label>
+                    <select
+                      id="event-district"
+                      className={adminInput}
+                      value={eventForm.district}
+                      onChange={(event) => {
+                        const nextDistrict = event.target.value;
+                        setEventForm((prev) => ({
+                          ...prev,
+                          district: nextDistrict,
+                          municipality: '',
+                          eventbrite_venue_region: nextDistrict,
+                          eventbrite_venue_city: '',
+                          city: '',
+                        }));
+                      }}
+                    >
+                      <option value="">Seleciona um distrito</option>
+                      {portugalDistricts.map((district) => (
+                        <option key={district} value={district}>
+                          {district}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                ) : null}
+
+                {eventForm.country_code === PORTUGAL_COUNTRY_CODE ? (
+                  <div className={adminField}>
+                    <label className={adminLabel} htmlFor="event-municipality">
+                      Concelho
+                    </label>
+                    <select
+                      id="event-municipality"
+                      className={adminInput}
+                      value={eventForm.municipality}
+                      onChange={(event) => {
+                        const nextMunicipality = event.target.value;
+                        setEventForm((prev) => ({
+                          ...prev,
+                          municipality: nextMunicipality,
+                          city: nextMunicipality,
+                          eventbrite_venue_city: nextMunicipality,
+                        }));
+                      }}
+                      disabled={!eventForm.district}
+                    >
+                      <option value="">
+                        {eventForm.district ? 'Seleciona um concelho' : 'Escolhe primeiro o distrito'}
+                      </option>
+                      {currentDistrictMunicipalities.map((municipality) => (
+                        <option key={municipality} value={municipality}>
+                          {municipality}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                ) : null}
+
+                <div className={adminField}>
                   <label className={adminLabel} htmlFor="event-city">
-                    Cidade
+                    Cidade / Localidade
                   </label>
                   <input
                     id="event-city"
                     className={adminInput}
-                    value={eventForm.city}
-                    onChange={(event) =>
-                      setEventForm((prev) => ({ ...prev, city: event.target.value }))
+                    list={
+                      eventForm.country_code === PORTUGAL_COUNTRY_CODE
+                        ? 'event-city-suggestions'
+                        : existingEventCities.length > 0
+                          ? 'event-city-suggestions'
+                          : undefined
                     }
+                    value={eventForm.city}
+                    onChange={(event) => {
+                      const nextCity = event.target.value;
+                      setEventForm((prev) => ({
+                        ...prev,
+                        city: nextCity,
+                        municipality:
+                          prev.country_code === PORTUGAL_COUNTRY_CODE &&
+                          allPortugalMunicipalities.includes(nextCity)
+                            ? nextCity
+                            : prev.country_code === PORTUGAL_COUNTRY_CODE
+                              ? ''
+                              : prev.municipality,
+                      }));
+                    }}
                   />
+                  {eventForm.country_code === PORTUGAL_COUNTRY_CODE || existingEventCities.length > 0 ? (
+                    <datalist id="event-city-suggestions">
+                      {(eventForm.country_code === PORTUGAL_COUNTRY_CODE
+                        ? allPortugalMunicipalities
+                        : existingEventCities
+                      ).map((city) => (
+                        <option key={city} value={city} />
+                      ))}
+                    </datalist>
+                  ) : null}
+                  {eventForm.country_code === PORTUGAL_COUNTRY_CODE ? (
+                    <p className={blockText}>
+                      Lista com municípios de Portugal carregada a partir da GEO API PT.
+                    </p>
+                  ) : null}
                 </div>
 
                 <div className={adminField}>
                   <label className={adminLabel} htmlFor="event-location">
                     Local
                   </label>
-                  <input
-                    id="event-location"
-                    className={adminInput}
+                  <GoogleMapsLocationField
+                    inputId="event-location"
+                    suggestions={existingEventLocations}
                     value={eventForm.location}
-                    onChange={(event) =>
-                      setEventForm((prev) => ({ ...prev, location: event.target.value }))
+                    onLocationChange={(nextLocation) =>
+                      setEventForm((prev) => ({ ...prev, location: nextLocation }))
+                    }
+                    onCityChange={(nextCity) =>
+                      setEventForm((prev) => ({ ...prev, city: nextCity }))
                     }
                   />
                 </div>

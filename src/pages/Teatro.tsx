@@ -26,8 +26,6 @@ import TopBar from '../components/layout/TopBar';
 import heroImage from '../assets/19825874_uqliU.jpeg';
 import {
   adminBtnSecondary,
-  blockText,
-  blockTitle,
   container,
   mainContent,
   sectionSpace
@@ -165,6 +163,7 @@ function Teatro() {
     () => [
       ...events.slice(0, 2).map((item) => ({
         id: `event-${item.id}`,
+        kind: getLocaleText(locale, 'Espetáculo', 'Performance'),
         title: item.title,
         description: item.description,
         date: item.start_date || item.event_date,
@@ -173,6 +172,7 @@ function Teatro() {
       })),
       ...sessions.slice(0, 2).map((item) => ({
         id: `session-${item.id}`,
+        kind: getLocaleText(locale, 'Ensaio / sessão', 'Rehearsal / session'),
         title: item.title,
         description: item.description,
         date: item.start_date || item.session_date,
@@ -180,7 +180,35 @@ function Teatro() {
         image: ''
       }))
     ],
-    [events, sessions]
+    [events, sessions, locale]
+  );
+  const agendaItems = useMemo(
+    () =>
+      [
+        ...events.map((item) => ({
+          id: `event-${item.id}`,
+          kind: getLocaleText(locale, 'Espetáculo', 'Performance'),
+          title: item.title,
+          description: item.description,
+          date: item.start_date || item.event_date,
+          href: `/laboratorio-cultural/eventos/${item.id}`,
+        })),
+        ...sessions.map((item) => ({
+          id: `session-${item.id}`,
+          kind: getLocaleText(locale, 'Ensaio', 'Rehearsal'),
+          title: item.title,
+          description: item.description,
+          date: item.start_date || item.session_date,
+          href: `/laboratorio-cultural/sessoes/${item.id}`,
+        })),
+      ]
+        .sort((left, right) => {
+          const leftTime = new Date(left.date).getTime();
+          const rightTime = new Date(right.date).getTime();
+          return leftTime - rightTime;
+        })
+        .slice(0, 6),
+    [events, sessions, locale]
   );
   const clubPhotoItems = useMemo(
     () =>
@@ -244,14 +272,28 @@ function Teatro() {
 
       <main className={mainContent}>
         <div className={`${container} ${sectionSpace}`}>
-          <h2 className={blockTitle}>{getLocaleText(locale, 'Aqui podes:', 'Here you can:')}</h2>
-          <p className={blockText}>
-            {getLocaleText(
-              locale,
-              'Participar em ensaios, explorar técnicas de representação, criar personagens, trabalhar voz e movimento e colaborar em apresentações abertas à comunidade académica.',
-              'Join rehearsals, explore acting techniques, create characters, work on voice and movement, and collaborate in performances open to the academic community.'
-            )}
-          </p>
+          <section>
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#dd8609]">
+              {getLocaleText(locale, 'Apresentação', 'Presentation')}
+            </p>
+            <h2 className="mt-3 font-heading text-3xl font-bold tracking-tight text-black xl:text-4xl">
+              {getLocaleText(locale, 'Grupo de Teatro ISPGAYA', 'ISPGAYA Theatre Group')}
+            </h2>
+            <p className="mt-5 max-w-4xl text-base leading-8 text-slate-700">
+              {getLocaleText(
+                locale,
+                'O Clube de Teatro é um espaço de criação artística, expressão e trabalho coletivo. Aqui desenvolvem-se exercícios de interpretação, voz, corpo, improvisação e construção de cena, culminando em ensaios abertos e espetáculos apresentados à comunidade académica.',
+                'The Theatre Club is a space for artistic creation, expression and collective work. It develops acting, voice, body, improvisation and scene-building practice, leading to open rehearsals and performances presented to the academic community.'
+              )}
+            </p>
+            <p className="mt-4 max-w-4xl text-base leading-8 text-slate-700">
+              {getLocaleText(
+                locale,
+                'É pensado tanto para quem já tem experiência de palco como para quem quer começar, ganhar confiança e explorar novas formas de comunicar.',
+                'It is designed both for students with stage experience and for those who want to begin, build confidence and explore new ways of communicating.'
+              )}
+            </p>
+          </section>
 
           <img
             className="mx-auto mb-8 mt-8 aspect-[3/1] w-full max-w-5xl rounded-sm object-cover shadow-xl"
@@ -259,25 +301,110 @@ function Teatro() {
             alt={getLocaleText(locale, 'Clube de Teatro', 'Theatre Club')}
           />
 
-          <p className={`${blockText} mb-8`}>
-            {getLocaleText(
-              locale,
-              'Se gostas de comunicar, improvisar, construir cenas e ganhar confiança perante o público, este é o teu espaço dentro do Laboratório Cultural.',
-              'If you enjoy communicating, improvising, building scenes and gaining confidence in front of an audience, this is your space in the Cultural Laboratory.'
-            )}
-          </p>
+          <section className="grid gap-5 lg:grid-cols-3">
+            <article className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+              <h3 className="text-lg font-semibold text-slate-900">
+                {getLocaleText(locale, 'Ensaios regulares', 'Regular rehearsals')}
+              </h3>
+              <p className="mt-3 text-sm leading-6 text-slate-600">
+                {getLocaleText(
+                  locale,
+                  'Momentos dedicados ao treino de expressão, leitura de texto, improvisação e construção de personagens.',
+                  'Dedicated moments for expression training, script reading, improvisation and character building.'
+                )}
+              </p>
+            </article>
+            <article className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+              <h3 className="text-lg font-semibold text-slate-900">
+                {getLocaleText(locale, 'Espetáculos e mostras', 'Performances and showcases')}
+              </h3>
+              <p className="mt-3 text-sm leading-6 text-slate-600">
+                {getLocaleText(
+                  locale,
+                  'Apresentações públicas dos trabalhos desenvolvidos pelo grupo ao longo do semestre e do ano letivo.',
+                  'Public presentations of the work developed by the group throughout the semester and academic year.'
+                )}
+              </p>
+            </article>
+            <article className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+              <h3 className="text-lg font-semibold text-slate-900">
+                {getLocaleText(locale, 'Integração no clube', 'Join the group')}
+              </h3>
+              <p className="mt-3 text-sm leading-6 text-slate-600">
+                {getLocaleText(
+                  locale,
+                  'Se gostas de comunicar, improvisar e ganhar confiança em palco, este é o teu espaço no Laboratório Cultural.',
+                  'If you enjoy communicating, improvising and building confidence on stage, this is your place in the Cultural Laboratory.'
+                )}
+              </p>
+            </article>
+          </section>
 
-          {clubPhotoItems.length > 0 ? (
-            <section className="mb-12 mt-12">
-              <div className="mb-5">
-                <h2 className={blockTitle}>
-                  {getLocaleText(locale, 'Momentos do Laboratório Cultural', 'Cultural Lab moments')}
+          <section className="mt-14">
+            <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#dd8609]">
+                  {getLocaleText(locale, 'Agenda', 'Agenda')}
+                </p>
+                <h2 className="mt-3 font-heading text-3xl font-bold tracking-tight text-black xl:text-4xl">
+                  {getLocaleText(locale, 'Ensaios e espetáculos', 'Rehearsals and performances')}
                 </h2>
-                <p className={blockText}>
+                <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-600">
                   {getLocaleText(
                     locale,
-                    'Galeria visual com imagens das criações, ensaios e apresentações do clube.',
-                    'Visual gallery with images from the club creations, rehearsals and performances.'
+                    'Consulta os próximos momentos do grupo, desde sessões de trabalho até apresentações abertas.',
+                    'Check the group’s next moments, from working sessions to open performances.'
+                  )}
+                </p>
+              </div>
+              <Link to="/laboratorio-cultural/agenda" className={adminBtnSecondary}>
+                {getLocaleText(locale, 'Explorar agenda', 'Explore agenda')}
+              </Link>
+            </div>
+
+            {agendaItems.length > 0 ? (
+              <div className="grid gap-5 lg:grid-cols-2">
+                {agendaItems.map((item) => (
+                  <article key={item.id} className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+                    <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#dd8609]">
+                      {item.kind}
+                    </p>
+                    <h3 className="mt-3 text-2xl font-bold text-slate-900">{item.title}</h3>
+                    <p className="mt-2 text-sm font-medium text-slate-500">
+                      {formatPublicDate(item.date, locale)}
+                    </p>
+                    <p className="mt-4 line-clamp-4 text-sm leading-6 text-slate-600">{item.description}</p>
+                    <Link to={item.href} className="mt-5 inline-flex text-sm font-bold text-[#dd8609] hover:underline">
+                      {getLocaleText(locale, 'Ver detalhe', 'View details')}
+                    </Link>
+                  </article>
+                ))}
+              </div>
+            ) : (
+              <p className="text-sm text-slate-600">
+                {getLocaleText(
+                  locale,
+                  'Ainda não existem ensaios ou espetáculos publicados para este clube.',
+                  'There are no published rehearsals or performances for this club yet.'
+                )}
+              </p>
+            )}
+          </section>
+
+          {clubPhotoItems.length > 0 ? (
+            <section className="mb-12 mt-14">
+              <div className="mb-5">
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#dd8609]">
+                  {getLocaleText(locale, 'Registo fotográfico', 'Photo record')}
+                </p>
+                <h2 className="mt-3 font-heading text-3xl font-bold tracking-tight text-black xl:text-4xl">
+                  {getLocaleText(locale, 'Momentos do grupo', 'Group moments')}
+                </h2>
+                <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-600">
+                  {getLocaleText(
+                    locale,
+                    'Galeria com imagens de ensaios, cenas, bastidores e apresentações do Clube de Teatro.',
+                    'Gallery with images from rehearsals, scenes, backstage moments and Theatre Club performances.'
                   )}
                 </p>
               </div>
@@ -314,7 +441,15 @@ function Teatro() {
           ) : null}
 
           {highlightedNews.length > 0 || highlightedEvents.length > 0 ? (
-            <section className="mb-12 mt-12 bg-white">
+            <section className="mb-12 mt-14 bg-white">
+              <div className="mb-8">
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#dd8609]">
+                  {getLocaleText(locale, 'Atualizações', 'Updates')}
+                </p>
+                <h2 className="mt-3 font-heading text-3xl font-bold tracking-tight text-black xl:text-4xl">
+                  {getLocaleText(locale, 'Notícias e divulgação', 'News and updates')}
+                </h2>
+              </div>
               <div className="grid w-full grid-cols-1 gap-12 xl:grid-cols-2 xl:gap-14">
                 <NewsHighlightsSection
                   title={getLocaleText(locale, 'Notícias', 'News')}
@@ -338,7 +473,7 @@ function Teatro() {
             <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
               <div>
                 <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#dd8609]">
-                  {getLocaleText(locale, 'Palco', 'Stage')}
+                  {getLocaleText(locale, 'Destaques', 'Highlights')}
                 </p>
                 <h2 className="mt-3 font-heading text-3xl font-bold tracking-tight text-black xl:text-4xl">
                   {getLocaleText(locale, 'Atividades em destaque', 'Featured activities')}
