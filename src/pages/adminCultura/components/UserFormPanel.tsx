@@ -252,14 +252,16 @@ export default function UserFormPanel({
                 </div>
               </section>
 
-              {userPage.mode === 'create' ? (
+              {userPage.mode === 'create' || userPage.mode === 'edit' ? (
                 <section className="space-y-4 rounded-2xl border border-slate-200 bg-slate-50 p-4 md:p-5">
                   <div>
                     <h3 className="text-sm font-semibold uppercase tracking-[0.14em] text-slate-500">
                       Clube
                     </h3>
                     <p className={adminInfo}>
-                      Associa este utilizador a um clube logo na criação.
+                      {userPage.mode === 'create'
+                        ? 'Associa este utilizador a um clube logo na criação.'
+                        : 'Atualiza o clube associado a este utilizador.'}
                     </p>
                   </div>
 
@@ -271,12 +273,14 @@ export default function UserFormPanel({
                       id="user-club"
                       className={adminInput}
                       value={userForm.club_id}
-                      required
+                      required={userPage.mode === 'create'}
                       onChange={(event) =>
                         setUserForm((prev) => ({ ...prev, club_id: event.target.value }))
                       }
                     >
-                      <option value="">Seleciona um clube</option>
+                      <option value="">
+                        {userPage.mode === 'create' ? 'Seleciona um clube' : 'Sem clube'}
+                      </option>
                       {isLoadingClubs ? <option value="">A carregar clubes...</option> : null}
                       {!isLoadingClubs && clubs.length === 0 ? (
                         <option value="">Nao existem clubes disponiveis</option>
@@ -288,7 +292,9 @@ export default function UserFormPanel({
                       ))}
                     </select>
                     <p className={adminInfo}>
-                      O clube escolhido fica guardado no momento da criacao do utilizador.
+                      {userPage.mode === 'create'
+                        ? 'O clube escolhido fica guardado no momento da criacao do utilizador.'
+                        : 'Podes trocar ou remover a associação do clube nesta edição.'}
                     </p>
                   </div>
                 </section>

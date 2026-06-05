@@ -51,13 +51,14 @@ export function useAdminUserActions({
       if (!token || !canManageUsers || !userPage) return;
 
       const manualPassword = userForm.password.trim();
+      const clubId = userForm.club_id.trim() ? Number(userForm.club_id) : null;
       const payload = {
         name: userForm.name.trim(),
         email: userForm.email.trim(),
         role: userForm.role,
         generate_password: userForm.generate_password,
-        ...(userPage.mode === 'create' && userForm.club_id
-          ? { club_id: Number(userForm.club_id) }
+        ...(userPage.mode === 'create' || userPage.mode === 'edit'
+          ? { club_id: clubId }
           : {}),
         ...(!userForm.generate_password && manualPassword ? { password: manualPassword } : {}),
       };

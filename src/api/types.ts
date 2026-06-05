@@ -428,6 +428,7 @@ export type UserPayload = {
   name: string;
   email: string;
   role: string;
+  club_id?: number | null;
   password?: string;
   generate_password?: boolean;
   is_active?: boolean;
