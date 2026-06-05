@@ -7,6 +7,7 @@ type UseUniversityEmailDomainOptions = {
   enabled: boolean;
   email: string;
   suggestedLocalPart?: string;
+  autoApplySearchResult?: boolean;
   onEmailChange: (nextEmail: string) => void;
 };
 
@@ -65,6 +66,7 @@ export function useUniversityEmailDomain({
   enabled,
   email,
   suggestedLocalPart = '',
+  autoApplySearchResult = true,
   onEmailChange,
 }: UseUniversityEmailDomainOptions) {
   const [universityQuery, setUniversityQuery] = useState('');
@@ -100,7 +102,7 @@ export function useUniversityEmailDomain({
       setSelectedUniversityIndex(0);
       setSelectedUniversityDomain(nextDomain);
 
-      if (nextDomain) {
+      if (nextDomain && autoApplySearchResult) {
         onEmailChange(
           currentEmail.trim()
             ? applyEmailDomain(currentEmail, nextDomain)

@@ -66,9 +66,10 @@ export default function UserFormPanel({
   selectedUser,
 }: UserFormPanelProps) {
   const university = useUniversityEmailDomain({
-    enabled: userPage.mode === 'create' || userPage.mode === 'edit',
+    enabled: userPage.mode === 'create',
     email: userForm.email,
     suggestedLocalPart: buildEmailLocalPartFromName(userForm.name),
+    autoApplySearchResult: userPage.mode === 'create',
     onEmailChange: (nextEmail) =>
       setUserForm((current) => ({
         ...current,
