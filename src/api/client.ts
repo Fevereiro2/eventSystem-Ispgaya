@@ -156,7 +156,8 @@ function shouldNotifySuccess(path: string, method: string): boolean {
   if (
     path === '/auth/login/' ||
     path === '/auth/logout/' ||
-    path === '/auth/refresh/'
+    path === '/auth/refresh/' ||
+    path === '/metrics/view/'
   ) {
     return false;
   }
