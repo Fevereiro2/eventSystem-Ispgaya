@@ -421,3 +421,124 @@ def sync_event_to_eventbrite(event) -> bool:
         event.eventbrite_last_synced_at = timezone.now()
         event.save(update_fields=['eventbrite_last_error', 'eventbrite_last_synced_at'])
         return False
+
+
+def clean_str(value) -> str:
+    if value is None:
+        return ""
+    return str(value).strip()
+
+
+def clean_str_or_none(value) -> str | None:
+    if value is None:
+        return None
+    cleaned = str(value).strip()
+    return cleaned if cleaned else None
+
+
+def normalize_eventbrite_attendee(attendee_payload: dict) -> dict:
+    profile = attendee_payload.get('profile') or {}
+    ticket_class = attendee_payload.get('ticket_class') or {}
+
+    section_label = ""
+    row_label = ""
+    seat_number = None
+    seat_label = ""
+    eventbrite_seat_id = clean_str_or_none(attendee_payload.get('eventbrite_seat_id'))
+
+    # 1. ORDEM DE PRECEDÊNCIA PRINCIPAL: Estruturas explícitas de Reserved Seating
+    reserved_seating = attendee_payload.get('reserved_seating') or attendee_payload.get('seat')
+    if isinstance(reserved_seating, dict):
+        row_label = clean_str(reserved_seating.get('row'))
+        seat_label = clean_str(reserved_seating.get('seat'))
+        eventbrite_seat_id = clean_str_or_none(reserved_seating.get('seat_id')) or eventbrite_seat_id
+        section_label = clean_str(reserved_seating.get('section'))
+        try:
+            seat_number = int(seat_label)
+        except (TypeError, ValueError):
+            pass
+
+    # 2. FALLBACK SECUNDÁRIO E OPCIONAL: Se não encontrou dados e existe assigned_number
+    if not row_label and not seat_label:
+        assigned_number = attendee_payload.get('assigned_number')
+        if assigned_number:
+            temp_label = str(assigned_number).strip()
+            if ',' in temp_label:
+                parts = [p.strip() for p in temp_label.split(',')]
+                for part in parts:
+                    if part.lower().startswith('row '):
+                        row_label = part[4:].strip()
+                    elif part.lower().startswith('seat '):
+                        seat_label = part[5:].strip()
+                        try:
+                            seat_number = int(seat_label)
+                        except (TypeError, ValueError):
+                            pass
+            elif '-' in temp_label:
+                r_part, s_part = temp_label.split('-', 1)
+                row_label = r_part.strip()
+                seat_label = s_part.strip()
+                try:
+                    seat_number = int(seat_label)
+                except (TypeError, ValueError):
+                    pass
+
+    # Construção defensiva do nome
+    first_name = clean_str(profile.get('first_name'))
+    last_name = clean_str(profile.get('last_name'))
+    full_name = clean_str(profile.get('name'))
+    if not full_name:
+        full_name = f"{first_name} {last_name}".strip()
+    else:
+        full_name = full_name.strip()
+
+    return {
+        "eventbrite_attendee_id": clean_str_or_none(attendee_payload.get('id')),
+        "eventbrite_order_id": clean_str_or_none(attendee_payload.get('order_id')),
+        "attendee_name": full_name,
+        "attendee_email": clean_str(profile.get('email')),
+        "ticket_class_id": clean_str_or_none(attendee_payload.get('ticket_class_id')),
+        "ticket_class_name": clean_str(attendee_payload.get('ticket_class_name') or ticket_class.get('name') or ''),
+        "section_label": section_label,
+        "row_label": row_label,
+        "seat_number": seat_number,
+        "seat_label": seat_label,
+        "eventbrite_seat_id": eventbrite_seat_id
+    }
+
+
+def get_eventbrite_seat_map(eventbrite_event_id: str) -> list[dict]:
+    """
+    Fetches the seat map from Eventbrite API.
+    Since the standard Eventbrite REST API has restricted public seat map endpoints,
+    we implement a robust fetch that tries to get seat map details from '/events/{event_id}/seat_map/',
+    and falls back to extracting seat structures from attendee payloads.
+    """
+    try:
+        res = _eventbrite_request('GET', f'/events/{eventbrite_event_id}/seat_map/')
+        if isinstance(res, dict) and 'seats' in res:
+            return res['seats']
+    except EventbriteAPIError:
+        pass
+
+    # Fallback: Fetch attendees to harvest seats from reserved seating payloads
+    seats = []
+    try:
+        attendees_data = list_eventbrite_attendees(eventbrite_event_id)
+        attendees = attendees_data.get('attendees', [])
+        seen_seat_ids = set()
+        for att in attendees:
+            reserved_seating = att.get('reserved_seating') or att.get('seat')
+            if isinstance(reserved_seating, dict):
+                seat_id = clean_str_or_none(reserved_seating.get('seat_id'))
+                if seat_id and seat_id not in seen_seat_ids:
+                    seen_seat_ids.add(seat_id)
+                    seats.append({
+                        'id': seat_id,
+                        'section': clean_str(reserved_seating.get('section')),
+                        'row': clean_str(reserved_seating.get('row')),
+                        'seat': clean_str(reserved_seating.get('seat')),
+                    })
+    except Exception:
+        pass
+    return seats

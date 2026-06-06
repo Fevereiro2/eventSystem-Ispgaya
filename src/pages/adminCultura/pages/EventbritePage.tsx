@@ -17,6 +17,11 @@ import {
   InfoCulturaEvent,
   InfoCulturaUser,
   syncAdminEventToEventbrite,
+  fetchAdminEventSeating,
+  saveAdminEventSeating,
+  paintAdminEventSeat,
+  syncAdminEventSeating,
+  EventSeatSyncIssue,
 } from '../../../api/infoculturaApi';
 import {
   adminActions,
@@ -80,6 +85,7 @@ type LocalVenueConfig = {
   seatsPerRow: number;
   prefix: string;
   notes: string;
+  layout_mode?: 'local_layout' | 'eventbrite_reserved_seating';
 };
 
 type SeatStatus = 'available' | 'held' | 'blocked' | 'vip';
@@ -89,6 +95,8 @@ type LocalSeat = {
   rowLabel: string;
   seatNumber: number;
   status: SeatStatus;
+  attendee_name?: string;
+  attendee_email?: string;
 };
 
 type LocalTicketPreset = {
@@ -124,10 +132,11 @@ const initialForm: EventbriteDraftForm = {
 
 const defaultVenueConfig: LocalVenueConfig = {
   name: '',
-  rows: 8,
-  seatsPerRow: 12,
+  rows: 5,
+  seatsPerRow: 10,
   prefix: 'Fila',
   notes: '',
+  layout_mode: 'local_layout',
 };
 
 const defaultTicketPreset = (): LocalTicketPreset => ({
@@ -146,28 +155,7 @@ function getTicketClassLabel(ticket: Record<string, unknown>): string {
   return `${name}${quantity ? ` · ${quantity}` : ''}${sold ? ` · vendidos ${sold}` : ''}`;
 }
 
-function buildRowLabel(prefix: string, index: number): string {
-  const letter = String.fromCharCode(65 + index);
-  return `${prefix.trim() || 'Fila'} ${letter}`;
-}
-
-function buildSeatMap(config: LocalVenueConfig): LocalSeat[] {
-  const seats: LocalSeat[] = [];
-
-  for (let rowIndex = 0; rowIndex < config.rows; rowIndex += 1) {
-    const rowLabel = buildRowLabel(config.prefix, rowIndex);
-    for (let seatNumber = 1; seatNumber <= config.seatsPerRow; seatNumber += 1) {
-      seats.push({
-        id: `${rowLabel}-${seatNumber}`,
-        rowLabel,
-        seatNumber,
-        status: 'available',
-      });
-    }
-  }
-
-  return seats;
-}
+// buildRowLabel has been removed since row generation is handled on the backend.
 
 function readStorage<T>(key: string, fallback: T): T {
   if (typeof window === 'undefined') return fallback;
@@ -212,12 +200,9 @@ function EventbritePage({
   const [ticketQuantity, setTicketQuantity] = useState('25');
   const [ticketType, setTicketType] = useState<'free' | 'paid' | 'donation'>('free');
   const [ticketPrice, setTicketPrice] = useState('');
-  const [venueConfigByEventId, setVenueConfigByEventId] = useState<Record<number, LocalVenueConfig>>(
-    () => readStorage('infocultura:eventbrite:venues', {})
-  );
-  const [seatMapByEventId, setSeatMapByEventId] = useState<Record<number, LocalSeat[]>>(
-    () => readStorage('infocultura:eventbrite:seatmaps', {})
-  );
+  const [venueConfigByEventId, setVenueConfigByEventId] = useState<Record<number, LocalVenueConfig>>({});
+  const [seatMapByEventId, setSeatMapByEventId] = useState<Record<number, LocalSeat[]>>({});
+  const [syncIssuesByEventId, setSyncIssuesByEventId] = useState<Record<number, EventSeatSyncIssue[]>>({});
   const [ticketPresetsByEventId, setTicketPresetsByEventId] = useState<Record<number, LocalTicketPreset[]>>(
     () => readStorage('infocultura:eventbrite:ticket-presets', {})
   );
@@ -234,16 +219,70 @@ function EventbritePage({
     null;
 
   useEffect(() => {
-    writeStorage('infocultura:eventbrite:venues', venueConfigByEventId);
-  }, [venueConfigByEventId]);
-
-  useEffect(() => {
-    writeStorage('infocultura:eventbrite:seatmaps', seatMapByEventId);
-  }, [seatMapByEventId]);
-
-  useEffect(() => {
     writeStorage('infocultura:eventbrite:ticket-presets', ticketPresetsByEventId);
   }, [ticketPresetsByEventId]);
+
+  // Load layout and seats from Django API when event changes
+  useEffect(() => {
+    if (!selectedEventId) return;
+
+    let isMounted = true;
+    setIsLoadingEventbrite(true);
+    fetchAdminEventSeating(token, selectedEventId)
+      .then((res) => {
+        if (!isMounted) return;
+        if (res.venue_layout) {
+          setVenueConfigByEventId((prev) => ({
+            ...prev,
+            [selectedEventId]: {
+              name: res.venue_layout!.notes || '',
+              rows: res.venue_layout!.rows,
+              seatsPerRow: res.venue_layout!.seats_per_row,
+              prefix: res.venue_layout!.row_prefix,
+              notes: res.venue_layout!.notes,
+              layout_mode: res.venue_layout!.layout_mode,
+            }
+          }));
+        } else {
+          setVenueConfigByEventId((prev) => ({
+            ...prev,
+            [selectedEventId]: {
+              ...defaultVenueConfig,
+              name: selectedEvent?.eventbrite_venue?.name || selectedEvent?.location || '',
+            }
+          }));
+        }
+        if (res.seats) {
+          setSeatMapByEventId((prev) => ({
+            ...prev,
+            [selectedEventId]: res.seats.map((seat) => ({
+              id: String(seat.id),
+              rowLabel: seat.row_label,
+              seatNumber: seat.seat_number || 0,
+              status: seat.status === 'assigned' ? 'held' : (seat.status as SeatStatus),
+              attendee_name: seat.attendee_name,
+              attendee_email: seat.attendee_email,
+            }))
+          }));
+        }
+        if (res.sync_issues) {
+          setSyncIssuesByEventId((prev) => ({
+            ...prev,
+            [selectedEventId]: res.sync_issues
+          }));
+        }
+      })
+      .catch((err) => {
+        console.error("Erro ao carregar lugares do evento:", err);
+      })
+      .finally(() => {
+        if (isMounted) setIsLoadingEventbrite(false);
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [selectedEventId, token]);
 
   useEffect(() => {
     if (!selectedEventId && eventbriteEvents.length > 0) {
@@ -410,42 +449,161 @@ function EventbritePage({
     }
   }
 
-  function handleSaveVenueConfig(event: FormEvent<HTMLFormElement>) {
+  async function handleSaveVenueConfig(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!selectedEvent) return;
+    setError('');
 
-    const normalizedVenue = {
-      ...draftVenueConfig,
+    const payload = {
+      layout_mode: draftVenueConfig.layout_mode || 'local_layout',
       rows: Math.max(1, Number(draftVenueConfig.rows)),
-      seatsPerRow: Math.max(1, Number(draftVenueConfig.seatsPerRow)),
+      seats_per_row: Math.max(1, Number(draftVenueConfig.seatsPerRow)),
+      row_prefix: draftVenueConfig.prefix,
+      notes: draftVenueConfig.notes,
     };
 
-    setVenueConfigByEventId((prev) => ({ ...prev, [selectedEvent.id]: normalizedVenue }));
-    setSeatMapByEventId((prev) => ({
-      ...prev,
-      [selectedEvent.id]: prev[selectedEvent.id]?.length ? prev[selectedEvent.id] : buildSeatMap(normalizedVenue),
-    }));
+    try {
+      setIsSaving(true);
+      const res = await saveAdminEventSeating(token, selectedEvent.id, payload);
+      if (res.venue_layout) {
+        setVenueConfigByEventId((prev) => ({
+          ...prev,
+          [selectedEvent.id]: {
+            name: res.venue_layout!.notes || '',
+            rows: res.venue_layout!.rows,
+            seatsPerRow: res.venue_layout!.seats_per_row,
+            prefix: res.venue_layout!.row_prefix,
+            notes: res.venue_layout!.notes,
+            layout_mode: res.venue_layout!.layout_mode,
+          }
+        }));
+      }
+      setSeatMapByEventId((prev) => ({
+        ...prev,
+        [selectedEvent.id]: res.seats.map((seat) => ({
+          id: String(seat.id),
+          rowLabel: seat.row_label,
+          seatNumber: seat.seat_number || 0,
+          status: seat.status === 'assigned' ? 'held' : (seat.status as SeatStatus),
+          attendee_name: seat.attendee_name,
+          attendee_email: seat.attendee_email,
+        })),
+      }));
+      if (res.sync_issues) {
+        setSyncIssuesByEventId((prev) => ({
+          ...prev,
+          [selectedEvent.id]: res.sync_issues
+        }));
+      }
+    } catch (caught: any) {
+      setError(caught?.message || 'Erro ao guardar a sala.');
+    } finally {
+      setIsSaving(false);
+    }
   }
 
-  function handleGenerateSeatMap() {
+  async function handleGenerateSeatMap() {
     if (!selectedEvent) return;
-    const normalizedVenue = {
-      ...draftVenueConfig,
+    setError('');
+
+    const payload = {
+      layout_mode: draftVenueConfig.layout_mode || 'local_layout',
       rows: Math.max(1, Number(draftVenueConfig.rows)),
-      seatsPerRow: Math.max(1, Number(draftVenueConfig.seatsPerRow)),
+      seats_per_row: Math.max(1, Number(draftVenueConfig.seatsPerRow)),
+      row_prefix: draftVenueConfig.prefix,
+      notes: draftVenueConfig.notes,
     };
-    setSeatMapByEventId((prev) => ({ ...prev, [selectedEvent.id]: buildSeatMap(normalizedVenue) }));
+
+    try {
+      setIsSaving(true);
+      const res = await saveAdminEventSeating(token, selectedEvent.id, payload);
+      if (res.venue_layout) {
+        setVenueConfigByEventId((prev) => ({
+          ...prev,
+          [selectedEvent.id]: {
+            name: res.venue_layout!.notes || '',
+            rows: res.venue_layout!.rows,
+            seatsPerRow: res.venue_layout!.seats_per_row,
+            prefix: res.venue_layout!.row_prefix,
+            notes: res.venue_layout!.notes,
+            layout_mode: res.venue_layout!.layout_mode,
+          }
+        }));
+      }
+      setSeatMapByEventId((prev) => ({
+        ...prev,
+        [selectedEvent.id]: res.seats.map((seat) => ({
+          id: String(seat.id),
+          rowLabel: seat.row_label,
+          seatNumber: seat.seat_number || 0,
+          status: seat.status === 'assigned' ? 'held' : (seat.status as SeatStatus),
+          attendee_name: seat.attendee_name,
+          attendee_email: seat.attendee_email,
+        })),
+      }));
+      if (res.sync_issues) {
+        setSyncIssuesByEventId((prev) => ({
+          ...prev,
+          [selectedEvent.id]: res.sync_issues
+        }));
+      }
+    } catch (caught: any) {
+      setError(caught?.message || 'Erro ao gerar o mapa de lugares.');
+    } finally {
+      setIsSaving(false);
+    }
   }
 
-  function handlePaintSeat(seatId: string) {
+  async function handlePaintSeat(seatId: string) {
     if (!selectedEvent) return;
+    setError('');
 
-    setSeatMapByEventId((prev) => ({
-      ...prev,
-      [selectedEvent.id]: (prev[selectedEvent.id] || []).map((seat) =>
-        seat.id === seatId ? { ...seat, status: seatPaintMode } : seat
-      ),
-    }));
+    const seatIdNum = Number(seatId);
+    if (isNaN(seatIdNum)) return;
+
+    try {
+      const res = await paintAdminEventSeat(token, selectedEvent.id, seatIdNum, seatPaintMode);
+      setSeatMapByEventId((prev) => ({
+        ...prev,
+        [selectedEvent.id]: (prev[selectedEvent.id] || []).map((seat) =>
+          seat.id === seatId ? { ...seat, status: res.status === 'assigned' ? 'held' : (res.status as SeatStatus) } : seat
+        ),
+      }));
+    } catch (caught: any) {
+      setError(caught?.message || 'Erro ao pintar o lugar.');
+    }
+  }
+
+  async function handleSyncSeating() {
+    if (!selectedEvent) return;
+    setIsLoadingEventbrite(true);
+    setError('');
+    try {
+      await syncAdminEventSeating(token, selectedEvent.id);
+      const res = await fetchAdminEventSeating(token, selectedEvent.id);
+      if (res.seats) {
+        setSeatMapByEventId((prev) => ({
+          ...prev,
+          [selectedEvent.id]: res.seats.map((seat) => ({
+            id: String(seat.id),
+            rowLabel: seat.row_label,
+            seatNumber: seat.seat_number || 0,
+            status: seat.status === 'assigned' ? 'held' : (seat.status as SeatStatus),
+          })),
+        }));
+      }
+      if (res.sync_issues) {
+        setSyncIssuesByEventId((prev) => ({
+          ...prev,
+          [selectedEvent.id]: res.sync_issues
+        }));
+      }
+      await handleLoadEventbriteData(selectedEvent.id);
+    } catch (caught: any) {
+      setError(caught?.message || 'Erro ao sincronizar lugares.');
+    } finally {
+      setIsLoadingEventbrite(false);
+    }
   }
 
   function handleSaveTicketPreset() {
@@ -727,33 +885,56 @@ function EventbritePage({
             <form className={`${adminPanelForm} mt-4`} onSubmit={handleSaveVenueConfig}>
               <div className={adminFormGridSpaced}>
                 <div className={adminField}>
+                  <label className={adminLabel}>Modo de Layout</label>
+                  <select
+                    className={adminInput}
+                    value={draftVenueConfig.layout_mode || 'local_layout'}
+                    onChange={(event) => setDraftVenueConfig((prev) => ({ ...prev, layout_mode: event.target.value as any }))}
+                  >
+                    <option value="local_layout">Layout Local</option>
+                    <option value="eventbrite_reserved_seating">Reserved Seating Eventbrite</option>
+                  </select>
+                </div>
+                <div className={adminField}>
                   <label className={adminLabel}>Nome da sala</label>
                   <input className={adminInput} value={draftVenueConfig.name} onChange={(event) => setDraftVenueConfig((prev) => ({ ...prev, name: event.target.value }))} />
                 </div>
-                <div className={adminField}>
-                  <label className={adminLabel}>Número de filas</label>
-                  <input className={adminInput} type="number" min="1" value={draftVenueConfig.rows} onChange={(event) => setDraftVenueConfig((prev) => ({ ...prev, rows: Number(event.target.value) }))} />
-                </div>
-                <div className={adminField}>
-                  <label className={adminLabel}>Lugares por fila</label>
-                  <input className={adminInput} type="number" min="1" value={draftVenueConfig.seatsPerRow} onChange={(event) => setDraftVenueConfig((prev) => ({ ...prev, seatsPerRow: Number(event.target.value) }))} />
-                </div>
-                <div className={adminField}>
-                  <label className={adminLabel}>Prefixo das filas</label>
-                  <input className={adminInput} value={draftVenueConfig.prefix} onChange={(event) => setDraftVenueConfig((prev) => ({ ...prev, prefix: event.target.value }))} />
-                </div>
+                {draftVenueConfig.layout_mode !== 'eventbrite_reserved_seating' ? (
+                  <>
+                    <div className={adminField}>
+                      <label className={adminLabel}>Número de filas</label>
+                      <input className={adminInput} type="number" min="1" value={draftVenueConfig.rows} onChange={(event) => setDraftVenueConfig((prev) => ({ ...prev, rows: Number(event.target.value) }))} />
+                    </div>
+                    <div className={adminField}>
+                      <label className={adminLabel}>Lugares por fila</label>
+                      <input className={adminInput} type="number" min="1" value={draftVenueConfig.seatsPerRow} onChange={(event) => setDraftVenueConfig((prev) => ({ ...prev, seatsPerRow: Number(event.target.value) }))} />
+                    </div>
+                    <div className={adminField}>
+                      <label className={adminLabel}>Prefixo das filas</label>
+                      <input className={adminInput} value={draftVenueConfig.prefix} onChange={(event) => setDraftVenueConfig((prev) => ({ ...prev, prefix: event.target.value }))} />
+                    </div>
+                  </>
+                ) : null}
               </div>
               <div className={adminField}>
                 <label className={adminLabel}>Notas operacionais</label>
                 <textarea className={adminInput} rows={4} value={draftVenueConfig.notes} onChange={(event) => setDraftVenueConfig((prev) => ({ ...prev, notes: event.target.value }))} />
               </div>
               <div className={adminActions}>
-                <button type="submit" className={adminBtnPrimary}>Guardar sala</button>
-                <button type="button" className={adminBtnSecondary} onClick={handleGenerateSeatMap}>Gerar mapa de lugares</button>
+                <button type="submit" className={adminBtnPrimary} disabled={isSaving}>Guardar sala</button>
+                {draftVenueConfig.layout_mode !== 'eventbrite_reserved_seating' ? (
+                  <button type="button" className={adminBtnSecondary} disabled={isSaving} onClick={handleGenerateSeatMap}>Gerar mapa de lugares</button>
+                ) : null}
               </div>
-              <p className={`${adminListMeta} mt-3`}>
-                Configuração atual: {draftVenueConfig.rows} filas · {draftVenueConfig.seatsPerRow} lugares por fila · capacidade teórica {draftVenueConfig.rows * draftVenueConfig.seatsPerRow}
-              </p>
+              {draftVenueConfig.layout_mode !== 'eventbrite_reserved_seating' ? (
+                <p className={`${adminListMeta} mt-3`}>
+                  Configuração atual: {draftVenueConfig.rows} filas · {draftVenueConfig.seatsPerRow} lugares por fila · capacidade teórica {draftVenueConfig.rows * draftVenueConfig.seatsPerRow}
+                </p>
+              ) : (
+                <p className={`${adminListMeta} mt-3`}>
+                  Sala sincronizada a partir do Reserved Seating da Eventbrite.
+                </p>
+              )}
             </form>
           ) : null}
         </section>
@@ -768,23 +949,33 @@ function EventbritePage({
           {!selectedEvent ? <p className={`${adminInfo} mt-4`}>Seleciona um evento para editar os lugares.</p> : null}
           {selectedEvent ? (
             <>
-              <div className={`${adminActions} mt-4`}>
-                {(['available', 'held', 'blocked', 'vip'] as SeatStatus[]).map((status) => (
-                  <button
-                    key={status}
-                    type="button"
-                    className={seatPaintMode === status ? adminBtnPrimary : adminBtnSecondary}
-                    onClick={() => setSeatPaintMode(status)}
-                  >
-                    {status === 'available'
-                      ? 'Disponível'
-                      : status === 'held'
-                        ? 'Reservado'
-                        : status === 'blocked'
-                          ? 'Bloqueado'
-                          : 'VIP'}
-                  </button>
-                ))}
+              <div className={`${adminActions} mt-4 flex items-center justify-between flex-wrap gap-3`}>
+                <div className="flex flex-wrap gap-2">
+                  {(['available', 'held', 'blocked', 'vip'] as SeatStatus[]).map((status) => (
+                    <button
+                      key={status}
+                      type="button"
+                      className={seatPaintMode === status ? adminBtnPrimary : adminBtnSecondary}
+                      onClick={() => setSeatPaintMode(status)}
+                    >
+                      {status === 'available'
+                        ? 'Disponível'
+                        : status === 'held'
+                          ? 'Reservado'
+                          : status === 'blocked'
+                            ? 'Bloqueado'
+                            : 'VIP'}
+                    </button>
+                  ))}
+                </div>
+                <button
+                  type="button"
+                  className={adminBtnPrimary}
+                  disabled={isLoadingEventbrite}
+                  onClick={handleSyncSeating}
+                >
+                  Sincronizar Lugares
+                </button>
               </div>
 
               <div className="mt-4 grid grid-cols-2 gap-3 lg:grid-cols-4">
@@ -793,6 +984,28 @@ function EventbritePage({
                 <div className="rounded-xl border border-slate-200 p-4 text-sm text-slate-700">Bloqueados: {seatStatusCounts.blocked}</div>
                 <div className="rounded-xl border border-slate-200 p-4 text-sm text-slate-700">VIP: {seatStatusCounts.vip}</div>
               </div>
+
+              {syncIssuesByEventId[selectedEvent.id]?.length > 0 ? (
+                <div className="mt-6 rounded-xl border border-rose-200 bg-rose-50 p-4">
+                  <h3 className="text-sm font-semibold text-rose-900">Anomalias de Sincronização</h3>
+                  <div className="mt-2 space-y-2">
+                    {syncIssuesByEventId[selectedEvent.id].map((issue) => (
+                      <p key={issue.id} className="text-xs text-rose-800">
+                        {issue.attendee_name || issue.attendee_email || 'Participante'} ({issue.ticket_class_name || 'Ticket'}) ·{' '}
+                        <strong>
+                          {issue.issue_type === 'unassigned'
+                            ? 'Sem assento atribuído (Sala Cheia / Sem Cadeira)'
+                            : issue.issue_type === 'seat_not_found'
+                              ? 'Assento Eventbrite não encontrado na sala local'
+                              : issue.issue_type === 'missing_attendee_id'
+                                ? 'Participante sem ID da Eventbrite'
+                                : 'Duplicado'}
+                        </strong>
+                      </p>
+                    ))}
+                  </div>
+                </div>
+              ) : null}
 
               {selectedSeatMap.length === 0 ? (
                 <p className={`${adminInfo} mt-4`}>Ainda não existe mapa para este evento. Primeiro configura a sala.</p>
@@ -804,24 +1017,28 @@ function EventbritePage({
                       <div className="flex flex-wrap gap-2">
                         {selectedSeatMap
                           .filter((seat) => seat.rowLabel === rowLabel)
-                          .map((seat) => (
-                            <button
-                              key={seat.id}
-                              type="button"
-                              onClick={() => handlePaintSeat(seat.id)}
-                              className={`h-10 w-10 rounded-md border text-xs font-semibold ${
-                                seat.status === 'available'
-                                  ? 'border-slate-200 bg-white text-slate-700'
-                                  : seat.status === 'held'
-                                    ? 'border-amber-200 bg-amber-100 text-amber-900'
-                                    : seat.status === 'blocked'
-                                      ? 'border-rose-200 bg-rose-100 text-rose-900'
-                                      : 'border-emerald-200 bg-emerald-100 text-emerald-900'
-                              }`}
-                            >
-                              {seat.seatNumber}
-                            </button>
-                          ))}
+                          .map((seat) => {
+                            const titleText = seat.status === 'held' ? `${seat.attendee_name || 'Reservado'} (${seat.attendee_email || ''})` : `Lugar ${seat.seatNumber}`;
+                            return (
+                              <button
+                                key={seat.id}
+                                type="button"
+                                title={titleText}
+                                onClick={() => handlePaintSeat(seat.id)}
+                                className={`h-10 w-10 rounded-md border text-xs font-semibold ${
+                                  seat.status === 'available'
+                                    ? 'border-slate-200 bg-white text-slate-700'
+                                    : seat.status === 'held'
+                                      ? 'border-amber-200 bg-amber-100 text-amber-900'
+                                      : seat.status === 'blocked'
+                                        ? 'border-rose-200 bg-rose-100 text-rose-900'
+                                        : 'border-emerald-200 bg-emerald-100 text-emerald-900'
+                                }`}
+                              >
+                                {seat.seatNumber || seat.id}
+                              </button>
+                            );
+                          })}
                       </div>
                     </div>
                   ))}

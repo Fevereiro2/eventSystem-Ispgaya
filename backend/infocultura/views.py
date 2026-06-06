@@ -34,6 +34,9 @@ from .view_modules.admin_events import (
     AdminRegistrationStatusUpdateView,
     AdminSessionDetailView,
     AdminSessionListCreateView,
+    AdminEventSeatingView,
+    AdminEventSeatingPaintView,
+    AdminEventSeatingSyncView,
 )
 from .view_modules.admin.logs import AdminActivityLogListView
 from .view_modules.admin.metrics import AdminMetricsOverviewView
@@ -113,6 +116,9 @@ __all__ = [
     'AdminEventEventbriteTicketClassView',
     'AdminEventListCreateView',
     'AdminImageUploadView',
+    'AdminEventSeatingView',
+    'AdminEventSeatingPaintView',
+    'AdminEventSeatingSyncView',
     'AdminMetricsOverviewView',
     'AdminNewsBulkDeleteView',
     'AdminNewsBulkStatusUpdateView',

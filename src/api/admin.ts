@@ -1518,3 +1518,103 @@ export async function removeUserFromClub(
 
   return data.user;
 }
+
+export interface LocalSeat {
+  id: number;
+  section_label: string;
+  row_label: string;
+  seat_number: number | null;
+  seat_label: string;
+  eventbrite_seat_id: string | null;
+  eventbrite_attendee_id: string | null;
+  eventbrite_order_id: string | null;
+  attendee_name: string;
+  attendee_email: string;
+  ticket_class_name: string;
+  status: 'available' | 'blocked' | 'vip' | 'assigned';
+}
+
+export interface VenueLayoutConfig {
+  id: number;
+  layout_mode: 'local_layout' | 'eventbrite_reserved_seating';
+  rows: number;
+  seats_per_row: number;
+  row_prefix: string;
+  eventbrite_seat_map_id: string | null;
+  notes: string;
+}
+
+export interface EventSeatSyncIssue {
+  id: number;
+  eventbrite_attendee_id: string | null;
+  eventbrite_order_id: string | null;
+  attendee_name: string;
+  attendee_email: string;
+  ticket_class_name: string;
+  issue_type: 'unassigned' | 'duplicate' | 'seat_not_found' | 'missing_attendee_id';
+}
+
+export interface EventSeatingResponse {
+  venue_layout: VenueLayoutConfig | null;
+  seats: LocalSeat[];
+  sync_issues: EventSeatSyncIssue[];
+}
+
+export async function fetchAdminEventSeating(
+  token: string,
+  eventId: number
+): Promise<EventSeatingResponse> {
+  return request<EventSeatingResponse>(`/events/admin/${eventId}/seating/`, {}, token);
+}
+
+export async function saveAdminEventSeating(
+  token: string,
+  eventId: number,
+  payload: {
+    layout_mode: string;
+    rows: number;
+    seats_per_row: number;
+    row_prefix: string;
+    notes?: string;
+    eventbrite_seat_map_id?: string | null;
+  }
+): Promise<EventSeatingResponse> {
+  return request<EventSeatingResponse>(
+    `/events/admin/${eventId}/seating/`,
+    {
+      method: 'POST',
+      body: JSON.stringify(payload)
+    },
+    token
+  );
+}
+
+export async function paintAdminEventSeat(
+  token: string,
+  eventId: number,
+  seatId: number,
+  status: string
+): Promise<{ message: string; seat_id: number; status: string }> {
+  return request<{ message: string; seat_id: number; status: string }>(
+    `/events/admin/${eventId}/seating/paint/`,
+    {
+      method: 'POST',
+      body: JSON.stringify({ seat_id: seatId, status })
+    },
+    token
+  );
+}
+
+export async function syncAdminEventSeating(
+  token: string,
+  eventId: number
+): Promise<{ message: string }> {
+  return request<{ message: string }>(
+    `/events/admin/${eventId}/seating/sync/`,
+    {
+      method: 'POST'
+    },
+    token
+  );
+}
+
