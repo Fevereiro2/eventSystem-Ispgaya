@@ -589,3 +589,106 @@ class AdminAuditLog(models.Model):
         db_table = db_constants.TABLE_ADMIN_AUDIT_LOG
         managed = False
         ordering = ['-created_at']
+
+
+class VenueLayout(models.Model):
+    LAYOUT_MODES = [
+        ('local_layout', 'Layout Local'),
+        ('eventbrite_reserved_seating', 'Reserved Seating Eventbrite'),
+    ]
+
+    id = models.AutoField(primary_key=True)
+    event = models.OneToOneField('Event', on_delete=models.CASCADE, related_name='venue_layout')
+    layout_mode = models.CharField(max_length=50, choices=LAYOUT_MODES, default='local_layout')
+    rows = models.IntegerField(default=0)
+    seats_per_row = models.IntegerField(default=0)
+    row_prefix = models.CharField(max_length=20, blank=True, default='')
+    eventbrite_seat_map_id = models.CharField(max_length=64, blank=True, null=True, default=None)
+    eventbrite_source_seat_map_id = models.CharField(max_length=64, blank=True, null=True, default=None)
+    notes = models.TextField(blank=True, default='')
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = 'infocultura_venue_layout'
+        managed = False
+
+
+class EventSeat(models.Model):
+    STATUS_CHOICES = [
+        ('available', 'Disponível'),
+        ('blocked', 'Bloqueado'),
+        ('vip', 'VIP'),
+        ('assigned', 'Atribuído'),
+    ]
+
+    id = models.AutoField(primary_key=True)
+    event = models.ForeignKey('Event', on_delete=models.CASCADE, related_name='seats')
+    venue_layout = models.ForeignKey(VenueLayout, on_delete=models.SET_NULL, blank=True, null=True, related_name='seats')
+    section_label = models.CharField(max_length=100, blank=True, default='')
+    row_label = models.CharField(max_length=50)
+    seat_number = models.IntegerField(blank=True, null=True)
+    seat_label = models.CharField(max_length=100)
+    eventbrite_seat_id = models.CharField(max_length=64, blank=True, null=True, default=None)
+    eventbrite_attendee_id = models.CharField(max_length=64, blank=True, null=True, default=None)
+    eventbrite_order_id = models.CharField(max_length=64, blank=True, null=True, default=None)
+    attendee_name = models.CharField(max_length=255, blank=True, default='')
+    attendee_email = models.CharField(max_length=255, blank=True, default='')
+    ticket_class_id = models.CharField(max_length=64, blank=True, null=True, default=None)
+    ticket_class_name = models.CharField(max_length=255, blank=True, default='')
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='available')
+    synced_at = models.DateTimeField(blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = 'infocultura_event_seat'
+        managed = False
+        constraints = [
+            models.UniqueConstraint(
+                fields=['event', 'section_label', 'row_label', 'seat_label'],
+                name='unique_event_section_row_seat_label'
+            ),
+            models.UniqueConstraint(
+                fields=['event', 'eventbrite_seat_id'],
+                condition=models.Q(eventbrite_seat_id__isnull=False),
+                name='unique_event_eventbrite_seat_id'
+            ),
+            models.UniqueConstraint(
+                fields=['event', 'eventbrite_attendee_id'],
+                condition=models.Q(eventbrite_attendee_id__isnull=False),
+                name='unique_event_eventbrite_attendee_id'
+            )
+        ]
+
+
+class EventSeatSyncIssue(models.Model):
+    ISSUE_TYPES = [
+        ('unassigned', 'Sem assento atribuído'),
+        ('duplicate', 'Participante com múltiplos assentos'),
+        ('seat_not_found', 'Assento do Eventbrite inexistente na sala local'),
+        ('missing_attendee_id', 'Participante sem ID da Eventbrite'),
+    ]
+
+    id = models.AutoField(primary_key=True)
+    event = models.ForeignKey('Event', on_delete=models.CASCADE, related_name='seating_issues')
+    eventbrite_attendee_id = models.CharField(max_length=64, blank=True, null=True, default=None)
+    eventbrite_order_id = models.CharField(max_length=64, blank=True, null=True, default=None)
+    attendee_name = models.CharField(max_length=255, blank=True, default='')
+    attendee_email = models.CharField(max_length=255, blank=True, default='')
+    ticket_class_name = models.CharField(max_length=255, blank=True, default='')
+    issue_type = models.CharField(max_length=30, choices=ISSUE_TYPES, default='unassigned')
+    synced_at = models.DateTimeField(auto_now=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = 'infocultura_event_seat_sync_issue'
+        managed = False
+        constraints = [
+            models.UniqueConstraint(
+                fields=['event', 'eventbrite_attendee_id'],
+                condition=models.Q(eventbrite_attendee_id__isnull=False),
+                name='unique_event_sync_issue_attendee'
+            )
+        ]
+

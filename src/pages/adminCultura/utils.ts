@@ -150,14 +150,14 @@ export function getPhotoSubpage(pathname: string): PhotoSubpage | null {
 }
 
 export function getEventbriteSubpage(pathname: string): EventbriteSubpage | null {
-  if (pathname === '/infocultura/eventbrite' || pathname === '/infocultura/eventbrite/') {
-    return 'overview';
-  }
-  if (pathname === '/infocultura/eventbrite/salas') return 'venues';
-  if (pathname === '/infocultura/eventbrite/lugares') return 'seating';
-  if (pathname === '/infocultura/eventbrite/tickets') return 'tickets';
+  const clean = pathname.replace(/\/$/, '');
+  if (clean === '/infocultura/eventbrite/salas') return 'venues';
+  if (clean === '/infocultura/eventbrite/lugares') return 'seating';
+  if (clean === '/infocultura/eventbrite/tickets') return 'tickets';
+  if (clean === '/infocultura/eventbrite') return 'overview';
   return null;
 }
+
 
 export function getNewsRoute(page: NewsSubpage): string {
   return page === 'form' ? '/infocultura/noticias/nova' : '/infocultura/noticias/registadas';

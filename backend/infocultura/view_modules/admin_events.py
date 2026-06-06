@@ -41,6 +41,11 @@ from .admin.sessions import (
     AdminSessionDetailView,
     AdminSessionListCreateView,
 )
+from .admin.views_seating import (
+    AdminEventSeatingView,
+    AdminEventSeatingPaintView,
+    AdminEventSeatingSyncView,
+)
 
 __all__ = [
     'AdminAuditLogListView',
@@ -72,4 +77,7 @@ __all__ = [
     'AdminRegistrationStatusUpdateView',
     'AdminSessionDetailView',
     'AdminSessionListCreateView',
+    'AdminEventSeatingView',
+    'AdminEventSeatingPaintView',
+    'AdminEventSeatingSyncView',
 ]
