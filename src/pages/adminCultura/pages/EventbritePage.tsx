@@ -1,6 +1,5 @@
 import { FormEvent, useEffect, useMemo, useState } from 'react';
 import { Ticket } from 'lucide-react';
-import { useLocation, Link } from 'react-router-dom';
 
 import {
   createAdminEvent,
@@ -45,7 +44,6 @@ import {
   blockTitle,
 } from '../../../styles/ui';
 import AdminPageHero from '../components/AdminPageHero';
-import { getEventbriteSubpage } from '../utils';
 import { formatAdminDateTime, getWorkflowStatusLabel } from '../utils';
 
 type EventbritePageProps = {
@@ -181,8 +179,7 @@ function EventbritePage({
   events,
   setEvents,
 }: EventbritePageProps) {
-  const location = useLocation();
-  const activeSubpage = getEventbriteSubpage(location.pathname) || 'overview';
+  const [activeSubpage, setActiveSubpage] = useState<'overview' | 'venues' | 'seating' | 'tickets'>('overview');
   const [form, setForm] = useState<EventbriteDraftForm>(() => ({
     ...initialForm,
     club_id: canManageUsers ? '' : currentUser.club_id ? String(currentUser.club_id) : '',
@@ -666,11 +663,11 @@ function EventbritePage({
   }, [selectedSeatMap]);
 
   const subpageLinks = [
-    { label: 'Visão Geral', href: '/infocultura/eventbrite', id: 'overview' },
-    { label: 'Salas', href: '/infocultura/eventbrite/salas', id: 'venues' },
-    { label: 'Lugares', href: '/infocultura/eventbrite/lugares', id: 'seating' },
-    { label: 'Tickets', href: '/infocultura/eventbrite/tickets', id: 'tickets' },
-  ] as const;
+    { label: 'Visão Geral', id: 'overview' as const },
+    { label: 'Salas', id: 'venues' as const },
+    { label: 'Lugares', id: 'seating' as const },
+    { label: 'Tickets', id: 'tickets' as const },
+  ];
 
   return (
     <div className="space-y-6">
@@ -689,13 +686,14 @@ function EventbritePage({
       <section className={adminPanelCard}>
         <div className="flex flex-wrap gap-2">
           {subpageLinks.map((item) => (
-            <Link
+            <button
               key={item.id}
-              to={item.href}
+              type="button"
+              onClick={() => setActiveSubpage(item.id)}
               className={activeSubpage === item.id ? adminBtnPrimary : adminBtnSecondary}
             >
               {item.label}
-            </Link>
+            </button>
           ))}
         </div>
       </section>

@@ -2942,9 +2942,10 @@ function AdminCultura() {
                                     <NavLink
                                       key={link.href}
                                       to={link.href}
+                                      end
                                       className={({ isActive }) =>
                                         `block w-full rounded-md px-3 py-2 text-sm transition-colors ${
-                                          isActive || eventbritePageHref === link.href
+                                          isActive
                                             ? 'bg-orange-50 font-semibold text-[#dd8609]'
                                             : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
                                         }`
