@@ -87,10 +87,15 @@ class AdminNewsletterSendView(APIView):
         if not recipients:
             return Response({'message': 'Nao existem subscritores ativos.'}, status=400)
 
+        image_url = None
+        if newsletter.image:
+            image_url = request.build_absolute_uri(newsletter.image)
+
         send_newsletter_email(
             subject=newsletter.subject,
             body=newsletter.content,
             recipient_list=recipients,
+            image_url=image_url,
         )
 
         newsletter.status = 'sent'
