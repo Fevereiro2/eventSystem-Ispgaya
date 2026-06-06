@@ -1,5 +1,5 @@
 import { Images, Trash2 } from 'lucide-react';
-import type { Dispatch, FormEvent, SetStateAction } from 'react';
+import { useMemo, type Dispatch, type FormEvent, type SetStateAction } from 'react';
 
 import type { InfoCulturaPhoto } from '../../../api/infoculturaApi';
 import PhotoCarousel from '../../../components/ui/PhotoCarousel';
@@ -73,6 +73,19 @@ function PhotoGalleryPage({
   const { locale } = useLocale();
   const activePhotos = photos.filter((photo) => photo.is_active).sort((a, b) => a.display_order - b.display_order);
   const previewPhotos = activePhotos.filter((photo) => photo.section.trim() === 'laboratorio-cultural');
+  const photoSectionOptions = useMemo(() => {
+    const baseSections = [
+      'laboratorio-cultural',
+      'teatro',
+      'clube-leitura',
+      'clube-cultural',
+      'homepage',
+    ];
+    const merged = new Set(
+      [...baseSections, ...photos.map((photo) => photo.section.trim())].filter(Boolean)
+    );
+    return Array.from(merged).sort((left, right) => left.localeCompare(right, 'pt-PT'));
+  }, [photos]);
 
   return (
     <div className="space-y-6">
@@ -96,12 +109,34 @@ function PhotoGalleryPage({
         <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_420px]">
           <form onSubmit={onSubmit} className={adminPanelForm}>
             <h3 className={blockTitle}>{editingPhotoId ? getLocaleText(locale, 'Editar Foto', 'Edit Photo') : getLocaleText(locale, 'Nova Foto', 'New Photo')}</h3>
-            <p className={blockText}>{getLocaleText(locale, 'Cria imagens para o carrossel do Laboratório Cultural.', 'Create images for the Cultural Laboratory carousel.')}</p>
+            <p className={blockText}>{getLocaleText(locale, 'Cria imagens para carrosséis e secções visuais, escolhendo a secção onde devem aparecer.', 'Create images for carousels and visual sections, choosing the section where they should appear.')}</p>
 
             <div className={adminFormGridSpaced}>
               <div className={adminField}>
+                <label className={adminLabel} htmlFor="photo-section">
+                  {getLocaleText(locale, 'Secção', 'Section')}
+                </label>
+                <input
+                  id="photo-section"
+                  className={adminInput}
+                  list="photo-section-suggestions"
+                  value={form.section}
+                  onChange={(event) => setForm((prev) => ({ ...prev, section: event.target.value }))}
+                  placeholder={getLocaleText(locale, 'Ex.: laboratorio-cultural, club-3, teatro', 'Ex.: laboratorio-cultural, club-3, teatro')}
+                />
+                <datalist id="photo-section-suggestions">
+                  {photoSectionOptions.map((section) => (
+                    <option key={section} value={section} />
+                  ))}
+                </datalist>
+                <p className={adminInfo}>
+                  {getLocaleText(locale, 'Podes escolher uma secção existente ou escrever uma nova.', 'You can choose an existing section or type a new one.')}
+                </p>
+              </div>
+
+              <div className={adminField}>
                 <label className={adminLabel} htmlFor="photo-order">
-                  Ordem
+                  {getLocaleText(locale, 'Ordem', 'Order')}
                 </label>
                 <input
                   id="photo-order"
@@ -236,7 +271,7 @@ function PhotoGalleryPage({
                   <div className={adminListHeader}>
                     <p className={adminListTitle}>{photo.title}</p>
                     <p className={adminListMeta}>
-                      {getLocaleText(locale, 'Ordem:', 'Order:')} {photo.display_order} · {photo.is_active ? getLocaleText(locale, 'Ativa', 'Active') : getLocaleText(locale, 'Inativa', 'Inactive')}
+                      {getLocaleText(locale, 'Secção:', 'Section:')} {photo.section} · {getLocaleText(locale, 'Ordem:', 'Order:')} {photo.display_order} · {photo.is_active ? getLocaleText(locale, 'Ativa', 'Active') : getLocaleText(locale, 'Inativa', 'Inactive')}
                     </p>
                   </div>
                   <div className={adminListTools}>

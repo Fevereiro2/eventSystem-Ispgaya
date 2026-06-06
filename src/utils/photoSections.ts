@@ -25,9 +25,19 @@ function expandSectionAliases(values: string[]): string[] {
   return Array.from(aliases);
 }
 
-export function buildClubPhotoSectionAliases(clubName?: string | null, extraTerms: string[] = []): string[] {
+export function buildClubPhotoSectionAliases(
+  clubName?: string | null,
+  extraTerms: string[] = [],
+  clubId?: number | null
+): string[] {
   const normalizedClub = normalizeSection(clubName || '');
   const aliases = new Set<string>(expandSectionAliases(extraTerms));
+
+  if (typeof clubId === 'number' && Number.isFinite(clubId)) {
+    aliases.add(`club-${clubId}`);
+    aliases.add(`club_${clubId}`);
+    aliases.add(`club${clubId}`);
+  }
 
   if (normalizedClub) {
     expandSectionAliases([normalizedClub]).forEach((value) => aliases.add(value));

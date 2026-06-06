@@ -167,7 +167,7 @@ function ClubeCultural({
     () =>
       filterPhotosBySections(
         photos,
-        buildClubPhotoSectionAliases(club?.name, clubSearchTerms || [])
+        buildClubPhotoSectionAliases(club?.name, clubSearchTerms || [], club?.id)
       ).map((photo) => ({
         id: photo.id,
         title: photo.title,

@@ -214,7 +214,7 @@ function Teatro() {
     () =>
       filterPhotosBySections(
         photos,
-        buildClubPhotoSectionAliases(club?.name, ['teatro', 'clube teatro', 'clube de teatro'])
+        buildClubPhotoSectionAliases(club?.name, ['teatro', 'clube teatro', 'clube de teatro'], club?.id)
       ).map((photo) => ({
         id: photo.id,
         title: photo.title,

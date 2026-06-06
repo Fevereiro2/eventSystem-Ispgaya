@@ -775,7 +775,8 @@ function AdminCultura() {
     newsTotal,
     dashboardStats,
     selectedNewsIds,
-    sortedNews
+    sortedNews,
+    locale
   );
   const activityOverviewStats = buildActivityOverviewStats(
     activityTab,
@@ -785,7 +786,8 @@ function AdminCultura() {
     sortedBooks,
     sortedCategories,
     sortedEvents,
-    sortedSessions
+    sortedSessions,
+    locale
   );
   const registrationOverviewStats = buildRegistrationOverviewStats(
     registrationTotal,
@@ -1961,6 +1963,37 @@ function AdminCultura() {
     }
   }
 
+  async function handleUploadClubGalleryImage(file: File): Promise<string> {
+    if (!token) {
+      throw new Error(getLocaleText(locale, 'Sessão inválida para carregar imagens.', 'Invalid session to upload images.'));
+    }
+
+    return uploadAdminImage(token, file, 'photos');
+  }
+
+  async function handleSaveClubGalleryPhoto(payload: PhotoPayload, photoId?: string | null) {
+    if (!token) {
+      throw new Error(getLocaleText(locale, 'Sessão inválida para guardar imagens.', 'Invalid session to save images.'));
+    }
+
+    const savedPhoto = photoId
+      ? await updateAdminPhoto(token, photoId, payload)
+      : await createAdminPhoto(token, payload);
+
+    setPhotos((prev) =>
+      sortPhotos(photoId ? prev.map((photo) => (photo.id === photoId ? savedPhoto : photo)) : [savedPhoto, ...prev])
+    );
+  }
+
+  async function handleDeleteClubGalleryPhoto(photoId: string) {
+    if (!token) {
+      throw new Error(getLocaleText(locale, 'Sessão inválida para apagar imagens.', 'Invalid session to delete images.'));
+    }
+
+    await deleteAdminPhoto(token, photoId);
+    setPhotos((prev) => prev.filter((photo) => photo.id !== photoId));
+  }
+
   function handleEditNews(item: InfoCulturaNews) {
     setEditingNewsId(item.id);
     setNewsImageFileKey((prev) => prev + 1);
@@ -3125,6 +3158,10 @@ function AdminCultura() {
               clubMembers={clubMembers}
               removingClubUserId={removingClubUserId}
               handleRemoveUserFromClub={handleRemoveUserFromClub}
+              photos={photos}
+              handleUploadClubGalleryImage={handleUploadClubGalleryImage}
+              handleSaveClubGalleryPhoto={handleSaveClubGalleryPhoto}
+              handleDeleteClubGalleryPhoto={handleDeleteClubGalleryPhoto}
             />
           ) : null}
 

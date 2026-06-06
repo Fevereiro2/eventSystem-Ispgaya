@@ -486,19 +486,20 @@ export function buildNewsOverviewStats(
   newsTotal: number,
   dashboardStats: InfoCulturaDashboardStats | null,
   selectedNewsIds: number[],
-  sortedNews: InfoCulturaNews[]
+  sortedNews: InfoCulturaNews[],
+  locale: Locale
 ): AdminOverviewStat[] {
   return [
-    { label: 'Total filtrado', value: newsTotal },
+    { label: getLocaleText(locale, 'Total filtrado', 'Filtered total'), value: newsTotal },
     {
-      label: 'Em revisão',
+      label: getLocaleText(locale, 'Em revisão', 'In review'),
       value:
         dashboardStats?.news_review ??
         sortedNews.filter((item) => normalizeWorkflowStatus(item.news_status_name) === 'review').length,
     },
-    { label: 'Selecionadas', value: selectedNewsIds.length },
+    { label: getLocaleText(locale, 'Selecionadas', 'Selected'), value: selectedNewsIds.length },
     {
-      label: 'Publicadas',
+      label: getLocaleText(locale, 'Publicadas', 'Published'),
       value:
         dashboardStats?.news_published ??
         sortedNews.filter((item) => normalizeWorkflowStatus(item.news_status_name) === 'published').length,
@@ -514,41 +515,42 @@ export function buildActivityOverviewStats(
   sortedBooks: InfoCulturaBook[],
   sortedCategories: InfoCulturaCategory[],
   sortedEvents: InfoCulturaEvent[],
-  sortedSessions: InfoCulturaSession[]
+  sortedSessions: InfoCulturaSession[],
+  locale: Locale
 ): AdminOverviewStat[] {
   if (activityTab === 'books') {
     return [
-      { label: 'Total filtrado', value: activityTotal },
-      { label: 'Em destaque', value: sortedBooks.filter((item) => item.is_featured).length },
-      { label: 'Selecionados', value: selectedBookIds.length },
-      { label: 'Clubes na pagina', value: new Set(sortedBooks.map((item) => item.club_id)).size },
+      { label: getLocaleText(locale, 'Total filtrado', 'Filtered total'), value: activityTotal },
+      { label: getLocaleText(locale, 'Em destaque', 'Featured'), value: sortedBooks.filter((item) => item.is_featured).length },
+      { label: getLocaleText(locale, 'Selecionados', 'Selected'), value: selectedBookIds.length },
+      { label: getLocaleText(locale, 'Clubes na pagina', 'Clubs on page'), value: new Set(sortedBooks.map((item) => item.club_id)).size },
     ];
   }
 
   if (activityTab === 'sessions') {
     return [
-      { label: 'Total filtrado', value: activityTotal },
+      { label: getLocaleText(locale, 'Total filtrado', 'Filtered total'), value: activityTotal },
       {
-        label: 'Próximas',
+        label: getLocaleText(locale, 'Próximas', 'Upcoming'),
         value: sortedSessions.filter((item) => new Date(item.start_date).getTime() >= Date.now())
           .length,
       },
       {
-        label: 'Inscrições abertas',
+        label: getLocaleText(locale, 'Inscrições abertas', 'Open registrations'),
         value: sortedSessions.filter((item) => item.enable_registrations).length,
       },
       {
-        label: 'Clubes na pagina',
+        label: getLocaleText(locale, 'Clubes na pagina', 'Clubs on page'),
         value: new Set(sortedSessions.map((item) => item.club_id)).size,
       },
     ];
   }
 
   return [
-    { label: 'Total filtrado', value: activityTotal },
-    { label: 'Em revisão', value: sortedEvents.filter((item) => normalizeWorkflowStatus(item.status) === 'review').length },
-    { label: 'Selecionados', value: selectedEventIds.length },
-    { label: 'Categorias', value: sortedCategories.length },
+    { label: getLocaleText(locale, 'Total filtrado', 'Filtered total'), value: activityTotal },
+    { label: getLocaleText(locale, 'Em revisão', 'In review'), value: sortedEvents.filter((item) => normalizeWorkflowStatus(item.status) === 'review').length },
+    { label: getLocaleText(locale, 'Selecionados', 'Selected'), value: selectedEventIds.length },
+    { label: getLocaleText(locale, 'Categorias', 'Categories'), value: sortedCategories.length },
   ];
 }
 

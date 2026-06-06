@@ -105,6 +105,8 @@ function ClubeLeitura() {
     };
   }, []);
 
+  
+
   const highlightedNews = useMemo<NewsHighlightItem[]>(
     () =>
       [...newsItems]
@@ -157,7 +159,7 @@ function ClubeLeitura() {
     () =>
       filterPhotosBySections(
         photos,
-        buildClubPhotoSectionAliases(club?.name, ['leitura', 'clube leitura', 'clube de leitura'])
+        buildClubPhotoSectionAliases(club?.name, ['leitura', 'clube leitura', 'clube de leitura'], club?.id)
       ).map((photo) => ({
         id: photo.id,
         title: photo.title,
@@ -165,7 +167,7 @@ function ClubeLeitura() {
         image: photo.image,
         alt_text: photo.alt_text,
       })),
-    [photos, club?.name]
+    [photos, club?.id, club?.name]
   );
 
   async function handleSubmitRegistration(data: ClubRegistrationFormData) {
@@ -238,23 +240,20 @@ function ClubeLeitura() {
             )}
           </p>
 
-          {clubPhotoItems.length > 0 ? (
-            <section className="mb-12 mt-12">
-              <div className="mb-5">
-                <h2 className={blockTitle}>
-                  {getLocaleText(locale, 'Momentos do Laboratório Cultural', 'Cultural Lab moments')}
-                </h2>
-                <p className={blockText}>
-                  {getLocaleText(
-                    locale,
-                    'Imagens de sessões, encontros e atividades partilhadas pelo clube.',
-                    'Images from sessions, gatherings and activities shared by the club.'
-                  )}
+
+            <section className="space-y-4">
+              <div className="max-w-3xl">
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#dd8609]">
+                  {getLocaleText(locale, 'Galeria', 'Gallery')}
                 </p>
+                <h2 className="mt-3 text-2xl font-semibold text-slate-900 lg:text-3xl">
+                  {getLocaleText(locale, 'Momentos do Laboratório Cultural', 'Moments from the Cultural Laboratory')}
+                </h2>
               </div>
+              
               <PhotoCarousel items={clubPhotoItems} />
             </section>
-          ) : null}
+
         </div>
 
         <ClubCallToAction
