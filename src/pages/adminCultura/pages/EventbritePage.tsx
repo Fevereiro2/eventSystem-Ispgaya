@@ -1,5 +1,6 @@
 import { FormEvent, useEffect, useMemo, useState } from 'react';
 import { Ticket } from 'lucide-react';
+import { useLocation, useNavigate } from 'react-router-dom';
 
 import {
   createAdminEvent,
@@ -44,6 +45,7 @@ import {
   blockTitle,
 } from '../../../styles/ui';
 import AdminPageHero from '../components/AdminPageHero';
+import { getEventbriteSubpage, getEventbriteRoute } from '../utils';
 import { formatAdminDateTime, getWorkflowStatusLabel } from '../utils';
 import { getLocaleText, useLocale } from '../../../i18n/locale';
 
@@ -181,7 +183,9 @@ function EventbritePage({
   setEvents,
 }: EventbritePageProps) {
   const { locale } = useLocale();
-  const [activeSubpage, setActiveSubpage] = useState<'overview' | 'venues' | 'seating' | 'tickets'>('overview');
+  const location = useLocation();
+  const navigate = useNavigate();
+  const activeSubpage = getEventbriteSubpage(location.pathname) ?? 'overview';
   const [form, setForm] = useState<EventbriteDraftForm>(() => ({
     ...initialForm,
     club_id: canManageUsers ? '' : currentUser.club_id ? String(currentUser.club_id) : '',
@@ -691,7 +695,7 @@ function EventbritePage({
             <button
               key={item.id}
               type="button"
-              onClick={() => setActiveSubpage(item.id)}
+              onClick={() => navigate(getEventbriteRoute(item.id))}
               className={activeSubpage === item.id ? adminBtnPrimary : adminBtnSecondary}
             >
               {item.label}
