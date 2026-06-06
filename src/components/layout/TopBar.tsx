@@ -21,7 +21,7 @@ type TopBarLink = {
   rel?: string;
 };
 
-function getLeftLinks(locale: 'pt' | 'en'): TopBarLink[] {
+function getLeftLinks(): TopBarLink[] {
   return [
     {
       pt: 'Inforestudante',
@@ -40,9 +40,7 @@ function getLeftLinks(locale: 'pt' | 'en'): TopBarLink[] {
     {
       pt: 'Infocultura',
       en: 'InfoCultura',
-      href: buildIspgayaUrl(locale, '/infocultura'),
-      target: '_blank',
-      rel: 'noindex nofollow'
+      href: '/infocultura'
     },
     {
       pt: 'Email',
@@ -89,7 +87,7 @@ type TopBarProps = {
 
 function TopBar({ transparent = false }: TopBarProps) {
   const { locale, setLocale } = useLocale();
-  const leftLinks = getLeftLinks(locale);
+  const leftLinks = getLeftLinks();
   const rightLinks = getRightLinks(locale);
   const rootClassName = transparent
     ? 'hidden xl:block bg-transparent text-white'

@@ -263,7 +263,7 @@ function HeaderNav({ transparent = false }: HeaderNavProps) {
   const mobilePrivateLinks: LinkItem[] = [
     { label: getLocaleText(locale, 'Inforestudante', 'Student Portal'), href: 'https://inforestudante.ispgaya.pt' },
     { label: getLocaleText(locale, 'Infordocente', 'Teacher Portal'), href: 'https://infordocente.ispgaya.pt' },
-    { label: 'Infocultura', href: buildIspgayaUrl(locale, '/infocultura') },
+    { label: 'Infocultura', href: '/infocultura', internal: true },
     { label: getLocaleText(locale, 'Email', 'Email'), href: 'https://outlook.office.com' },
     { label: getLocaleText(locale, 'Horários', 'Timetables'), href: 'https://horarios.ispgaya.pt/geral/' }
   ];
