@@ -21,7 +21,7 @@ def list_active_newsletter_subscriber_emails() -> list[str]:
     )
 
 
-def send_newsletter_email(*, subject: str, body: str, recipient_list: list[str]) -> None:
+def send_newsletter_email(*, subject: str, body: str, recipient_list: list[str], image_url: str | None = None) -> None:
     if not recipient_list:
         return
 
@@ -34,6 +34,7 @@ def send_newsletter_email(*, subject: str, body: str, recipient_list: list[str])
         'from_name': _extract_sender_name(from_email),
         'from_email': _extract_sender_email(from_email),
         'logo_cid': logo_cid,
+        'image_url': image_url,
     }
     text_message = render_to_string('emails/newsletters/newsletter.txt', context)
     html_message = render_to_string('emails/newsletters/newsletter.html', context)
