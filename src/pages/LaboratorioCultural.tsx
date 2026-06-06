@@ -338,8 +338,8 @@ function LaboratorioCultural() {
           'O Laboratório Cultural é um espaço vivo onde a criatividade ganha forma e a cultura se torna experiência.',
           'The Cultural Laboratory is a living space where creativity takes shape and culture becomes an experience.'
         )}
-        parentLabel={getLocaleText(locale, 'Laboratório Cultural', 'Cultural Laboratory')}
-        parentHref="/laboratorio-cultural"
+        parentLabel={getLocaleText(locale, 'Início', 'Home')}
+        parentHref="/"
         currentLabel={getLocaleText(locale, 'Laboratório Cultural', 'Cultural Laboratory')}
         currentHref="/laboratorio-cultural"
       />

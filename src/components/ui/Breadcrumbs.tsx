@@ -54,7 +54,7 @@ function Breadcrumbs({
       'O ISPGAYA desenvolve investigação científica nas diversas áreas em que oferece formação, resultando em publicações, livros, capítulos e artigos científicos.',
       'ISPGAYA develops scientific research across the various areas where it offers training, resulting in publications, books, chapters and scientific articles.'
     );
-  const resolvedParentLabel = parentLabel || getLocaleText(locale, 'Investigação', 'Research');
+  const resolvedParentLabel = parentLabel || getLocaleText(locale, 'Laboratório Cultural', 'Research');
   const resolvedCurrentLabel = currentLabel || getLocaleText(locale, 'Publicações Científicas', 'Scientific Publications');
   return (
     <div className={heroPatternWrap}>
