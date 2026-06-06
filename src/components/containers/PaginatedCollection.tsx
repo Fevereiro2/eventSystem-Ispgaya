@@ -101,7 +101,7 @@ function PaginatedCollection<T>({
       <div className="space-y-10">{paginatedItems.map((item) => renderItem(item))}</div>
 
       <div className="mt-12">
-        <nav aria-label="Paginação" className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <nav aria-label={getLocaleText(locale, 'Paginação', 'Pagination')} className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex flex-1 justify-between gap-3 sm:hidden">
             {currentPage > 1 ? (
               <button
@@ -139,7 +139,7 @@ function PaginatedCollection<T>({
                 disabled={currentPage === 1}
                 onClick={() => goToPage(currentPage - 1)}
                 className="relative inline-flex items-center rounded-l-sm border border-gray-300 bg-white px-2 py-2 text-sm font-medium leading-5 text-gray-500 disabled:cursor-not-allowed disabled:text-gray-400"
-                aria-label="Anterior"
+                aria-label={getLocaleText(locale, 'Anterior', 'Previous')}
               >
                 <PaginationArrow direction="left" />
               </button>
@@ -174,7 +174,7 @@ function PaginatedCollection<T>({
                 disabled={currentPage === totalPages}
                 onClick={() => goToPage(currentPage + 1)}
                 className="relative inline-flex items-center rounded-r-sm border border-gray-300 bg-white px-2 py-2 text-sm font-medium leading-5 text-gray-500 disabled:cursor-not-allowed disabled:text-gray-400"
-                aria-label="Próximo"
+                aria-label={getLocaleText(locale, 'Próximo', 'Next')}
               >
                 <PaginationArrow direction="right" />
               </button>

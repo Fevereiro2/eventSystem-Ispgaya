@@ -38,6 +38,7 @@ import {
   InfoCulturaRegistration,
   InfoCulturaRegistrationStatus,
 } from '../../api/infoculturaApi';
+import { getLocaleText, useLocale } from '../../i18n/locale';
 
 type AdminHeroStat = { label: string; value: string | number };
 
@@ -136,38 +137,40 @@ function RegistrationsPage({
   handleUpdateRegistrationStatus,
   toggleSelectedId,
 }: RegistrationsPageProps) {
+  const { locale } = useLocale();
+
   return (
     <div className="space-y-6">
       <AdminPageHero
         icon={Inbox}
-        title="Inscrições"
-        description="Consulta, triagem e validação dos pedidos submetidos pelos clubes."
+        title={getLocaleText(locale, 'Inscrições', 'Registrations')}
+        description={getLocaleText(locale, 'Consulta, triagem e validação dos pedidos submetidos pelos clubes.', 'Review, triage and validate requests submitted by clubs.')}
         tone="rose"
         stats={registrationOverviewStats}
       />
 
       <section className={adminPanelCard}>
-        <h2 className={blockTitle}>Inscrições</h2>
+        <h2 className={blockTitle}>{getLocaleText(locale, 'Inscrições', 'Registrations')}</h2>
         <p className={blockText}>
-          Consulta os pedidos submetidos pelos clubes e atualiza o respetivo estado.
+          {getLocaleText(locale, 'Consulta os pedidos submetidos pelos clubes e atualiza o respetivo estado.', 'Review club submissions and update their status.')}
         </p>
 
         <div className={adminStatsGrid}>
           <div className={adminStatCard}>
             <p className={adminStatValue}>{registrationTotal}</p>
-            <p className={adminStatLabel}>Total filtrado</p>
+            <p className={adminStatLabel}>{getLocaleText(locale, 'Total filtrado', 'Filtered total')}</p>
           </div>
           <div className={adminStatCard}>
             <p className={adminStatValue}>{pendingRegistrations}</p>
-            <p className={adminStatLabel}>Pendentes na página</p>
+            <p className={adminStatLabel}>{getLocaleText(locale, 'Pendentes na página', 'Pending on page')}</p>
           </div>
           <div className={adminStatCard}>
             <p className={adminStatValue}>{approvedRegistrations}</p>
-            <p className={adminStatLabel}>Aprovadas na página</p>
+            <p className={adminStatLabel}>{getLocaleText(locale, 'Aprovadas na página', 'Approved on page')}</p>
           </div>
           <div className={adminStatCard}>
             <p className={adminStatValue}>{rejectedRegistrations}</p>
-            <p className={adminStatLabel}>Rejeitadas na página</p>
+            <p className={adminStatLabel}>{getLocaleText(locale, 'Rejeitadas na página', 'Rejected on page')}</p>
           </div>
         </div>
 
@@ -175,7 +178,7 @@ function RegistrationsPage({
           {canManageUsers ? (
             <div className={adminField}>
               <label className={adminLabel} htmlFor="registration-club-filter">
-                Clube
+                {getLocaleText(locale, 'Clube', 'Club')}
               </label>
               <select
                 id="registration-club-filter"
@@ -186,7 +189,7 @@ function RegistrationsPage({
                   setRegistrationPage(1);
                 }}
               >
-                <option value="all">Todos os clubes</option>
+                <option value="all">{getLocaleText(locale, 'Todos os clubes', 'All clubs')}</option>
                 {clubs.map((club) => (
                   <option key={club.id} value={club.id}>
                     {club.name}
@@ -198,7 +201,7 @@ function RegistrationsPage({
 
           <div className={adminField}>
             <label className={adminLabel} htmlFor="registration-status-filter">
-              Estado
+              {getLocaleText(locale, 'Estado', 'Status')}
             </label>
             <select
               id="registration-status-filter"
@@ -209,8 +212,8 @@ function RegistrationsPage({
                 setRegistrationPage(1);
               }}
             >
-              <option value="all">Todos</option>
-              {isLoadingRegistrationStatuses ? <option value="">A carregar estados...</option> : null}
+              <option value="all">{getLocaleText(locale, 'Todos', 'All')}</option>
+              {isLoadingRegistrationStatuses ? <option value="">{getLocaleText(locale, 'A carregar estados...', 'Loading statuses...')}</option> : null}
               {registrationStatuses.map((status) => (
                 <option key={status.id} value={status.name}>
                   {status.name}
@@ -220,7 +223,7 @@ function RegistrationsPage({
           </div>
           <div className={adminField}>
             <label className={adminLabel} htmlFor="registration-date-from">
-              Submetidas desde
+              {getLocaleText(locale, 'Submetidas desde', 'Submitted from')}
             </label>
             <input
               id="registration-date-from"
@@ -232,7 +235,7 @@ function RegistrationsPage({
           </div>
           <div className={adminField}>
             <label className={adminLabel} htmlFor="registration-date-to">
-              Submetidas ate
+              {getLocaleText(locale, 'Submetidas até', 'Submitted until')}
             </label>
             <input
               id="registration-date-to"
@@ -246,7 +249,7 @@ function RegistrationsPage({
 
         <form onSubmit={handleRegistrationSearchSubmit} className={adminFieldSpaced}>
           <label className={adminLabel} htmlFor="registration-search">
-            Pesquisar por nome ou email
+            {getLocaleText(locale, 'Pesquisar por nome ou email', 'Search by name or email')}
           </label>
           <div className={adminActions}>
             <input
@@ -254,10 +257,10 @@ function RegistrationsPage({
               className={adminInput}
               value={registrationSearchInput}
               onChange={(event) => setRegistrationSearchInput(event.target.value)}
-              placeholder="Ex.: maria ou maria@email.pt"
+              placeholder={getLocaleText(locale, 'Ex.: maria ou maria@email.pt', 'E.g. maria or maria@email.pt')}
             />
             <button type="submit" className={adminBtnPrimary}>
-              Pesquisar
+              {getLocaleText(locale, 'Pesquisar', 'Search')}
             </button>
             <button
               type="button"
@@ -268,7 +271,7 @@ function RegistrationsPage({
                 setRegistrationPage(1);
               }}
             >
-              Limpar
+              {getLocaleText(locale, 'Limpar', 'Clear')}
             </button>
           </div>
         </form>
@@ -281,16 +284,16 @@ function RegistrationsPage({
             value={registrationOrder}
             onChange={(event) => setRegistrationOrder(event.target.value)}
           >
-            <option value="newest">Mais recentes</option>
-            <option value="oldest">Mais antigas</option>
-            <option value="name_asc">Nome A-Z</option>
-            <option value="name_desc">Nome Z-A</option>
-            <option value="email_asc">Email A-Z</option>
-            <option value="email_desc">Email Z-A</option>
-            <option value="club_asc">Clube A-Z</option>
-            <option value="club_desc">Clube Z-A</option>
-            <option value="status_asc">Estado A-Z</option>
-            <option value="status_desc">Estado Z-A</option>
+            <option value="newest">{getLocaleText(locale, 'Mais recentes', 'Newest')}</option>
+            <option value="oldest">{getLocaleText(locale, 'Mais antigas', 'Oldest')}</option>
+            <option value="name_asc">{getLocaleText(locale, 'Nome A-Z', 'Name A-Z')}</option>
+            <option value="name_desc">{getLocaleText(locale, 'Nome Z-A', 'Name Z-A')}</option>
+            <option value="email_asc">{getLocaleText(locale, 'Email A-Z', 'Email A-Z')}</option>
+            <option value="email_desc">{getLocaleText(locale, 'Email Z-A', 'Email Z-A')}</option>
+            <option value="club_asc">{getLocaleText(locale, 'Clube A-Z', 'Club A-Z')}</option>
+            <option value="club_desc">{getLocaleText(locale, 'Clube Z-A', 'Club Z-A')}</option>
+            <option value="status_asc">{getLocaleText(locale, 'Estado A-Z', 'Status A-Z')}</option>
+            <option value="status_desc">{getLocaleText(locale, 'Estado Z-A', 'Status Z-A')}</option>
           </select>
           <button
             type="button"
@@ -305,8 +308,8 @@ function RegistrationsPage({
             disabled={registrations.length === 0}
           >
             {selectedRegistrationIds.length === registrations.length && registrations.length > 0
-              ? 'Limpar selecao'
-              : 'Selecionar pagina'}
+              ? getLocaleText(locale, 'Limpar seleção', 'Clear selection')
+              : getLocaleText(locale, 'Selecionar página', 'Select page')}
           </button>
           <select
             className={adminInput}
@@ -325,16 +328,16 @@ function RegistrationsPage({
             disabled={selectedRegistrationIds.length === 0 || isApplyingBulkRegistrations}
             onClick={() => void handleApplyBulkRegistrationStatus()}
           >
-            {isApplyingBulkRegistrations ? 'A aplicar...' : 'Aplicar em lote'}
+            {isApplyingBulkRegistrations ? getLocaleText(locale, 'A aplicar...', 'Applying...') : getLocaleText(locale, 'Aplicar em lote', 'Apply in bulk')}
           </button>
         </div>
 
         {!isLoadingRegistrations ? (
           <div className={adminActions}>
             <p className={blockText}>
-              página {registrationPage}
-              {registrationTotalPages > 0 ? ` de ${registrationTotalPages}` : ''} ·{' '}
-              {registrationTotal} resultado{registrationTotal === 1 ? '' : 's'}
+              {getLocaleText(locale, 'página', 'page')} {registrationPage}
+              {registrationTotalPages > 0 ? ` ${getLocaleText(locale, 'de', 'of')} ${registrationTotalPages}` : ''} ·{' '}
+              {registrationTotal} {getLocaleText(locale, registrationTotal === 1 ? 'resultado' : 'resultados', registrationTotal === 1 ? 'result' : 'results')}
             </p>
             <div className={adminActions}>
               <button
@@ -343,7 +346,7 @@ function RegistrationsPage({
                 disabled={registrationPage <= 1}
                 onClick={() => setRegistrationPage((prev) => Math.max(1, prev - 1))}
               >
-                Anterior
+                {getLocaleText(locale, 'Anterior', 'Previous')}
               </button>
               <button
                 type="button"
@@ -357,16 +360,16 @@ function RegistrationsPage({
                   )
                 }
               >
-                Seguinte
+                {getLocaleText(locale, 'Seguinte', 'Next')}
               </button>
             </div>
           </div>
         ) : null}
 
         <div className={adminUserList}>
-          {isLoadingRegistrations ? <p className={adminInfo}>A carregar inscrições...</p> : null}
+          {isLoadingRegistrations ? <p className={adminInfo}>{getLocaleText(locale, 'A carregar inscrições...', 'Loading registrations...')}</p> : null}
           {!isLoadingRegistrations && registrations.length === 0 ? (
-            <p className={adminInfo}>Não existem inscrições para os filtros atuais.</p>
+            <p className={adminInfo}>{getLocaleText(locale, 'Não existem inscrições para os filtros atuais.', 'There are no registrations for the current filters.')}</p>
           ) : null}
           {registrations.map((registration) => (
             <article key={registration.id} className={adminUserItem}>
@@ -377,24 +380,24 @@ function RegistrationsPage({
                     checked={selectedRegistrationIds.includes(registration.id)}
                     onChange={() => toggleSelectedId(setSelectedRegistrationIds, registration.id)}
                   />
-                  Selecionar
+                  {getLocaleText(locale, 'Selecionar', 'Select')}
                 </label>
                 <h3 className={adminUserName}>{registration.name}</h3>
                 <p className={adminUserEmail}>{registration.email}</p>
                 <p className={adminUserMeta}>
                   {registration.registration_type === 'event'
-                    ? 'Evento'
+                    ? getLocaleText(locale, 'Evento', 'Event')
                     : registration.registration_type === 'session'
-                      ? 'Sessão'
-                      : 'Clube'}{' '}
+                      ? getLocaleText(locale, 'Sessão', 'Session')
+                      : getLocaleText(locale, 'Clube', 'Club')}{' '}
                   · {registration.target_title || registration.club_name} ·{' '}
                   {formatAdminDateTime(registration.created_at)}
                 </p>
                 {registration.phone ? (
-                  <p className={adminUserMeta}>Telefone: {registration.phone}</p>
+                  <p className={adminUserMeta}>{getLocaleText(locale, 'Telefone:', 'Phone:')} {registration.phone}</p>
                 ) : null}
                 <p className={adminUserMeta}>
-                  {registration.message || 'Sem mensagem adicional.'}
+                  {registration.message || getLocaleText(locale, 'Sem mensagem adicional.', 'No additional message.')}
                 </p>
               </div>
               <div className={adminListTools}>
@@ -410,7 +413,7 @@ function RegistrationsPage({
                   }
                   onClick={() => handleUpdateRegistrationStatus(registration.id, 'approved')}
                 >
-                  {updatingRegistrationId === registration.id ? 'A atualizar...' : 'Aprovar'}
+                  {updatingRegistrationId === registration.id ? getLocaleText(locale, 'A atualizar...', 'Updating...') : getLocaleText(locale, 'Aprovar', 'Approve')}
                 </button>
                 <button
                   type="button"
@@ -421,7 +424,7 @@ function RegistrationsPage({
                   }
                   onClick={() => handleUpdateRegistrationStatus(registration.id, 'rejected')}
                 >
-                  {updatingRegistrationId === registration.id ? 'A atualizar...' : 'Rejeitar'}
+                  {updatingRegistrationId === registration.id ? getLocaleText(locale, 'A atualizar...', 'Updating...') : getLocaleText(locale, 'Rejeitar', 'Reject')}
                 </button>
                 <button
                   type="button"
@@ -432,7 +435,7 @@ function RegistrationsPage({
                   }
                   onClick={() => handleUpdateRegistrationStatus(registration.id, 'pending')}
                 >
-                  {updatingRegistrationId === registration.id ? 'A atualizar...' : 'Pendente'}
+                  {updatingRegistrationId === registration.id ? getLocaleText(locale, 'A atualizar...', 'Updating...') : getLocaleText(locale, 'Pendente', 'Pending')}
                 </button>
               </div>
             </article>

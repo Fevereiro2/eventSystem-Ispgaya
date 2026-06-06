@@ -31,6 +31,7 @@ import {
 } from '../../styles/ui';
 import { InfoCulturaClub, InfoCulturaRole, InfoCulturaUser } from '../../api/infoculturaApi';
 import UserFormPanel from './components/UserFormPanel.js';
+import { getLocaleText, useLocale } from '../../i18n/locale';
 
 type AdminHeroStat = { label: string; value: string | number };
 
@@ -93,22 +94,24 @@ function UsersPage({
   isActivatingUser,
   handleActivateUser,
 }: UsersPageProps) {
+  const { locale } = useLocale();
+
   if (!userPage) return null;
 
   if (userPage.mode === 'list') {
     return (
       <div className="space-y-6">
-      <AdminPageHero
-        icon={Users}
-        title="Utilizadores"
-        description="Gestão e consulta dos acessos administrativos do InfoCultura."
+        <AdminPageHero
+          icon={Users}
+        title={getLocaleText(locale, 'Utilizadores', 'Users')}
+        description={getLocaleText(locale, 'Gestão e consulta dos acessos administrativos do InfoCultura.', 'Management and review of InfoCultura administrative access.')}
         tone="slate"
         stats={userOverviewStats}
         actions={
           canManageUsers ? (
             <>
               <NavLink to="/infocultura/utilizadores/novo" className={adminBtnPrimary}>
-                Criar utilizador
+                {getLocaleText(locale, 'Criar utilizador', 'Create user')}
               </NavLink>
             </>
           ) : undefined
@@ -119,7 +122,7 @@ function UsersPage({
           <div className={adminFormGridSpaced}>
             <div className={adminField}>
               <label className={adminLabel} htmlFor="user-date-from">
-                Criados desde
+                {getLocaleText(locale, 'Criados desde', 'Created from')}
               </label>
               <input
                 id="user-date-from"
@@ -131,7 +134,7 @@ function UsersPage({
             </div>
             <div className={adminField}>
               <label className={adminLabel} htmlFor="user-date-to">
-                Criados até
+                {getLocaleText(locale, 'Criados até', 'Created until')}
               </label>
               <input
                 id="user-date-to"
@@ -143,7 +146,7 @@ function UsersPage({
             </div>
             <div className={adminField}>
               <label className={adminLabel} htmlFor="user-order">
-                Ordenar por
+                {getLocaleText(locale, 'Sortear por', 'Sort by')}
               </label>
               <select
                 id="user-order"
@@ -151,27 +154,27 @@ function UsersPage({
                 value={userOrder}
                 onChange={(event) => setUserOrder(event.target.value)}
               >
-                <option value="active_name">Ativos primeiro</option>
-                <option value="newest">Mais recentes</option>
-                <option value="oldest">Mais antigos</option>
-                <option value="name_asc">Nome A-Z</option>
-                <option value="name_desc">Nome Z-A</option>
-                <option value="email_asc">Email A-Z</option>
-                <option value="email_desc">Email Z-A</option>
+                <option value="active_name">{getLocaleText(locale, 'Ativos primeiro', 'Active first')}</option>
+                <option value="newest">{getLocaleText(locale, 'Mais recentes', 'Newest')}</option>
+                <option value="oldest">{getLocaleText(locale, 'Mais antigos', 'Oldest')}</option>
+                <option value="name_asc">{getLocaleText(locale, 'Nome A-Z', 'Name A-Z')}</option>
+                <option value="name_desc">{getLocaleText(locale, 'Nome Z-A', 'Name Z-A')}</option>
+                <option value="email_asc">{getLocaleText(locale, 'Email A-Z', 'Email A-Z')}</option>
+                <option value="email_desc">{getLocaleText(locale, 'Email Z-A', 'Email Z-A')}</option>
               </select>
             </div>
           </div>
 
           {canManageUsers ? null : (
             <p className={adminInfo}>
-              Apenas o superadmin pode criar, editar e desativar utilizadores.
+              {getLocaleText(locale, 'Apenas o superadmin pode criar, editar e desativar utilizadores.', 'Only the superadmin can create, edit and deactivate users.')}
             </p>
           )}
 
           <div className={adminUserList}>
-            {isLoadingUsers ? <p className={adminInfo}>A carregar utilizadores...</p> : null}
+            {isLoadingUsers ? <p className={adminInfo}>{getLocaleText(locale, 'A carregar utilizadores...', 'Loading users...')}</p> : null}
             {!isLoadingUsers && filteredUsers.length === 0 ? (
-              <p className={adminInfo}>Não existem utilizadores para mostrar.</p>
+              <p className={adminInfo}>{getLocaleText(locale, 'Não existem utilizadores para mostrar.', 'There are no users to display.')}</p>
             ) : null}
             {filteredUsers.map((user) => (
               <article key={user.id} className={adminUserItem}>
@@ -180,10 +183,10 @@ function UsersPage({
                   <p className={adminUserEmail}>{user.email}</p>
                   <p className={adminUserMeta}>
                     {user.role}
-                    {currentUser?.id === user.id ? ' · sessão atual' : ''}
+                    {currentUser?.id === user.id ? getLocaleText(locale, ' · sessão atual', ' · current session') : ''}
                   </p>
                   <p className={adminUserMeta}>
-                    Criado em: {formatAdminDateTime(user.created_at || '')}
+                    {getLocaleText(locale, 'Criado em:', 'Created at:')} {formatAdminDateTime(user.created_at || '')}
                   </p>
                 </div>
                 <div className={adminListTools}>
@@ -192,13 +195,13 @@ function UsersPage({
                       user.is_active ? adminUserStatusActive : adminUserStatusInactive
                     }`}
                   >
-                    {user.is_active ? 'Ativo' : 'Inativo'}
+                    {user.is_active ? getLocaleText(locale, 'Ativo', 'Active') : getLocaleText(locale, 'Inativo', 'Inactive')}
                   </span>
                   <NavLink
                     to={`/infocultura/utilizadores/${user.id}/perfil`}
                     className={adminBtnSecondary}
                   >
-                    Perfil
+                    {getLocaleText(locale, 'Perfil', 'Profile')}
                   </NavLink>
                   {canManageUsers ? (
                     <>
@@ -206,14 +209,14 @@ function UsersPage({
                         to={`/infocultura/utilizadores/${user.id}/editar`}
                         className={adminBtnEdit}
                       >
-                        Editar
+                        {getLocaleText(locale, 'Editar', 'Edit')}
                       </NavLink>
                       {user.is_active && currentUser?.id !== user.id ? (
                         <NavLink
                           to={`/infocultura/utilizadores/${user.id}/desativar`}
                           className={adminBtnDanger}
                         >
-                          Desativar
+                          {getLocaleText(locale, 'Desativar', 'Deactivate')}
                         </NavLink>
                       ) : null}
                       {!user.is_active ? (
@@ -221,7 +224,7 @@ function UsersPage({
                           to={`/infocultura/utilizadores/${user.id}/ativar`}
                           className={adminBtnPrimary}
                         >
-                          Ativar
+                          {getLocaleText(locale, 'Ativar', 'Activate')}
                         </NavLink>
                       ) : null}
                     </>
@@ -240,12 +243,12 @@ function UsersPage({
       <div className="space-y-6">
         <AdminPageHero
           icon={Users}
-          title="Perfil de Utilizador"
-          description="Detalhe completo do acesso e da filiação do utilizador no InfoCultura."
+          title={getLocaleText(locale, 'Perfil de Utilizador', 'User Profile')}
+          description={getLocaleText(locale, 'Detalhe completo do acesso e da filiação do utilizador no InfoCultura.', 'Complete details of the user access and club affiliation in InfoCultura.')}
           tone="blue"
           actions={
             <NavLink to="/infocultura/utilizadores" className={adminBtnSecondary}>
-              Voltar aos utilizadores
+              {getLocaleText(locale, 'Voltar aos utilizadores', 'Back to users')}
             </NavLink>
           }
         />
@@ -253,7 +256,7 @@ function UsersPage({
         <section className={adminPanelCard}>
           {!selectedUser ? (
             <p className={adminInfo}>
-              {isLoadingUsers ? 'A carregar utilizador...' : 'Utilizador não encontrado.'}
+              {isLoadingUsers ? getLocaleText(locale, 'A carregar utilizador...', 'Loading user...') : getLocaleText(locale, 'Utilizador não encontrado.', 'User not found.')}
             </p>
           ) : (
             <div className="space-y-6">
@@ -263,7 +266,7 @@ function UsersPage({
                   <p className={adminUserEmail}>{selectedUser.email}</p>
                   <p className={adminUserMeta}>
                     {selectedUser.role}
-                    {currentUser?.id === selectedUser.id ? ' · sessão atual' : ''}
+                    {currentUser?.id === selectedUser.id ? getLocaleText(locale, ' · sessão atual', ' · current session') : ''}
                   </p>
                 </div>
                 <span
@@ -271,7 +274,7 @@ function UsersPage({
                     selectedUser.is_active ? adminUserStatusActive : adminUserStatusInactive
                   }`}
                 >
-                  {selectedUser.is_active ? 'Ativo' : 'Inativo'}
+                  {selectedUser.is_active ? getLocaleText(locale, 'Ativo', 'Active') : getLocaleText(locale, 'Inativo', 'Inactive')}
                 </span>
               </div>
 
@@ -284,7 +287,7 @@ function UsersPage({
                 </div>
                 <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
                   <p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">
-                    Função
+                    {getLocaleText(locale, 'Função', 'Role')}
                   </p>
                   <p className="mt-2 text-sm font-medium text-slate-900">{selectedUser.role}</p>
                 </div>
@@ -293,20 +296,20 @@ function UsersPage({
                     Clube
                   </p>
                   <p className="mt-2 text-sm font-medium text-slate-900">
-                    {selectedUser.club_name || 'Sem clube associado'}
+                    {selectedUser.club_name || getLocaleText(locale, 'Sem clube associado', 'No club assigned')}
                   </p>
                 </div>
                 <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
                   <p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">
-                    Estado
+                    {getLocaleText(locale, 'Estado', 'Status')}
                   </p>
                   <p className="mt-2 text-sm font-medium text-slate-900">
-                    {selectedUser.is_active ? 'Conta ativa' : 'Conta inativa'}
+                    {selectedUser.is_active ? getLocaleText(locale, 'Conta ativa', 'Active account') : getLocaleText(locale, 'Conta inativa', 'Inactive account')}
                   </p>
                 </div>
                 <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 md:col-span-2">
                   <p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">
-                    Criado em
+                    {getLocaleText(locale, 'Criado em', 'Created at')}
                   </p>
                   <p className="mt-2 text-sm font-medium text-slate-900">
                     {formatAdminDateTime(selectedUser.created_at || '')}
@@ -320,14 +323,14 @@ function UsersPage({
                     to={`/infocultura/utilizadores/${selectedUser.id}/editar`}
                     className={adminBtnEdit}
                   >
-                    Editar utilizador
+                    {getLocaleText(locale, 'Editar utilizador', 'Edit user')}
                   </NavLink>
                   {selectedUser.is_active && currentUser?.id !== selectedUser.id ? (
                     <NavLink
                       to={`/infocultura/utilizadores/${selectedUser.id}/desativar`}
                       className={adminBtnDanger}
                     >
-                      Desativar
+                      {getLocaleText(locale, 'Desativar', 'Deactivate')}
                     </NavLink>
                   ) : null}
                 </div>
@@ -365,22 +368,22 @@ function UsersPage({
       <div className="space-y-6">
         <AdminPageHero
           icon={Users}
-          title="Desativar Utilizador"
-          description="Confirma a desativação do utilizador selecionado antes de remover o acesso."
+          title={getLocaleText(locale, 'Desativar Utilizador', 'Deactivate User')}
+          description={getLocaleText(locale, 'Confirma a desativação do utilizador selecionado antes de remover o acesso.', 'Confirm deactivation of the selected user before removing access.')}
           tone="rose"
           actions={
             <NavLink to="/infocultura/utilizadores" className={adminBtnSecondary}>
-              Voltar aos utilizadores
+              {getLocaleText(locale, 'Voltar aos utilizadores', 'Back to users')}
             </NavLink>
           }
         />
 
         <section className={adminPanelCard}>
           {!canManageUsers ? (
-            <p className={adminError}>Apenas o superadmin pode aceder a esta pagina.</p>
+            <p className={adminError}>{getLocaleText(locale, 'Apenas o superadmin pode aceder a esta pagina.', 'Only the superadmin can access this page.')}</p>
           ) : !selectedUser ? (
             <p className={adminInfo}>
-              {isLoadingUsers ? 'A carregar utilizador...' : 'Utilizador não encontrado.'}
+              {isLoadingUsers ? getLocaleText(locale, 'A carregar utilizador...', 'Loading user...') : getLocaleText(locale, 'Utilizador não encontrado.', 'User not found.')}
             </p>
           ) : (
             <form onSubmit={handleDeactivateUser} className={adminPanelForm}>
@@ -397,7 +400,7 @@ function UsersPage({
                       : adminUserStatusInactive
                   }`}
                 >
-                  {selectedUser.is_active ? 'Ativo' : 'Inativo'}
+                  {selectedUser.is_active ? getLocaleText(locale, 'Ativo', 'Active') : getLocaleText(locale, 'Inativo', 'Inactive')}
                 </span>
               </div>
 
@@ -409,7 +412,7 @@ function UsersPage({
                   className={adminBtnDanger}
                   disabled={isDeactivatingUser || !selectedUser.is_active}
                 >
-                  {isDeactivatingUser ? 'A desativar...' : 'Confirmar desativação'}
+                  {isDeactivatingUser ? getLocaleText(locale, 'A desativar...', 'Deactivating...') : getLocaleText(locale, 'Confirmar desativação', 'Confirm deactivation')}
                 </button>
               </div>
             </form>
@@ -424,22 +427,22 @@ function UsersPage({
       <div className="space-y-6">
         <AdminPageHero
           icon={Users}
-          title="Ativar Utilizador"
-          description="Confirma a ativação do utilizador selecionado para restaurar o acesso."
+          title={getLocaleText(locale, 'Ativar Utilizador', 'Activate User')}
+          description={getLocaleText(locale, 'Confirma a ativação do utilizador selecionado para restaurar o acesso.', 'Confirm activation of the selected user to restore access.')}
           tone="emerald"
           actions={
             <NavLink to="/infocultura/utilizadores" className={adminBtnSecondary}>
-              Voltar aos utilizadores
+              {getLocaleText(locale, 'Voltar aos utilizadores', 'Back to users')}
             </NavLink>
           }
         />
 
         <section className={adminPanelCard}>
           {!canManageUsers ? (
-            <p className={adminError}>Apenas o superadmin pode aceder a esta pagina.</p>
+            <p className={adminError}>{getLocaleText(locale, 'Apenas o superadmin pode aceder a esta pagina.', 'Only the superadmin can access this page.')}</p>
           ) : !selectedUser ? (
             <p className={adminInfo}>
-              {isLoadingUsers ? 'A carregar utilizador...' : 'Utilizador não encontrado.'}
+              {isLoadingUsers ? getLocaleText(locale, 'A carregar utilizador...', 'Loading user...') : getLocaleText(locale, 'Utilizador não encontrado.', 'User not found.')}
             </p>
           ) : (
             <form onSubmit={handleActivateUser} className={adminPanelForm}>
@@ -456,7 +459,7 @@ function UsersPage({
                       : adminUserStatusInactive
                   }`}
                 >
-                  {selectedUser.is_active ? 'Ativo' : 'Inativo'}
+                  {selectedUser.is_active ? getLocaleText(locale, 'Ativo', 'Active') : getLocaleText(locale, 'Inativo', 'Inactive')}
                 </span>
               </div>
 
@@ -468,7 +471,7 @@ function UsersPage({
                   className={adminBtnPrimary}
                   disabled={isActivatingUser || selectedUser.is_active}
                 >
-                  {isActivatingUser ? 'A ativar...' : 'Confirmar ativação'}
+                  {isActivatingUser ? getLocaleText(locale, 'A ativar...', 'Activating...') : getLocaleText(locale, 'Confirmar ativação', 'Confirm activation')}
                 </button>
               </div>
             </form>

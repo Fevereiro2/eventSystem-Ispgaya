@@ -41,8 +41,8 @@ function NotificationsPage({
     <div className="space-y-6">
       <AdminPageHero
         icon={Bell}
-        title="Centro de Notificações"
-        description="Alertas editoriais, operacionais e de agenda gerados a partir da atividade do sistema."
+        title={getLocaleText(locale, 'Centro de Notificações', 'Notification Center')}
+        description={getLocaleText(locale, 'Alertas editoriais, operacionais e de agenda gerados a partir da atividade do sistema.', 'Editorial, operational and scheduling alerts generated from system activity.')}
         tone="amber"
         stats={notificationOverviewStats}
         actions={

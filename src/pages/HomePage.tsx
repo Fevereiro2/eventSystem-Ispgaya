@@ -241,6 +241,17 @@ function HomePage() {
   const metrics = getMetrics(locale);
   const supportSlides = getSupportSlides(locale);
   const testimonialSlides = getTestimonialSlides(locale);
+  const copy = locale === 'en'
+    ? {
+        futureTitle: 'Where the Future Takes You',
+        highlightsTitle: 'Highlights',
+        metricsCta: 'The ISPGAYA experience in numbers and opportunities.',
+      }
+    : {
+        futureTitle: 'Onde o Futuro Te Leva',
+        highlightsTitle: 'Destaques',
+        metricsCta: 'A experiência ISPGAYA em números e oportunidades.',
+      };
 
   useEffect(() => {
     const interval = window.setInterval(() => {
@@ -557,7 +568,7 @@ function HomePage() {
         <section id="content-start" className="scroll-mt-36 bg-white pt-10 lg:pt-12 xl:pt-16 2xl:pt-20">
           <div className={`${container} px-4 text-center sm:px-6 lg:px-3`}>
             <h2 className="font-heading text-3xl font-bold tracking-tight text-black xl:text-4xl 2xl:text-5xl">
-                {getLocaleText(locale, 'Destaques', 'Highlights')}
+                {copy.highlightsTitle}
             </h2>
           </div>
 
@@ -610,8 +621,9 @@ function HomePage() {
             <div className="col-span-2 mx-auto max-w-xl space-y-10 lg:col-span-1 lg:mx-0 lg:max-w-none xl:space-y-14">
               <div className="text-center lg:text-left">
                 <h2 className="font-heading text-3xl font-bold tracking-tight text-black xl:text-4xl 2xl:text-5xl">
-                  Onde o Futuro Te Leva
+                  {copy.futureTitle}
                 </h2>
+                <p className="mt-3 text-sm leading-6 text-slate-600">{copy.metricsCta}</p>
               </div>
 
               {metrics.map((item, index) => (

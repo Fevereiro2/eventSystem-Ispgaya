@@ -3,6 +3,7 @@ import { CalendarClock } from 'lucide-react';
 
 import AdminPageHero from './components/AdminPageHero.js';
 import GoogleMapsLocationField from '../../components/ui/GoogleMapsLocationField.js';
+import { getLocaleText, useLocale } from '../../i18n/locale';
 import { adminNamePattern, adminNameTitle } from './nameValidation.js';
 import { ActivityTab, BookFormState, CategoryFormState, EventFormState, SessionFormState } from './types';
 import { formatAdminDateTime, getWorkflowStatusLabel, normalizeWorkflowStatus } from './utils';
@@ -446,6 +447,7 @@ function ActivitiesPage({
   handleDeleteCategory,
   toggleSelectedId,
 }: ActivitiesPageProps) {
+  const { locale } = useLocale();
   const [countryOptions, setCountryOptions] = useState<CountryOption[]>(DEFAULT_COUNTRY_OPTIONS);
   const [portugalDistricts, setPortugalDistricts] = useState<string[]>(PORTUGAL_DISTRICT_OPTIONS);
   const [portugalDistrictCodesByName, setPortugalDistrictCodesByName] = useState<Record<string, string>>({});
@@ -715,7 +717,7 @@ function ActivitiesPage({
               {canManageUsers ? (
                 <div className={adminField}>
                   <label className={adminLabel} htmlFor="activity-club-filter">
-                    Filtrar por clube
+                    {getLocaleText(locale, 'Filtrar por clube', 'Filter by club')}
                   </label>
                   <select
                     id="activity-club-filter"
@@ -723,7 +725,7 @@ function ActivitiesPage({
                     value={activityClubFilter}
                     onChange={(event) => setActivityClubFilter(event.target.value)}
                   >
-                    <option value="all">Todos os clubes</option>
+                    <option value="all">{getLocaleText(locale, 'Todos os clubes', 'All clubs')}</option>
                     {clubs.map((club) => (
                       <option key={club.id} value={club.id}>
                         {club.name}
@@ -735,7 +737,7 @@ function ActivitiesPage({
               {activityTab === 'events' ? (
                 <div className={adminField}>
                   <label className={adminLabel} htmlFor="activity-category-filter">
-                    Filtrar por categoria
+                    {getLocaleText(locale, 'Filtrar por categoria', 'Filter by category')}
                   </label>
                   <select
                     id="activity-category-filter"
@@ -743,7 +745,7 @@ function ActivitiesPage({
                     value={activityCategoryFilter}
                     onChange={(event) => setActivityCategoryFilter(event.target.value)}
                   >
-                    <option value="all">Todas as categorias</option>
+                    <option value="all">{getLocaleText(locale, 'Todas as categorias', 'All categories')}</option>
                     {sortedCategories.map((category) => (
                       <option key={category.id} value={category.id}>
                         {category.name}
@@ -755,7 +757,7 @@ function ActivitiesPage({
               {activityTab === 'events' ? (
                 <div className={adminField}>
                   <label className={adminLabel} htmlFor="activity-status-filter">
-                    Estado editorial
+                    {getLocaleText(locale, 'Estado editorial', 'Editorial status')}
                   </label>
                   <select
                     id="activity-status-filter"
@@ -763,7 +765,7 @@ function ActivitiesPage({
                     value={activityStatusFilter}
                     onChange={(event) => setActivityStatusFilter(event.target.value)}
                   >
-                    <option value="all">Todos os estados</option>
+                    <option value="all">{getLocaleText(locale, 'Todos os estados', 'All statuses')}</option>
                     {EVENT_WORKFLOW_ORDER.map((status) => (
                       <option key={status} value={status}>
                         {getWorkflowStatusLabel(status)}
@@ -775,7 +777,7 @@ function ActivitiesPage({
               {activityTab === 'books' ? (
                 <div className={adminField}>
                   <label className={adminLabel} htmlFor="activity-book-featured-filter">
-                    Destaque
+                    {getLocaleText(locale, 'Destaque', 'Featured')}
                   </label>
                   <select
                     id="activity-book-featured-filter"
@@ -783,9 +785,9 @@ function ActivitiesPage({
                     value={activityBookFeaturedFilter}
                     onChange={(event) => setActivityBookFeaturedFilter(event.target.value)}
                   >
-                    <option value="all">Todos os livros</option>
-                    <option value="featured">Apenas em destaque</option>
-                    <option value="regular">Sem destaque</option>
+                    <option value="all">{getLocaleText(locale, 'Todos os livros', 'All books')}</option>
+                    <option value="featured">{getLocaleText(locale, 'Apenas em destaque', 'Featured only')}</option>
+                    <option value="regular">{getLocaleText(locale, 'Sem destaque', 'Not featured')}</option>
                   </select>
                 </div>
               ) : null}
@@ -793,7 +795,7 @@ function ActivitiesPage({
                 <>
                   <div className={adminField}>
                     <label className={adminLabel} htmlFor="activity-session-registrations-filter">
-                      Inscricoes
+                      {getLocaleText(locale, 'Inscrições', 'Registrations')}
                     </label>
                     <select
                       id="activity-session-registrations-filter"
@@ -803,14 +805,14 @@ function ActivitiesPage({
                         setActivitySessionRegistrationsFilter(event.target.value)
                       }
                     >
-                      <option value="all">Todas</option>
-                      <option value="open">Abertas</option>
-                      <option value="closed">Fechadas</option>
+                      <option value="all">{getLocaleText(locale, 'Todas', 'All')}</option>
+                      <option value="open">{getLocaleText(locale, 'Abertas', 'Open')}</option>
+                      <option value="closed">{getLocaleText(locale, 'Fechadas', 'Closed')}</option>
                     </select>
                   </div>
                   <div className={adminField}>
                     <label className={adminLabel} htmlFor="activity-session-location-filter">
-                      Local
+                      {getLocaleText(locale, 'Local', 'Location')}
                     </label>
                     <input
                       id="activity-session-location-filter"
@@ -822,7 +824,7 @@ function ActivitiesPage({
                       }
                       value={activitySessionLocationFilter}
                       onChange={(event) => setActivitySessionLocationFilter(event.target.value)}
-                      placeholder="Rua, sala ou local"
+                      placeholder={getLocaleText(locale, 'Rua, sala ou local', 'Street, room or location')}
                     />
                     {existingSessionLocations.length > 0 ? (
                       <datalist id="activity-session-location-suggestions">
@@ -838,7 +840,7 @@ function ActivitiesPage({
                 <>
                   <div className={adminField}>
                     <label className={adminLabel} htmlFor="activity-event-city-filter">
-                      Cidade
+                      {getLocaleText(locale, 'Cidade', 'City')}
                     </label>
                     <input
                       id="activity-event-city-filter"
@@ -850,7 +852,7 @@ function ActivitiesPage({
                       }
                       value={activityEventCityFilter}
                       onChange={(event) => setActivityEventCityFilter(event.target.value)}
-                      placeholder="Cidade ou concelho"
+                      placeholder={getLocaleText(locale, 'Cidade ou concelho', 'City or municipality')}
                     />
                     {existingEventCities.length > 0 ? (
                       <datalist id="activity-event-city-suggestions">
@@ -862,7 +864,7 @@ function ActivitiesPage({
                   </div>
                   <div className={adminField}>
                     <label className={adminLabel} htmlFor="activity-event-location-filter">
-                      Local
+                      {getLocaleText(locale, 'Local', 'Location')}
                     </label>
                     <input
                       id="activity-event-location-filter"
@@ -874,7 +876,7 @@ function ActivitiesPage({
                       }
                       value={activityEventLocationFilter}
                       onChange={(event) => setActivityEventLocationFilter(event.target.value)}
-                      placeholder="Rua, sala ou local"
+                      placeholder={getLocaleText(locale, 'Rua, sala ou local', 'Street, room or location')}
                     />
                     {existingEventLocations.length > 0 ? (
                       <datalist id="activity-event-location-suggestions">
@@ -895,12 +897,12 @@ function ActivitiesPage({
             <form onSubmit={handleApplyActivitySearch} className={adminPanelForm}>
               <div className={adminField}>
                 <label className={adminLabel} htmlFor="activity-search">
-                  Pesquisar{' '}
+                  {getLocaleText(locale, 'Pesquisar', 'Search')}{' '}
                   {activityTab === 'books'
-                    ? 'livros'
+                    ? getLocaleText(locale, 'livros', 'books')
                     : activityTab === 'sessions'
-                      ? 'sessoes'
-                      : 'eventos'}
+                      ? getLocaleText(locale, 'sessoes', 'sessions')
+                      : getLocaleText(locale, 'eventos', 'events')}
                 </label>
                 <input
                   id="activity-search"
@@ -909,16 +911,16 @@ function ActivitiesPage({
                   onChange={(event) => setActivitySearchInput(event.target.value)}
                   placeholder={
                     activityTab === 'books'
-                      ? 'Titulo, autor, editora ou clube'
+                      ? getLocaleText(locale, 'Titulo, autor, editora ou clube', 'Title, author, publisher or club')
                       : activityTab === 'sessions'
-                        ? 'Nome, titulo, descricao ou clube'
-                        : 'Titulo, descricao, local ou clube'
+                        ? getLocaleText(locale, 'Nome, titulo, descricao ou clube', 'Name, title, description or club')
+                        : getLocaleText(locale, 'Titulo, descricao, local ou clube', 'Title, description, location or club')
                   }
                 />
               </div>
               <div className={adminActions}>
                 <button type="submit" className={adminBtnPrimary}>
-                  Pesquisar
+                  {getLocaleText(locale, 'Pesquisar', 'Search')}
                 </button>
                 <button
                   type="button"
@@ -929,7 +931,7 @@ function ActivitiesPage({
                     setActivityPage(1);
                   }}
                 >
-                  Limpar
+                  {getLocaleText(locale, 'Limpar', 'Clear')}
                 </button>
               </div>
             </form>
@@ -940,7 +942,7 @@ function ActivitiesPage({
           <div className={adminFormGridSpaced}>
             <div className={adminField}>
               <label className={adminLabel} htmlFor="activity-date-from">
-                Data desde
+                {getLocaleText(locale, 'Data desde', 'Date from')}
               </label>
               <input
                 id="activity-date-from"
@@ -952,7 +954,7 @@ function ActivitiesPage({
             </div>
             <div className={adminField}>
               <label className={adminLabel} htmlFor="activity-date-to">
-                Data ate
+                {getLocaleText(locale, 'Data até', 'Date until')}
               </label>
               <input
                 id="activity-date-to"
@@ -964,7 +966,7 @@ function ActivitiesPage({
             </div>
             <div className={adminField}>
               <label className={adminLabel} htmlFor="activity-order">
-                Ordenar por
+                {getLocaleText(locale, 'Ordenar por', 'Sort by')}
               </label>
               <select
                 id="activity-order"
@@ -974,39 +976,39 @@ function ActivitiesPage({
               >
                 {activityTab === 'books' ? (
                   <>
-                    <option value="featured">Destaque primeiro</option>
-                    <option value="newest">Mais recentes</option>
-                    <option value="oldest">Mais antigos</option>
-                    <option value="title_asc">Titulo A-Z</option>
-                    <option value="title_desc">Titulo Z-A</option>
-                    <option value="year_desc">Ano mais recente</option>
-                    <option value="year_asc">Ano mais antigo</option>
-                    <option value="club_asc">Clube A-Z</option>
-                    <option value="club_desc">Clube Z-A</option>
+                    <option value="featured">{getLocaleText(locale, 'Destaque primeiro', 'Featured first')}</option>
+                    <option value="newest">{getLocaleText(locale, 'Mais recentes', 'Newest')}</option>
+                    <option value="oldest">{getLocaleText(locale, 'Mais antigos', 'Oldest')}</option>
+                    <option value="title_asc">{getLocaleText(locale, 'Titulo A-Z', 'Title A-Z')}</option>
+                    <option value="title_desc">{getLocaleText(locale, 'Titulo Z-A', 'Title Z-A')}</option>
+                    <option value="year_desc">{getLocaleText(locale, 'Ano mais recente', 'Most recent year')}</option>
+                    <option value="year_asc">{getLocaleText(locale, 'Ano mais antigo', 'Oldest year')}</option>
+                    <option value="club_asc">{getLocaleText(locale, 'Clube A-Z', 'Club A-Z')}</option>
+                    <option value="club_desc">{getLocaleText(locale, 'Clube Z-A', 'Club Z-A')}</option>
                   </>
                 ) : activityTab === 'sessions' ? (
                   <>
-                    <option value="date_asc">Data mais proxima</option>
-                    <option value="date_desc">Data mais distante</option>
-                    <option value="newest">Mais recentes</option>
-                    <option value="oldest">Mais antigas</option>
-                    <option value="title_asc">Titulo A-Z</option>
-                    <option value="title_desc">Titulo Z-A</option>
-                    <option value="club_asc">Clube A-Z</option>
-                    <option value="club_desc">Clube Z-A</option>
+                    <option value="date_asc">{getLocaleText(locale, 'Data mais proxima', 'Nearest date')}</option>
+                    <option value="date_desc">{getLocaleText(locale, 'Data mais distante', 'Farthest date')}</option>
+                    <option value="newest">{getLocaleText(locale, 'Mais recentes', 'Newest')}</option>
+                    <option value="oldest">{getLocaleText(locale, 'Mais antigas', 'Oldest')}</option>
+                    <option value="title_asc">{getLocaleText(locale, 'Titulo A-Z', 'Title A-Z')}</option>
+                    <option value="title_desc">{getLocaleText(locale, 'Titulo Z-A', 'Title Z-A')}</option>
+                    <option value="club_asc">{getLocaleText(locale, 'Clube A-Z', 'Club A-Z')}</option>
+                    <option value="club_desc">{getLocaleText(locale, 'Clube Z-A', 'Club Z-A')}</option>
                   </>
                 ) : (
                   <>
-                    <option value="date_asc">Data mais proxima</option>
-                    <option value="date_desc">Data mais distante</option>
-                    <option value="newest">Mais recentes</option>
-                    <option value="oldest">Mais antigos</option>
-                    <option value="title_asc">Titulo A-Z</option>
-                    <option value="title_desc">Titulo Z-A</option>
-                    <option value="club_asc">Clube A-Z</option>
-                    <option value="club_desc">Clube Z-A</option>
-                    <option value="status_asc">Estado A-Z</option>
-                    <option value="status_desc">Estado Z-A</option>
+                    <option value="date_asc">{getLocaleText(locale, 'Data mais proxima', 'Nearest date')}</option>
+                    <option value="date_desc">{getLocaleText(locale, 'Data mais distante', 'Farthest date')}</option>
+                    <option value="newest">{getLocaleText(locale, 'Mais recentes', 'Newest')}</option>
+                    <option value="oldest">{getLocaleText(locale, 'Mais antigos', 'Oldest')}</option>
+                    <option value="title_asc">{getLocaleText(locale, 'Titulo A-Z', 'Title A-Z')}</option>
+                    <option value="title_desc">{getLocaleText(locale, 'Titulo Z-A', 'Title Z-A')}</option>
+                    <option value="club_asc">{getLocaleText(locale, 'Clube A-Z', 'Club A-Z')}</option>
+                    <option value="club_desc">{getLocaleText(locale, 'Clube Z-A', 'Club Z-A')}</option>
+                    <option value="status_asc">{getLocaleText(locale, 'Estado A-Z', 'Status A-Z')}</option>
+                    <option value="status_desc">{getLocaleText(locale, 'Estado Z-A', 'Status Z-A')}</option>
                   </>
                 )}
               </select>
@@ -1028,8 +1030,8 @@ function ActivitiesPage({
                 disabled={sortedBooks.length === 0}
               >
                 {selectedBookIds.length === sortedBooks.length && sortedBooks.length > 0
-                  ? 'Limpar selecao'
-                  : 'Selecionar pagina'}
+                  ? getLocaleText(locale, 'Limpar seleção', 'Clear selection')
+                  : getLocaleText(locale, 'Selecionar página', 'Select page')}
               </button>
               <button
                 type="button"
@@ -1037,7 +1039,7 @@ function ActivitiesPage({
                 disabled={selectedBookIds.length === 0 || isDeletingBulkBooks}
                 onClick={() => void handleBulkDeleteBooks()}
               >
-                {isDeletingBulkBooks ? 'A apagar...' : 'Apagar selecionados'}
+                {isDeletingBulkBooks ? getLocaleText(locale, 'A apagar...', 'Deleting...') : getLocaleText(locale, 'Apagar selecionados', 'Delete selected')}
               </button>
             </div>
           ) : null}
@@ -1057,8 +1059,8 @@ function ActivitiesPage({
                 disabled={sortedEvents.length === 0}
               >
                 {selectedEventIds.length === sortedEvents.length && sortedEvents.length > 0
-                  ? 'Limpar selecao'
-                  : 'Selecionar pagina'}
+                  ? getLocaleText(locale, 'Limpar seleção', 'Clear selection')
+                  : getLocaleText(locale, 'Selecionar página', 'Select page')}
               </button>
               <select
                 className={adminInput}
@@ -1077,7 +1079,7 @@ function ActivitiesPage({
                 disabled={selectedEventIds.length === 0 || isApplyingBulkEvents}
                 onClick={() => void handleApplyBulkEventStatus()}
               >
-                {isApplyingBulkEvents ? 'A aplicar...' : 'Aplicar em lote'}
+                {isApplyingBulkEvents ? getLocaleText(locale, 'A aplicar...', 'Applying...') : getLocaleText(locale, 'Aplicar em lote', 'Apply in bulk')}
               </button>
               <button
                 type="button"
@@ -1085,7 +1087,7 @@ function ActivitiesPage({
                 disabled={selectedEventIds.length === 0 || isDeletingBulkEvents}
                 onClick={() => void handleBulkDeleteEvents()}
               >
-                {isDeletingBulkEvents ? 'A apagar...' : 'Apagar selecionados'}
+                {isDeletingBulkEvents ? getLocaleText(locale, 'A apagar...', 'Deleting...') : getLocaleText(locale, 'Apagar selecionados', 'Delete selected')}
               </button>
             </div>
           ) : null}
@@ -1096,13 +1098,13 @@ function ActivitiesPage({
         <>
           {showActivityForm ? (
             <form id="activity-form" onSubmit={handleSaveBook} className={adminPanelForm}>
-              <h2 className={blockTitle}>{editingBookId ? 'Editar Livro' : 'Novo Livro'}</h2>
+              <h2 className={blockTitle}>{editingBookId ? getLocaleText(locale, 'Editar Livro', 'Edit Book') : getLocaleText(locale, 'Novo Livro', 'New Book')}</h2>
 
               <div className={adminFormGridSpaced}>
                 {canManageUsers ? (
                   <div className={adminField}>
                     <label className={adminLabel} htmlFor="book-club-id">
-                      Clube
+                      {getLocaleText(locale, 'Clube', 'Club')}
                     </label>
                     <select
                       id="book-club-id"
@@ -1120,7 +1122,7 @@ function ActivitiesPage({
                         }
                       }}
                     >
-                      <option value="">Seleciona um clube</option>
+                      <option value="">{getLocaleText(locale, 'Seleciona um clube', 'Select a club')}</option>
                       {clubs.map((club) => (
                         <option key={club.id} value={club.id}>
                           {club.name}
@@ -1132,7 +1134,7 @@ function ActivitiesPage({
 
                 <div className={adminField}>
                   <label className={adminLabel} htmlFor="book-title">
-                    Titulo
+                    {getLocaleText(locale, 'Titulo', 'Title')}
                   </label>
                   <input
                     id="book-title"
@@ -1146,7 +1148,7 @@ function ActivitiesPage({
 
                 <div className={adminField}>
                   <label className={adminLabel} htmlFor="book-author">
-                    Autor
+                    {getLocaleText(locale, 'Autor', 'Author')}
                   </label>
                   <input
                     id="book-author"
@@ -1160,7 +1162,7 @@ function ActivitiesPage({
 
                 <div className={adminField}>
                   <label className={adminLabel} htmlFor="book-year">
-                    Ano
+                    {getLocaleText(locale, 'Ano', 'Year')}
                   </label>
                   <input
                     id="book-year"
@@ -1180,7 +1182,7 @@ function ActivitiesPage({
               <div className={adminFormGridSpaced}>
                 <div className={adminField}>
                   <label className={adminLabel} htmlFor="book-publisher">
-                    Editora
+                    {getLocaleText(locale, 'Editora', 'Publisher')}
                   </label>
                   <input
                     id="book-publisher"
@@ -1194,7 +1196,7 @@ function ActivitiesPage({
 
                 <div className={adminField}>
                   <label className={adminLabel} htmlFor="book-cover">
-                    Capa
+                    {getLocaleText(locale, 'Capa', 'Cover')}
                   </label>
                   <input
                     id="book-cover"
@@ -1209,15 +1211,15 @@ function ActivitiesPage({
                   />
                   <p className={blockText}>
                     {isUploadingBookImage
-                      ? 'A carregar capa...'
+                      ? getLocaleText(locale, 'A carregar capa...', 'Uploading cover...')
                       : bookForm.cover_image
-                        ? 'Capa carregada com sucesso.'
-                        : 'Seleciona uma imagem do computador ou telemovel.'}
+                        ? getLocaleText(locale, 'Capa carregada com sucesso.', 'Cover uploaded successfully.')
+                        : getLocaleText(locale, 'Seleciona uma imagem do computador ou telemovel.', 'Select an image from your computer or phone.')}
                   </p>
                   {bookForm.cover_image ? (
                     <img
                       src={resolveInfoCulturaAssetUrl(bookForm.cover_image)}
-                      alt="Preview da capa"
+                      alt={getLocaleText(locale, 'Preview da capa', 'Cover preview')}
                       className="mt-3 h-40 w-full rounded-xl object-cover"
                     />
                   ) : null}
@@ -1225,7 +1227,7 @@ function ActivitiesPage({
 
                 <div className={adminField}>
                   <label className={adminLabel} htmlFor="book-featured">
-                    Destaque
+                    {getLocaleText(locale, 'Destaque', 'Featured')}
                   </label>
                   <select
                     id="book-featured"
@@ -1238,14 +1240,14 @@ function ActivitiesPage({
                       }))
                     }
                   >
-                    <option value="nao">Nao</option>
-                    <option value="sim">Sim</option>
+                    <option value="nao">{getLocaleText(locale, 'Nao', 'No')}</option>
+                    <option value="sim">{getLocaleText(locale, 'Sim', 'Yes')}</option>
                   </select>
                 </div>
 
 	                <div className={adminField}>
 	                  <label className={adminLabel} htmlFor="book-available-at">
-	                    Publicar em
+	                    {getLocaleText(locale, 'Publicar em', 'Publish at')}
 	                  </label>
                   <input
                     id="book-available-at"
@@ -1257,14 +1259,14 @@ function ActivitiesPage({
                     }
                   />
 	                  <p className={blockText}>
-	                    Usa "Publicar agora" para publicar imediatamente ou escolhe data/hora futura e clica em "Agendar".
+	                    {getLocaleText(locale, 'Usa "Publicar agora" para publicar imediatamente ou escolhe data/hora futura e clica em "Agendar".', 'Use "Publish now" to publish immediately or choose a future date/time and click "Schedule".')}
 	                  </p>
 	                </div>
               </div>
 
               <div className={adminFieldSpaced}>
                 <label className={adminLabel} htmlFor="book-summary">
-                  Resumo
+                  {getLocaleText(locale, 'Resumo', 'Summary')}
                 </label>
                 <textarea
                   id="book-summary"
@@ -1288,7 +1290,7 @@ function ActivitiesPage({
                     (canManageUsers && activityClubFilter === 'all' && !bookForm.club_id)
                   }
 	                >
-	                  {isSavingBook ? 'A guardar...' : editingBookId ? 'Atualizar' : 'Salvar'}
+	                  {isSavingBook ? getLocaleText(locale, 'A guardar...', 'Saving...') : editingBookId ? getLocaleText(locale, 'Atualizar', 'Update') : getLocaleText(locale, 'Guardar', 'Save')}
 	                </button>
 	                <button
 	                  type="submit"
@@ -1297,7 +1299,7 @@ function ActivitiesPage({
 	                  className={adminBtnSecondary}
 	                  disabled={isSavingBook}
 	                >
-	                  Publicar agora
+	                  {getLocaleText(locale, 'Publicar agora', 'Publish now')}
 	                </button>
 	                <button
 	                  type="submit"
@@ -1306,10 +1308,10 @@ function ActivitiesPage({
 	                  className={adminBtnSecondary}
 	                  disabled={isSavingBook}
 	                >
-	                  Agendar
+	                  {getLocaleText(locale, 'Agendar', 'Schedule')}
 	                </button>
 	                <button type="button" onClick={resetBookForm} className={adminBtnSecondary}>
-	                  Limpar
+	                  {getLocaleText(locale, 'Limpar', 'Clear')}
 	                </button>
               </div>
             </form>
@@ -1317,9 +1319,9 @@ function ActivitiesPage({
 
           {showActivityFiltersAndList ? (
             <div id="activity-list" className={adminList}>
-              {isLoadingActivities ? <p className={adminInfo}>A carregar livros...</p> : null}
+              {isLoadingActivities ? <p className={adminInfo}>{getLocaleText(locale, 'A carregar livros...', 'Loading books...')}</p> : null}
               {!isLoadingActivities && sortedBooks.length === 0 ? (
-                <p className={adminInfo}>Não existem livros para o filtro atual.</p>
+                <p className={adminInfo}>{getLocaleText(locale, 'Não existem livros para o filtro atual.', 'There are no books for the current filter.')}</p>
               ) : null}
               {sortedBooks.map((item) => (
                 <article key={item.id} className={adminListItem}>
@@ -1331,7 +1333,7 @@ function ActivitiesPage({
                           checked={selectedBookIds.includes(item.id)}
                           onChange={() => toggleSelectedId(setSelectedBookIds, item.id)}
                         />
-                        Selecionar
+                        {getLocaleText(locale, 'Selecionar', 'Select')}
                       </label>
                       <h3 className={adminListTitle}>{item.title}</h3>
                       <p className={adminListMeta}>
@@ -1342,7 +1344,7 @@ function ActivitiesPage({
                     </div>
                     <div className={adminListTools}>
                       <button type="button" className={adminBtnEdit} onClick={() => handleEditBook(item)}>
-                        Editar
+                        {getLocaleText(locale, 'Editar', 'Edit')}
                       </button>
                       <button
                         type="button"
@@ -1351,10 +1353,10 @@ function ActivitiesPage({
                         onClick={() => void handleToggleBookActive(item.id, !item.is_active)}
                       >
                         {changingBookStatusId === item.id
-                          ? 'A atualizar...'
+                          ? getLocaleText(locale, 'A atualizar...', 'Updating...')
                           : item.is_active
-                            ? 'Desativar'
-                            : 'Ativar'}
+                            ? getLocaleText(locale, 'Desativar', 'Deactivate')
+                            : getLocaleText(locale, 'Ativar', 'Activate')}
                       </button>
                       <button
                         type="button"
@@ -1362,7 +1364,7 @@ function ActivitiesPage({
                         disabled={deletingBookId === item.id}
                         onClick={() => handleDeleteBook(item.id)}
                       >
-                        {deletingBookId === item.id ? 'A apagar...' : 'Apagar'}
+                        {deletingBookId === item.id ? getLocaleText(locale, 'A apagar...', 'Deleting...') : getLocaleText(locale, 'Apagar', 'Delete')}
                       </button>
                     </div>
                   </div>
@@ -1374,7 +1376,7 @@ function ActivitiesPage({
           {showActivityFiltersAndList && !isLoadingActivities ? (
             <div className={`${adminActions} mt-6`}>
               <p className={adminInfo}>
-                {activityTotal} livro(s) · pagina {activityPage} de {activityTotalPages || 1}
+                {activityTotal} {getLocaleText(locale, 'livro(s)', 'book(s)')} · {getLocaleText(locale, 'pagina', 'page')} {activityPage} {getLocaleText(locale, 'de', 'of')} {activityTotalPages || 1}
               </p>
               <button
                 type="button"
@@ -1382,7 +1384,7 @@ function ActivitiesPage({
                 disabled={activityPage <= 1}
                 onClick={() => setActivityPage((prev) => Math.max(1, prev - 1))}
               >
-                Anterior
+                {getLocaleText(locale, 'Anterior', 'Previous')}
               </button>
               <button
                 type="button"
@@ -1390,7 +1392,7 @@ function ActivitiesPage({
                 disabled={activityTotalPages === 0 || activityPage >= activityTotalPages}
                 onClick={() => setActivityPage((prev) => prev + 1)}
               >
-                Seguinte
+                {getLocaleText(locale, 'Seguinte', 'Next')}
               </button>
             </div>
           ) : null}
@@ -1401,13 +1403,13 @@ function ActivitiesPage({
         <>
           {showActivityForm ? (
             <form id="activity-form" onSubmit={handleSaveSession} className={adminPanelForm}>
-              <h2 className={blockTitle}>{editingSessionId ? 'Editar Sessao' : 'Nova Sessao'}</h2>
+              <h2 className={blockTitle}>{editingSessionId ? getLocaleText(locale, 'Editar Sessao', 'Edit Session') : getLocaleText(locale, 'Nova Sessao', 'New Session')}</h2>
 
               <div className={adminFormGridSpaced}>
                 {canManageUsers ? (
                   <div className={adminField}>
                     <label className={adminLabel} htmlFor="session-club-id">
-                      Clube
+                      {getLocaleText(locale, 'Clube', 'Club')}
                     </label>
                     <select
                       id="session-club-id"
@@ -1417,7 +1419,7 @@ function ActivitiesPage({
                         setSessionForm((prev) => ({ ...prev, club_id: event.target.value }))
                       }
                     >
-                      <option value="">Seleciona um clube</option>
+                      <option value="">{getLocaleText(locale, 'Seleciona um clube', 'Select a club')}</option>
                       {clubs.map((club) => (
                         <option key={club.id} value={club.id}>
                           {club.name}
@@ -1429,7 +1431,7 @@ function ActivitiesPage({
 
                 <div className={adminField}>
                   <label className={adminLabel} htmlFor="session-name">
-                    Nome curto
+                    {getLocaleText(locale, 'Nome curto', 'Short name')}
                   </label>
                   <input
                     id="session-name"
@@ -1445,7 +1447,7 @@ function ActivitiesPage({
 
                 <div className={adminField}>
                   <label className={adminLabel} htmlFor="session-title">
-                    Titulo
+                    {getLocaleText(locale, 'Titulo', 'Title')}
                   </label>
                   <input
                     id="session-title"
@@ -1461,7 +1463,7 @@ function ActivitiesPage({
               <div className={adminFormGridSpaced}>
                 <div className={adminField}>
                   <label className={adminLabel} htmlFor="session-start">
-                    Inicio
+                    {getLocaleText(locale, 'Inicio', 'Start')}
                   </label>
                   <input
                     id="session-start"
@@ -1479,7 +1481,7 @@ function ActivitiesPage({
 
 	                <div className={adminField}>
 	                  <label className={adminLabel} htmlFor="session-end">
-                    Fim
+                    {getLocaleText(locale, 'Fim', 'End')}
                   </label>
                   <input
                     id="session-end"
@@ -1494,7 +1496,7 @@ function ActivitiesPage({
 
 	                <div className={adminField}>
 	                  <label className={adminLabel} htmlFor="session-available-at">
-	                    Publicar em
+	                    {getLocaleText(locale, 'Publicar em', 'Publish at')}
 	                  </label>
 	                  <input
 	                    id="session-available-at"
@@ -1506,13 +1508,13 @@ function ActivitiesPage({
 	                    }
 	                  />
 	                  <p className={blockText}>
-	                    Usa "Publicar agora" para publicar imediatamente ou escolhe data/hora futura e clica em "Agendar".
+	                    {getLocaleText(locale, 'Usa "Publicar agora" para publicar imediatamente ou escolhe data/hora futura e clica em "Agendar".', 'Use "Publish now" to publish immediately or choose a future date/time and click "Schedule".')}
 	                  </p>
 	                </div>
 
                 <div className={adminField}>
                   <label className={adminLabel} htmlFor="session-location">
-                    Local
+                    {getLocaleText(locale, 'Local', 'Location')}
                   </label>
                   <GoogleMapsLocationField
                     inputId="session-location"
@@ -1528,7 +1530,7 @@ function ActivitiesPage({
 
 	                <div className={adminField}>
 	                  <label className={adminLabel} htmlFor="session-registrations-enabled">
-                    Inscricoes
+                    {getLocaleText(locale, 'Inscricoes', 'Registrations')}
                   </label>
                   <select
                     id="session-registrations-enabled"
@@ -1541,14 +1543,14 @@ function ActivitiesPage({
                       }))
                     }
                   >
-                    <option value="nao">Fechadas</option>
-                    <option value="sim">Abertas</option>
+                    <option value="nao">{getLocaleText(locale, 'Fechadas', 'Closed')}</option>
+                    <option value="sim">{getLocaleText(locale, 'Abertas', 'Open')}</option>
                   </select>
                 </div>
 
                 <div className={adminField}>
                   <label className={adminLabel} htmlFor="session-registration-capacity">
-                    Lotacao
+                    {getLocaleText(locale, 'Lotacao', 'Capacity')}
                   </label>
                   <input
                     id="session-registration-capacity"
@@ -1564,14 +1566,14 @@ function ActivitiesPage({
                     }
                   />
                   <p className={blockText}>
-                    Define o numero maximo de lugares antes de ativar lista de espera.
+                    {getLocaleText(locale, 'Define o numero maximo de lugares antes de ativar lista de espera.', 'Define the maximum number of places before activating the waiting list.')}
                   </p>
                 </div>
               </div>
 
               <div className={adminFieldSpaced}>
                 <label className={adminLabel} htmlFor="session-description">
-                  Descricao
+                  {getLocaleText(locale, 'Descricao', 'Description')}
                 </label>
                 <textarea
                   id="session-description"
@@ -1591,7 +1593,7 @@ function ActivitiesPage({
 
               <div className={adminActions}>
 	                <button type="submit" className={adminBtnPrimary} disabled={isSavingSession}>
-	                  {isSavingSession ? 'A guardar...' : editingSessionId ? 'Atualizar' : 'Salvar'}
+	                  {isSavingSession ? getLocaleText(locale, 'A guardar...', 'Saving...') : editingSessionId ? getLocaleText(locale, 'Atualizar', 'Update') : getLocaleText(locale, 'Guardar', 'Save')}
 	                </button>
 	                <button
 	                  type="submit"
@@ -1600,7 +1602,7 @@ function ActivitiesPage({
 	                  className={adminBtnSecondary}
 	                  disabled={isSavingSession}
 	                >
-	                  Publicar agora
+	                  {getLocaleText(locale, 'Publicar agora', 'Publish now')}
 	                </button>
 	                <button
 	                  type="submit"
@@ -1609,10 +1611,10 @@ function ActivitiesPage({
 	                  className={adminBtnSecondary}
 	                  disabled={isSavingSession}
 	                >
-	                  Agendar
+	                  {getLocaleText(locale, 'Agendar', 'Schedule')}
 	                </button>
 	                <button type="button" onClick={resetSessionForm} className={adminBtnSecondary}>
-	                  Limpar
+	                  {getLocaleText(locale, 'Limpar', 'Clear')}
 	                </button>
               </div>
             </form>
@@ -1620,9 +1622,9 @@ function ActivitiesPage({
 
           {showActivityFiltersAndList ? (
             <div id="activity-list" className={adminList}>
-              {isLoadingActivities ? <p className={adminInfo}>A carregar sessoes...</p> : null}
+              {isLoadingActivities ? <p className={adminInfo}>{getLocaleText(locale, 'A carregar sessoes...', 'Loading sessions...')}</p> : null}
               {!isLoadingActivities && sortedSessions.length === 0 ? (
-                <p className={adminInfo}>Nao existem sessoes para o filtro atual.</p>
+                <p className={adminInfo}>{getLocaleText(locale, 'Nao existem sessoes para o filtro atual.', 'There are no sessions for the current filter.')}</p>
               ) : null}
               {sortedSessions.map((item) => (
                 <article key={item.id} className={adminListItem}>
@@ -1637,7 +1639,7 @@ function ActivitiesPage({
                     </div>
                     <div className={adminListTools}>
                       <button type="button" className={adminBtnEdit} onClick={() => handleEditSession(item)}>
-                        Editar
+                        {getLocaleText(locale, 'Editar', 'Edit')}
                       </button>
                       <button
                         type="button"
@@ -1646,10 +1648,10 @@ function ActivitiesPage({
                         onClick={() => void handleToggleSessionActive(item.id, !item.is_active)}
                       >
                         {changingSessionStatusId === item.id
-                          ? 'A atualizar...'
+                          ? getLocaleText(locale, 'A atualizar...', 'Updating...')
                           : item.is_active
-                            ? 'Desativar'
-                            : 'Ativar'}
+                            ? getLocaleText(locale, 'Desativar', 'Deactivate')
+                            : getLocaleText(locale, 'Ativar', 'Activate')}
                       </button>
                       <button
                         type="button"
@@ -1657,17 +1659,17 @@ function ActivitiesPage({
                         disabled={deletingSessionId === item.id}
                         onClick={() => handleDeleteSession(item.id)}
                       >
-                        {deletingSessionId === item.id ? 'A apagar...' : 'Apagar'}
+                        {deletingSessionId === item.id ? getLocaleText(locale, 'A apagar...', 'Deleting...') : getLocaleText(locale, 'Apagar', 'Delete')}
                       </button>
                     </div>
                   </div>
                   <p className={adminListDesc}>{item.description}</p>
                   <p className={adminListMeta}>
-                    {item.location ? `Local ${item.location} · ` : ''}
-                    Inscricoes {item.enable_registrations ? 'abertas' : 'fechadas'} ·
-                    Confirmadas {item.confirmed_registrations} · Espera {item.waitlist_registrations}
+                    {item.location ? `${getLocaleText(locale, 'Local', 'Location')} ${item.location} · ` : ''}
+                    {getLocaleText(locale, 'Inscricoes', 'Registrations')} {item.enable_registrations ? getLocaleText(locale, 'abertas', 'open') : getLocaleText(locale, 'fechadas', 'closed')} ·
+                    {getLocaleText(locale, 'Confirmadas', 'Confirmed')} {item.confirmed_registrations} · {getLocaleText(locale, 'Espera', 'Waitlist')} {item.waitlist_registrations}
                     {item.registration_capacity !== null && item.registration_capacity !== undefined
-                      ? ` · Lotacao ${item.registration_capacity}`
+                      ? ` · ${getLocaleText(locale, 'Lotacao', 'Capacity')} ${item.registration_capacity}`
                       : ''}
                   </p>
                 </article>
@@ -1677,7 +1679,7 @@ function ActivitiesPage({
           {showActivityFiltersAndList && !isLoadingActivities ? (
             <div className={`${adminActions} mt-6`}>
               <p className={adminInfo}>
-                {activityTotal} sessao(oes) · pagina {activityPage} de {activityTotalPages || 1}
+                {activityTotal} {getLocaleText(locale, 'sessao(oes)', 'session(s)')} · {getLocaleText(locale, 'pagina', 'page')} {activityPage} {getLocaleText(locale, 'de', 'of')} {activityTotalPages || 1}
               </p>
               <button
                 type="button"
@@ -1685,7 +1687,7 @@ function ActivitiesPage({
                 disabled={activityPage <= 1}
                 onClick={() => setActivityPage((prev) => Math.max(1, prev - 1))}
               >
-                Anterior
+                {getLocaleText(locale, 'Anterior', 'Previous')}
               </button>
               <button
                 type="button"
@@ -1693,7 +1695,7 @@ function ActivitiesPage({
                 disabled={activityTotalPages === 0 || activityPage >= activityTotalPages}
                 onClick={() => setActivityPage((prev) => prev + 1)}
               >
-                Seguinte
+                {getLocaleText(locale, 'Seguinte', 'Next')}
               </button>
             </div>
           ) : null}
@@ -1704,7 +1706,11 @@ function ActivitiesPage({
         <>
           {showActivityForm ? (
             <form id="activity-form" onSubmit={handleSaveEvent} className={adminPanelForm}>
-              <h2 className={blockTitle}>{editingEventId ? 'Editar Evento' : 'Novo Evento'}</h2>
+              <h2 className={blockTitle}>
+                {editingEventId
+                  ? getLocaleText(locale, 'Editar Evento', 'Edit Event')
+                  : getLocaleText(locale, 'Novo Evento', 'New Event')}
+              </h2>
               <div className="mb-4 flex flex-wrap items-center gap-3 rounded-lg border border-slate-200 bg-slate-50 p-3">
                 <button
                   type="button"
@@ -1714,13 +1720,15 @@ function ActivitiesPage({
                     void handleCheckEventbriteConnection?.();
                   }}
                 >
-                  {isCheckingEventbriteConnection ? 'A verificar...' : 'Verificar Eventbrite'}
+                  {isCheckingEventbriteConnection
+                    ? getLocaleText(locale, 'A verificar...', 'Checking...')
+                    : getLocaleText(locale, 'Verificar Eventbrite', 'Check Eventbrite')}
                 </button>
                 {eventbriteConnection ? (
                   <p className={eventbriteConnection.connected ? adminInfo : adminError}>
                     {eventbriteConnection.connected
-                      ? `Ligado a ${eventbriteConnection.organization_name || eventbriteConnection.organization_id || 'Eventbrite'}`
-                      : eventbriteConnection.message || 'Eventbrite nao configurada'}
+                      ? `${getLocaleText(locale, 'Ligado a', 'Connected to')} ${eventbriteConnection.organization_name || eventbriteConnection.organization_id || 'Eventbrite'}`
+                      : eventbriteConnection.message || getLocaleText(locale, 'Eventbrite nao configurada', 'Eventbrite is not configured')}
                   </p>
                 ) : null}
               </div>
@@ -1729,7 +1737,7 @@ function ActivitiesPage({
                 {canManageUsers ? (
                   <div className={adminField}>
                     <label className={adminLabel} htmlFor="event-club-id">
-                      Clube
+                      {getLocaleText(locale, 'Clube', 'Club')}
                     </label>
                     <select
                       id="event-club-id"
@@ -1739,7 +1747,7 @@ function ActivitiesPage({
                         setEventForm((prev) => ({ ...prev, club_id: event.target.value }))
                       }
                     >
-                      <option value="">Seleciona um clube</option>
+                      <option value="">{getLocaleText(locale, 'Seleciona um clube', 'Select a club')}</option>
                       {clubs.map((club) => (
                         <option key={club.id} value={club.id}>
                           {club.name}
@@ -1751,7 +1759,7 @@ function ActivitiesPage({
 
                 <div className={adminField}>
                   <label className={adminLabel} htmlFor="event-title">
-                    Titulo
+                    {getLocaleText(locale, 'Titulo', 'Title')}
                   </label>
                   <input
                     id="event-title"
@@ -1765,7 +1773,7 @@ function ActivitiesPage({
 
                 <div className={adminField}>
                   <label className={adminLabel} htmlFor="event-status">
-                    Estado
+                    {getLocaleText(locale, 'Estado', 'Status')}
                   </label>
                   <select
                     id="event-status"
@@ -1786,14 +1794,14 @@ function ActivitiesPage({
                   </select>
                   <p className={blockText}>
                     {canManageUsers
-                      ? 'Podes rever, publicar ou arquivar o evento.'
-                      : 'O evento pode ficar em rascunho ou seguir para revisao.'}
+                      ? getLocaleText(locale, 'Podes rever, publicar ou arquivar o evento.', 'You can review, publish or archive the event.')
+                      : getLocaleText(locale, 'O evento pode ficar em rascunho ou seguir para revisao.', 'The event can stay in draft or move to review.')}
                   </p>
                 </div>
 
                 <div className={adminField}>
                   <label className={adminLabel} htmlFor="event-categories">
-                    Categorias
+                    {getLocaleText(locale, 'Categorias', 'Categories')}
                   </label>
                   <select
                     id="event-categories"
@@ -1821,7 +1829,7 @@ function ActivitiesPage({
               <div className={adminFormGridSpaced}>
                 <div className={adminField}>
                   <label className={adminLabel} htmlFor="event-start">
-                    Inicio
+                    {getLocaleText(locale, 'Inicio', 'Start')}
                   </label>
                   <input
                     id="event-start"
@@ -1836,7 +1844,7 @@ function ActivitiesPage({
 
 	                <div className={adminField}>
 	                  <label className={adminLabel} htmlFor="event-end">
-                    Fim
+                    {getLocaleText(locale, 'Fim', 'End')}
                   </label>
                   <input
                     id="event-end"
@@ -1851,7 +1859,7 @@ function ActivitiesPage({
 
 	                <div className={adminField}>
 	                  <label className={adminLabel} htmlFor="event-publish-at">
-	                    Publicar em
+	                    {getLocaleText(locale, 'Publicar em', 'Publish at')}
 	                  </label>
 	                  <input
 	                    id="event-publish-at"
@@ -1863,13 +1871,13 @@ function ActivitiesPage({
 	                    }
 	                  />
 	                  <p className={blockText}>
-	                    Usa "Publicar agora" para publicar imediatamente ou escolhe data/hora futura e clica em "Agendar".
+	                    {getLocaleText(locale, 'Usa "Publicar agora" para publicar imediatamente ou escolhe data/hora futura e clica em "Agendar".', 'Use "Publish now" to publish immediately or choose a future date/time and click "Schedule".')}
 	                  </p>
 	                </div>
 
 	                <div className={adminField}>
 	                  <label className={adminLabel} htmlFor="event-external">
-                    Externo
+                    {getLocaleText(locale, 'Externo', 'External')}
                   </label>
                   <select
                     id="event-external"
@@ -1882,14 +1890,14 @@ function ActivitiesPage({
                       }))
                     }
                   >
-                    <option value="nao">Nao</option>
-                    <option value="sim">Sim</option>
+                    <option value="nao">{getLocaleText(locale, 'Nao', 'No')}</option>
+                    <option value="sim">{getLocaleText(locale, 'Sim', 'Yes')}</option>
                   </select>
                 </div>
 
                 <div className={adminField}>
                   <label className={adminLabel} htmlFor="event-registrations-enabled">
-                    Inscricoes
+                    {getLocaleText(locale, 'Inscricoes', 'Registrations')}
                   </label>
                   <select
                     id="event-registrations-enabled"
@@ -1902,8 +1910,8 @@ function ActivitiesPage({
                       }))
                     }
                   >
-                    <option value="nao">Fechadas</option>
-                    <option value="sim">Abertas</option>
+                    <option value="nao">{getLocaleText(locale, 'Fechadas', 'Closed')}</option>
+                    <option value="sim">{getLocaleText(locale, 'Abertas', 'Open')}</option>
                   </select>
                 </div>
               </div>
@@ -1941,7 +1949,7 @@ function ActivitiesPage({
                 {eventForm.country_code === PORTUGAL_COUNTRY_CODE ? (
                   <div className={adminField}>
                     <label className={adminLabel} htmlFor="event-district">
-                      Distrito
+                      {getLocaleText(locale, 'Distrito', 'District')}
                     </label>
                     <select
                       id="event-district"
@@ -1959,7 +1967,7 @@ function ActivitiesPage({
                         }));
                       }}
                     >
-                      <option value="">Seleciona um distrito</option>
+                      <option value="">{getLocaleText(locale, 'Seleciona um distrito', 'Select a district')}</option>
                       {portugalDistricts.map((district) => (
                         <option key={district} value={district}>
                           {district}
@@ -1972,7 +1980,7 @@ function ActivitiesPage({
                 {eventForm.country_code === PORTUGAL_COUNTRY_CODE ? (
                   <div className={adminField}>
                     <label className={adminLabel} htmlFor="event-municipality">
-                      Concelho
+                      {getLocaleText(locale, 'Concelho', 'Municipality')}
                     </label>
                     <select
                       id="event-municipality"
@@ -1990,7 +1998,9 @@ function ActivitiesPage({
                       disabled={!eventForm.district}
                     >
                       <option value="">
-                        {eventForm.district ? 'Seleciona um concelho' : 'Escolhe primeiro o distrito'}
+                        {eventForm.district
+                          ? getLocaleText(locale, 'Seleciona um concelho', 'Select a municipality')
+                          : getLocaleText(locale, 'Escolhe primeiro o distrito', 'Choose the district first')}
                       </option>
                       {currentDistrictMunicipalities.map((municipality) => (
                         <option key={municipality} value={municipality}>
@@ -2003,7 +2013,7 @@ function ActivitiesPage({
 
                 <div className={adminField}>
                   <label className={adminLabel} htmlFor="event-city">
-                    Cidade / Localidade
+                    {getLocaleText(locale, 'Cidade / Localidade', 'City / Locality')}
                   </label>
                   <input
                     id="event-city"
@@ -2043,14 +2053,14 @@ function ActivitiesPage({
                   ) : null}
                   {eventForm.country_code === PORTUGAL_COUNTRY_CODE ? (
                     <p className={blockText}>
-                      Lista com municípios de Portugal carregada a partir da GEO API PT.
+                      {getLocaleText(locale, 'Lista com municípios de Portugal carregada a partir da GEO API PT.', 'List of Portuguese municipalities loaded from the GEO API PT.')}
                     </p>
                   ) : null}
                 </div>
 
                 <div className={adminField}>
                   <label className={adminLabel} htmlFor="event-location">
-                    Local
+                    {getLocaleText(locale, 'Local', 'Location')}
                   </label>
                   <GoogleMapsLocationField
                     inputId="event-location"
@@ -2072,7 +2082,7 @@ function ActivitiesPage({
 
                 <div className={adminField}>
                   <label className={adminLabel} htmlFor="event-registration-capacity">
-                    Lotacao
+                    {getLocaleText(locale, 'Lotacao', 'Capacity')}
                   </label>
                   <input
                     id="event-registration-capacity"
@@ -2088,16 +2098,16 @@ function ActivitiesPage({
                     }
                   />
                   <p className={blockText}>
-                    Quando a lotacao for atingida, novas inscricoes passam para espera.
+                    {getLocaleText(locale, 'Quando a lotacao for atingida, novas inscricoes passam para espera.', 'When capacity is reached, new registrations move to the waitlist.')}
                   </p>
                 </div>
               </div>
 
-              <h3 className={blockTitle}>Eventbrite</h3>
+              <h3 className={blockTitle}>{getLocaleText(locale, 'Eventbrite', 'Eventbrite')}</h3>
               <div className={adminFormGridSpaced}>
                 <div className={adminField}>
                   <label className={adminLabel} htmlFor="eventbrite-venue-id">
-                    ID da sala
+                    {getLocaleText(locale, 'ID da sala', 'Venue ID')}
                   </label>
                   <input
                     id="eventbrite-venue-id"
@@ -2108,12 +2118,12 @@ function ActivitiesPage({
                     }
                   />
                   <p className={blockText}>
-                    Usa uma sala existente ou deixa vazio para criar pela morada abaixo.
+                    {getLocaleText(locale, 'Usa uma sala existente ou deixa vazio para criar pela morada abaixo.', 'Use an existing venue or leave it empty to create one from the address below.')}
                   </p>
                 </div>
                 <div className={adminField}>
                   <label className={adminLabel} htmlFor="eventbrite-venue-name">
-                    Sala
+                    {getLocaleText(locale, 'Sala', 'Venue')}
                   </label>
                   <input
                     id="eventbrite-venue-name"
@@ -2126,7 +2136,7 @@ function ActivitiesPage({
                 </div>
                 <div className={adminField}>
                   <label className={adminLabel} htmlFor="eventbrite-venue-address">
-                    Morada
+                    {getLocaleText(locale, 'Morada', 'Address')}
                   </label>
                   <input
                     id="eventbrite-venue-address"
@@ -2139,7 +2149,7 @@ function ActivitiesPage({
                 </div>
                 <div className={adminField}>
                   <label className={adminLabel} htmlFor="eventbrite-venue-postal">
-                    Codigo postal
+                    {getLocaleText(locale, 'Codigo postal', 'Postal code')}
                   </label>
                   <input
                     id="eventbrite-venue-postal"
@@ -2152,7 +2162,7 @@ function ActivitiesPage({
                 </div>
                 <div className={adminField}>
                   <label className={adminLabel} htmlFor="eventbrite-venue-city">
-                    Cidade Eventbrite
+                    {getLocaleText(locale, 'Cidade Eventbrite', 'Eventbrite city')}
                   </label>
                   <input
                     id="eventbrite-venue-city"
@@ -2165,7 +2175,7 @@ function ActivitiesPage({
                 </div>
                 <div className={adminField}>
                   <label className={adminLabel} htmlFor="eventbrite-venue-country">
-                    Pais
+                    {getLocaleText(locale, 'Pais', 'Country')}
                   </label>
                   <input
                     id="eventbrite-venue-country"
@@ -2178,7 +2188,7 @@ function ActivitiesPage({
                 </div>
                 <div className={adminField}>
                   <label className={adminLabel} htmlFor="eventbrite-ticket-name">
-                    Ticket
+                    {getLocaleText(locale, 'Ticket', 'Ticket')}
                   </label>
                   <input
                     id="eventbrite-ticket-name"
@@ -2191,7 +2201,7 @@ function ActivitiesPage({
                 </div>
                 <div className={adminField}>
                   <label className={adminLabel} htmlFor="eventbrite-ticket-type">
-                    Tipo
+                    {getLocaleText(locale, 'Tipo', 'Type')}
                   </label>
                   <select
                     id="eventbrite-ticket-type"
@@ -2204,14 +2214,14 @@ function ActivitiesPage({
                       }))
                     }
                   >
-                    <option value="free">Gratis</option>
-                    <option value="paid">Pago</option>
-                    <option value="donation">Donativo</option>
+                    <option value="free">{getLocaleText(locale, 'Gratis', 'Free')}</option>
+                    <option value="paid">{getLocaleText(locale, 'Pago', 'Paid')}</option>
+                    <option value="donation">{getLocaleText(locale, 'Donativo', 'Donation')}</option>
                   </select>
                 </div>
                 <div className={adminField}>
                   <label className={adminLabel} htmlFor="eventbrite-ticket-quantity">
-                    Quantidade
+                    {getLocaleText(locale, 'Quantidade', 'Quantity')}
                   </label>
                   <input
                     id="eventbrite-ticket-quantity"
@@ -2226,7 +2236,7 @@ function ActivitiesPage({
                 </div>
                 <div className={adminField}>
                   <label className={adminLabel} htmlFor="eventbrite-ticket-price">
-                    Preco
+                    {getLocaleText(locale, 'Preco', 'Price')}
                   </label>
                   <input
                     id="eventbrite-ticket-price"
@@ -2249,7 +2259,7 @@ function ActivitiesPage({
                       setEventForm((prev) => ({ ...prev, sync_eventbrite_on_save: event.target.checked }))
                     }
                   />
-                  Sincronizar ao guardar
+                  {getLocaleText(locale, 'Sincronizar ao guardar', 'Sync on save')}
                 </label>
                 <label className={`${adminLabel} flex items-center gap-2`}>
                   <input
@@ -2263,14 +2273,14 @@ function ActivitiesPage({
                       }))
                     }
                   />
-                  Publicar na Eventbrite ao guardar
+                  {getLocaleText(locale, 'Publicar na Eventbrite ao guardar', 'Publish to Eventbrite on save')}
                 </label>
               </div>
 
               <div className={adminFormGridSpaced}>
                 <div className={adminField}>
                   <label className={adminLabel} htmlFor="event-image">
-                    Imagem
+                    {getLocaleText(locale, 'Imagem', 'Image')}
                   </label>
                   <input
                     id="event-image"
@@ -2285,15 +2295,15 @@ function ActivitiesPage({
                   />
                   <p className={blockText}>
                     {isUploadingEventImage
-                      ? 'A carregar imagem...'
+                      ? getLocaleText(locale, 'A carregar imagem...', 'Uploading image...')
                       : eventForm.image
-                        ? 'Imagem carregada com sucesso.'
-                        : 'Seleciona uma imagem para o evento.'}
+                        ? getLocaleText(locale, 'Imagem carregada com sucesso.', 'Image uploaded successfully.')
+                        : getLocaleText(locale, 'Seleciona uma imagem para o evento.', 'Select an image for the event.')}
                   </p>
                   {eventForm.image ? (
                     <img
                       src={resolveInfoCulturaAssetUrl(eventForm.image)}
-                      alt="Preview do evento"
+                      alt={getLocaleText(locale, 'Preview do evento', 'Event preview')}
                       className="mt-3 h-40 w-full rounded-xl object-cover"
                     />
                   ) : null}
@@ -2302,7 +2312,7 @@ function ActivitiesPage({
 
               <div className={adminFieldSpaced}>
                 <label className={adminLabel} htmlFor="event-description">
-                  Descricao
+                  {getLocaleText(locale, 'Descricao', 'Description')}
                 </label>
                 <textarea
                   id="event-description"
@@ -2322,7 +2332,11 @@ function ActivitiesPage({
 
               <div className={adminActions}>
 	                <button type="submit" className={adminBtnPrimary} disabled={isSavingEvent}>
-	                  {isSavingEvent ? 'A guardar...' : editingEventId ? 'Atualizar' : 'Salvar'}
+	                  {isSavingEvent
+                      ? getLocaleText(locale, 'A guardar...', 'Saving...')
+                      : editingEventId
+                        ? getLocaleText(locale, 'Atualizar', 'Update')
+                        : getLocaleText(locale, 'Guardar', 'Save')}
 	                </button>
 	                <button
 	                  type="submit"
@@ -2331,7 +2345,7 @@ function ActivitiesPage({
 	                  className={adminBtnSecondary}
 	                  disabled={isSavingEvent}
 	                >
-	                  Publicar agora
+	                  {getLocaleText(locale, 'Publicar agora', 'Publish now')}
 	                </button>
 	                <button
 	                  type="submit"
@@ -2340,10 +2354,10 @@ function ActivitiesPage({
 	                  className={adminBtnSecondary}
 	                  disabled={isSavingEvent}
 	                >
-	                  Agendar
+	                  {getLocaleText(locale, 'Agendar', 'Schedule')}
 	                </button>
 	                <button type="button" onClick={resetEventForm} className={adminBtnSecondary}>
-	                  Limpar
+	                  {getLocaleText(locale, 'Limpar', 'Clear')}
 	                </button>
               </div>
             </form>
@@ -2351,9 +2365,9 @@ function ActivitiesPage({
 
           {showActivityFiltersAndList ? (
             <div id="activity-list" className={adminList}>
-              {isLoadingActivities ? <p className={adminInfo}>A carregar eventos...</p> : null}
+              {isLoadingActivities ? <p className={adminInfo}>{getLocaleText(locale, 'A carregar eventos...', 'Loading events...')}</p> : null}
               {!isLoadingActivities && sortedEvents.length === 0 ? (
-                <p className={adminInfo}>Nao existem eventos para o filtro atual.</p>
+                <p className={adminInfo}>{getLocaleText(locale, 'Nao existem eventos para o filtro atual.', 'There are no events for the current filter.')}</p>
               ) : null}
               {sortedEvents.map((item) => (
                 <article key={item.id} className={adminListItem}>
@@ -2365,11 +2379,11 @@ function ActivitiesPage({
                           checked={selectedEventIds.includes(item.id)}
                           onChange={() => toggleSelectedId(setSelectedEventIds, item.id)}
                         />
-                        Selecionar
+                        {getLocaleText(locale, 'Selecionar', 'Select')}
                       </label>
                       <h3 className={adminListTitle}>{item.title}</h3>
                       <p className={adminListMeta}>
-                        <span className={adminListBadge}>{item.club_name || 'Sem clube'}</span>
+                        <span className={adminListBadge}>{item.club_name || getLocaleText(locale, 'Sem clube', 'No club')}</span>
                         <span className="mx-2 text-slate-300">·</span>
                         {getWorkflowStatusLabel(item.status)} ·{' '}
                         {formatAdminDateTime(item.start_date)}
@@ -2382,7 +2396,7 @@ function ActivitiesPage({
                         disabled={syncingEventbriteId === item.id}
                         onClick={() => handleSyncEventbrite(item.id, false)}
                       >
-                        {syncingEventbriteId === item.id ? 'A sincronizar...' : 'Eventbrite'}
+                        {syncingEventbriteId === item.id ? getLocaleText(locale, 'A sincronizar...', 'Syncing...') : getLocaleText(locale, 'Eventbrite', 'Eventbrite')}
                       </button>
                       <button
                         type="button"
@@ -2390,7 +2404,7 @@ function ActivitiesPage({
                         disabled={syncingEventbriteId === item.id}
                         onClick={() => handleSyncEventbrite(item.id, true)}
                       >
-                        Publicar EB
+                        {getLocaleText(locale, 'Publicar EB', 'Publish EB')}
                       </button>
                       <button
                         type="button"
@@ -2398,10 +2412,10 @@ function ActivitiesPage({
                         disabled={loadingEventbriteOrdersId === item.id || !item.eventbrite_event_id}
                         onClick={() => handleLoadEventbriteOrders(item.id)}
                       >
-                        {loadingEventbriteOrdersId === item.id ? 'A carregar...' : 'Pedidos EB'}
+                        {loadingEventbriteOrdersId === item.id ? getLocaleText(locale, 'A carregar...', 'Loading...') : getLocaleText(locale, 'Pedidos EB', 'EB Orders')}
                       </button>
                       <button type="button" className={adminBtnEdit} onClick={() => handleEditEvent(item)}>
-                        Editar
+                        {getLocaleText(locale, 'Editar', 'Edit')}
                       </button>
                       <button
                         type="button"
@@ -2410,10 +2424,10 @@ function ActivitiesPage({
                         onClick={() => void handleToggleEventActive(item.id, !item.is_active)}
                       >
                         {changingEventStatusId === item.id
-                          ? 'A atualizar...'
+                          ? getLocaleText(locale, 'A atualizar...', 'Updating...')
                           : item.is_active
-                            ? 'Desativar'
-                            : 'Ativar'}
+                            ? getLocaleText(locale, 'Desativar', 'Deactivate')
+                            : getLocaleText(locale, 'Ativar', 'Activate')}
                       </button>
                       <button
                         type="button"
@@ -2421,29 +2435,29 @@ function ActivitiesPage({
                         disabled={deletingEventId === item.id}
                         onClick={() => handleDeleteEvent(item.id)}
                       >
-                        {deletingEventId === item.id ? 'A apagar...' : 'Apagar'}
+                        {deletingEventId === item.id ? getLocaleText(locale, 'A apagar...', 'Deleting...') : getLocaleText(locale, 'Apagar', 'Delete')}
                       </button>
                     </div>
                   </div>
                   <p className={adminListDesc}>{item.description}</p>
                   <p className={adminListMeta}>
-                    Inscricoes {item.enable_registrations ? 'abertas' : 'fechadas'} ·
-                    Confirmadas {item.confirmed_registrations} · Espera {item.waitlist_registrations}
+                    {getLocaleText(locale, 'Inscricoes', 'Registrations')} {item.enable_registrations ? getLocaleText(locale, 'abertas', 'open') : getLocaleText(locale, 'fechadas', 'closed')} ·
+                    {getLocaleText(locale, 'Confirmadas', 'Confirmed')} {item.confirmed_registrations} · {getLocaleText(locale, 'Espera', 'Waitlist')} {item.waitlist_registrations}
                     {item.registration_capacity !== null && item.registration_capacity !== undefined
-                      ? ` · Lotacao ${item.registration_capacity}`
+                      ? ` · ${getLocaleText(locale, 'Lotacao', 'Capacity')} ${item.registration_capacity}`
                       : ''}
                   </p>
                   {item.categories.length > 0 ? (
                     <p className={adminListMeta}>
-                      Categorias: {item.categories.map((category) => category.name).join(', ')}
+                      {getLocaleText(locale, 'Categorias', 'Categories')}: {item.categories.map((category) => category.name).join(', ')}
                     </p>
                   ) : null}
                   {item.eventbrite_event_id ? (
                     <p className={adminListMeta}>
-                      Eventbrite: {item.eventbrite_status || 'sincronizado'} ·{' '}
+                      Eventbrite: {item.eventbrite_status || getLocaleText(locale, 'sincronizado', 'synced')} ·{' '}
                       {item.eventbrite_url ? (
                         <a className="underline" href={item.eventbrite_url} target="_blank" rel="noreferrer">
-                          abrir
+                          {getLocaleText(locale, 'abrir', 'open')}
                         </a>
                       ) : (
                         item.eventbrite_event_id
@@ -2452,9 +2466,11 @@ function ActivitiesPage({
                   ) : null}
                   {item.eventbrite_venue_id || item.eventbrite_ticket_classes?.length ? (
                     <p className={adminListMeta}>
-                      {item.eventbrite_venue_id ? `Sala EB ${item.eventbrite_venue_id}` : 'Sala EB por criar'}
+                      {item.eventbrite_venue_id
+                        ? `${getLocaleText(locale, 'Sala EB', 'EB venue')} ${item.eventbrite_venue_id}`
+                        : getLocaleText(locale, 'Sala EB por criar', 'EB venue to be created')}
                       {item.eventbrite_ticket_classes?.length
-                        ? ` · Tickets: ${item.eventbrite_ticket_classes
+                        ? ` · ${getLocaleText(locale, 'Tickets', 'Tickets')}: ${item.eventbrite_ticket_classes
                             .map((ticket) => `${ticket.name} (${ticket.quantity_total})`)
                             .join(', ')}`
                         : ''}
@@ -2468,7 +2484,7 @@ function ActivitiesPage({
                       <div className="flex flex-wrap items-end gap-3">
                         <div className={adminField}>
                           <label className={adminLabel} htmlFor={`eventbrite-refund-${item.id}`}>
-                            Reembolsos
+                            {getLocaleText(locale, 'Reembolsos', 'Refunds')}
                           </label>
                           <select
                             id={`eventbrite-refund-${item.id}`}
@@ -2480,12 +2496,12 @@ function ActivitiesPage({
                               void handleLoadEventbriteOrders(item.id, nextStatus);
                             }}
                           >
-                            <option value="">Todos os pedidos</option>
-                            <option value="pending">Reembolso pendente</option>
-                            <option value="completed">Reembolso concluido</option>
-                            <option value="outside_policy">Fora da politica</option>
-                            <option value="disputed">Em disputa</option>
-                            <option value="denied">Negado</option>
+                            <option value="">{getLocaleText(locale, 'Todos os pedidos', 'All orders')}</option>
+                            <option value="pending">{getLocaleText(locale, 'Reembolso pendente', 'Pending refund')}</option>
+                            <option value="completed">{getLocaleText(locale, 'Reembolso concluido', 'Completed refund')}</option>
+                            <option value="outside_policy">{getLocaleText(locale, 'Fora da politica', 'Outside policy')}</option>
+                            <option value="disputed">{getLocaleText(locale, 'Em disputa', 'Disputed')}</option>
+                            <option value="denied">{getLocaleText(locale, 'Negado', 'Denied')}</option>
                           </select>
                         </div>
                         {eventbriteOrdersByEventId[item.id]?.eventbrite_manage_orders_url ? (
@@ -2495,7 +2511,7 @@ function ActivitiesPage({
                             target="_blank"
                             rel="noreferrer"
                           >
-                            Gerir na Eventbrite
+                            {getLocaleText(locale, 'Gerir na Eventbrite', 'Manage on Eventbrite')}
                           </a>
                         ) : null}
                       </div>
@@ -2503,18 +2519,18 @@ function ActivitiesPage({
                         <div className="mt-3 space-y-2">
                           <p className={adminListMeta}>
                             {eventbriteOrdersByEventId[item.id].pagination.object_count ?? eventbriteOrdersByEventId[item.id].orders.length}{' '}
-                            pedido(s) encontrados
+                            {getLocaleText(locale, 'pedido(s) encontrados', 'order(s) found')}
                           </p>
                           {eventbriteOrdersByEventId[item.id].orders.slice(0, 5).map((order) => (
                             <p key={order.id} className={adminListMeta}>
-                              {order.name || order.email || order.id} · {order.status || 'sem estado'} ·{' '}
+                              {order.name || order.email || order.id} · {order.status || getLocaleText(locale, 'sem estado', 'no status')} ·{' '}
                               {formatAdminDateTime(order.created)}
                             </p>
                           ))}
                         </div>
                       ) : (
                         <p className={`${adminListMeta} mt-3`}>
-                          Carrega em “Pedidos EB” para ver encomendas e pedidos de reembolso.
+                          {getLocaleText(locale, 'Carrega em “Pedidos EB” para ver encomendas e pedidos de reembolso.', 'Click “EB Orders” to view orders and refund requests.')}
                         </p>
                       )}
                     </div>
@@ -2540,7 +2556,7 @@ function ActivitiesPage({
           {showActivityFiltersAndList && !isLoadingActivities ? (
             <div className={`${adminActions} mt-6`}>
               <p className={adminInfo}>
-                {activityTotal} evento(s) · pagina {activityPage} de {activityTotalPages || 1}
+                {activityTotal} {getLocaleText(locale, 'evento(s)', 'event(s)')} · {getLocaleText(locale, 'pagina', 'page')} {activityPage} {getLocaleText(locale, 'de', 'of')} {activityTotalPages || 1}
               </p>
               <button
                 type="button"
@@ -2548,7 +2564,7 @@ function ActivitiesPage({
                 disabled={activityPage <= 1}
                 onClick={() => setActivityPage((prev) => Math.max(1, prev - 1))}
               >
-                Anterior
+                {getLocaleText(locale, 'Anterior', 'Previous')}
               </button>
               <button
                 type="button"
@@ -2556,7 +2572,7 @@ function ActivitiesPage({
                 disabled={activityTotalPages === 0 || activityPage >= activityTotalPages}
                 onClick={() => setActivityPage((prev) => prev + 1)}
               >
-                Seguinte
+                {getLocaleText(locale, 'Seguinte', 'Next')}
               </button>
             </div>
           ) : null}
@@ -2565,16 +2581,16 @@ function ActivitiesPage({
 
       {showEventCategories ? (
         <section id="event-categories" className={adminPanelCard}>
-          <h2 className={blockTitle}>Categorias de eventos</h2>
+          <h2 className={blockTitle}>{getLocaleText(locale, 'Categorias de eventos', 'Event categories')}</h2>
           <p className={blockText}>
-            Cria categorias para classificar eventos e usar filtros no painel e no publico.
+            {getLocaleText(locale, 'Cria categorias para classificar eventos e usar filtros no painel e no publico.', 'Create categories to classify events and use filters in the panel and on the public site.')}
           </p>
 
           <form onSubmit={handleSaveCategory} className={adminPanelForm}>
             <div className={adminFormGridSpaced}>
               <div className={adminField}>
                 <label className={adminLabel} htmlFor="category-name">
-                  Nome
+                  {getLocaleText(locale, 'Nome', 'Name')}
                 </label>
                 <input
                   id="category-name"
@@ -2590,7 +2606,7 @@ function ActivitiesPage({
 
               <div className={adminField}>
                 <label className={adminLabel} htmlFor="category-description">
-                  Descricao
+                  {getLocaleText(locale, 'Descricao', 'Description')}
                 </label>
                 <textarea
                   id="category-description"
@@ -2612,21 +2628,21 @@ function ActivitiesPage({
             <div className={adminActions}>
               <button type="submit" className={adminBtnPrimary} disabled={isSavingCategory}>
                 {isSavingCategory
-                  ? 'A guardar...'
+                  ? getLocaleText(locale, 'A guardar...', 'Saving...')
                   : editingCategoryId
-                    ? 'Atualizar categoria'
-                    : 'Criar categoria'}
+                    ? getLocaleText(locale, 'Atualizar categoria', 'Update category')
+                    : getLocaleText(locale, 'Criar categoria', 'Create category')}
               </button>
               <button type="button" onClick={resetCategoryForm} className={adminBtnSecondary}>
-                Limpar
+                {getLocaleText(locale, 'Limpar', 'Clear')}
               </button>
             </div>
           </form>
 
           <div className={adminList}>
-            {isLoadingCategories ? <p className={adminInfo}>A carregar categorias...</p> : null}
+            {isLoadingCategories ? <p className={adminInfo}>{getLocaleText(locale, 'A carregar categorias...', 'Loading categories...')}</p> : null}
             {!isLoadingCategories && sortedCategories.length === 0 ? (
-              <p className={adminInfo}>Nao existem categorias registadas.</p>
+              <p className={adminInfo}>{getLocaleText(locale, 'Nao existem categorias registadas.', 'There are no categories registered.')}</p>
             ) : null}
             {sortedCategories.map((category) => (
               <article key={category.id} className={adminListItem}>
@@ -2638,7 +2654,7 @@ function ActivitiesPage({
                 </div>
                 <div className={adminListTools}>
                   <button type="button" className={adminBtnEdit} onClick={() => handleEditCategory(category)}>
-                    Editar
+                    {getLocaleText(locale, 'Editar', 'Edit')}
                   </button>
                   <button
                     type="button"
@@ -2646,7 +2662,7 @@ function ActivitiesPage({
                     disabled={deletingCategoryId === category.id}
                     onClick={() => handleDeleteCategory(category.id)}
                   >
-                    {deletingCategoryId === category.id ? 'A apagar...' : 'Apagar'}
+                    {deletingCategoryId === category.id ? getLocaleText(locale, 'A apagar...', 'Deleting...') : getLocaleText(locale, 'Apagar', 'Delete')}
                   </button>
                 </div>
               </article>

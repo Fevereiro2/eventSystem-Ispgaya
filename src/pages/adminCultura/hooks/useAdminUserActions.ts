@@ -8,6 +8,7 @@ import {
   InfoCulturaUser,
   updateAdminUser,
 } from '../../../api/infoculturaApi';
+import { getLocaleText, useLocale } from '../../../i18n/locale';
 import { UserFormState, UserPage } from '../types';
 import { sortUsers } from '../utils';
 
@@ -44,6 +45,7 @@ export function useAdminUserActions({
   resetUserForm,
   navigate,
 }: UseAdminUserActionsOptions) {
+  const { locale } = useLocale();
   const handleSaveUser = useCallback(
     async (event: FormEvent<HTMLFormElement>) => {
       event.preventDefault();
@@ -64,17 +66,17 @@ export function useAdminUserActions({
       };
 
       if (!payload.name || !payload.email || !payload.role) {
-        setUserFormError('Preenche nome, email e role.');
+        setUserFormError(getLocaleText(locale, 'Preenche nome, email e role.', 'Fill in name, email and role.'));
         return;
       }
 
       if (userPage.mode === 'create' && !userForm.club_id) {
-        setUserFormError('Seleciona um clube para associar este utilizador.');
+        setUserFormError(getLocaleText(locale, 'Seleciona um clube para associar este utilizador.', 'Select a club to associate with this user.'));
         return;
       }
 
       if (userPage.mode === 'create' && !userForm.generate_password && !manualPassword) {
-        setUserFormError('Ativa a geração automatica ou indica uma password.');
+        setUserFormError(getLocaleText(locale, 'Ativa a geração automatica ou indica uma password.', 'Enable automatic generation or provide a password.'));
         return;
       }
 
@@ -107,7 +109,7 @@ export function useAdminUserActions({
         navigate('/infocultura/utilizadores');
       } catch (error) {
         const message =
-          error instanceof Error ? error.message : 'Não foi possível guardar o utilizador.';
+          error instanceof Error ? error.message : getLocaleText(locale, 'Não foi possível guardar o utilizador.', 'Could not save the user.');
         setUserFormError(message);
       } finally {
         setIsSavingUser(false);
@@ -125,6 +127,7 @@ export function useAdminUserActions({
       setCurrentUser,
       resetUserForm,
       navigate,
+      locale,
     ]
   );
 
@@ -145,7 +148,7 @@ export function useAdminUserActions({
         navigate('/infocultura/utilizadores');
       } catch (error) {
         const message =
-          error instanceof Error ? error.message : 'Não foi possível desativar o utilizador.';
+          error instanceof Error ? error.message : getLocaleText(locale, 'Não foi possível desativar o utilizador.', 'Could not deactivate the user.');
         setUserFormError(message);
       } finally {
         setIsDeactivatingUser(false);
@@ -159,6 +162,7 @@ export function useAdminUserActions({
       setUserFormError,
       setUsers,
       navigate,
+      locale,
     ]
   );
 
@@ -179,7 +183,7 @@ export function useAdminUserActions({
         navigate('/infocultura/utilizadores');
       } catch (error) {
         const message =
-          error instanceof Error ? error.message : 'Não foi possível ativar o utilizador.';
+          error instanceof Error ? error.message : getLocaleText(locale, 'Não foi possível ativar o utilizador.', 'Could not activate the user.');
         setUserFormError(message);
       } finally {
         setIsActivatingUser(false);
@@ -193,6 +197,7 @@ export function useAdminUserActions({
       setUserFormError,
       setUsers,
       navigate,
+      locale,
     ]
   );
 

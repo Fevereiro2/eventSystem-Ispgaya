@@ -229,6 +229,7 @@ import {
   TOKEN_KEY
 } from './adminCultura/constants';
 import {
+  AdminSection,
   ActivityTab,
   BookFormState,
   CategoryFormState,
@@ -619,13 +620,14 @@ function AdminCultura() {
       ).length,
     [registrations]
   );
-  const dashboardCards = buildDashboardCards(dashboardStats);
+  const dashboardCards = buildDashboardCards(dashboardStats, locale);
   const dashboardHighlights = buildDashboardHighlights(
     dashboardStats,
     activeUsers,
     publishedItems,
     pendingRegistrations,
-    sessions.length
+    sessions.length,
+    locale
   );
   const newsPageHref = activeNewsSubpage ? getNewsRoute(activeNewsSubpage) : null;
   const bookPageHref =
@@ -641,7 +643,10 @@ function AdminCultura() {
       ? getActivityRoute('events', activeActivitySubpage)
       : null;
   const contentPageHref = activeContentSubpage ? getContentRoute(activeContentSubpage) : null;
-  const eventbritePageHref = activeEventbriteSubpage ? getEventbriteRoute(activeEventbriteSubpage) : null;
+  const eventbritePageHref =
+    activeEventbriteSubpage && activeEventbriteSubpage !== 'overview'
+      ? getEventbriteRoute(activeEventbriteSubpage)
+      : null;
   const photoPageHref = activePhotoSubpage ? getPhotoRoute(activePhotoSubpage) : null;
   const userPageHref =
     userPage?.mode === 'create'
@@ -666,14 +671,14 @@ function AdminCultura() {
   const showContentList = activeContentSubpage === 'list';
   const showPhotoForm = activePhotoSubpage === 'form';
   const showPhotoList = activePhotoSubpage === 'list';
-  const newsPageLinks = getNewsPageLinks(editingNewsId);
-  const bookPageLinks = getActivityPageLinks('books', editingBookId, editingSessionId, editingEventId);
-  const sessionPageLinks = getActivityPageLinks('sessions', editingBookId, editingSessionId, editingEventId);
-  const eventPageLinks = getActivityPageLinks('events', editingBookId, editingSessionId, editingEventId);
-  const contentPageLinks = getContentPageLinks(editingId);
-  const photoPageLinks = getPhotoPageLinks(editingPhotoId);
-  const eventbritePageLinks = getEventbritePageLinks();
-  const userPageLinks = getUserPageLinks(userPage);
+  const newsPageLinks = getNewsPageLinks(editingNewsId, locale);
+  const bookPageLinks = getActivityPageLinks('books', editingBookId, editingSessionId, editingEventId, locale);
+  const sessionPageLinks = getActivityPageLinks('sessions', editingBookId, editingSessionId, editingEventId, locale);
+  const eventPageLinks = getActivityPageLinks('events', editingBookId, editingSessionId, editingEventId, locale);
+  const contentPageLinks = getContentPageLinks(editingId, locale);
+  const photoPageLinks = getPhotoPageLinks(editingPhotoId, locale);
+  const eventbritePageLinks = getEventbritePageLinks(locale);
+  const userPageLinks = getUserPageLinks(userPage, locale);
   const sidebarContextNavBySection = buildSidebarContextNav(
     newsPageLinks,
     bookPageLinks,
@@ -704,7 +709,8 @@ function AdminCultura() {
     notifications,
     readNotificationIdSet,
     dashboardStats,
-    pendingRegistrations
+    pendingRegistrations,
+    locale
   );
   function openDashboardNotification(notification: {
     id: string;
@@ -724,10 +730,10 @@ function AdminCultura() {
       created_at: notification.created_at,
     });
   }
-  const dashboardAgenda = buildDashboardAgenda(dashboardStats);
-  const dashboardQuickActions = buildDashboardQuickActions(canManageUsers, defaultActivityHref);
+  const dashboardAgenda = buildDashboardAgenda(dashboardStats, locale);
+  const dashboardQuickActions = buildDashboardQuickActions(canManageUsers, defaultActivityHref, locale);
   const { label: activitySectionLabel, description: activitySectionDescription } =
-    getActivitySectionCopy(activityTab);
+    getActivitySectionCopy(activityTab, locale);
   const latestNotifications = useMemo(
     () =>
       notifications.map((notification) => ({
@@ -738,10 +744,33 @@ function AdminCultura() {
   );
   const notificationOverviewStats = buildNotificationOverviewStats(
     notifications,
-    unreadNotifications.length
+    unreadNotifications.length,
+    locale
   );
-  const userOverviewStats = buildUserOverviewStats(filteredUsers);
-  const clubsOverviewStats = buildClubOverviewStats(filteredClubs);
+  const userOverviewStats = buildUserOverviewStats(filteredUsers, locale);
+  const clubsOverviewStats = buildClubOverviewStats(filteredClubs, locale);
+  const localizedSectionLabels: Partial<Record<AdminSection, string>> = {
+    resumo: getLocaleText(locale, 'Resumo', 'Overview'),
+    metricas: getLocaleText(locale, 'Métricas', 'Metrics'),
+    logs: getLocaleText(locale, 'Logs', 'Logs'),
+    notificacoes: getLocaleText(locale, 'Notificações', 'Notifications'),
+    newsletters: getLocaleText(locale, 'Newsletters', 'Newsletters'),
+    galeria: getLocaleText(locale, 'Galeria', 'Gallery'),
+    utilizadores: getLocaleText(locale, 'Utilizadores', 'Users'),
+    noticias: getLocaleText(locale, 'Notícias', 'News'),
+    livros: getLocaleText(locale, 'Livros', 'Books'),
+    sessoes: getLocaleText(locale, 'Sessões', 'Sessions'),
+    eventos: getLocaleText(locale, 'Eventos', 'Events'),
+    conteudos: getLocaleText(locale, 'Conteúdos', 'Content'),
+    inscricoes: getLocaleText(locale, 'Inscrições', 'Registrations'),
+    clubes: getLocaleText(locale, 'Clubes', 'Clubs'),
+    eventbrite: 'Eventbrite',
+  };
+  const localizedGroupTitles: Record<string, string> = {
+    Painel: getLocaleText(locale, 'Painel', 'Dashboard'),
+    Gestão: getLocaleText(locale, 'Gestão', 'Management'),
+    Conteúdos: getLocaleText(locale, 'Conteúdos', 'Content'),
+  };
   const newsOverviewStats = buildNewsOverviewStats(
     newsTotal,
     dashboardStats,
@@ -2886,8 +2915,8 @@ function AdminCultura() {
 
               {visibleSectionGroups.map((group) => (
                 <div key={group.title} className={adminPortalSidebarSection}>
-                  <p className={adminPortalSidebarTitle}>{group.title}</p>
-                  <nav className={adminPortalSidebarNav} aria-label={group.title}>
+                  <p className={adminPortalSidebarTitle}>{localizedGroupTitles[group.title] || group.title}</p>
+                  <nav className={adminPortalSidebarNav} aria-label={localizedGroupTitles[group.title] || group.title}>
                     {group.sections.map((section) => (
                       <div key={section.id}>
                         <NavLink
@@ -2899,8 +2928,8 @@ function AdminCultura() {
                           }
                         >
                           {section.id === 'notificacoes' && unreadNotifications.length > 0
-                            ? `${section.label} (${unreadNotifications.length})`
-                            : section.label}
+                            ? `${localizedSectionLabels[section.id] || section.label} (${unreadNotifications.length})`
+                            : localizedSectionLabels[section.id] || section.label}
                         </NavLink>
                         {section.id === 'eventos' &&
                         (activeSection === 'eventos' || activeSection === 'eventbrite') ? (
@@ -2928,7 +2957,7 @@ function AdminCultura() {
                                 to="/infocultura/eventbrite"
                                 className={({ isActive }) =>
                                   `mb-2 block w-full rounded-md px-3 py-2 text-sm transition-colors ${
-                                    isActive || activeSection === 'eventbrite'
+                                    activeEventbriteSubpage === 'overview' || isActive
                                       ? 'bg-orange-50 font-semibold text-[#dd8609]'
                                       : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
                                   }`

@@ -31,6 +31,7 @@ import {
   blockTitle,
 } from '../../../styles/ui';
 import type { PhotoFormState } from '../types';
+import { getLocaleText, useLocale } from '../../../i18n/locale';
 
 type PhotoGalleryPageProps = {
   photos: InfoCulturaPhoto[];
@@ -69,6 +70,7 @@ function PhotoGalleryPage({
   onEdit,
   onDelete,
 }: PhotoGalleryPageProps) {
+  const { locale } = useLocale();
   const activePhotos = photos.filter((photo) => photo.is_active).sort((a, b) => a.display_order - b.display_order);
   const previewPhotos = activePhotos.filter((photo) => photo.section.trim() === 'laboratorio-cultural');
 
@@ -80,9 +82,9 @@ function PhotoGalleryPage({
             <Images className="h-5 w-5" />
           </span>
           <div>
-            <h2 className="text-3xl font-semibold text-slate-900">Galeria</h2>
+            <h2 className="text-3xl font-semibold text-slate-900">{getLocaleText(locale, 'Galeria', 'Gallery')}</h2>
             <p className="mt-1 text-sm text-slate-600">
-              Gestão das imagens usadas em carrosséis e secções visuais.
+              {getLocaleText(locale, 'Gestão das imagens usadas em carrosséis e secções visuais.', 'Manage images used in carousels and visual sections.')}
             </p>
           </div>
         </div>
@@ -93,8 +95,8 @@ function PhotoGalleryPage({
       {showForm ? (
         <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_420px]">
           <form onSubmit={onSubmit} className={adminPanelForm}>
-            <h3 className={blockTitle}>{editingPhotoId ? 'Editar Foto' : 'Nova Foto'}</h3>
-            <p className={blockText}>Cria imagens para o carrossel do Laboratório Cultural.</p>
+            <h3 className={blockTitle}>{editingPhotoId ? getLocaleText(locale, 'Editar Foto', 'Edit Photo') : getLocaleText(locale, 'Nova Foto', 'New Photo')}</h3>
+            <p className={blockText}>{getLocaleText(locale, 'Cria imagens para o carrossel do Laboratório Cultural.', 'Create images for the Cultural Laboratory carousel.')}</p>
 
             <div className={adminFormGridSpaced}>
               <div className={adminField}>
@@ -115,7 +117,7 @@ function PhotoGalleryPage({
 
               <div className={adminField}>
                 <label className={adminLabel} htmlFor="photo-title">
-                  Título
+                  {getLocaleText(locale, 'Título', 'Title')}
                 </label>
                 <input
                   id="photo-title"
@@ -140,7 +142,7 @@ function PhotoGalleryPage({
 
             <div className={adminFieldSpaced}>
               <label className={adminLabel} htmlFor="photo-caption">
-                Legenda
+                {getLocaleText(locale, 'Legenda', 'Caption')}
               </label>
               <textarea
                 id="photo-caption"
@@ -153,7 +155,7 @@ function PhotoGalleryPage({
 
             <div className={adminFieldSpaced}>
               <label className={adminLabel} htmlFor="photo-image">
-                Imagem
+                {getLocaleText(locale, 'Imagem', 'Image')}
               </label>
               <input
                 key={uploadingKey}
@@ -170,16 +172,16 @@ function PhotoGalleryPage({
               />
               <p className={adminInfo}>
                 {isUploading
-                  ? 'A carregar imagem...'
+                  ? getLocaleText(locale, 'A carregar imagem...', 'Uploading image...')
                   : form.image
-                    ? 'Imagem carregada com sucesso.'
-                    : 'Seleciona a imagem para o carrossel.'}
+                    ? getLocaleText(locale, 'Imagem carregada com sucesso.', 'Image uploaded successfully.')
+                    : getLocaleText(locale, 'Seleciona a imagem para o carrossel.', 'Select the image for the carousel.')}
               </p>
               {form.image ? (
                 <div className="overflow-hidden rounded-lg border border-slate-200">
                   <img
                     src={resolveInfoCulturaAssetUrl(form.image)}
-                    alt={form.alt_text || form.title || 'Pré-visualização'}
+                    alt={form.alt_text || form.title || getLocaleText(locale, 'Pré-visualização', 'Preview')}
                     className="h-64 w-full object-cover"
                   />
                 </div>
@@ -195,26 +197,26 @@ function PhotoGalleryPage({
                     setForm((prev) => ({ ...prev, is_active: event.target.checked }))
                   }
                 />
-                Foto ativa
+                {getLocaleText(locale, 'Foto ativa', 'Active photo')}
               </label>
             </div>
 
             <div className={adminActions}>
               <button type="submit" className={adminBtnPrimary} disabled={isSaving}>
-                {isSaving ? 'A guardar...' : editingPhotoId ? 'Guardar alterações' : 'Criar foto'}
+                {isSaving ? getLocaleText(locale, 'A guardar...', 'Saving...') : editingPhotoId ? getLocaleText(locale, 'Guardar alterações', 'Save changes') : getLocaleText(locale, 'Criar foto', 'Create photo')}
               </button>
             </div>
           </form>
 
           <aside className={adminPanelCard}>
-            <h3 className={blockTitle}>Pré-visualização</h3>
+            <h3 className={blockTitle}>{getLocaleText(locale, 'Pré-visualização', 'Preview')}</h3>
             <p className={blockText}>
-              O preview mostra as fotos ativas do carrossel pela ordem definida.
+              {getLocaleText(locale, 'O preview mostra as fotos ativas do carrossel pela ordem definida.', 'The preview shows active carousel photos in the defined order.')}
             </p>
             {previewPhotos.length > 0 ? (
               <PhotoCarousel items={previewPhotos} className="mt-5" aspectClassName="aspect-[4/3]" />
             ) : (
-              <p className="mt-5 text-sm text-slate-500">Ainda não existem fotos ativas no carrossel.</p>
+              <p className="mt-5 text-sm text-slate-500">{getLocaleText(locale, 'Ainda não existem fotos ativas no carrossel.', 'There are no active carousel photos yet.')}</p>
             )}
           </aside>
         </div>
@@ -222,10 +224,10 @@ function PhotoGalleryPage({
 
       {showList ? (
         <section className={adminPanelCard}>
-          <h3 className={blockTitle}>Fotos registadas</h3>
-          <p className={blockText}>Lista organizada por secção e ordem de apresentação.</p>
+          <h3 className={blockTitle}>{getLocaleText(locale, 'Fotos registadas', 'Registered photos')}</h3>
+          <p className={blockText}>{getLocaleText(locale, 'Lista organizada por secção e ordem de apresentação.', 'List organized by section and display order.')}</p>
 
-          {isLoading ? <p className="mt-4 text-sm text-slate-500">A carregar fotos...</p> : null}
+          {isLoading ? <p className="mt-4 text-sm text-slate-500">{getLocaleText(locale, 'A carregar fotos...', 'Loading photos...')}</p> : null}
 
           <div className={adminList}>
             {photos.map((photo) => (
@@ -234,12 +236,12 @@ function PhotoGalleryPage({
                   <div className={adminListHeader}>
                     <p className={adminListTitle}>{photo.title}</p>
                     <p className={adminListMeta}>
-                      Ordem: {photo.display_order} · {photo.is_active ? 'Ativa' : 'Inativa'}
+                      {getLocaleText(locale, 'Ordem:', 'Order:')} {photo.display_order} · {photo.is_active ? getLocaleText(locale, 'Ativa', 'Active') : getLocaleText(locale, 'Inativa', 'Inactive')}
                     </p>
                   </div>
                   <div className={adminListTools}>
                     <button type="button" className={adminBtnEdit} onClick={() => onEdit(photo)}>
-                      Editar
+                      {getLocaleText(locale, 'Editar', 'Edit')}
                     </button>
                     <button
                       type="button"
@@ -249,7 +251,7 @@ function PhotoGalleryPage({
                     >
                       <span className="inline-flex items-center gap-1">
                         <Trash2 className="h-3.5 w-3.5" />
-                        {deletingPhotoId === photo.id ? 'A apagar...' : 'Apagar'}
+                        {deletingPhotoId === photo.id ? getLocaleText(locale, 'A apagar...', 'Deleting...') : getLocaleText(locale, 'Apagar', 'Delete')}
                       </span>
                     </button>
                   </div>
@@ -270,7 +272,7 @@ function PhotoGalleryPage({
             ))}
 
             {!isLoading && photos.length === 0 ? (
-              <p className="text-sm text-slate-500">Ainda não existem fotos registadas.</p>
+              <p className="text-sm text-slate-500">{getLocaleText(locale, 'Ainda não existem fotos registadas.', 'There are no registered photos yet.')}</p>
             ) : null}
           </div>
         </section>
