@@ -2902,9 +2902,63 @@ function AdminCultura() {
                             ? `${section.label} (${unreadNotifications.length})`
                             : section.label}
                         </NavLink>
-                        {(section.id === activeSection ||
-                          (section.id === 'eventos' && activeSection === 'eventbrite')) &&
-                        sidebarContextNavBySection[section.id]?.links.length ? (
+                        {section.id === 'eventos' &&
+                        (activeSection === 'eventos' || activeSection === 'eventbrite') ? (
+                          <div className="border-l-[4px] border-[#f4a24d] bg-white/75 px-4 py-2">
+                            <div className="flex flex-col gap-1">
+                              {eventPageLinks.map((link) => (
+                                <NavLink
+                                  key={link.href}
+                                  to={link.href}
+                                  className={({ isActive }) =>
+                                    `block w-full rounded-md px-3 py-2 text-sm transition-colors ${
+                                      isActive || eventPageHref === link.href
+                                        ? 'bg-orange-50 font-semibold text-[#dd8609]'
+                                        : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
+                                    }`
+                                  }
+                                >
+                                  {link.label}
+                                </NavLink>
+                              ))}
+                            </div>
+
+                            <div className="mt-3 pl-2">
+                              <NavLink
+                                to="/infocultura/eventbrite"
+                                className={({ isActive }) =>
+                                  `mb-2 block w-full rounded-md px-3 py-2 text-sm transition-colors ${
+                                    isActive || activeSection === 'eventbrite'
+                                      ? 'bg-orange-50 font-semibold text-[#dd8609]'
+                                      : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
+                                  }`
+                                }
+                              >
+                                Eventbrite
+                              </NavLink>
+                              {activeSection === 'eventbrite' ? (
+                                <div className="flex flex-col gap-1 pl-4">
+                                  {eventbritePageLinks.map((link) => (
+                                    <NavLink
+                                      key={link.href}
+                                      to={link.href}
+                                      className={({ isActive }) =>
+                                        `block w-full rounded-md px-3 py-2 text-sm transition-colors ${
+                                          isActive || eventbritePageHref === link.href
+                                            ? 'bg-orange-50 font-semibold text-[#dd8609]'
+                                            : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
+                                        }`
+                                      }
+                                    >
+                                      {link.label}
+                                    </NavLink>
+                                  ))}
+                                </div>
+                              ) : null}
+                            </div>
+                          </div>
+                        ) : section.id === activeSection &&
+                          sidebarContextNavBySection[section.id]?.links.length ? (
                           <div className="border-l-[4px] border-[#f4a24d] bg-white/75 px-4 py-2">
                             <div className="flex flex-col gap-1">
                               {sidebarContextNavBySection[section.id]?.links.map((link) => (
