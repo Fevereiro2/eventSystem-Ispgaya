@@ -83,6 +83,8 @@ class RegistrationRepositoryTests(TestCase):
                         "registration_id": 91,
                         "club_id": 7,
                         "club_name": "Teatro",
+                        "registration_type": "club",
+                        "target_title": "Teatro",
                         "name": "Ana",
                         "email": "ana@example.com",
                         "phone": None,
@@ -146,3 +148,80 @@ class RegistrationRepositoryTests(TestCase):
         self.assertEqual(audit_mock.call_args.kwargs['club_id'], 7)
         self.assertEqual(audit_mock.call_args.kwargs['actor_name'], 'Visitante')
         notify_mock.assert_called_once()
+
+
+class RegistrationEmailTemplateTests(TestCase):
+    def test_activity_registration_template_renders_correctly(self):
+        from django.template.loader import render_to_string
+        html = render_to_string(
+            'emails/registrations/activity_registration.html',
+            {
+                'attendee_name': 'Ana Silva',
+                'label': 'Evento',
+                'activity_title': 'Workshop de Teatro',
+                'club_name': 'Teatro ISPGAYA',
+                'location': 'Auditório A',
+                'start_date_str': '25/12/2026 18:00',
+                'status': 'confirmed',
+                'logo_cid': 'ispgaya-logo',
+            },
+        )
+        self.assertIn('Ana Silva', html)
+        self.assertIn('Workshop de Teatro', html)
+        self.assertIn('Teatro ISPGAYA', html)
+        self.assertIn('Auditório A', html)
+        self.assertIn('25/12/2026 18:00', html)
+        self.assertIn('Inscrição confirmada', html)
+        self.assertIn('cid:ispgaya-logo', html)
+
+    def test_admin_registration_notification_template_renders_correctly(self):
+        from django.template.loader import render_to_string
+        html = render_to_string(
+            'emails/registrations/admin_registration_notification.html',
+            {
+                'subject': 'Nova inscricao no clube Teatro',
+                'attendee_name': 'Carlos Pedro',
+                'attendee_email': 'carlos@example.com',
+                'phone': '912345678',
+                'message': 'Gostaria de me inscrever.',
+                'scope_label': 'Teatro',
+                'logo_cid': 'ispgaya-logo',
+            },
+        )
+        self.assertIn('Carlos Pedro', html)
+        self.assertIn('carlos@example.com', html)
+        self.assertIn('912345678', html)
+        self.assertIn('Gostaria de me inscrever.', html)
+        self.assertIn('Teatro', html)
+        self.assertIn('cid:ispgaya-logo', html)
+
+    def test_registration_status_update_template_renders_correctly(self):
+        from django.template.loader import render_to_string
+        html = render_to_string(
+            'emails/registrations/registration_status_update.html',
+            {
+                'subject': 'Inscricao atualizada em Teatro',
+                'attendee_name': 'Ana',
+                'club_name': 'Teatro',
+                'status': 'confirmed',
+                'logo_cid': 'ispgaya-logo',
+            },
+        )
+        self.assertIn('Ana', html)
+        self.assertIn('Teatro', html)
+        self.assertIn('Confirmada', html)
+        self.assertIn('cid:ispgaya-logo', html)
+
+    @patch('infocultura.repositories.registrations.EmailMultiAlternatives')
+    def test_notify_new_club_registration_sends_multipart_email(self, email_mock):
+        club = SimpleNamespace(id=7, name='Teatro')
+        registration = SimpleNamespace(name='Ana', email='ana@example.com', phone='912345678', message='Olá')
+        
+        with patch('infocultura.repositories.registrations._get_club_recipient_emails', return_value=['admin@example.com']):
+            repo.notify_new_club_registration(club=club, registration=registration)
+            
+        email_mock.assert_called_once()
+        msg_instance = email_mock.return_value
+        msg_instance.attach_alternative.assert_called_once()
+        msg_instance.send.assert_called_once()
+

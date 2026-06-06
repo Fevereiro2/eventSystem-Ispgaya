@@ -3,11 +3,15 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Any
 
+from email import encoders
+from email.mime.base import MIMEBase
 from django.conf import settings
 from django.core.cache import cache
-from django.core.mail import send_mail
+from django.core.mail import EmailMultiAlternatives
 from django.db import transaction
+from django.template.loader import render_to_string
 from django.utils import timezone
+from .email_assets import get_ispgaya_logo_path
 
 from ..database import constants as db_constants
 from ..models import AppUser, Club, Event, Registration, RegistrationStatus, Session
@@ -55,17 +59,62 @@ def _get_club_recipient_emails(*, club_id: int | None) -> list[str]:
     )
 
 
-def _send_mail_message(*, subject: str, body: str, recipient_list: list[str]) -> None:
+def _send_multipart_email(
+    *,
+    subject: str,
+    template_name_prefix: str,
+    context: dict[str, Any],
+    recipient_list: list[str],
+) -> None:
     if not recipient_list:
         return
 
-    send_mail(
+    from_email = getattr(settings, "DEFAULT_FROM_EMAIL", "noreply@ispgaya.pt")
+    logo_cid = "ispgaya-logo"
+
+    full_context = {
+        **context,
+        "subject": subject,
+        "from_name": _extract_sender_name(from_email),
+        "from_email": _extract_sender_email(from_email),
+        "logo_cid": logo_cid,
+    }
+
+    text_message = render_to_string(f"{template_name_prefix}.txt", full_context)
+    html_message = render_to_string(f"{template_name_prefix}.html", full_context)
+
+    message = EmailMultiAlternatives(
         subject=subject,
-        message=body,
-        from_email=getattr(settings, "DEFAULT_FROM_EMAIL", "noreply@ispgaya.pt"),
-        recipient_list=recipient_list,
-        fail_silently=True,
+        body=text_message,
+        from_email=from_email,
+        to=recipient_list,
     )
+
+    logo_path = get_ispgaya_logo_path()
+    if logo_path is not None:
+        image_part = MIMEBase("image", "svg+xml")
+        image_part.set_payload(logo_path.read_bytes())
+        encoders.encode_base64(image_part)
+        image_part.add_header("Content-ID", f"<{logo_cid}>")
+        image_part.add_header("Content-Disposition", "inline", filename=logo_path.name)
+        message.attach(image_part)
+
+    message.attach_alternative(html_message, "text/html")
+    message.send(fail_silently=True)
+
+
+def _extract_sender_name(value: str) -> str:
+    cleaned = value.strip()
+    if "<" in cleaned and ">" in cleaned:
+        return cleaned.split("<", 1)[0].strip() or "InfoCultura"
+    return "InfoCultura"
+
+
+def _extract_sender_email(value: str) -> str:
+    cleaned = value.strip()
+    if "<" in cleaned and ">" in cleaned:
+        return cleaned.split("<", 1)[1].split(">", 1)[0].strip()
+    return cleaned
 
 
 def _get_allowed_club_id(user) -> int | None:
@@ -458,15 +507,16 @@ def _build_admin_registration_notification_body(
 
 def notify_new_club_registration(*, club: Club, registration: Registration) -> None:
     recipients = _get_club_recipient_emails(club_id=club.id)
-    _send_mail_message(
+    _send_multipart_email(
         subject=f"Nova inscricao no clube {club.name}",
-        body=_build_admin_registration_notification_body(
-            attendee_name=registration.name,
-            attendee_email=registration.email,
-            phone=registration.phone,
-            message=registration.message,
-            scope_label=club.name,
-        ),
+        template_name_prefix="emails/registrations/admin_registration_notification",
+        context={
+            "attendee_name": registration.name,
+            "attendee_email": registration.email,
+            "phone": registration.phone,
+            "message": registration.message,
+            "scope_label": club.name,
+        },
         recipient_list=recipients,
     )
 
@@ -479,15 +529,16 @@ def notify_new_activity_registration(
     registration: Registration,
 ) -> None:
     recipients = _get_club_recipient_emails(club_id=club_id)
-    _send_mail_message(
+    _send_multipart_email(
         subject=f"Nova inscricao em {activity_label.lower()}: {activity_title}",
-        body=_build_admin_registration_notification_body(
-            attendee_name=registration.name,
-            attendee_email=registration.email,
-            phone=registration.phone,
-            message=registration.message,
-            scope_label=f"{activity_label} {activity_title}",
-        ),
+        template_name_prefix="emails/registrations/admin_registration_notification",
+        context={
+            "attendee_name": registration.name,
+            "attendee_email": registration.email,
+            "phone": registration.phone,
+            "message": registration.message,
+            "scope_label": f"{activity_label} {activity_title}",
+        },
         recipient_list=recipients,
     )
 
@@ -503,21 +554,23 @@ def send_activity_registration_email(
     start_date: datetime,
     status: str,
 ) -> None:
-    _send_mail_message(
-        subject=_build_activity_registration_subject(
-            label=label,
-            activity_title=activity_title,
-            status=status,
-        ),
-        body=_build_activity_registration_body(
-            attendee_name=attendee_name,
-            label=label,
-            activity_title=activity_title,
-            club_name=club_name,
-            location=location,
-            start_date=start_date,
-            status=status,
-        ),
+    subject = _build_activity_registration_subject(
+        label=label,
+        activity_title=activity_title,
+        status=status,
+    )
+    _send_multipart_email(
+        subject=subject,
+        template_name_prefix="emails/registrations/activity_registration",
+        context={
+            "attendee_name": attendee_name,
+            "label": label,
+            "activity_title": activity_title,
+            "club_name": club_name,
+            "location": location or "Local por definir",
+            "start_date_str": _format_dt(start_date),
+            "status": status,
+        },
         recipient_list=[recipient_email],
     )
 
@@ -800,9 +853,14 @@ def update_admin_club_registration_status(
         allowed_club_id=allowed_club_id,
     )
     if updated_record:
-        _send_mail_message(
+        _send_multipart_email(
             subject=f"Inscricao atualizada em {updated_record.club_name}",
-            body=f"Ola {updated_record.name},\n\nO estado da tua inscricao mudou para {updated_record.status}.",
+            template_name_prefix="emails/registrations/registration_status_update",
+            context={
+                "attendee_name": updated_record.name,
+                "club_name": updated_record.club_name,
+                "status": updated_record.status,
+            },
             recipient_list=[updated_record.email],
         )
     return updated_record
