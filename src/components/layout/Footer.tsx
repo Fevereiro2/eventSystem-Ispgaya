@@ -1,4 +1,5 @@
 import { Facebook, Instagram, Linkedin } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import {
   footerBottomContainer,
   footerBottomCopyright,
@@ -46,7 +47,7 @@ function Footer() {
   const hubLinks: { name: string; link: string }[] = [
     { name: getLocaleText(locale, 'Inforestudante', 'Student Portal'), link: 'https://inforestudante.ispgaya.pt' },
     { name: getLocaleText(locale, 'Infordocente', 'Teacher Portal'), link: 'https://infordocente.ispgaya.pt' },
-    { name: 'Infocultura', link: buildIspgayaUrl(locale, '/infocultura') },
+    { name: 'Infocultura', link: '/infocultura' },
     { name: getLocaleText(locale, 'Email', 'Email'), link: 'https://outlook.office.com' },
     { name: getLocaleText(locale, 'Horários', 'Timetables'), link: 'https://horarios.ispgaya.pt/geral/' },
     { name: getLocaleText(locale, 'Palavra-passe', 'Password'), link: buildIspgayaUrl(locale, '/perguntas-frequentes') },
@@ -127,9 +128,15 @@ function Footer() {
             <ul className={footerList}>
               {hubLinks.map((item) => (
                 <li key={item.name} className={footerListItem}>
-                  <a href={item.link} className={footerLink}>
-                    {item.name}
-                  </a>
+                  {item.link === '/infocultura' ? (
+                    <Link to={item.link} className={footerLink}>
+                      {item.name}
+                    </Link>
+                  ) : (
+                    <a href={item.link} className={footerLink}>
+                      {item.name}
+                    </a>
+                  )}
                 </li>
               ))}
             </ul>
