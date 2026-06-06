@@ -2893,14 +2893,17 @@ function AdminCultura() {
                         <NavLink
                           to={section.href}
                           className={({ isActive }) =>
-                            isActive ? adminPortalSidebarLinkActive : adminPortalSidebarLink
+                            isActive || (section.id === 'eventos' && activeSection === 'eventbrite')
+                              ? adminPortalSidebarLinkActive
+                              : adminPortalSidebarLink
                           }
                         >
                           {section.id === 'notificacoes' && unreadNotifications.length > 0
                             ? `${section.label} (${unreadNotifications.length})`
                             : section.label}
                         </NavLink>
-                        {section.id === activeSection &&
+                        {(section.id === activeSection ||
+                          (section.id === 'eventos' && activeSection === 'eventbrite')) &&
                         sidebarContextNavBySection[section.id]?.links.length ? (
                           <div className="border-l-[4px] border-[#f4a24d] bg-white/75 px-4 py-2">
                             <div className="flex flex-col gap-1">

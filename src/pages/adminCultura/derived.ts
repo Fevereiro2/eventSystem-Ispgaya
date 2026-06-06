@@ -225,8 +225,8 @@ export function buildSidebarContextNav(
       activeHref: sessionPageHref,
     },
     eventos: {
-      links: eventPageLinks,
-      activeHref: eventPageHref,
+      links: [...eventPageLinks, ...eventbritePageLinks],
+      activeHref: eventPageHref ?? eventbritePageHref,
     },
     conteudos: {
       links: contentPageLinks,
@@ -235,10 +235,6 @@ export function buildSidebarContextNav(
     galeria: {
       links: photoPageLinks,
       activeHref: photoPageHref,
-    },
-    eventbrite: {
-      links: eventbritePageLinks,
-      activeHref: eventbritePageHref,
     },
     utilizadores: {
       links: userPageLinks,

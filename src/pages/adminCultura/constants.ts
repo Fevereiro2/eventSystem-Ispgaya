@@ -169,7 +169,6 @@ export const adminSections: { id: AdminSection; label: string; href: string }[] 
   { id: 'livros', label: 'Livros', href: '/infocultura/livros' },
   { id: 'sessoes', label: 'Sessões', href: '/infocultura/sessoes' },
   { id: 'eventos', label: 'Eventos', href: '/infocultura/eventos' },
-  { id: 'eventbrite', label: 'Eventbrite', href: '/infocultura/eventbrite' },
   { id: 'conteudos', label: 'Conteúdos', href: '/infocultura/conteudos' },
   { id: 'inscricoes', label: 'Inscrições', href: '/infocultura/inscricoes' },
   { id: 'clubes', label: 'Clubes', href: '/infocultura/clubes' }
@@ -181,5 +180,5 @@ export const adminSectionGroups: {
 }[] = [
   { title: 'Painel', ids: ['resumo', 'metricas', 'logs', 'notificacoes'] },
   { title: 'Gestão', ids: ['newsletters', 'galeria', 'utilizadores', 'clubes', 'inscricoes'] },
-  { title: 'Conteúdos', ids: ['noticias', 'livros', 'sessoes', 'eventos', 'eventbrite', 'conteudos'] }
+  { title: 'Conteúdos', ids: ['noticias', 'livros', 'sessoes', 'eventos', 'conteudos'] }
 ];
