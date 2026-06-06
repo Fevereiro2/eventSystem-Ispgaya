@@ -19,6 +19,7 @@ import {
   adminPanelForm,
 } from '../../../styles/ui.js';
 import AdminPageHero from './AdminPageHero.js';
+import { getLocaleText, useLocale } from '../../../i18n/locale';
 
 function buildEmailLocalPartFromName(name: string): string {
   const normalized = name
@@ -65,6 +66,7 @@ export default function UserFormPanel({
   resetUserForm,
   selectedUser,
 }: UserFormPanelProps) {
+  const { locale } = useLocale();
   const university = useUniversityEmailDomain({
     enabled: userPage.mode === 'create',
     email: userForm.email,
@@ -81,26 +83,26 @@ export default function UserFormPanel({
     <div className="space-y-6">
       <AdminPageHero
         icon={Users}
-        title={userPage.mode === 'create' ? 'Criar Utilizador' : 'Editar Utilizador'}
+        title={userPage.mode === 'create' ? getLocaleText(locale, 'Criar Utilizador', 'Create User') : getLocaleText(locale, 'Editar Utilizador', 'Edit User')}
         description={
           userPage.mode === 'create'
-            ? 'Criacao de novos acessos administrativos no InfoCultura.'
-            : 'Atualizacao dos dados e permissoes do utilizador selecionado.'
+            ? getLocaleText(locale, 'Criação de novos acessos administrativos no InfoCultura.', 'Create new administrative access in InfoCultura.')
+            : getLocaleText(locale, 'Atualização dos dados e permissões do utilizador selecionado.', 'Update the selected user data and permissions.')
         }
         tone="slate"
         actions={
           <NavLink to="/infocultura/utilizadores" className={adminBtnSecondary}>
-            Voltar aos utilizadores
+            {getLocaleText(locale, 'Voltar aos utilizadores', 'Back to users')}
           </NavLink>
         }
       />
 
       <section className={adminPanelCard}>
         {!canManageUsers ? (
-          <p className={adminError}>Apenas o superadmin pode aceder a esta pagina.</p>
+          <p className={adminError}>{getLocaleText(locale, 'Apenas o superadmin pode aceder a esta pagina.', 'Only the superadmin can access this page.')}</p>
         ) : userPage.mode === 'edit' && !selectedUser ? (
           <p className={adminInfo}>
-            {isLoadingUsers ? 'A carregar utilizador...' : 'Utilizador nao encontrado.'}
+            {isLoadingUsers ? getLocaleText(locale, 'A carregar utilizador...', 'Loading user...') : getLocaleText(locale, 'Utilizador nao encontrado.', 'User not found.')}
           </p>
         ) : (
           <form onSubmit={handleSaveUser} className={adminPanelForm}>
@@ -108,9 +110,9 @@ export default function UserFormPanel({
               <section className="space-y-4 rounded-2xl border border-slate-200 bg-white p-4 md:p-5">
                 <div>
                   <h3 className="text-sm font-semibold uppercase tracking-[0.14em] text-slate-500">
-                    Dados pessoais
+                    {getLocaleText(locale, 'Dados pessoais', 'Personal data')}
                   </h3>
-                  <p className={adminInfo}>Nome e contacto institucional do novo utilizador.</p>
+                  <p className={adminInfo}>{getLocaleText(locale, 'Nome e contacto institucional do novo utilizador.', 'Name and institutional contact details for the new user.')}</p>
                 </div>
 
                 <div className="space-y-4">
@@ -132,7 +134,7 @@ export default function UserFormPanel({
 
                   <div className={adminField}>
                     <label className={adminLabel} htmlFor="university-country">
-                      País
+                      {getLocaleText(locale, 'País', 'Country')}
                     </label>
                     <select
                       id="university-country"
@@ -141,13 +143,13 @@ export default function UserFormPanel({
                       onChange={(event) => university.setUniversityCountry(event.target.value)}
                     >
                       <option value="Portugal">Portugal</option>
-                      <option value="all">Todos os países</option>
+                      <option value="all">{getLocaleText(locale, 'Todos os países', 'All countries')}</option>
                     </select>
                   </div>
 
                   <div className={adminField}>
                     <label className={adminLabel} htmlFor="university-search">
-                      Universidade
+                      {getLocaleText(locale, 'Universidade', 'University')}
                     </label>
                     <div className="flex gap-2">
                       <input
@@ -155,7 +157,7 @@ export default function UserFormPanel({
                         className={adminInput}
                         value={university.universityQuery}
                         onChange={(event) => university.setUniversityQuery(event.target.value)}
-                        placeholder="Pesquisar universidade"
+                        placeholder={getLocaleText(locale, 'Pesquisar universidade', 'Search university')}
                       />
                       <button
                         type="button"
@@ -167,20 +169,20 @@ export default function UserFormPanel({
                           )
                         }
                       >
-                        Pesquisar
+                        {getLocaleText(locale, 'Pesquisar', 'Search')}
                       </button>
                     </div>
                     {university.universityError ? (
                       <p className={adminError}>{university.universityError}</p>
                     ) : null}
                     {university.isSearchingUniversities ? (
-                      <p className={adminInfo}>A procurar universidades...</p>
+                      <p className={adminInfo}>{getLocaleText(locale, 'A procurar universidades...', 'Searching universities...')}</p>
                     ) : null}
                     {!university.isSearchingUniversities && university.universityResults.length > 0 ? (
                       <div className="space-y-3 rounded-lg border border-slate-200 bg-slate-50 p-4">
                         <div>
                           <label className={adminLabel} htmlFor="university-result">
-                            Resultados
+                            {getLocaleText(locale, 'Resultados', 'Results')}
                           </label>
                           <select
                             id="university-result"
@@ -201,8 +203,8 @@ export default function UserFormPanel({
                         {university.selectedUniversity ? (
                           <div className="space-y-2">
                             <p className={adminInfo}>
-                              Domínios disponíveis:{' '}
-                              {university.selectedUniversity.domains.join(', ') || 'Sem domínio'}
+                              {getLocaleText(locale, 'Domínios disponíveis:', 'Available domains:')}{' '}
+                              {university.selectedUniversity.domains.join(', ') || getLocaleText(locale, 'Sem domínio', 'No domain')}
                             </p>
                             {university.selectedUniversity.domains.length > 0 ? (
                               <div className="flex flex-wrap gap-2">
@@ -223,7 +225,7 @@ export default function UserFormPanel({
                             ) : null}
                             {university.selectedUniversityDomain ? (
                               <p className={adminInfo}>
-                                Domínio selecionado: {university.selectedUniversityDomain}
+                                {getLocaleText(locale, 'Domínio selecionado:', 'Selected domain:')} {university.selectedUniversityDomain}
                               </p>
                             ) : null}
                           </div>
@@ -244,10 +246,10 @@ export default function UserFormPanel({
                       onChange={(event) => university.handleEmailChange(event.target.value)}
                     />
                     <p className={adminInfo}>
-                      O email institucional aparece automaticamente quando escolhes a universidade.
+                      {getLocaleText(locale, 'O email institucional aparece automaticamente quando escolhes a universidade.', 'The institutional email appears automatically when you choose a university.')}
                     </p>
                     <p className={adminInfo}>
-                      O dominio substitui apenas a parte depois do @ e nao pode ser trocado manualmente.
+                      {getLocaleText(locale, 'O dominio substitui apenas a parte depois do @ e nao pode ser trocado manualmente.', 'The domain only replaces the part after @ and cannot be changed manually.')}
                     </p>
                   </div>
                 </div>
@@ -257,18 +259,18 @@ export default function UserFormPanel({
                 <section className="space-y-4 rounded-2xl border border-slate-200 bg-slate-50 p-4 md:p-5">
                   <div>
                     <h3 className="text-sm font-semibold uppercase tracking-[0.14em] text-slate-500">
-                      Clube
+                      {getLocaleText(locale, 'Clube', 'Club')}
                     </h3>
                     <p className={adminInfo}>
                       {userPage.mode === 'create'
-                        ? 'Associa este utilizador a um clube logo na criação.'
-                        : 'Atualiza o clube associado a este utilizador.'}
+                        ? getLocaleText(locale, 'Associa este utilizador a um clube logo na criação.', 'Associate this user with a club during creation.')
+                        : getLocaleText(locale, 'Atualiza o clube associado a este utilizador.', 'Update the club associated with this user.')}
                     </p>
                   </div>
 
                   <div className={adminField}>
                     <label className={adminLabel} htmlFor="user-club">
-                      Clube
+                      {getLocaleText(locale, 'Clube', 'Club')}
                     </label>
                     <select
                       id="user-club"
@@ -280,11 +282,11 @@ export default function UserFormPanel({
                       }
                     >
                       <option value="">
-                        {userPage.mode === 'create' ? 'Seleciona um clube' : 'Sem clube'}
+                        {userPage.mode === 'create' ? getLocaleText(locale, 'Seleciona um clube', 'Select a club') : getLocaleText(locale, 'Sem clube', 'No club')}
                       </option>
-                      {isLoadingClubs ? <option value="">A carregar clubes...</option> : null}
+                      {isLoadingClubs ? <option value="">{getLocaleText(locale, 'A carregar clubes...', 'Loading clubs...')}</option> : null}
                       {!isLoadingClubs && clubs.length === 0 ? (
-                        <option value="">Nao existem clubes disponiveis</option>
+                        <option value="">{getLocaleText(locale, 'Nao existem clubes disponiveis', 'No clubs available')}</option>
                       ) : null}
                       {clubs.map((club) => (
                         <option key={club.id} value={club.id}>
@@ -294,8 +296,8 @@ export default function UserFormPanel({
                     </select>
                     <p className={adminInfo}>
                       {userPage.mode === 'create'
-                        ? 'O clube escolhido fica guardado no momento da criacao do utilizador.'
-                        : 'Podes trocar ou remover a associação do clube nesta edição.'}
+                        ? getLocaleText(locale, 'O clube escolhido fica guardado no momento da criacao do utilizador.', 'The selected club is saved when the user is created.')
+                        : getLocaleText(locale, 'Podes trocar ou remover a associação do clube nesta edição.', 'You can change or remove the club association in this edit.')}
                     </p>
                   </div>
                 </section>
@@ -304,16 +306,16 @@ export default function UserFormPanel({
               <section className="space-y-4 rounded-2xl border border-slate-200 bg-white p-4 md:p-5">
                 <div>
                   <h3 className="text-sm font-semibold uppercase tracking-[0.14em] text-slate-500">
-                    Acesso
+                    {getLocaleText(locale, 'Acesso', 'Access')}
                   </h3>
                   <p className={adminInfo}>
-                    Define o perfil administrativo que este utilizador vai receber.
+                    {getLocaleText(locale, 'Define o perfil administrativo que este utilizador vai receber.', 'Define the administrative profile this user will receive.')}
                   </p>
                 </div>
 
                 <div className={adminField}>
                   <label className={adminLabel} htmlFor="user-role">
-                    Role
+                    {getLocaleText(locale, 'Função', 'Role')}
                   </label>
                   <select
                     id="user-role"
@@ -323,9 +325,9 @@ export default function UserFormPanel({
                       setUserForm((prev) => ({ ...prev, role: event.target.value }))
                     }
                   >
-                    {isLoadingRoles ? <option>A carregar roles...</option> : null}
+                    {isLoadingRoles ? <option>{getLocaleText(locale, 'A carregar roles...', 'Loading roles...')}</option> : null}
                     {!isLoadingRoles && roles.length === 0 ? (
-                      <option value="">Sem roles disponiveis</option>
+                      <option value="">{getLocaleText(locale, 'Sem roles disponiveis', 'No roles available')}</option>
                     ) : null}
                     {roles.map((role) => (
                       <option key={role.id} value={role.name}>
@@ -346,13 +348,13 @@ export default function UserFormPanel({
                 disabled={isSavingUser || isLoadingRoles || roles.length === 0}
               >
                 {isSavingUser
-                  ? 'A guardar...'
+                  ? getLocaleText(locale, 'A guardar...', 'Saving...')
                   : userPage.mode === 'create'
-                    ? 'Criar utilizador'
-                    : 'Guardar alteracoes'}
+                    ? getLocaleText(locale, 'Criar utilizador', 'Create user')
+                    : getLocaleText(locale, 'Guardar alteracoes', 'Save changes')}
               </button>
               <button type="button" onClick={() => resetUserForm()} className={adminBtnSecondary}>
-                Limpar
+                {getLocaleText(locale, 'Limpar', 'Reset')}
               </button>
             </div>
           </form>

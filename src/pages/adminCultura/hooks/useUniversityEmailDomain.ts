@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { getLocaleText, useLocale } from '../../../i18n/locale';
 
 import { searchUniversities } from '../../../api/public';
 import { UniversitySearchResult } from '../../../api/types';
@@ -69,6 +70,7 @@ export function useUniversityEmailDomain({
   autoApplySearchResult = true,
   onEmailChange,
 }: UseUniversityEmailDomainOptions) {
+  const { locale } = useLocale();
   const [universityQuery, setUniversityQuery] = useState('');
   const [universityCountry, setUniversityCountry] = useState('Portugal');
   const [universityResults, setUniversityResults] = useState<UniversitySearchResult[]>([]);
@@ -111,7 +113,9 @@ export function useUniversityEmailDomain({
       }
     } catch (error) {
       const message =
-        error instanceof Error ? error.message : 'Nao foi possivel carregar as universidades.';
+        error instanceof Error
+          ? error.message
+          : getLocaleText(locale, 'Nao foi possivel carregar as universidades.', 'Could not load the universities.');
       setUniversityError(message);
       setUniversityResults([]);
       setSelectedUniversityIndex(0);

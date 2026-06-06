@@ -1,4 +1,5 @@
 import { type Dispatch, type SetStateAction, useCallback, useState } from 'react';
+import { getLocaleText, useLocale } from '../../../i18n/locale';
 
 import {
   EventbriteOrdersPage,
@@ -21,6 +22,7 @@ export function useAdminEventbrite({
   setActivityError,
   handleAuthError,
 }: UseAdminEventbriteOptions) {
+  const { locale } = useLocale();
   const [syncingEventbriteId, setSyncingEventbriteId] = useState<number | null>(null);
   const [loadingEventbriteOrdersId, setLoadingEventbriteOrdersId] = useState<number | null>(null);
   const [eventbriteRefundStatus, setEventbriteRefundStatus] = useState<EventbriteRefundStatus>('');
@@ -41,13 +43,15 @@ export function useAdminEventbrite({
       } catch (error) {
         if (handleAuthError(error)) return;
         const message =
-          error instanceof Error ? error.message : 'Nao foi possivel sincronizar com a Eventbrite.';
+          error instanceof Error
+            ? error.message
+            : getLocaleText(locale, 'Nao foi possivel sincronizar com a Eventbrite.', 'Could not sync with Eventbrite.');
         setActivityError(message);
       } finally {
         setSyncingEventbriteId(null);
       }
     },
-    [token, setActivityError, setEvents, handleAuthError]
+    [token, setActivityError, setEvents, handleAuthError, locale]
   );
 
   const handleLoadEventbriteOrders = useCallback(
@@ -65,13 +69,13 @@ export function useAdminEventbrite({
         const message =
           error instanceof Error
             ? error.message
-            : 'Nao foi possivel carregar os pedidos da Eventbrite.';
+            : getLocaleText(locale, 'Nao foi possivel carregar os pedidos da Eventbrite.', 'Could not load Eventbrite orders.');
         setActivityError(message);
       } finally {
         setLoadingEventbriteOrdersId(null);
       }
     },
-    [token, eventbriteRefundStatus, setActivityError, handleAuthError]
+    [token, eventbriteRefundStatus, setActivityError, handleAuthError, locale]
   );
 
   return {

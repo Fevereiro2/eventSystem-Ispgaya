@@ -330,7 +330,7 @@ function NewslettersPage() {
           className={activeTab === 'subscribers' ? adminBtnPrimary : adminBtnSecondary}
           onClick={() => setActiveTab('subscribers')}
         >
-          Subscritores
+          {getLocaleText(locale, 'Subscritores', 'Subscribers')}
         </button>
       </div>
 
@@ -352,7 +352,7 @@ function NewslettersPage() {
             <div className={adminFormGridSpaced}>
               <div className={adminField}>
                 <label className={adminLabel} htmlFor="newsletter-title">
-                  Titulo 
+                  {getLocaleText(locale, 'Titulo', 'Title')}
                 </label>
                 <input
                   id="newsletter-title"
@@ -380,7 +380,7 @@ function NewslettersPage() {
 
               <div className={adminField}>
                 <label className={adminLabel} htmlFor="newsletter-status">
-                  Estado
+                  {getLocaleText(locale, 'Estado', 'Status')}
                 </label>
                 <select
                   id="newsletter-status"
@@ -390,10 +390,10 @@ function NewslettersPage() {
                     setNewsletterForm((prev) => ({ ...prev, status: event.target.value }))
                   }
                 >
-                  <option value="draft">Rascunho</option>
-                  <option value="scheduled">Agendada</option>
-                  <option value="sent">Enviada</option>
-                  <option value="cancelled">Cancelada</option>
+                  <option value="draft">{getLocaleText(locale, 'Rascunho', 'Draft')}</option>
+                  <option value="scheduled">{getLocaleText(locale, 'Agendada', 'Scheduled')}</option>
+                  <option value="sent">{getLocaleText(locale, 'Enviada', 'Sent')}</option>
+                  <option value="cancelled">{getLocaleText(locale, 'Cancelada', 'Cancelled')}</option>
                 </select>
               </div>
             </div>
@@ -477,7 +477,7 @@ function NewslettersPage() {
 
             <div className={adminFieldSpaced}>
               <label className={adminLabel} htmlFor="newsletter-content">
-                Conteudo
+                {getLocaleText(locale, 'Conteudo', 'Content')}
               </label>
               <textarea
                 id="newsletter-content"
@@ -493,7 +493,7 @@ function NewslettersPage() {
             <div className={adminActions}>
               <button type="submit" className={adminBtnPrimary} disabled={savingNewsletter}>
                 <Plus size={16} />
-                {savingNewsletter ? 'A guardar...' : editingNewsletterId ? 'Atualizar' : 'Criar'}
+                {savingNewsletter ? getLocaleText(locale, 'A guardar...', 'Saving...') : editingNewsletterId ? getLocaleText(locale, 'Atualizar', 'Update') : getLocaleText(locale, 'Criar', 'Create')}
               </button>
             </div>
           </form>
@@ -501,10 +501,10 @@ function NewslettersPage() {
           <div className={adminList}>
             <div className={adminListTop}>
               <div>
-                <h3 className={adminListTitle}>Campanhas registadas</h3>
-                <p className={adminListMeta}>Lista das newsletters preparadas para envio.</p>
+                <h3 className={adminListTitle}>{getLocaleText(locale, 'Campanhas registadas', 'Registered campaigns')}</h3>
+                <p className={adminListMeta}>{getLocaleText(locale, 'Lista das newsletters preparadas para envio.', 'List of newsletters prepared for sending.')}</p>
               </div>
-              {loading ? <p className={adminInfo}>A carregar...</p> : null}
+              {loading ? <p className={adminInfo}>{getLocaleText(locale, 'A carregar...', 'Loading...')}</p> : null}
             </div>
 
             {newsletters.map((newsletter) => (
@@ -513,12 +513,12 @@ function NewslettersPage() {
                   <div>
                     <h4 className={adminListTitle}>{newsletter.title}</h4>
                     <p className={adminListMeta}>
-                      {newsletter.subject} · {newsletter.status} · {newsletter.user_name || 'Sistema'}
+                      {newsletter.subject} · {newsletter.status} · {newsletter.user_name || getLocaleText(locale, 'Sistema', 'System')}
                     </p>
                   </div>
                   <span className={adminListMeta}>
                     {newsletter.sent_at
-                      ? `Enviada ${formatAdminDateTime(newsletter.sent_at)}`
+                      ? `${getLocaleText(locale, 'Enviada', 'Sent')} ${formatAdminDateTime(newsletter.sent_at)}`
                       : formatAdminDateTime(newsletter.created_at)}
                   </span>
                 </div>
@@ -532,7 +532,7 @@ function NewslettersPage() {
                     onClick={() => handleEditNewsletter(newsletter)}
                   >
                     <Pencil size={16} />
-                    Editar
+                    {getLocaleText(locale, 'Editar', 'Edit')}
                   </button>
                   <button
                     type="button"
@@ -541,7 +541,7 @@ function NewslettersPage() {
                     disabled={sendingNewsletterId === newsletter.id}
                   >
                     <SendHorizonal size={16} />
-                    {sendingNewsletterId === newsletter.id ? 'A enviar...' : 'Enviar'}
+                    {sendingNewsletterId === newsletter.id ? getLocaleText(locale, 'A enviar...', 'Sending...') : getLocaleText(locale, 'Enviar', 'Send')}
                   </button>
                   <button
                     type="button"
@@ -550,14 +550,14 @@ function NewslettersPage() {
                     disabled={deletingNewsletterId === newsletter.id}
                   >
                     <Trash2 size={16} />
-                    {deletingNewsletterId === newsletter.id ? 'A apagar...' : 'Apagar'}
+                    {deletingNewsletterId === newsletter.id ? getLocaleText(locale, 'A apagar...', 'Deleting...') : getLocaleText(locale, 'Apagar', 'Delete')}
                   </button>
                 </div>
               </article>
             ))}
 
             {!loading && newsletters.length === 0 ? (
-              <p className={adminInfo}>Não existem newsletters registadas.</p>
+              <p className={adminInfo}>{getLocaleText(locale, 'Não existem newsletters registadas.', 'There are no registered newsletters.')}</p>
             ) : null}
           </div>
         </div>
@@ -567,10 +567,10 @@ function NewslettersPage() {
             <div className="flex items-center justify-between gap-3">
               <div>
                 <h2 className={blockTitle}>
-                  {editingSubscriberId ? 'Editar subscritor' : 'Novo subscritor'}
+                  {editingSubscriberId ? getLocaleText(locale, 'Editar subscritor', 'Edit subscriber') : getLocaleText(locale, 'Novo subscritor', 'New subscriber')}
                 </h2>
                 <p className={blockText}>
-                  Adiciona ou ativa emails para receberem as campanhas.
+                  {getLocaleText(locale, 'Adiciona ou ativa emails para receberem as campanhas.', 'Add or activate emails to receive campaigns.')}
                 </p>
               </div>
               <button type="button" className={adminBtnSecondary} onClick={resetSubscriberForm}>
@@ -595,7 +595,7 @@ function NewslettersPage() {
 
             <div className={adminField}>
               <label className={adminLabel} htmlFor="subscriber-active">
-                Ativo
+                {getLocaleText(locale, 'Ativo', 'Active')}
               </label>
               <select
                 id="subscriber-active"
@@ -608,15 +608,15 @@ function NewslettersPage() {
                   }))
                 }
               >
-                <option value="1">Sim</option>
-                <option value="0">Não</option>
+                <option value="1">{getLocaleText(locale, 'Sim', 'Yes')}</option>
+                <option value="0">{getLocaleText(locale, 'Não', 'No')}</option>
               </select>
             </div>
 
             <div className={adminActions}>
               <button type="submit" className={adminBtnPrimary} disabled={savingSubscriber}>
                 <Plus size={16} />
-                {savingSubscriber ? 'A guardar...' : editingSubscriberId ? 'Atualizar' : 'Criar'}
+                {savingSubscriber ? getLocaleText(locale, 'A guardar...', 'Saving...') : editingSubscriberId ? getLocaleText(locale, 'Atualizar', 'Update') : getLocaleText(locale, 'Criar', 'Create')}
               </button>
             </div>
           </form>
@@ -624,10 +624,10 @@ function NewslettersPage() {
           <div className={adminList}>
             <div className={adminListTop}>
               <div>
-                <h3 className={adminListTitle}>Subscritores</h3>
-                <p className={adminListMeta}>Emails que recebem newsletters ativas.</p>
+                <h3 className={adminListTitle}>{getLocaleText(locale, 'Subscritores', 'Subscribers')}</h3>
+                <p className={adminListMeta}>{getLocaleText(locale, 'Emails que recebem newsletters ativas.', 'Emails that receive active newsletters.')}</p>
               </div>
-              {loading ? <p className={adminInfo}>A carregar...</p> : null}
+              {loading ? <p className={adminInfo}>{getLocaleText(locale, 'A carregar...', 'Loading...')}</p> : null}
             </div>
 
             {subscribers.map((subscriber) => (
@@ -636,7 +636,7 @@ function NewslettersPage() {
                   <div>
                     <h4 className={adminListTitle}>{subscriber.email}</h4>
                     <p className={adminListMeta}>
-                      {subscriber.is_active ? 'Ativo' : 'Inativo'} ·{' '}
+                      {subscriber.is_active ? getLocaleText(locale, 'Ativo', 'Active') : getLocaleText(locale, 'Inativo', 'Inactive')} ·{' '}
                       {formatAdminDateTime(subscriber.subscribed_at)}
                     </p>
                   </div>
@@ -650,7 +650,7 @@ function NewslettersPage() {
                     onClick={() => handleEditSubscriber(subscriber)}
                   >
                     <Pencil size={16} />
-                    Editar
+                    {getLocaleText(locale, 'Editar', 'Edit')}
                   </button>
                   <button
                     type="button"
@@ -659,14 +659,14 @@ function NewslettersPage() {
                     disabled={deletingSubscriberId === subscriber.id}
                   >
                     <Trash2 size={16} />
-                    {deletingSubscriberId === subscriber.id ? 'A apagar...' : 'Apagar'}
+                    {deletingSubscriberId === subscriber.id ? getLocaleText(locale, 'A apagar...', 'Deleting...') : getLocaleText(locale, 'Apagar', 'Delete')}
                   </button>
                 </div>
               </article>
             ))}
 
             {!loading && subscribers.length === 0 ? (
-              <p className={adminInfo}>Não existem subscritores registados.</p>
+              <p className={adminInfo}>{getLocaleText(locale, 'Não existem subscritores registados.', 'There are no registered subscribers.')}</p>
             ) : null}
           </div>
         </div>

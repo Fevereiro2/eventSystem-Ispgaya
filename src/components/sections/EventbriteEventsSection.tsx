@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useLocale } from '../../i18n/locale';
+import { getLocaleText, useLocale } from '../../i18n/locale';
 
 interface EventbriteEvent {
   id: string;
@@ -44,8 +44,8 @@ export default function EventbriteEventsSection() {
     return (
       <section className="space-y-6">
         <div className="max-w-3xl">
-          <h2 className="text-2xl font-semibold text-slate-900 lg:text-3xl">Eventos Eventbrite</h2>
-          <p className="mt-2 text-base leading-8 text-slate-700 lg:text-lg">A carregar eventos...</p>
+          <h2 className="text-2xl font-semibold text-slate-900 lg:text-3xl">{getLocaleText(locale, 'Eventos Eventbrite', 'Eventbrite Events')}</h2>
+          <p className="mt-2 text-base leading-8 text-slate-700 lg:text-lg">{getLocaleText(locale, 'A carregar eventos...', 'Loading events...')}</p>
         </div>
       </section>
     );
@@ -55,8 +55,8 @@ export default function EventbriteEventsSection() {
     return (
       <section className="space-y-6">
         <div className="max-w-3xl">
-          <h2 className="text-2xl font-semibold text-slate-900 lg:text-3xl">Eventos Eventbrite</h2>
-          <p className="mt-2 text-sm text-red-600">Erro: {error}</p>
+          <h2 className="text-2xl font-semibold text-slate-900 lg:text-3xl">{getLocaleText(locale, 'Eventos Eventbrite', 'Eventbrite Events')}</h2>
+          <p className="mt-2 text-sm text-red-600">{getLocaleText(locale, 'Erro:', 'Error:')} {error}</p>
         </div>
       </section>
     );
@@ -71,25 +71,25 @@ export default function EventbriteEventsSection() {
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div className="max-w-3xl">
           <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#dd8609]">
-            Eventos ao vivo
+            {getLocaleText(locale, 'Eventos ao vivo', 'Live events')}
           </p>
           <h2 className="mt-3 text-2xl font-semibold text-slate-900 lg:text-3xl">
-            Eventos Eventbrite
+            {getLocaleText(locale, 'Eventos Eventbrite', 'Eventbrite Events')}
           </h2>
           <p className="mt-2 text-base leading-8 text-slate-700 lg:text-lg">
-            Confira os eventos publicados no Eventbrite da nossa organização.
+            {getLocaleText(locale, 'Confira os eventos publicados no Eventbrite da nossa organização.', 'Browse the events published on our organization Eventbrite.')}
           </p>
         </div>
       </div>
 
       <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
         {events.map((event) => {
-          const startDate = new Date(event.start).toLocaleDateString(locale === 'pt' ? 'pt-PT' : 'en-US', {
+          const startDate = new Date(event.start).toLocaleDateString(locale === 'pt' ? 'pt-PT' : 'en-GB', {
             day: '2-digit',
             month: 'short',
             year: 'numeric',
           });
-          const startTime = new Date(event.start).toLocaleTimeString(locale === 'pt' ? 'pt-PT' : 'en-US', {
+          const startTime = new Date(event.start).toLocaleTimeString(locale === 'pt' ? 'pt-PT' : 'en-GB', {
             hour: '2-digit',
             minute: '2-digit',
           });
@@ -108,17 +108,17 @@ export default function EventbriteEventsSection() {
                       : 'bg-amber-100 text-amber-700'
                   }`}
                 >
-                  {event.status === 'live' ? 'Publicado' : 'Rascunho'}
+                  {event.status === 'live' ? getLocaleText(locale, 'Publicado', 'Published') : getLocaleText(locale, 'Rascunho', 'Draft')}
                 </span>
               </div>
 
               <p className="mt-3 flex items-center gap-2 text-sm text-slate-600">
                 <span>📅</span>
-                {startDate} às {startTime}
+                {startDate} {getLocaleText(locale, 'às', 'at')} {startTime}
               </p>
 
               <p className="mt-3 text-sm leading-6 text-slate-700">
-                Evento registado no Eventbrite. Clique no botão abaixo para mais informações e ingressos.
+                {getLocaleText(locale, 'Evento registado no Eventbrite. Clique no botão abaixo para mais informações e ingressos.', 'Event registered on Eventbrite. Click the button below for more information and tickets.')}
               </p>
 
               <a
@@ -127,7 +127,7 @@ export default function EventbriteEventsSection() {
                 rel="noopener noreferrer"
                 className="mt-4 inline-flex items-center gap-2 text-sm font-semibold text-[#dd8609] transition-colors hover:text-[#c26900]"
               >
-                Ver no Eventbrite
+                {getLocaleText(locale, 'Ver no Eventbrite', 'View on Eventbrite')}
                 <span>→</span>
               </a>
             </article>

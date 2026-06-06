@@ -42,6 +42,7 @@ import {
   InfoCulturaUser,
   resolveInfoCulturaAssetUrl,
 } from '../../api/infoculturaApi';
+import { getLocaleText, useLocale } from '../../i18n/locale';
 
 type AdminHeroStat = { label: string; value: string | number };
 
@@ -114,27 +115,28 @@ function ClubsPage({
   removingClubUserId,
   handleRemoveUserFromClub,
 }: ClubsPageProps) {
+  const { locale } = useLocale();
+
   return (
     <div className="space-y-6">
       <AdminPageHero
         icon={Building2}
-        title="Clubes"
-        description="Estrutura interna dos clubes, estados de atividade e configuração de inscrições."
+        title={getLocaleText(locale, 'Clubes', 'Clubs')}
+        description={getLocaleText(locale, 'Estrutura interna dos clubes, estados de atividade e configuração de inscrições.', 'Internal club structure, activity status and registration settings.')}
         tone="amber"
         stats={clubsOverviewStats}
       />
 
       <form onSubmit={handleSaveClub} className={adminPanelForm}>
-        <h2 className={blockTitle}>{editingClubId ? 'Editar Clube' : 'Novo Clube'}</h2>
+        <h2 className={blockTitle}>{editingClubId ? getLocaleText(locale, 'Editar Clube', 'Edit Club') : getLocaleText(locale, 'Novo Clube', 'New Club')}</h2>
         <p className={blockText}>
-          Cria clubes para organizar a estrutura do InfoCultura. Esta seçcão e reservada
-          ao superadmin.
+          {getLocaleText(locale, 'Cria clubes para organizar a estrutura do InfoCultura. Esta seção é reservada ao superadmin.', 'Create clubs to organize the InfoCultura structure. This section is reserved for the superadmin.')}
         </p>
 
         <div className={adminFormGridSpaced}>
           <div className={adminField}>
             <label className={adminLabel} htmlFor="club-name">
-              Nome do clube
+              {getLocaleText(locale, 'Nome do clube', 'Club name')}
             </label>
             <input
               id="club-name"
@@ -150,7 +152,7 @@ function ClubsPage({
 
           <div className={adminField}>
             <label className={adminLabel} htmlFor="club-image">
-              Imagem do clube
+              {getLocaleText(locale, 'Imagem do clube', 'Club image')}
             </label>
             <input
               id="club-image"
@@ -165,15 +167,15 @@ function ClubsPage({
             />
             <p className={blockText}>
               {isUploadingClubImage
-                ? 'A carregar imagem...'
+                ? getLocaleText(locale, 'A carregar imagem...', 'Uploading image...')
                 : clubForm.image
-                  ? 'Imagem carregada com sucesso.'
-                  : 'Seleciona uma imagem PNG ou JPG do computador ou telemóvel.'}
+                  ? getLocaleText(locale, 'Imagem carregada com sucesso.', 'Image uploaded successfully.')
+                  : getLocaleText(locale, 'Seleciona uma imagem PNG ou JPG do computador ou telemóvel.', 'Select a PNG or JPG image from your computer or phone.')}
             </p>
             {clubForm.image ? (
               <img
                 src={resolveInfoCulturaAssetUrl(clubForm.image)}
-                alt="Preview do clube"
+                alt={getLocaleText(locale, 'Preview do clube', 'Club preview')}
                 className="mt-3 h-40 w-full rounded-xl object-cover"
               />
             ) : null}
@@ -181,7 +183,7 @@ function ClubsPage({
 
           <div className={adminField}>
             <label className={adminLabel} htmlFor="club-mission">
-              Missão
+              {getLocaleText(locale, 'Missão', 'Mission')}
             </label>
             <textarea
               id="club-mission"
@@ -199,7 +201,7 @@ function ClubsPage({
 
           <div className={adminField}>
             <label className={adminLabel} htmlFor="club-status">
-              Estado
+              {getLocaleText(locale, 'Estado', 'Status')}
             </label>
             <select
               id="club-status"
@@ -212,14 +214,14 @@ function ClubsPage({
                 }))
               }
             >
-              <option value="ativo">Ativo</option>
-              <option value="inativo">Inativo</option>
+              <option value="ativo">{getLocaleText(locale, 'Ativo', 'Active')}</option>
+              <option value="inativo">{getLocaleText(locale, 'Inativo', 'Inactive')}</option>
             </select>
           </div>
 
           <div className={adminField}>
             <label className={adminLabel} htmlFor="club-registrations">
-              Permitir inscrições
+              {getLocaleText(locale, 'Permitir inscrições', 'Allow registrations')}
             </label>
             <select
               id="club-registrations"
@@ -232,15 +234,15 @@ function ClubsPage({
                 }))
               }
             >
-              <option value="sim">Sim</option>
-              <option value="Não">Não</option>
+              <option value="sim">{getLocaleText(locale, 'Sim', 'Yes')}</option>
+              <option value="Não">{getLocaleText(locale, 'Não', 'No')}</option>
             </select>
           </div>
         </div>
 
         <div className={adminFieldSpaced}>
           <label className={adminLabel} htmlFor="club-description">
-            Descrição
+            {getLocaleText(locale, 'Descrição', 'Description')}
           </label>
           <textarea
             id="club-description"
@@ -261,20 +263,20 @@ function ClubsPage({
         <div className={adminActions}>
           <button type="submit" className={adminBtnPrimary} disabled={isSavingClub}>
             {isSavingClub
-              ? 'A guardar...'
+              ? getLocaleText(locale, 'A guardar...', 'Saving...')
               : editingClubId
-                ? 'Guardar alterações'
-                : 'Criar clube'}
+                ? getLocaleText(locale, 'Guardar alterações', 'Save changes')
+                : getLocaleText(locale, 'Criar clube', 'Create club')}
           </button>
           <button type="button" onClick={resetClubForm} className={adminBtnSecondary}>
-            Limpar
+            {getLocaleText(locale, 'Limpar', 'Clear')}
           </button>
         </div>
 
         {editingClubId ? (
           <div className={adminFieldSpaced}>
             <label className={adminLabel} htmlFor="club-user-select">
-              Associar utilizador sem clube
+              {getLocaleText(locale, 'Associar utilizador sem clube', 'Associate user without club')}
             </label>
             <div className={adminActions}>
               <select
@@ -283,7 +285,7 @@ function ClubsPage({
                 value={selectedClubUserId}
                 onChange={(event) => setSelectedClubUserId(event.target.value)}
               >
-                <option value="">Seleciona um utilizador</option>
+                <option value="">{getLocaleText(locale, 'Seleciona um utilizador', 'Select a user')}</option>
                 {usersWithoutClub.map((user) => (
                   <option key={user.id} value={user.id}>
                     {user.name} · {user.email}
@@ -296,47 +298,47 @@ function ClubsPage({
                 disabled={!selectedClubUserId || isAssigningClubUser}
                 onClick={handleAssignUserToClub}
               >
-                {isAssigningClubUser ? 'A associar...' : 'Associar ao clube'}
+                {isAssigningClubUser ? getLocaleText(locale, 'A associar...', 'Associating...') : getLocaleText(locale, 'Associar ao clube', 'Associate with club')}
               </button>
             </div>
             {usersWithoutClub.length === 0 ? (
-              <p className={adminInfo}>Não existem utilizadores ativos sem clube.</p>
+              <p className={adminInfo}>{getLocaleText(locale, 'Não existem utilizadores ativos sem clube.', 'There are no active users without a club.')}</p>
             ) : null}
           </div>
         ) : (
-          <p className={adminInfo}>Guarda o clube primeiro para poderes associar utilizadores.</p>
+          <p className={adminInfo}>{getLocaleText(locale, 'Guarda o clube primeiro para poderes associar utilizadores.', 'Save the club first so you can associate users.')}</p>
         )}
       </form>
 
       <section className={adminPanelCard}>
-        <h2 className={blockTitle}>Clubes registados</h2>
+        <h2 className={blockTitle}>{getLocaleText(locale, 'Clubes registados', 'Registered clubs')}</h2>
         <p className={blockText}>
-          Lista de clubes disponiveis para futura associacao a utilizadores e conteudos.
+          {getLocaleText(locale, 'Lista de clubes disponiveis para futura associacao a utilizadores e conteudos.', 'List of clubs available for future association with users and content.')}
         </p>
 
         <div className={adminStatsGrid}>
           <div className={adminStatCard}>
             <p className={adminStatValue}>{filteredClubs.length}</p>
-            <p className={adminStatLabel}>Total</p>
+            <p className={adminStatLabel}>{getLocaleText(locale, 'Total', 'Total')}</p>
           </div>
           <div className={adminStatCard}>
             <p className={adminStatValue}>
               {filteredClubs.filter((club) => club.is_active).length}
             </p>
-            <p className={adminStatLabel}>Ativos</p>
+            <p className={adminStatLabel}>{getLocaleText(locale, 'Ativos', 'Active')}</p>
           </div>
           <div className={adminStatCard}>
             <p className={adminStatValue}>
               {filteredClubs.filter((club) => !club.is_active).length}
             </p>
-            <p className={adminStatLabel}>Inativos</p>
+            <p className={adminStatLabel}>{getLocaleText(locale, 'Inativos', 'Inactive')}</p>
           </div>
         </div>
 
         <div className={adminFormGridSpaced}>
           <div className={adminField}>
             <label className={adminLabel} htmlFor="club-date-from">
-              Criados desde
+              {getLocaleText(locale, 'Criados desde', 'Created from')}
             </label>
             <input
               id="club-date-from"
@@ -348,7 +350,7 @@ function ClubsPage({
           </div>
           <div className={adminField}>
             <label className={adminLabel} htmlFor="club-date-to">
-              Criados até
+              {getLocaleText(locale, 'Criados até', 'Created until')}
             </label>
             <input
               id="club-date-to"
@@ -360,7 +362,7 @@ function ClubsPage({
           </div>
           <div className={adminField}>
             <label className={adminLabel} htmlFor="club-order">
-              Ordenar por
+              {getLocaleText(locale, 'Ordenar por', 'Sort by')}
             </label>
             <select
               id="club-order"
@@ -368,20 +370,20 @@ function ClubsPage({
               value={clubOrder}
               onChange={(event) => setClubOrder(event.target.value)}
             >
-              <option value="active_name">Ativos primeiro</option>
-              <option value="newest">Mais recentes</option>
-              <option value="oldest">Mais antigos</option>
-              <option value="name_asc">Nome A-Z</option>
-              <option value="name_desc">Nome Z-A</option>
-              <option value="registrations_open">Inscrições abertas primeiro</option>
+              <option value="active_name">{getLocaleText(locale, 'Ativos primeiro', 'Active first')}</option>
+              <option value="newest">{getLocaleText(locale, 'Mais recentes', 'Newest')}</option>
+              <option value="oldest">{getLocaleText(locale, 'Mais antigos', 'Oldest')}</option>
+              <option value="name_asc">{getLocaleText(locale, 'Nome A-Z', 'Name A-Z')}</option>
+              <option value="name_desc">{getLocaleText(locale, 'Nome Z-A', 'Name Z-A')}</option>
+              <option value="registrations_open">{getLocaleText(locale, 'Inscrições abertas primeiro', 'Open registrations first')}</option>
             </select>
           </div>
         </div>
 
         <div className={adminUserList}>
-          {isLoadingClubs ? <p className={adminInfo}>A carregar clubes...</p> : null}
+          {isLoadingClubs ? <p className={adminInfo}>{getLocaleText(locale, 'A carregar clubes...', 'Loading clubs...')}</p> : null}
           {!isLoadingClubs && filteredClubs.length === 0 ? (
-            <p className={adminInfo}>Não existem clubes registados.</p>
+            <p className={adminInfo}>{getLocaleText(locale, 'Não existem clubes registados.', 'There are no registered clubs.')}</p>
           ) : null}
           {filteredClubs.map((club) => (
             <article key={club.id} className={adminUserItem}>
@@ -394,13 +396,13 @@ function ClubsPage({
                   />
                 ) : null}
                 <h3 className={adminUserName}>{club.name}</h3>
-                <p className={adminUserEmail}>{club.mission || 'Sem missão definida'}</p>
-                <p className={adminUserMeta}>{club.description || 'Sem descrição'}</p>
+                <p className={adminUserEmail}>{club.mission || getLocaleText(locale, 'Sem missão definida', 'No mission defined')}</p>
+                <p className={adminUserMeta}>{club.description || getLocaleText(locale, 'Sem descrição', 'No description')}</p>
                 <p className={adminUserMeta}>
-                  Inscricoes: {club.enable_registrations ? 'Permitidas' : 'Desativadas'}
+                  {getLocaleText(locale, 'Inscrições:', 'Registrations:')} {club.enable_registrations ? getLocaleText(locale, 'Permitidas', 'Allowed') : getLocaleText(locale, 'Desativadas', 'Disabled')}
                 </p>
                 <p className={adminUserMeta}>
-                  Criado em: {formatAdminDateTime(club.created_at || '')}
+                  {getLocaleText(locale, 'Criado em:', 'Created at:')} {formatAdminDateTime(club.created_at || '')}
                 </p>
               </div>
               <div className={adminListTools}>
@@ -409,10 +411,10 @@ function ClubsPage({
                     club.is_active ? adminUserStatusActive : adminUserStatusInactive
                   }`}
                 >
-                  {club.is_active ? 'Ativo' : 'Inativo'}
+                  {club.is_active ? getLocaleText(locale, 'Ativo', 'Active') : getLocaleText(locale, 'Inativo', 'Inactive')}
                 </span>
                 <button type="button" className={adminBtnEdit} onClick={() => handleEditClub(club)}>
-                  Editar
+                  {getLocaleText(locale, 'Editar', 'Edit')}
                 </button>
                 <button
                   type="button"
@@ -421,10 +423,10 @@ function ClubsPage({
                   onClick={() => void handleToggleClubActive(club.id, !club.is_active)}
                 >
                   {changingClubStatusId === club.id
-                    ? 'A atualizar...'
+                    ? getLocaleText(locale, 'A atualizar...', 'Updating...')
                     : club.is_active
-                      ? 'Desativar'
-                      : 'Ativar'}
+                      ? getLocaleText(locale, 'Desativar', 'Deactivate')
+                      : getLocaleText(locale, 'Ativar', 'Activate')}
                 </button>
                 <button
                   type="button"
@@ -432,7 +434,7 @@ function ClubsPage({
                   disabled={deletingClubId === club.id}
                   onClick={() => handleDeleteClub(club.id)}
                 >
-                  {deletingClubId === club.id ? 'A apagar...' : 'Apagar'}
+                  {deletingClubId === club.id ? getLocaleText(locale, 'A apagar...', 'Deleting...') : getLocaleText(locale, 'Apagar', 'Delete')}
                 </button>
               </div>
             </article>
@@ -442,15 +444,14 @@ function ClubsPage({
 
       {editingClubId ? (
         <section className={adminPanelCard}>
-          <h2 className={blockTitle}>Utilizadores deste clube</h2>
+          <h2 className={blockTitle}>{getLocaleText(locale, 'Utilizadores deste clube', 'Users in this club')}</h2>
           <p className={blockText}>
-            Aqui podes ver quem pertence ao clube em edição e remover a associação se
-            necessário.
+            {getLocaleText(locale, 'Aqui podes ver quem pertence ao clube em edição e remover a associação se necessário.', 'Here you can see who belongs to the club being edited and remove the association if needed.')}
           </p>
 
           <div className={adminUserList}>
             {clubMembers.length === 0 ? (
-              <p className={adminInfo}>Ainda não existem utilizadores associados.</p>
+              <p className={adminInfo}>{getLocaleText(locale, 'Ainda não existem utilizadores associados.', 'There are no associated users yet.')}</p>
             ) : null}
             {clubMembers.map((user) => (
               <article key={user.id} className={adminUserItem}>
@@ -466,7 +467,7 @@ function ClubsPage({
                     disabled={removingClubUserId === user.id}
                     onClick={() => handleRemoveUserFromClub(user.id)}
                   >
-                    {removingClubUserId === user.id ? 'A remover...' : 'Remover do clube'}
+                    {removingClubUserId === user.id ? getLocaleText(locale, 'A remover...', 'Removing...') : getLocaleText(locale, 'Remover do clube', 'Remove from club')}
                   </button>
                 </div>
               </article>

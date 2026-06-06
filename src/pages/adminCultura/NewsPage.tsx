@@ -40,6 +40,7 @@ import {
   InfoCulturaNewsStatus,
   resolveInfoCulturaAssetUrl,
 } from '../../api/infoculturaApi';
+import { getLocaleText, useLocale } from '../../i18n/locale';
 
 type AdminHeroStat = { label: string; value: string | number };
 
@@ -154,12 +155,13 @@ function NewsPage({
   isLoadingNews,
   toggleSelectedId,
 }: NewsPageProps) {
+  const { locale } = useLocale();
   return (
     <div className="space-y-6">
       <AdminPageHero
         icon={Newspaper}
-        title="Notícias"
-        description="Workflow editorial, publicação e acompanhamento das Notícias por clube."
+        title={getLocaleText(locale, 'Notícias', 'News')}
+        description={getLocaleText(locale, 'Workflow editorial, publicação e acompanhamento das Notícias por clube.', 'Editorial workflow, publishing and monitoring of news by club.')}
         tone="blue"
         stats={newsOverviewStats}
       />
@@ -167,15 +169,15 @@ function NewsPage({
       {showNewsForm ? (
         <form id="news-form" onSubmit={handleSaveNews} className={`${adminPanelForm} max-w-none`}>
           <div className="border-b border-slate-100 pb-4">
-            <h2 className={blockTitle}>{editingNewsId ? 'Editar Notícia' : 'Nova Notícia'}</h2>
-            <p className={blockText}>Publica novidades de cada clube e controla o respetivo estado.</p>
+            <h2 className={blockTitle}>{editingNewsId ? getLocaleText(locale, 'Editar Notícia', 'Edit News') : getLocaleText(locale, 'Nova Notícia', 'New News')}</h2>
+            <p className={blockText}>{getLocaleText(locale, 'Publica novidades de cada clube e controla o respetivo estado.', 'Publish updates from each club and control their status.')}</p>
           </div>
 
           <div className={adminFormGridSpaced}>
             {canManageUsers ? (
               <div className={adminField}>
                 <label className={adminLabel} htmlFor="news-club-id">
-                  Clube
+                  {getLocaleText(locale, 'Clube', 'Club')}
                 </label>
                 <select
                   id="news-club-id"
@@ -185,7 +187,7 @@ function NewsPage({
                     setNewsForm((prev) => ({ ...prev, club_id: event.target.value }))
                   }
                 >
-                  <option value="">Seleciona um clube</option>
+                  <option value="">{getLocaleText(locale, 'Seleciona um clube', 'Select a club')}</option>
                   {clubs.map((club) => (
                     <option key={club.id} value={club.id}>
                       {club.name}
@@ -197,7 +199,7 @@ function NewsPage({
 
             <div className={adminField}>
               <label className={adminLabel} htmlFor="news-title">
-                Título
+                {getLocaleText(locale, 'Título', 'Title')}
               </label>
               <input
                 id="news-title"
@@ -211,7 +213,7 @@ function NewsPage({
 
             <div className={adminField}>
               <label className={adminLabel} htmlFor="news-status">
-                Estado
+                {getLocaleText(locale, 'Estado', 'Status')}
               </label>
               <select
                 id="news-status"
@@ -224,7 +226,7 @@ function NewsPage({
                   }))
                 }
               >
-                {isLoadingNewsStatuses ? <option value="">A carregar estados...</option> : null}
+                {isLoadingNewsStatuses ? <option value="">{getLocaleText(locale, 'A carregar estados...', 'Loading statuses...')}</option> : null}
                 {availableNewsStatuses.map((status) => (
                   <option key={status.id} value={status.name}>
                     {getWorkflowStatusLabel(status.name)}
@@ -233,14 +235,14 @@ function NewsPage({
               </select>
               <p className={blockText}>
                 {canManageUsers
-                  ? 'O superadmin pode publicar ou arquivar diretamente.'
-                  : 'O club_admin trabalha em rascunho ou envia para revisão.'}
+                  ? getLocaleText(locale, 'O superadmin pode publicar ou arquivar diretamente.', 'The superadmin can publish or archive directly.')
+                  : getLocaleText(locale, 'O club_admin trabalha em rascunho ou envia para revisão.', 'The club admin works in draft mode or sends items for review.')}
               </p>
             </div>
 
             <div className={adminField}>
               <label className={adminLabel} htmlFor="news-published-at">
-                Publicado em
+                {getLocaleText(locale, 'Publicado em', 'Published at')}
               </label>
               <input
                 id="news-published-at"
@@ -252,14 +254,14 @@ function NewsPage({
                 }
               />
               <p className={blockText}>
-                Escolhe a data/hora de publicação. Para publicar imediatamente, usa "Publicar agora"; para agendar, escolhe um momento futuro e clica em "Agendar".
+                {getLocaleText(locale, 'Escolhe a data/hora de publicação. Para publicar imediatamente, usa "Publicar agora"; para agendar, escolhe um momento futuro e clica em "Agendar".', 'Choose the publication date/time. To publish immediately, use "Publish now"; to schedule, choose a future time and click "Schedule".')}
               </p>
             </div>
           </div>
 
           <div className={adminFieldSpaced}>
             <label className={adminLabel} htmlFor="news-summary">
-              Resumo
+              {getLocaleText(locale, 'Resumo', 'Summary')}
             </label>
             <textarea
               id="news-summary"
@@ -274,7 +276,7 @@ function NewsPage({
 
           <div className={adminFieldSpaced}>
             <label className={adminLabel} htmlFor="news-image">
-              Imagem
+              {getLocaleText(locale, 'Imagem', 'Image')}
             </label>
             <input
               id="news-image"
@@ -289,15 +291,15 @@ function NewsPage({
             />
             <p className={blockText}>
               {isUploadingNewsImage
-                ? 'A carregar imagem...'
+                ? getLocaleText(locale, 'A carregar imagem...', 'Uploading image...')
                 : newsForm.image
-                  ? 'Imagem carregada com sucesso.'
-                  : 'Seleciona uma imagem PNG ou JPG para a notícia.'}
+                  ? getLocaleText(locale, 'Imagem carregada com sucesso.', 'Image uploaded successfully.')
+                  : getLocaleText(locale, 'Seleciona uma imagem PNG ou JPG para a notícia.', 'Select a PNG or JPG image for the news item.')}
             </p>
             {newsForm.image ? (
               <img
                 src={resolveInfoCulturaAssetUrl(newsForm.image)}
-                alt="Preview da Notícia"
+                alt={getLocaleText(locale, 'Preview da Notícia', 'News preview')}
                 className="mt-3 h-40 w-full rounded-xl object-cover"
               />
             ) : null}
@@ -305,7 +307,7 @@ function NewsPage({
 
           <div className={adminFieldSpaced}>
             <label className={adminLabel} htmlFor="news-content">
-              Conteúdo
+              {getLocaleText(locale, 'Conteúdo', 'Content')}
             </label>
             <textarea
               id="news-content"
@@ -322,7 +324,7 @@ function NewsPage({
 
           <div className={adminActions}>
             <button type="submit" className={adminBtnPrimary} disabled={isSavingNews}>
-              {isSavingNews ? 'A guardar...' : editingNewsId ? 'Atualizar' : 'Salvar'}
+              {isSavingNews ? getLocaleText(locale, 'A guardar...', 'Saving...') : editingNewsId ? getLocaleText(locale, 'Atualizar', 'Update') : getLocaleText(locale, 'Guardar', 'Save')}
             </button>
             <button
               type="submit"
@@ -331,7 +333,7 @@ function NewsPage({
               className={adminBtnSecondary}
               disabled={isSavingNews}
             >
-              Publicar agora
+              {getLocaleText(locale, 'Publicar agora', 'Publish now')}
             </button>
             <button
               type="submit"
@@ -340,10 +342,10 @@ function NewsPage({
               className={adminBtnSecondary}
               disabled={isSavingNews}
             >
-              Agendar
+              {getLocaleText(locale, 'Agendar', 'Schedule')}
             </button>
             <button type="button" onClick={resetNewsForm} className={adminBtnSecondary}>
-              Limpar
+              {getLocaleText(locale, 'Limpar', 'Clear')}
             </button>
           </div>
         </form>
@@ -353,13 +355,13 @@ function NewsPage({
         <section id="news-list" className={adminPanelCard}>
           <div className={adminHeaderRow}>
             <div>
-              <h2 className={blockTitle}>Notícias registadas</h2>
-              <p className={blockText}>Lista das Notícias criadas no InfoCultura.</p>
+              <h2 className={blockTitle}>{getLocaleText(locale, 'Notícias registadas', 'Registered news')}</h2>
+              <p className={blockText}>{getLocaleText(locale, 'Lista das Notícias criadas no InfoCultura.', 'List of news created in InfoCultura.')}</p>
             </div>
             {canManageUsers ? (
               <div className={adminField}>
                 <label className={adminLabel} htmlFor="news-club-filter">
-                  Filtrar por clube
+                  {getLocaleText(locale, 'Filtrar por clube', 'Filter by club')}
                 </label>
                 <select
                   id="news-club-filter"
@@ -367,7 +369,7 @@ function NewsPage({
                   value={newsClubFilter}
                   onChange={(event) => setNewsClubFilter(event.target.value)}
                 >
-                  <option value="all">Todos os clubes</option>
+                  <option value="all">{getLocaleText(locale, 'Todos os clubes', 'All clubs')}</option>
                   {clubs.map((club) => (
                     <option key={club.id} value={club.id}>
                       {club.name}
@@ -378,7 +380,7 @@ function NewsPage({
             ) : null}
             <div className={adminField}>
               <label className={adminLabel} htmlFor="news-status-filter">
-                Estado editorial
+                {getLocaleText(locale, 'Estado editorial', 'Editorial status')}
               </label>
               <select
                 id="news-status-filter"
@@ -386,7 +388,7 @@ function NewsPage({
                 value={newsStatusFilter}
                 onChange={(event) => setNewsStatusFilter(event.target.value)}
               >
-                <option value="all">Todos os estados</option>
+                <option value="all">{getLocaleText(locale, 'Todos os estados', 'All statuses')}</option>
                 {newsStatuses.map((status) => (
                   <option key={status.id} value={normalizeWorkflowStatus(status.name)}>
                     {getWorkflowStatusLabel(status.name)}
@@ -402,19 +404,19 @@ function NewsPage({
             <form onSubmit={handleApplyNewsSearch} className={adminPanelForm}>
               <div className={adminField}>
                 <label className={adminLabel} htmlFor="news-search">
-                  Pesquisar Notícias
+                  {getLocaleText(locale, 'Pesquisar Notícias', 'Search News')}
                 </label>
                 <input
                   id="news-search"
                   className={adminInput}
                   value={newsSearchInput}
                   onChange={(event) => setNewsSearchInput(event.target.value)}
-                  placeholder="Titulo, resumo, conteúdo ou clube"
+                  placeholder={getLocaleText(locale, 'Titulo, resumo, conteúdo ou clube', 'Title, summary, content or club')}
                 />
               </div>
               <div className={adminActions}>
                 <button type="submit" className={adminBtnPrimary}>
-                  Pesquisar
+                  {getLocaleText(locale, 'Pesquisar', 'Search')}
                 </button>
                 <button
                   type="button"
@@ -425,7 +427,7 @@ function NewsPage({
                     setNewsPage(1);
                   }}
                 >
-                  Limpar
+                  {getLocaleText(locale, 'Limpar', 'Clear')}
                 </button>
               </div>
             </form>
@@ -435,7 +437,7 @@ function NewsPage({
           <div className={adminFormGridSpaced}>
             <div className={adminField}>
               <label className={adminLabel} htmlFor="news-date-from">
-                Criadas desde
+                {getLocaleText(locale, 'Criadas desde', 'Created from')}
               </label>
               <input
                 id="news-date-from"
@@ -447,7 +449,7 @@ function NewsPage({
             </div>
             <div className={adminField}>
               <label className={adminLabel} htmlFor="news-date-to">
-                Criadas até
+                {getLocaleText(locale, 'Criadas até', 'Created until')}
               </label>
               <input
                 id="news-date-to"
@@ -459,7 +461,7 @@ function NewsPage({
             </div>
             <div className={adminField}>
               <label className={adminLabel} htmlFor="news-order">
-                Ordenar por
+                {getLocaleText(locale, 'Ordenar por', 'Sort by')}
               </label>
               <select
                 id="news-order"
@@ -467,14 +469,14 @@ function NewsPage({
                 value={newsOrder}
                 onChange={(event) => setNewsOrder(event.target.value)}
               >
-                <option value="newest">Mais recentes</option>
-                <option value="oldest">Mais antigas</option>
-                <option value="title_asc">Titulo A-Z</option>
-                <option value="title_desc">Titulo Z-A</option>
-                <option value="club_asc">Clube A-Z</option>
-                <option value="club_desc">Clube Z-A</option>
-                <option value="status_asc">Estado A-Z</option>
-                <option value="status_desc">Estado Z-A</option>
+                <option value="newest">{getLocaleText(locale, 'Mais recentes', 'Newest')}</option>
+                <option value="oldest">{getLocaleText(locale, 'Mais antigas', 'Oldest')}</option>
+                <option value="title_asc">{getLocaleText(locale, 'Titulo A-Z', 'Title A-Z')}</option>
+                <option value="title_desc">{getLocaleText(locale, 'Titulo Z-A', 'Title Z-A')}</option>
+                <option value="club_asc">{getLocaleText(locale, 'Clube A-Z', 'Club A-Z')}</option>
+                <option value="club_desc">{getLocaleText(locale, 'Clube Z-A', 'Club Z-A')}</option>
+                <option value="status_asc">{getLocaleText(locale, 'Estado A-Z', 'Status A-Z')}</option>
+                <option value="status_desc">{getLocaleText(locale, 'Estado Z-A', 'Status Z-A')}</option>
               </select>
             </div>
           </div>
@@ -493,8 +495,8 @@ function NewsPage({
               disabled={sortedNews.length === 0}
             >
               {selectedNewsIds.length === sortedNews.length && sortedNews.length > 0
-                ? 'Limpar seleção'
-                : 'Selecionar página'}
+                ? getLocaleText(locale, 'Limpar seleção', 'Clear selection')
+                : getLocaleText(locale, 'Selecionar página', 'Select page')}
             </button>
             <select
               className={adminInput}
@@ -513,7 +515,7 @@ function NewsPage({
               disabled={selectedNewsIds.length === 0 || isApplyingBulkNews}
               onClick={() => void handleApplyBulkNewsStatus()}
             >
-              {isApplyingBulkNews ? 'A aplicar...' : 'Aplicar em lote'}
+              {isApplyingBulkNews ? getLocaleText(locale, 'A aplicar...', 'Applying...') : getLocaleText(locale, 'Aplicar em lote', 'Apply in bulk')}
             </button>
             <button
               type="button"
@@ -521,14 +523,14 @@ function NewsPage({
               disabled={selectedNewsIds.length === 0 || isDeletingBulkNews}
               onClick={() => void handleBulkDeleteNews()}
             >
-              {isDeletingBulkNews ? 'A apagar...' : 'Apagar selecionadas'}
+              {isDeletingBulkNews ? getLocaleText(locale, 'A apagar...', 'Deleting...') : getLocaleText(locale, 'Apagar selecionadas', 'Delete selected')}
             </button>
           </div>
 
           <div className={adminList}>
-            {isLoadingNews ? <p className={adminInfo}>A carregar Notícias...</p> : null}
+            {isLoadingNews ? <p className={adminInfo}>{getLocaleText(locale, 'A carregar Notícias...', 'Loading news...')}</p> : null}
             {!isLoadingNews && sortedNews.length === 0 ? (
-              <p className={adminInfo}>Não existem Notícias para o filtro atual.</p>
+              <p className={adminInfo}>{getLocaleText(locale, 'Não existem Notícias para o filtro atual.', 'There is no news for the current filter.')}</p>
             ) : null}
             {sortedNews.map((item) => (
               <article key={item.id} className={adminListItem}>
@@ -541,7 +543,7 @@ function NewsPage({
                         checked={selectedNewsIds.includes(item.id)}
                         onChange={() => toggleSelectedId(setSelectedNewsIds, item.id)}
                       />
-                      Selecionar
+                      {getLocaleText(locale, 'Selecionar', 'Select')}
                     </label>
 
                     <h3 className={`${adminListTitle} break-words leading-snug`}>{item.title}</h3>
@@ -555,7 +557,7 @@ function NewsPage({
 
                   <div className={`${adminListTools} mt-0 shrink-0`}>
                     <button type="button" className={adminBtnEdit} onClick={() => handleEditNews(item)}>
-                      Editar
+                      {getLocaleText(locale, 'Editar', 'Edit')}
                     </button>
                     <button
                       type="button"
@@ -564,10 +566,10 @@ function NewsPage({
                       onClick={() => void handleToggleNewsActive(item.id, !item.is_active)}
                     >
                       {changingNewsStatusId === item.id
-                        ? 'A atualizar...'
+                        ? getLocaleText(locale, 'A atualizar...', 'Updating...')
                         : item.is_active
-                          ? 'Desativar'
-                          : 'Ativar'}
+                          ? getLocaleText(locale, 'Desativar', 'Deactivate')
+                          : getLocaleText(locale, 'Ativar', 'Activate')}
                     </button>
                     <button
                       type="button"
@@ -575,7 +577,7 @@ function NewsPage({
                       disabled={deletingNewsId === item.id}
                       onClick={() => handleDeleteNews(item.id)}
                     >
-                      {deletingNewsId === item.id ? 'A apagar...' : 'Apagar'}
+                      {deletingNewsId === item.id ? getLocaleText(locale, 'A apagar...', 'Deleting...') : getLocaleText(locale, 'Apagar', 'Delete')}
                     </button>
                   </div>
                 </div>
@@ -602,7 +604,7 @@ function NewsPage({
           {!isLoadingNews ? (
             <div className={`${adminActions} mt-6`}>
               <p className={adminInfo}>
-                {newsTotal} Notícia(s) · página {newsPage} de {newsTotalPages || 1}
+                {newsTotal} {getLocaleText(locale, 'Notícia(s)', 'News item(s)')} · {getLocaleText(locale, 'página', 'page')} {newsPage} {getLocaleText(locale, 'de', 'of')} {newsTotalPages || 1}
               </p>
               <button
                 type="button"
@@ -610,7 +612,7 @@ function NewsPage({
                 disabled={newsPage <= 1}
                 onClick={() => setNewsPage((prev) => Math.max(1, prev - 1))}
               >
-                Anterior
+                {getLocaleText(locale, 'Anterior', 'Previous')}
               </button>
               <button
                 type="button"
@@ -618,7 +620,7 @@ function NewsPage({
                 disabled={newsTotalPages === 0 || newsPage >= newsTotalPages}
                 onClick={() => setNewsPage((prev) => prev + 1)}
               >
-                Seguinte
+                {getLocaleText(locale, 'Seguinte', 'Next')}
               </button>
             </div>
           ) : null}

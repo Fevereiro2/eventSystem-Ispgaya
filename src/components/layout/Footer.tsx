@@ -75,6 +75,7 @@ function Footer() {
   const text = {
     follow: getLocaleText(locale, 'Segue-nos', 'Follow us'),
     ensino: getLocaleText(locale, 'Ensino', 'Study'),
+    hub: getLocaleText(locale, 'ISPGAYA HUB', 'ISPGAYA HUB'),
     interest: getLocaleText(locale, 'Links de Interesse', 'Useful Links'),
     contacts: getLocaleText(locale, 'Contactos', 'Contacts'),
     callHint: getLocaleText(
@@ -124,7 +125,7 @@ function Footer() {
           </div>
 
           <div className={footerCol}>
-            <p className={footerTitle}>ISPGAYA HUB</p>
+            <p className={footerTitle}>{text.hub}</p>
             <ul className={footerList}>
               {hubLinks.map((item) => (
                 <li key={item.name} className={footerListItem}>

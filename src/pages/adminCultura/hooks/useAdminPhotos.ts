@@ -1,4 +1,5 @@
 import { useEffect } from 'react';
+import { getLocaleText, useLocale } from '../../../i18n/locale';
 
 import { fetchAdminPhotos, InfoCulturaPhoto } from '../../../api/infoculturaApi';
 
@@ -29,6 +30,7 @@ export function useAdminPhotos({
   setPhotoFormError,
   handleAuthError,
 }: UseAdminPhotosOptions) {
+  const { locale } = useLocale();
   useEffect(() => {
     if (!token) return;
 
@@ -43,7 +45,10 @@ export function useAdminPhotos({
       .catch((error) => {
         if (!isMounted) return;
         if (handleAuthError(error)) return;
-        const message = error instanceof Error ? error.message : 'Não foi possível carregar as fotos.';
+        const message =
+          error instanceof Error
+            ? error.message
+            : getLocaleText(locale, 'Não foi possível carregar as fotos.', 'Could not load the photos.');
         setPhotoFormError(message);
       })
       .finally(() => {
@@ -54,5 +59,5 @@ export function useAdminPhotos({
     return () => {
       isMounted = false;
     };
-  }, [token, setPhotos, setIsLoadingPhotos, setPhotoFormError, handleAuthError]);
+  }, [token, setPhotos, setIsLoadingPhotos, setPhotoFormError, handleAuthError, locale]);
 }

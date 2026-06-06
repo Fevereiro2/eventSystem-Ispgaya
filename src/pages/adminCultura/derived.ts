@@ -28,6 +28,7 @@ import {
   normalizeWorkflowStatus,
   getAdminSectionHref,
 } from './utils.js';
+import { getLocaleText, type Locale } from '../../i18n/locale';
 
 export type AdminOverviewStat = { label: string; value: string | number };
 
@@ -86,31 +87,31 @@ export function getVisibleSectionGroups(visibleSections: typeof adminSections) {
     .filter((group) => group.sections.length > 0);
 }
 
-export function getActivitySectionCopy(activityTab: ActivityTab) {
+export function getActivitySectionCopy(activityTab: ActivityTab, locale: Locale) {
   if (activityTab === 'books') {
     return {
-      label: 'Livros',
-      description: 'Gestão editorial dos livros associados aos clubes.',
+      label: getLocaleText(locale, 'Livros', 'Books'),
+      description: getLocaleText(locale, 'Gestão editorial dos livros associados aos clubes.', 'Editorial management of books associated with clubs.'),
     };
   }
 
   if (activityTab === 'sessions') {
     return {
-      label: 'Sessões',
-      description: 'Planeamento e acompanhamento das sessões de cada clube.',
+      label: getLocaleText(locale, 'Sessões', 'Sessions'),
+      description: getLocaleText(locale, 'Planeamento e acompanhamento das sessões de cada clube.', 'Planning and monitoring of each club session.'),
     };
   }
 
   return {
-    label: 'Eventos',
-    description: 'Programação e workflow editorial dos eventos culturais.',
+    label: getLocaleText(locale, 'Eventos', 'Events'),
+    description: getLocaleText(locale, 'Programação e workflow editorial dos eventos culturais.', 'Programming and editorial workflow for cultural events.'),
   };
 }
 
-export function getNewsPageLinks(editingNewsId: number | null): AdminContextLink[] {
+export function getNewsPageLinks(editingNewsId: number | null, locale: Locale): AdminContextLink[] {
   return [
-    { label: editingNewsId ? 'Editar Noticia' : 'Nova Noticia', href: getNewsRoute('form') },
-    { label: 'Notícias Registadas', href: getNewsRoute('list') },
+    { label: editingNewsId ? getLocaleText(locale, 'Editar Notícia', 'Edit News') : getLocaleText(locale, 'Nova Notícia', 'New News'), href: getNewsRoute('form') },
+    { label: getLocaleText(locale, 'Notícias Registadas', 'Registered News'), href: getNewsRoute('list') },
   ];
 }
 
@@ -118,65 +119,66 @@ export function getActivityPageLinks(
   activityTab: ActivityTab,
   editingBookId: number | null,
   editingSessionId: number | null,
-  editingEventId: number | null
+  editingEventId: number | null,
+  locale: Locale
 ): AdminContextLink[] {
   if (activityTab === 'books') {
     return [
-      { label: editingBookId ? 'Editar Livro' : 'Novo Livro', href: getActivityRoute(activityTab, 'form') },
-      { label: 'Livros Registados', href: getActivityRoute(activityTab, 'list') },
+      { label: editingBookId ? getLocaleText(locale, 'Editar Livro', 'Edit Book') : getLocaleText(locale, 'Novo Livro', 'New Book'), href: getActivityRoute(activityTab, 'form') },
+      { label: getLocaleText(locale, 'Livros Registados', 'Registered Books'), href: getActivityRoute(activityTab, 'list') },
     ];
   }
 
   if (activityTab === 'sessions') {
     return [
-      { label: editingSessionId ? 'Editar Sessao' : 'Nova Sessão', href: getActivityRoute(activityTab, 'form') },
-      { label: 'Sessões Registadas', href: getActivityRoute(activityTab, 'list') },
+      { label: editingSessionId ? getLocaleText(locale, 'Editar Sessão', 'Edit Session') : getLocaleText(locale, 'Nova Sessão', 'New Session'), href: getActivityRoute(activityTab, 'form') },
+      { label: getLocaleText(locale, 'Sessões Registadas', 'Registered Sessions'), href: getActivityRoute(activityTab, 'list') },
     ];
   }
 
   return [
-    { label: editingEventId ? 'Editar Evento' : 'Novo Evento', href: getActivityRoute(activityTab, 'form') },
-    { label: 'Eventos Registados', href: getActivityRoute(activityTab, 'list') },
-    { label: 'Categorias de Eventos', href: getActivityRoute(activityTab, 'categories') },
+    { label: editingEventId ? getLocaleText(locale, 'Editar Evento', 'Edit Event') : getLocaleText(locale, 'Novo Evento', 'New Event'), href: getActivityRoute(activityTab, 'form') },
+    { label: getLocaleText(locale, 'Eventos Registados', 'Registered Events'), href: getActivityRoute(activityTab, 'list') },
+    { label: getLocaleText(locale, 'Categorias de Eventos', 'Event Categories'), href: getActivityRoute(activityTab, 'categories') },
   ];
 }
 
-export function getContentPageLinks(editingId: string | null): AdminContextLink[] {
+export function getContentPageLinks(editingId: string | null, locale: Locale): AdminContextLink[] {
   return [
-    { label: editingId ? 'Editar Conteúdo' : 'Novo Conteúdo', href: getContentRoute('form') },
-    { label: 'Conteúdos Registados', href: getContentRoute('list') },
+    { label: editingId ? getLocaleText(locale, 'Editar Conteúdo', 'Edit Content') : getLocaleText(locale, 'Novo Conteúdo', 'New Content'), href: getContentRoute('form') },
+    { label: getLocaleText(locale, 'Conteúdos Registados', 'Registered Content'), href: getContentRoute('list') },
   ];
 }
 
-export function getPhotoPageLinks(editingId: string | null): AdminContextLink[] {
+export function getPhotoPageLinks(editingId: string | null, locale: Locale): AdminContextLink[] {
   return [
-    { label: editingId ? 'Editar Foto' : 'Nova Foto', href: getPhotoRoute('form') },
-    { label: 'Fotos Registadas', href: getPhotoRoute('list') },
+    { label: editingId ? getLocaleText(locale, 'Editar Foto', 'Edit Photo') : getLocaleText(locale, 'Nova Foto', 'New Photo'), href: getPhotoRoute('form') },
+    { label: getLocaleText(locale, 'Fotos Registadas', 'Registered Photos'), href: getPhotoRoute('list') },
   ];
 }
 
-export function getUserPageLinks(userPage: UserPage | null): AdminContextLink[] {
+export function getUserPageLinks(userPage: UserPage | null, locale: Locale): AdminContextLink[] {
   const links: AdminContextLink[] = [
     {
-      label: userPage?.mode === 'create' ? 'Criar Utilizador' : 'Novo Utilizador',
+      label: userPage?.mode === 'create' ? getLocaleText(locale, 'Criar Utilizador', 'Create User') : getLocaleText(locale, 'Novo Utilizador', 'New User'),
       href: '/infocultura/utilizadores/novo',
     },
     {
-      label: 'Utilizadores Registados',
+      label: getLocaleText(locale, 'Utilizadores Registados', 'Registered Users'),
       href: '/infocultura/utilizadores',
     },
   ];
 
   if (userPage?.mode === 'deactivate') {
     links.push({
-      label: 'Desativar Conta',
+      label: getLocaleText(locale, 'Desativar Conta', 'Deactivate Account'),
       href: `/infocultura/utilizadores/${userPage.userId}/desativar`,
     });
   }
 
   if (userPage?.mode === 'activate') {
     links.push({
-      label: 'Ativar Conta',
+      label: getLocaleText(locale, 'Ativar Conta', 'Activate Account'),
       href: `/infocultura/utilizadores/${userPage.userId}/ativar`,
     });
   }
@@ -184,11 +186,11 @@ export function getUserPageLinks(userPage: UserPage | null): AdminContextLink[] 
   return links;
 }
 
-export function getEventbritePageLinks(): AdminContextLink[] {
+export function getEventbritePageLinks(locale: Locale): AdminContextLink[] {
   return [
-    { label: 'Visão Geral', href: getEventbriteRoute('overview') },
-    { label: 'Salas', href: getEventbriteRoute('venues') },
-    { label: 'Lugares', href: getEventbriteRoute('seating') },
+    { label: getLocaleText(locale, 'Visão Geral', 'Overview'), href: getEventbriteRoute('overview') },
+    { label: getLocaleText(locale, 'Salas', 'Venues'), href: getEventbriteRoute('venues') },
+    { label: getLocaleText(locale, 'Lugares', 'Seating'), href: getEventbriteRoute('seating') },
     { label: 'Tickets', href: getEventbriteRoute('tickets') },
   ];
 }
@@ -244,21 +246,22 @@ export function buildSidebarContextNav(
 }
 
 export function buildDashboardCards(
-  dashboardStats: InfoCulturaDashboardStats | null
+  dashboardStats: InfoCulturaDashboardStats | null,
+  locale: Locale
 ): AdminOverviewStat[] {
   if (!dashboardStats) {
     return [];
   }
 
   return [
-    { label: 'Utilizadores ativos', value: dashboardStats.active_users },
-    { label: 'Notícias publicadas', value: dashboardStats.news_published },
-    { label: 'Notícias em revisão', value: dashboardStats.news_review },
-    { label: 'Eventos em revisão', value: dashboardStats.events_review },
-    { label: 'Livros em destaque', value: dashboardStats.featured_books },
-    { label: 'Sessões próximas', value: dashboardStats.upcoming_sessions },
-    { label: 'Inscrições pendentes', value: dashboardStats.registrations_pending },
-    { label: 'Clubes com inscrições abertas', value: dashboardStats.clubs_with_registrations_open },
+    { label: getLocaleText(locale, 'Utilizadores ativos', 'Active users'), value: dashboardStats.active_users },
+    { label: getLocaleText(locale, 'Notícias publicadas', 'Published news'), value: dashboardStats.news_published },
+    { label: getLocaleText(locale, 'Notícias em revisão', 'News in review'), value: dashboardStats.news_review },
+    { label: getLocaleText(locale, 'Eventos em revisão', 'Events in review'), value: dashboardStats.events_review },
+    { label: getLocaleText(locale, 'Livros em destaque', 'Featured books'), value: dashboardStats.featured_books },
+    { label: getLocaleText(locale, 'Sessões próximas', 'Upcoming sessions'), value: dashboardStats.upcoming_sessions },
+    { label: getLocaleText(locale, 'Inscrições pendentes', 'Pending registrations'), value: dashboardStats.registrations_pending },
+    { label: getLocaleText(locale, 'Clubes com inscrições abertas', 'Clubs with open registrations'), value: dashboardStats.clubs_with_registrations_open },
   ];
 }
 
@@ -267,29 +270,30 @@ export function buildDashboardHighlights(
   activeUsers: number,
   publishedItems: number,
   pendingRegistrations: number,
-  sessionsLength: number
+  sessionsLength: number,
+  locale: Locale
 ): DashboardHighlight[] {
   return [
     {
-      label: 'Utilizadores ativos',
+      label: getLocaleText(locale, 'Utilizadores ativos', 'Active users'),
       value: dashboardStats?.active_users ?? activeUsers,
       tone: 'slate',
       icon: Users,
     },
     {
-      label: 'Notícias publicadas',
+      label: getLocaleText(locale, 'Notícias publicadas', 'Published news'),
       value: dashboardStats?.news_published ?? publishedItems,
       tone: 'amber',
       icon: Newspaper,
     },
     {
-      label: 'Sessões próximas',
+      label: getLocaleText(locale, 'Sessões próximas', 'Upcoming sessions'),
       value: dashboardStats?.upcoming_sessions ?? sessionsLength,
       tone: 'blue',
       icon: CalendarClock,
     },
     {
-      label: 'Inscrições pendentes',
+      label: getLocaleText(locale, 'Inscrições pendentes', 'Pending registrations'),
       value: dashboardStats?.registrations_pending ?? pendingRegistrations,
       tone: 'rose',
       icon: Bell,
@@ -301,7 +305,8 @@ export function buildDashboardAlerts(
   notifications: InfoCulturaAdminNotification[],
   readNotificationIdSet: Set<string>,
   dashboardStats: InfoCulturaDashboardStats | null,
-  pendingRegistrations: number
+  pendingRegistrations: number,
+  locale: Locale
 ): DashboardAlert[] {
   if (notifications.length > 0) {
     return notifications.slice(0, 4).map((notification) => ({
@@ -318,8 +323,12 @@ export function buildDashboardAlerts(
   return [
     {
       id: 'editorial-review',
-      title: 'Revisão editorial',
-      detail: `${dashboardStats?.news_review ?? 0} notícias e ${dashboardStats?.events_review ?? 0} eventos aguardam revisão.`,
+      title: getLocaleText(locale, 'Revisão editorial', 'Editorial review'),
+      detail: getLocaleText(
+        locale,
+        `${dashboardStats?.news_review ?? 0} notícias e ${dashboardStats?.events_review ?? 0} eventos aguardam revisão.`,
+        `${dashboardStats?.news_review ?? 0} news items and ${dashboardStats?.events_review ?? 0} events are waiting for review.`
+      ),
       href: getNewsRoute('list'),
       level: 'warning',
       is_read: false,
@@ -327,8 +336,12 @@ export function buildDashboardAlerts(
     },
     {
       id: 'registrations-pending',
-      title: 'Inscrições por validar',
-      detail: `${dashboardStats?.registrations_pending ?? pendingRegistrations} inscrições pendentes de decisão.`,
+      title: getLocaleText(locale, 'Inscrições por validar', 'Registrations to review'),
+      detail: getLocaleText(
+        locale,
+        `${dashboardStats?.registrations_pending ?? pendingRegistrations} inscrições pendentes de decisão.`,
+        `${dashboardStats?.registrations_pending ?? pendingRegistrations} registrations are awaiting a decision.`
+      ),
       href: getAdminSectionHref('inscricoes'),
       level: 'warning',
       is_read: false,
@@ -336,8 +349,12 @@ export function buildDashboardAlerts(
     },
     {
       id: 'clubs-open',
-      title: 'Clubes com atividade aberta',
-      detail: `${dashboardStats?.clubs_with_registrations_open ?? 0} clubes com inscrições atualmente ativas.`,
+      title: getLocaleText(locale, 'Clubes com atividade aberta', 'Clubs with open activity'),
+      detail: getLocaleText(
+        locale,
+        `${dashboardStats?.clubs_with_registrations_open ?? 0} clubes com inscrições atualmente ativas.`,
+        `${dashboardStats?.clubs_with_registrations_open ?? 0} clubs currently have registrations open.`
+      ),
       href: getAdminSectionHref('clubes'),
       level: 'info',
       is_read: false,
@@ -346,16 +363,16 @@ export function buildDashboardAlerts(
   ];
 }
 
-export function buildDashboardAgenda(dashboardStats: InfoCulturaDashboardStats | null): DashboardAgendaEntry[] {
+export function buildDashboardAgenda(dashboardStats: InfoCulturaDashboardStats | null, locale: Locale): DashboardAgendaEntry[] {
   return [
     dashboardStats?.latest_news
       ? {
-          label: 'Última notícia',
+          label: getLocaleText(locale, 'Última notícia', 'Latest news'),
           title: dashboardStats.latest_news.title,
-          meta: `${dashboardStats.latest_news.club_name || 'Sem clube'} · ${
+          meta: `${dashboardStats.latest_news.club_name || getLocaleText(locale, 'Sem clube', 'No club')} · ${
             dashboardStats.latest_news.status
               ? getWorkflowStatusLabel(dashboardStats.latest_news.status)
-              : 'Sem estado'
+              : getLocaleText(locale, 'Sem estado', 'No status')
           }`,
           date: formatAdminDateTime(dashboardStats.latest_news.date || ''),
           href: getNewsRoute('list'),
@@ -363,18 +380,18 @@ export function buildDashboardAgenda(dashboardStats: InfoCulturaDashboardStats |
       : null,
     dashboardStats?.next_session
       ? {
-          label: 'Próxima sessão',
+          label: getLocaleText(locale, 'Próxima sessão', 'Next session'),
           title: dashboardStats.next_session.title,
-          meta: dashboardStats.next_session.club_name || 'Sem clube',
+          meta: dashboardStats.next_session.club_name || getLocaleText(locale, 'Sem clube', 'No club'),
           date: formatAdminDateTime(dashboardStats.next_session.date || ''),
           href: getActivityRoute('sessions', 'list'),
         }
       : null,
     dashboardStats?.next_event
       ? {
-          label: 'Próximo evento',
+          label: getLocaleText(locale, 'Próximo evento', 'Next event'),
           title: dashboardStats.next_event.title,
-          meta: `${dashboardStats.next_event.club_name || 'Sem clube'}${
+          meta: `${dashboardStats.next_event.club_name || getLocaleText(locale, 'Sem clube', 'No club')}${
             dashboardStats.next_event.status ? ` · ${getWorkflowStatusLabel(dashboardStats.next_event.status)}` : ''
           }`,
           date: formatAdminDateTime(dashboardStats.next_event.date || ''),
@@ -386,30 +403,31 @@ export function buildDashboardAgenda(dashboardStats: InfoCulturaDashboardStats |
 
 export function buildDashboardQuickActions(
   canManageUsers: boolean,
-  defaultActivityHref: string
+  defaultActivityHref: string,
+  locale: Locale
 ): DashboardAction[] {
   const actions: DashboardAction[] = [
     {
-      label: 'Nova notícia',
-      hint: 'Abrir publicação editorial',
+      label: getLocaleText(locale, 'Nova notícia', 'New news'),
+      hint: getLocaleText(locale, 'Abrir publicação editorial', 'Open editorial publication'),
       href: getNewsRoute('list'),
       icon: Newspaper,
     },
     {
-      label: 'Nova atividade',
-      hint: 'Gerir livros, sessões e eventos',
+      label: getLocaleText(locale, 'Nova atividade', 'New activity'),
+      hint: getLocaleText(locale, 'Gerir livros, sessões e eventos', 'Manage books, sessions and events'),
       href: defaultActivityHref,
       icon: CalendarClock,
     },
     {
-      label: 'Conteúdos culturais',
-      hint: 'Atualizar Tuna, Leitura e Teatro',
+      label: getLocaleText(locale, 'Conteúdos culturais', 'Cultural content'),
+      hint: getLocaleText(locale, 'Atualizar Tuna, Leitura e Teatro', 'Update Tuna, Reading and Theatre'),
       href: getAdminSectionHref('conteudos'),
       icon: FilePlus2,
     },
     {
-      label: 'Inscrições',
-      hint: 'Validar pedidos pendentes',
+      label: getLocaleText(locale, 'Inscrições', 'Registrations'),
+      hint: getLocaleText(locale, 'Validar pedidos pendentes', 'Validate pending requests'),
       href: getAdminSectionHref('inscricoes'),
       icon: Bell,
     },
@@ -417,8 +435,8 @@ export function buildDashboardQuickActions(
 
   if (canManageUsers) {
     actions.unshift({
-      label: 'Utilizadores',
-      hint: 'Criar ou editar acessos',
+      label: getLocaleText(locale, 'Utilizadores', 'Users'),
+      hint: getLocaleText(locale, 'Criar ou editar acessos', 'Create or edit access'),
       href: getAdminSectionHref('utilizadores'),
       icon: Users,
     });
@@ -429,37 +447,38 @@ export function buildDashboardQuickActions(
 
 export function buildNotificationOverviewStats(
   notifications: InfoCulturaAdminNotification[],
-  unreadCount: number
+  unreadCount: number,
+  locale: Locale
 ): AdminOverviewStat[] {
   return [
-    { label: 'Total', value: notifications.length },
-    { label: 'Por ler', value: unreadCount },
+    { label: getLocaleText(locale, 'Total', 'Total'), value: notifications.length },
+    { label: getLocaleText(locale, 'Por ler', 'Unread'), value: unreadCount },
     {
-      label: 'Editoriais',
+      label: getLocaleText(locale, 'Editoriais', 'Editorial'),
       value: notifications.filter((notification) => notification.kind === 'editorial').length,
     },
     {
-      label: 'Agenda',
+      label: getLocaleText(locale, 'Agenda', 'Agenda'),
       value: notifications.filter((notification) => notification.kind === 'schedule').length,
     },
   ];
 }
 
-export function buildUserOverviewStats(users: InfoCulturaUser[]): AdminOverviewStat[] {
+export function buildUserOverviewStats(users: InfoCulturaUser[], locale: Locale): AdminOverviewStat[] {
   return [
-    { label: 'Total', value: users.length },
-    { label: 'Ativos', value: users.filter((user) => user.is_active).length },
-    { label: 'Inativos', value: users.filter((user) => !user.is_active).length },
-    { label: 'Club admins', value: users.filter((user) => user.role === 'club_admin').length },
+    { label: getLocaleText(locale, 'Total', 'Total'), value: users.length },
+    { label: getLocaleText(locale, 'Ativos', 'Active'), value: users.filter((user) => user.is_active).length },
+    { label: getLocaleText(locale, 'Inativos', 'Inactive'), value: users.filter((user) => !user.is_active).length },
+    { label: getLocaleText(locale, 'Admins de clube', 'Club admins'), value: users.filter((user) => user.role === 'club_admin').length },
   ];
 }
 
-export function buildClubOverviewStats(clubs: InfoCulturaClub[]): AdminOverviewStat[] {
+export function buildClubOverviewStats(clubs: InfoCulturaClub[], locale: Locale): AdminOverviewStat[] {
   return [
-    { label: 'Total', value: clubs.length },
-    { label: 'Ativos', value: clubs.filter((club) => club.is_active).length },
-    { label: 'Inscrições abertas', value: clubs.filter((club) => club.enable_registrations).length },
-    { label: 'Com imagem', value: clubs.filter((club) => Boolean(club.image)).length },
+    { label: getLocaleText(locale, 'Total', 'Total'), value: clubs.length },
+    { label: getLocaleText(locale, 'Ativos', 'Active'), value: clubs.filter((club) => club.is_active).length },
+    { label: getLocaleText(locale, 'Inscrições abertas', 'Open registrations'), value: clubs.filter((club) => club.enable_registrations).length },
+    { label: getLocaleText(locale, 'Com imagem', 'With image'), value: clubs.filter((club) => Boolean(club.image)).length },
   ];
 }
 

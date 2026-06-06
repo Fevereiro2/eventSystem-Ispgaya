@@ -105,10 +105,10 @@ function DashboardPage({
               {getLocaleText(locale, 'Sessão atual', 'Current Session')}
             </p>
             <p className="mt-2 text-lg font-semibold text-slate-900">
-              {currentUser?.name || (isLoadingUsers ? 'A carregar...' : 'Sem dados')}
+              {currentUser?.name || (isLoadingUsers ? getLocaleText(locale, 'A carregar...', 'Loading...') : getLocaleText(locale, 'Sem dados', 'No data'))}
             </p>
             <p className="mt-1 text-sm text-slate-600">
-              {currentUser ? `${currentUser.email} · ${currentUser.role}` : 'InfoCultura'}
+              {currentUser ? `${currentUser.email} · ${currentUser.role}` : getLocaleText(locale, 'InfoCultura', 'InfoCultura')}
             </p>
             {currentUser ? (
               <span

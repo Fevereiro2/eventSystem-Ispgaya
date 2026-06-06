@@ -364,11 +364,11 @@ function LaboratorioCultural() {
                 </p>
 
 	                <div className="mt-7 flex flex-wrap items-center gap-4">
-	                  <Link to="/laboratorio-cultural/roadmap" className={adminBtnSecondary}>
+                  <Link to="/laboratorio-cultural/roadmap" className={adminBtnSecondary}>
                     {getLocaleText(locale, 'Abrir página', 'Open page')}
                   </Link>
                   <span className="text-sm text-slate-500">
-                    {getLocaleText(locale, ' ', 'Quick read')}
+                    {getLocaleText(locale, 'Leitura rápida', 'Quick read')}
                   </span>
                 </div>
               </article>

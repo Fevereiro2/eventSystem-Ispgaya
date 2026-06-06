@@ -1,4 +1,5 @@
 import { useEffect } from 'react';
+import { getLocaleText, useLocale } from '../../../i18n/locale';
 
 import {
   InfoCulturaNews,
@@ -52,6 +53,7 @@ export function useAdminNews({
   handleAuthError,
   pageSize,
 }: UseAdminNewsOptions) {
+  const { locale } = useLocale();
   useEffect(() => {
     if (!token || !currentUser || activeSection !== 'noticias') {
       return;
@@ -90,7 +92,9 @@ export function useAdminNews({
         if (!isMounted) return;
         if (handleAuthError(error)) return;
         const message =
-          error instanceof Error ? error.message : 'Nao foi possivel carregar as noticias.';
+          error instanceof Error
+            ? error.message
+            : getLocaleText(locale, 'Nao foi possivel carregar as noticias.', 'Could not load the news.');
         setNewsError(message);
       })
       .finally(() => {
@@ -114,5 +118,6 @@ export function useAdminNews({
     newsDateFrom,
     newsDateTo,
     newsPage,
+    locale,
   ]);
 }

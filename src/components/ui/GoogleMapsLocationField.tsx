@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 
 import { adminInput, blockText } from '../../styles/ui';
 import { hasGoogleMapsApiKey, loadGoogleMapsPlacesApi } from '../../utils/googleMaps';
+import { getLocaleText, useLocale } from '../../i18n/locale';
 
 type PlaceAddressComponent = {
   long_name: string;
@@ -49,6 +50,7 @@ function GoogleMapsLocationField({
   value,
   citySuggestions = [],
 }: GoogleMapsLocationFieldProps) {
+  const { locale } = useLocale();
   const inputRef = useRef<HTMLInputElement | null>(null);
   const autocompleteRef = useRef<AutocompleteLike | null>(null);
   const [mapsStatus, setMapsStatus] = useState<'idle' | 'ready' | 'error'>('idle');
@@ -133,7 +135,7 @@ function GoogleMapsLocationField({
                 setFilteredCities(citySuggestions);
               }
             }}
-            placeholder="Pesquisar cidade..."
+            placeholder={getLocaleText(locale, 'Pesquisar cidade...', 'Search city...')}
           />
           <datalist id={`${inputId}-city-suggestions`}>
             {filteredCities.map((suggestion) => (
@@ -149,7 +151,7 @@ function GoogleMapsLocationField({
         list={suggestions.length > 0 ? datalistId : undefined}
         value={value}
         onChange={(event) => onLocationChange(event.target.value)}
-        placeholder={label || 'Pesquisar local no Google Maps'}
+        placeholder={label || getLocaleText(locale, 'Pesquisar local no Google Maps', 'Search location on Google Maps')}
       />
       {suggestions.length > 0 ? (
         <datalist id={datalistId}>
@@ -159,7 +161,7 @@ function GoogleMapsLocationField({
         </datalist>
       ) : null}
       {mapsStatus === 'ready' ? (
-        <p className={blockText}>Autocomplete Google Maps ativo e dropdown com locais já usados.</p>
+        <p className={blockText}>{getLocaleText(locale, 'Autocomplete Google Maps ativo e dropdown com locais já usados.', 'Google Maps autocomplete is active with a dropdown of previously used locations.')}</p>
       ) : null}
 
     </div>

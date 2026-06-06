@@ -1,4 +1,5 @@
 import { useEffect } from 'react';
+import { getLocaleText, useLocale } from '../../../i18n/locale';
 
 import {
   InfoCulturaBook,
@@ -75,6 +76,7 @@ export function useAdminActivities({
   handleAuthError,
   pageSize,
 }: UseAdminActivitiesOptions) {
+  const { locale } = useLocale();
   useEffect(() => {
     if (
       !token ||
@@ -163,7 +165,9 @@ export function useAdminActivities({
         if (!isMounted) return;
         if (handleAuthError(error)) return;
         const message =
-          error instanceof Error ? error.message : 'Nao foi possivel carregar as atividades.';
+          error instanceof Error
+            ? error.message
+            : getLocaleText(locale, 'Nao foi possivel carregar as atividades.', 'Could not load the activities.');
         setActivityError(message);
       })
       .finally(() => {
@@ -194,5 +198,6 @@ export function useAdminActivities({
     activityDateTo,
     activityPage,
     activityTab,
+    locale,
   ]);
 }
